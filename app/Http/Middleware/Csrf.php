@@ -22,7 +22,7 @@ class Csrf extends BaseVerifier
             ! in_array($origin, $this->allows) &&
             ! (empty($origin) && $request->ip() === '127.0.0.1')
         ) {
-            return redirect('https://api.riuir.com');
+            return response('token mismatch exception', 503);
         }
 
         if (
