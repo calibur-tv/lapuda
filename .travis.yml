@@ -7,6 +7,7 @@ before_install:
 - chmod 600 ~/.ssh/id_rsa
 - echo -e "Host 101.132.169.136\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 after_success:
+- ssh -p $DEPLOY_PORT $DEPLOY_USER@$DEPLOY_HOST 'cd /var/www/api && git pull'
 - ssh -p $DEPLOY_PORT $DEPLOY_USER@$DEPLOY_HOST 'cd /var/www/api && composer install'
 env:
   global:
