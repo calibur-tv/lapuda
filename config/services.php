@@ -1,12 +1,6 @@
 <?php
 
 return [
-
-    /**
-     * webhook key
-     */
-    'webhook' => env('GITHUB_DEPLOY_TOKEN'),
-
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

@@ -1,3 +1,4 @@
 {
-  "phabricator.uri" : "http://phab.riuir.com/"
+  "phabricator.uri" : "http://phab.riuir.com/",
+  "history.immutable": true
 }
