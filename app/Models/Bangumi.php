@@ -41,11 +41,11 @@ class Bangumi extends Model
 
     public function getAvatarAttribute($avatar)
     {
-        return $avatar ? 'https://cdn.riuir.com/' . $avatar : 'https://cdn.riuir.com/avatar';
+        return \Config::get('website.cdn','https://cdn.riuir.com/').($avatar?'':'avatar');
     }
 
     public function getBannerAttribute($banner)
     {
-        return $banner ? 'https://cdn.riuir.com/' . $banner : 'https://cdn.riuir.com/B-banner';
+        return \Config::get('website.cdn','https://cdn.riuir.com/').($banner?'':'B-banner');
     }
 }
