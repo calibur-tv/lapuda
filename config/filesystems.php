@@ -18,15 +18,18 @@ return [
 
     /**
      * 七牛云存储
-     * access：access_key
-     * secret：secret_key
+     * access_key：access_key
+     * secret_key：secret_key
      * bucket：空间
      * domain：加速域名
      */
-    'access' => env('QINIU_ACCESS_KEY'),
-    'secret' => env('QINIU_SECRET_KEY'),
-    'bucket' => env('QINIU_BUCKET'),
-    'domain' => env('QINIU_DOMAIN'),
+    'qiniu' => [
+        'driver'     => 'qiniu',
+        'access_key' => env('QINIU_ACCESS_KEY'),
+        'secret_key' => env('QINIU_SECRET_KEY'),
+        'bucket'     => env('QINIU_BUCKET'),
+        'domain'     => env('QINIU_DOMAIN'),
+    ],
 
     /*
     |--------------------------------------------------------------------------
