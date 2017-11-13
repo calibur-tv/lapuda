@@ -31,11 +31,11 @@ class Video extends Model
 
     public function getUrlAttribute($url)
     {
-        return $url ? 'https://cdn.riuir.com/' . $url : '';
+        return $url ? config('website.cdn') . $url : '';
     }
 
     public function getPosterAttribute($poster)
     {
-        return 'https://cdn.riuir.com/' . $poster;
+        return  config('website.cdn') . $poster;
     }
 }
