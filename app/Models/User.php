@@ -31,16 +31,12 @@ class User extends Authenticatable
 
     public function getAvatarAttribute($avatar)
     {
-        return $avatar
-            ? 'https://cdn.riuir.com/' . $avatar
-            : 'https://cdn.riuir.com/default/user-avatar';
+        return config('website.cdn').($avatar?$avatar:'default/user-avatar');
     }
 
     public function getBannerAttribute($banner)
     {
-        return $banner
-            ? 'https://cdn.riuir.com/' . $banner
-            : 'https://cdn.riuir.com/default/user-banner';
+        return config('website.cdn').($banner?$banner:'default/user-banner');
     }
 
     public function getSexAttribute($sex)
