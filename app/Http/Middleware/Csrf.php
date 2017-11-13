@@ -3,48 +3,29 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken as BaseVerifier;
 
-class Csrf extends BaseVerifier
+class Csrf
 {
     protected $allows = [
         'https://www.riuir.com',
         'https://m.riuir.com',
-        'http://riuir.dev'
+        'http://riuir.dev',
+        '127.0.0.1',
+        ''
     ];
 
     protected $except = [];
 
     public function handle($request, Closure $next)
     {
-        $origin = $request->headers->get('Origin');
         if (
-            ! in_array($origin, $this->allows) &&
-            ! (empty($origin) && $request->ip() === '127.0.0.1')
+            in_array($request->method(), ['HEAD', 'GET', 'OPTIONS']) ||
+            in_array($request->headers->get('Origin'), $this->allows) ||
+            in_array($request->url(), $this->except) ||
+            md5(config('app.md5_salt') . $request->headers->get('X-Auth-Timestamp')) === $request->headers->get('X-Auth-Token')
         ) {
-            return response('token mismatch exception', 503);
+            return $next($request);
         }
-
-        if (
-            $this->inExceptArray($request) ||
-            $this->isReading($request) ||
-            $this->runningUnitTests() ||
-            $this->tokensMatch($request)
-        ) {
-            return $this->addCookieToResponse($request, $next($request));
-        }
-
-        return response('token mismatch exception', 500);
-    }
-
-    protected function getTokenFromRequest($request)
-    {
-        $token = $request->cookie('XSRF-TOKEN');
-
-        if (! $token && $header = $request->header('X-XSRF-TOKEN')) {
-            $token = $this->encrypter->decrypt($header);
-        }
-
-        return $token;
+        return response('token mismatch exception', 503);
     }
 }

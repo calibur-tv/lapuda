@@ -124,6 +124,8 @@ return [
 
     'log_level' => env('APP_LOG_LEVEL', 'debug'),
 
+    'md5_salt' => env('MD5_SALT'),
+
     /*
     |--------------------------------------------------------------------------
     | Autoloaded Service Providers

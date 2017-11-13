@@ -25,24 +25,6 @@ class DoorController extends Controller
         return view('welcome');
     }
 
-    public function deploy(Request $request)
-    {
-        $commands = [
-            'cd /var/www/riuir',
-            'git pull'
-        ];
-        $signature = $request->header('X-Hub-Signature');
-        $payload = file_get_contents('php://input');
-        if ($this->isFromGithub($payload, $signature)) {
-            foreach ($commands as $command) {
-                shell_exec($command);
-            }
-            http_response_code(200);
-        } else {
-            abort(403);
-        }
-    }
-
     public function banner()
     {
         return Cache::remember('index_banner', config('cache.ttl'), function () {
@@ -102,7 +84,6 @@ class DoorController extends Controller
             : array_merge($arr, ['email' => $request->get('access')]);
 
         $user = User::create($data);
-        Auth::login($user);
 
         return response(JWTAuth::fromUser($user));
     }
@@ -186,10 +167,5 @@ class DoorController extends Controller
 
             return $pinyin;
         }
-    }
-
-    private function isFromGithub($payload, $signature)
-    {
-        return 'sha1=' . hash_hmac('sha1', $payload, config('services.webhook'), false) === $signature;
     }
 }
