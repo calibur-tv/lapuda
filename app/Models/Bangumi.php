@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-/** //todo:这个是什么模型……
+/**
  * Class Bangumi
  * @package App\Models
  */
@@ -41,11 +41,11 @@ class Bangumi extends Model
 
     public function getAvatarAttribute($avatar)
     {
-        return config('website.cdn','https://cdn.riuir.com/').($avatar?'':'avatar');
+        return config('website.cdn').($avatar ? $avatar : 'avatar');
     }
 
     public function getBannerAttribute($banner)
     {
-        return config('website.cdn','https://cdn.riuir.com/').($banner?'':'B-banner');
+        return config('website.cdn').($banner ? $banner : 'B-banner');
     }
 }

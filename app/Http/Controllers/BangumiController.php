@@ -13,9 +13,9 @@ class BangumiController extends Controller
 {
     public function news()
     {
-        $data = Cache::remember('bangumi_list_all', config('cache.ttl'), function ()
+        $data = Cache::remember('bangumi_news_page_1', config('cache.ttl'), function ()
         {
-            $bangumis = Bangumi::select('id', 'name', 'summary', 'avatar', 'season', 'released_at', 'published_at', 'released_video_id')->get();
+            $bangumis = Bangumi::all();
             foreach ($bangumis as $row)
             {
                 $row->released_part = 0;
@@ -30,7 +30,7 @@ class BangumiController extends Controller
                     }
                 }
                 $row->season = $published_at;
-                $row->tags = $row->tags()->select('name')->get();
+                $row->tags = $this->getBangumiTags($row);
             }
             return $bangumis;
         });
@@ -38,7 +38,7 @@ class BangumiController extends Controller
         return $data;
     }
 
-    public function info($id)
+    public function show($id)
     {
         $data = Cache::remember('bangumi_info_' . $id, config('cache.ttl'), function () use ($id)
         {
@@ -149,5 +149,17 @@ class BangumiController extends Controller
 
             return response()->json(['tags' => $tagList, 'bangumis' => $bangumis], 200);
         }
+    }
+
+    protected function getBangumiInfoById() {
+
+    }
+
+    protected function getBangumiTags($bangumi)
+    {
+        return Cache::remember('bangumi_tags_'.$bangumi->id, config('cache.ttl'), function () use ($bangumi)
+        {
+            return $bangumi->tags()->get()->toArray();
+        });
     }
 }

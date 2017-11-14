@@ -31,12 +31,12 @@ class User extends Authenticatable
 
     public function getAvatarAttribute($avatar)
     {
-        return config('website.cdn').($avatar?$avatar:'default/user-avatar');
+        return config('website.cdn').($avatar ? $avatar : 'default/user-avatar');
     }
 
     public function getBannerAttribute($banner)
     {
-        return config('website.cdn').($banner?$banner:'default/user-banner');
+        return config('website.cdn').($banner ? $banner : 'default/user-banner');
     }
 
     public function getSexAttribute($sex)
