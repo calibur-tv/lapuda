@@ -15,16 +15,13 @@ class BangumiController extends Controller
     {
         $data = Cache::remember('bangumi_news_page_1', config('cache.ttl'), function ()
         {
-            $bangumis = Bangumi::all();
-            foreach ($bangumis as $row)
+            $ids = Bangumi::latest('published_at')->get()->pluck('id');
+            $result = [];
+            foreach ($ids as $id)
             {
-                $row->released_part = 0;
-                if ($row->released_video_id) {
-                    $row->released_part = Video::find($row->released_video_id)->pluck('part');
-                }
-                $row->tags = $this->getBangumiTags($row);
+                array_push($result, $this->getBangumiInfoById($id));
             }
-            return $bangumis;
+            return $result;
         });
 
         return $data;
@@ -143,15 +140,34 @@ class BangumiController extends Controller
         }
     }
 
-    protected function getBangumiInfoById() {
+    protected function getBangumiInfoById($id)
+    {
+        return Cache::remember('bangumi_tags_'.$id, config('cache.ttl'), function () use ($id)
+        {
+            $bangumi = Bangumi::find($id);
+            $bangumi->released_part = 0;
+            if ($bangumi->released_video_id) {
+                // 这里可以使用 LEFT-JOIN 语句优化
+                $bangumi->released_part = Video::find($bangumi->released_video_id)->pluck('part');
+            }
+            $bangumi->tags = $this->getBangumiTags($bangumi);
 
+            return $bangumi;
+        });
     }
 
     protected function getBangumiTags($bangumi)
     {
         return Cache::remember('bangumi_tags_'.$bangumi->id, config('cache.ttl'), function () use ($bangumi)
         {
-            return $bangumi->tags()->get()->toArray();
+            // 这个可以使用 LEFT-JOIN 语句优化
+            return $bangumi->tags()->get()->transform(function ($item) {
+                return [
+                    'id' => $item->pivot->tag_id,
+                    'bangumi_id' => $item->pivot->bangumi_id,
+                    'name' => $item->name
+                ];
+            });
         });
     }
 }
