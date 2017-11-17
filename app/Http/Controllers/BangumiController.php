@@ -34,8 +34,6 @@ class BangumiController extends Controller
         {
             $bangumi = $this->getBangumiInfoById($id);
             $bangumi->videoPackage = $this->getBangumiVideo($bangumi);
-            $bangumi->alias = $bangumi->alias === 'null' ? '' : json_decode($bangumi->alias);
-            $bangumi->season = $bangumi->season === 'null' ? '' : json_decode($bangumi->season);
 
             return $bangumi;
         });
@@ -112,6 +110,9 @@ class BangumiController extends Controller
                 ? Video::find($bangumi->released_video_id)->pluck('part')
                 : 0;
             $bangumi->tags = $this->getBangumiTags($bangumi);
+            // json 格式化
+            $bangumi->alias = $bangumi->alias === 'null' ? '' : json_decode($bangumi->alias);
+            $bangumi->season = $bangumi->season === 'null' ? '' : json_decode($bangumi->season);
 
             return $bangumi;
         });
