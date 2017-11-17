@@ -10,7 +10,7 @@ class VideoController extends Controller
 {
     public function show($id)
     {
-        $data = Cache::remember('video_info_' . $id, config('cache.ttl'), function () use ($id)
+        $data = Cache::remember('video_'.$id.'_show', config('cache.ttl'), function () use ($id)
         {
             $info = Video::find($id);
 

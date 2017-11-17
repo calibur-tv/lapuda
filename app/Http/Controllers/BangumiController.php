@@ -30,7 +30,7 @@ class BangumiController extends Controller
 
     public function show($id)
     {
-        $result = Cache::remember('bangumi_info_' . $id, config('cache.ttl'), function () use ($id)
+        $result = Cache::remember('bangumi_'.$id.'_show', config('cache.ttl'), function () use ($id)
         {
             $bangumi = $this->getBangumiInfoById($id);
             if (is_null($bangumi)) {
@@ -106,7 +106,7 @@ class BangumiController extends Controller
 
     protected function getBangumiInfoById($id)
     {
-        return Cache::remember('bangumi_tags_'.$id, config('cache.ttl'), function () use ($id)
+        return Cache::remember('bangumi_'.$id.'_info', config('cache.ttl'), function () use ($id)
         {
             $bangumi = Bangumi::find($id);
             // 番剧可能不存在
@@ -128,7 +128,7 @@ class BangumiController extends Controller
 
     protected function getBangumiVideo($bangumi)
     {
-        return Cache::remember('bangumi_video_'.$bangumi->id, config('cache.ttl'), function () use ($bangumi)
+        return Cache::remember('bangumi_'.$bangumi->id.'_video', config('cache.ttl'), function () use ($bangumi)
         {
             $season = $bangumi['season'] === 'null' ? '' : $bangumi['season'];
 
@@ -170,7 +170,7 @@ class BangumiController extends Controller
 
     protected function getBangumiTags($bangumi)
     {
-        return Cache::remember('bangumi_tags_'.$bangumi->id, config('cache.ttl'), function () use ($bangumi)
+        return Cache::remember('bangumi_'.$bangumi->id.'_tags', config('cache.ttl'), function () use ($bangumi)
         {
             // 这个可以使用 LEFT-JOIN 语句优化
             return $bangumi->tags()->get()->transform(function ($item) {
