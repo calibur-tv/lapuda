@@ -176,8 +176,6 @@ class BangumiController extends Controller
             return $bangumi->tags()->get()->transform(function ($item) {
                 return [
                     'id' => $item->id,
-                    'bangumi_id' => $item->pivot->bangumi_id,
-                    'tag_id' => $item->pivot->tag_id,
                     'name' => $item->name
                 ];
             });
