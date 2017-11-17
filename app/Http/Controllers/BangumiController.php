@@ -130,7 +130,7 @@ class BangumiController extends Controller
     {
         return Cache::remember('bangumi_video_'.$bangumi->id, config('cache.ttl'), function () use ($bangumi)
         {
-            $season = $bangumi['season'] === 'null' ? '' : json_decode($bangumi['season']);
+            $season = $bangumi['season'] === 'null' ? '' : $bangumi['season'];
 
             $list = Cache::remember('video_groupBy_bangumi_'.$bangumi->id, config('cache.ttl'), function () use ($bangumi)
             {
