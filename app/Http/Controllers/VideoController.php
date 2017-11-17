@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Cache;
 
 class VideoController extends Controller
 {
-    public function info($id)
+    public function show($id)
     {
         $data = Cache::remember('video_info_' . $id, config('cache.ttl'), function () use ($id)
         {
@@ -38,7 +38,7 @@ class VideoController extends Controller
         });
 
         $value['data']++;
-        if (time() - $value['time'] > config('cache.ttl') * 60)
+        if (time() - $value['time'] > config('cache.ttl'))
         {
             $value['time'] = time();
             Video::find($id)->update([
