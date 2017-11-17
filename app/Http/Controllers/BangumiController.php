@@ -175,7 +175,7 @@ class BangumiController extends Controller
             // 这个可以使用 LEFT-JOIN 语句优化
             return $bangumi->tags()->get()->transform(function ($item) {
                 return [
-                    'id' => $item->id,
+                    'id' => $item->pivot->tag_id,
                     'name' => $item->name
                 ];
             });
