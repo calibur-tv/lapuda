@@ -17,6 +17,7 @@ class BangumiController extends Controller
         {
             $ids = Bangumi::latest('published_at')->get()->pluck('id');
             $result = [];
+            // 这里应该用 whereIn 而不是多次 where
             foreach ($ids as $id)
             {
                 array_push($result, $this->getBangumiInfoById($id));
@@ -29,30 +30,112 @@ class BangumiController extends Controller
 
     public function show($id)
     {
-        $data = Cache::remember('bangumi_info_' . $id, config('cache.ttl'), function () use ($id)
+        return Cache::remember('bangumi_info_' . $id, config('cache.ttl'), function () use ($id)
         {
-            $bangumi = Bangumi::where('id', $id)->select('id', 'name', 'banner', 'summary', 'alias', 'season')->first();
+            $bangumi = $this->getBangumiInfoById($id);
+            $bangumi->videoPackage = $this->getBangumiVideo($bangumi);
+            $bangumi->alias = $bangumi->alias === 'null' ? '' : json_decode($bangumi->alias);
+            $bangumi->season = $bangumi->season === 'null' ? '' : json_decode($bangumi->season);
 
-            $alias = $bangumi['alias'] === 'null' ? '' : json_decode($bangumi['alias'])->search;
-            $tags = $bangumi->tags()->select('name')->get()->toArray();
-            $keywords = $alias;
-            foreach ($tags as $tag)
+            return $bangumi;
+        });
+    }
+
+    public function tags(Request $request)
+    {
+        $list = Cache::remember('bangumi_tags_all', config('cache.ttl'), function ()
+        {
+            return Tag::where('model', 0)->select('id', 'name')->get()->toArray();
+        });
+        $data = [
+            'tags' => $list
+        ];
+        $bangumis = [];
+
+        $tags = $request->get('id');
+
+        if ($tags !== null)
+        {
+            $tags = array_values(array_unique(array_filter(explode('-', $tags), function ($tag) {
+                return !preg_match("/[^\d-., ]/", $tag);
+            })));
+
+            if ( ! empty($tags))
             {
-                $keywords = $keywords . ',' .$tag['name'];
+                sort($tags);
+                $bangumi_id = Cache::remember('bangumi_tags_' . implode('_', $tags), config('cache.ttl'), function () use ($tags)
+                {
+                    $count = count($tags);
+                    // bangumi 和 tags 是多对多的关系
+                    // 这里通过一个 tag_id Array 拿到一个 bangumi_id 的 Array
+                    // bangumi_id Array 中，同一个 bangumi_id 会重复出现
+                    // tags_id = [1, 2, 3]
+                    // bangumi_id 可能是
+                    // A 命中 1
+                    // B 命中 1, 2, 3
+                    // C 命中 1, 3
+                    // 我们要拿的是 B，而 ids 是：[A, B, B, B, C, C]
+                    $ids = array_count_values(BangumiTag::whereIn('tag_id', $tags)->pluck('bangumi_id')->toArray());
+                    $result = [];
+                    foreach ($ids as $id => $c)
+                    {
+                        // 因此当 count(B) === count($tags) 时，就是我们要的
+                        if ($c === $count)
+                        {
+                            array_push($result, $id);
+                        }
+                    }
+                    return $result;
+                });
+
+                if ( ! empty($bangumi_id))
+                {
+                    foreach ($bangumi_id as $id)
+                    {
+                        array_push($bangumis, $this->getBangumiInfoById($id));
+                    }
+                }
             }
-            $bangumi->keywords = trim($keywords, ',');
+        }
+        $data['bangumis'] = $bangumis;
 
-            $bangumi->season = $bangumi['season'] === 'null' ? '' : json_decode($bangumi['season']);
-            
-            if ($bangumi->season !== '' && isset($bangumi->season->part) && isset($bangumi->season->name))
+        return response()->json($data, 200);
+    }
+
+    protected function getBangumiInfoById($id)
+    {
+        return Cache::remember('bangumi_tags_'.$id, config('cache.ttl'), function () use ($id)
+        {
+            $bangumi = Bangumi::find($id);
+            // 这里可以使用 LEFT-JOIN 语句优化
+            $bangumi->released_part = $bangumi->released_video_id
+                ? Video::find($bangumi->released_video_id)->pluck('part')
+                : 0;
+            $bangumi->tags = $this->getBangumiTags($bangumi);
+
+            return $bangumi;
+        });
+    }
+
+    protected function getBangumiVideo($bangumi)
+    {
+        return Cache::remember('bangumi_video_'.$bangumi->id, config('cache.ttl'), function () use ($bangumi)
+        {
+            $season = $bangumi['season'] === 'null' ? '' : json_decode($bangumi['season']);
+
+            $list = Cache::remember('video_groupBy_bangumi_'.$bangumi->id, config('cache.ttl'), function () use ($bangumi)
             {
-                $list = Video::where('bangumi_id', $id)->select('id', 'part', 'name', 'poster', 'url')->get()->toArray();
+                return Video::where('bangumi_id', $bangumi->id)->get()->toArray();
+            });
+
+            if ($season !== '' && isset($season->part) && isset($season->name))
+            {
                 usort($list, function($prev, $next) {
                     return $prev['part'] - $next['part'];
                 });
-                $part = $bangumi->season->part;
-                $time = $bangumi->season->time;
-                $name = $bangumi->season->name;
+                $part = $season->part;
+                $time = $season->time;
+                $name = $season->name;
                 $videos = [];
                 for ($i=0, $j=1; $j < count($part); $i++, $j++) {
                     $begin = $part[$i];
@@ -63,96 +146,16 @@ class BangumiController extends Controller
                         'data' => $length > 0 ? array_slice($list, $begin, $length) : array_slice($list, $begin)
                     ]);
                 }
-                $bangumi->repeat = isset($bangumi->season->re) ? (boolean)$bangumi->season->re : false;
-                $bangumi->season = true;
-            }
-            else
-            {
-                $bangumi->season = false;
-                $videos = Video::where('bangumi_id', $id)->select('id', 'part', 'name', 'poster', 'url')->get()->toArray();
+                $repeat = isset($season->re) ? (boolean)$season->re : false;
+            } else {
+                $videos = $list;
+                $repeat = false;
             }
 
-            return json_encode([
-                'info' => $bangumi,
-                'tags' => $tags,
-                'videos' => $videos
-            ]);
-        });
-
-        return $data;
-    }
-
-    public function tags(Request $request)
-    {
-        $tagList = Cache::remember('bangumi_tags_all', config('cache.ttl'), function ()
-        {
-            return Tag::where('model', 0)->select('id', 'name')->get()->toArray();
-        });
-
-        $tags = $request->get('id');
-
-        if ($tags === null)
-        {
-            return response()->json(['tags' => $tagList, 'bangumis' => []], 200);
-        }
-        else
-        {
-            $arr = array_values(array_unique(array_filter(explode('-', $tags), function ($item) {
-                return !preg_match("/[^\d-., ]/", $item);
-            })));
-
-            if (empty($arr))
-            {
-                return null;
-            }
-
-            sort($arr);
-            $bangumi_id = Cache::remember('bangumi_tags_' . implode('_', $arr), config('cache.ttl'), function () use ($arr)
-            {
-                $count = count($arr);
-                $ids = array_count_values(BangumiTag::whereIn('tag_id', $arr)->pluck('bangumi_id')->toArray());
-                $ret = [];
-                foreach ($ids as $id => $c)
-                {
-                    if ($c === $count)
-                    {
-                        array_push($ret, $id);
-                    }
-                }
-                return $ret;
-            });
-
-            if (empty($bangumi_id))
-            {
-                return response()->json(['tags' => $tagList, 'bangumis' => []], 200);
-            }
-
-            $bangumis = [];
-            foreach ($bangumi_id as $id)
-            {
-                array_push($bangumis, Cache::remember('bangumi_profile_' . $id, config('cache.ttl'), function () use ($id)
-                {
-                    return Bangumi::find($id)->toArray();
-                }));
-            }
-
-            return response()->json(['tags' => $tagList, 'bangumis' => $bangumis], 200);
-        }
-    }
-
-    protected function getBangumiInfoById($id)
-    {
-        return Cache::remember('bangumi_tags_'.$id, config('cache.ttl'), function () use ($id)
-        {
-            $bangumi = Bangumi::find($id);
-            $bangumi->released_part = 0;
-            if ($bangumi->released_video_id) {
-                // 这里可以使用 LEFT-JOIN 语句优化
-                $bangumi->released_part = Video::find($bangumi->released_video_id)->pluck('part');
-            }
-            $bangumi->tags = $this->getBangumiTags($bangumi);
-
-            return $bangumi;
+            return [
+                'videos' => $videos,
+                'repeat' => $repeat
+            ];
         });
     }
 
@@ -164,7 +167,6 @@ class BangumiController extends Controller
             return $bangumi->tags()->get()->transform(function ($item) {
                 return [
                     'id' => $item->pivot->tag_id,
-                    'bangumi_id' => $item->pivot->bangumi_id,
                     'name' => $item->name
                 ];
             });
