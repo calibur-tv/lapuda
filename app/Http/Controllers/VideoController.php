@@ -16,11 +16,11 @@ class VideoController extends Controller
 
             $info['resource'] = $info['resource'] ? json_decode($info['resource']) : '';
 
-            return json_encode([
+            return [
                 'info' => $info,
                 'videos' => Video::where('bangumi_id', $info->bangumi_id)->get(),
                 'bangumi' => Bangumi::find($info->bangumi_id)
-            ]);
+            ];
         });
 
         return $this->resOK($data);
