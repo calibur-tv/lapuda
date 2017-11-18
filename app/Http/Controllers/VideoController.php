@@ -23,7 +23,7 @@ class VideoController extends Controller
             ]);
         });
 
-        return $data;
+        return $this->resOK($data);
     }
 
     public function playing($id)

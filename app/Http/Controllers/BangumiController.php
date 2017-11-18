@@ -22,7 +22,7 @@ class BangumiController extends Controller
             return $repository->list($ids);
         });
 
-        return $data;
+        return $this->resOK($data);
     }
 
     public function show($id)
@@ -40,7 +40,8 @@ class BangumiController extends Controller
 
             return $bangumi;
         });
-        return $result;
+
+        return $this->resOK($result);
     }
 
     public function tags(Request $request)
@@ -100,6 +101,6 @@ class BangumiController extends Controller
         }
         $data['bangumis'] = $bangumis;
 
-        return response()->json($data, 200);
+        return $this->resOK($data);
     }
 }
