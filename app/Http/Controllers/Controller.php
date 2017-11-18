@@ -38,4 +38,13 @@ class Controller extends BaseController
 
         return JWTAuth::parseToken()->authenticate();
     }
+
+    public function resOK($data = '', $message = '', $code = 0)
+    {
+        return response([
+            'code' => $code,
+            'message' => $message,
+            'data' => $data
+        ], $code ? $code : 200);
+    }
 }

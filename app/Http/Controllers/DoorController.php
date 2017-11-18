@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\User\RegisterRequest;
-use App\Mail\Test;
 use App\Mail\Welcome;
 use App\Models\Banner;
 use App\Models\Confirm;
@@ -27,16 +26,20 @@ class DoorController extends Controller
 
     public function banner()
     {
-        return Cache::remember('index_banner', config('cache.ttl'), function () {
+        $data = Cache::remember('index_banner', config('cache.ttl'), function () {
             return Banner::select('id', 'url', 'user_id', 'bangumi_id')->get()->toArray();
         });
+
+        return $this->resOK($data);
     }
 
     public function checkAccessUnique($method, $access)
     {
-        return in_array($method, ['phone', 'email'])
+        $data = in_array($method, ['phone', 'email'])
             ? User::where($method, $access)->count()
             : null;
+
+        return $this->resOK($data);
     }
 
     public function sendEmailOrMessage(Request $request)
@@ -85,14 +88,14 @@ class DoorController extends Controller
 
         $user = User::create($data);
 
-        return response(JWTAuth::fromUser($user));
+        return $this->resOK(JWTAuth::fromUser($user));
     }
 
     public function captcha()
     {
         $captcha = new GeeCaptcha();
 
-        return $captcha->GTServerIsNormal();
+        return $this->resOK(json_decode($captcha->GTServerIsNormal()));
     }
 
     public function login(Request $request)
@@ -111,10 +114,10 @@ class DoorController extends Controller
         {
             $user = Auth::user();
 
-            return response(JWTAuth::fromUser($user));
+            return $this->resOK(JWTAuth::fromUser($user));
         }
 
-        return response('用户名或密码错误', 422);
+        return $this->resOK('', '用户名或密码错误', 422);
     }
 
     public function logout()
