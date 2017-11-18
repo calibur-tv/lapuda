@@ -127,7 +127,7 @@ class DoorController extends Controller
 
     public function refresh()
     {
-        return $this->getAuthUser();
+        return $this->resOK($this->getAuthUser());
     }
 
     protected function checkAuthCode($code, $access)
