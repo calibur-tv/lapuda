@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Bangumi;
 use App\Models\BangumiTag;
-use App\Models\Tag;
-use App\Models\Video;
+use App\Repositories\BangumiRepository;
+use App\Repositories\TagRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -16,13 +16,10 @@ class BangumiController extends Controller
         $data = Cache::remember('bangumi_news_page_1', config('cache.ttl'), function ()
         {
             $ids = Bangumi::latest('published_at')->get()->pluck('id');
-            $result = [];
-            // 这里应该用 whereIn 而不是多次 where
-            foreach ($ids as $id)
-            {
-                array_push($result, $this->getBangumiInfoById($id));
-            }
-            return $result;
+
+            $repository = new BangumiRepository();
+
+            return $repository->list($ids);
         });
 
         return $data;
@@ -32,11 +29,14 @@ class BangumiController extends Controller
     {
         $result = Cache::remember('bangumi_'.$id.'_show', config('cache.ttl'), function () use ($id)
         {
-            $bangumi = $this->getBangumiInfoById($id);
+            $repository = new BangumiRepository();
+            $bangumi = $repository->item($id);
+
             if (is_null($bangumi)) {
                 return null;
             }
-            $bangumi->videoPackage = $this->getBangumiVideo($bangumi);
+
+            $bangumi->videoPackage = $repository->videos($bangumi);
 
             return $bangumi;
         });
@@ -45,12 +45,9 @@ class BangumiController extends Controller
 
     public function tags(Request $request)
     {
-        $list = Cache::remember('bangumi_tags_all', config('cache.ttl'), function ()
-        {
-            return Tag::where('model', 0)->select('id', 'name')->get()->toArray();
-        });
+        $tagRepository = new TagRepository();
         $data = [
-            'tags' => $list
+            'tags' => $tagRepository->all(0)
         ];
         $bangumis = [];
 
@@ -58,6 +55,7 @@ class BangumiController extends Controller
 
         if ($tags !== null)
         {
+            // 格式化为数组 -> 只保留数字 -> 去重 -> 保留value
             $tags = array_values(array_unique(array_filter(explode('-', $tags), function ($tag) {
                 return !preg_match("/[^\d-., ]/", $tag);
             })));
@@ -92,9 +90,10 @@ class BangumiController extends Controller
 
                 if ( ! empty($bangumi_id))
                 {
+                    $bangumiRepository = new BangumiRepository();
                     foreach ($bangumi_id as $id)
                     {
-                        array_push($bangumis, $this->getBangumiInfoById($id));
+                        array_push($bangumis, $bangumiRepository->item($id));
                     }
                 }
             }
@@ -102,83 +101,5 @@ class BangumiController extends Controller
         $data['bangumis'] = $bangumis;
 
         return response()->json($data, 200);
-    }
-
-    protected function getBangumiInfoById($id)
-    {
-        return Cache::remember('bangumi_'.$id.'_info', config('cache.ttl'), function () use ($id)
-        {
-            $bangumi = Bangumi::find($id);
-            // 番剧可能不存在
-            if (is_null($bangumi)) {
-                return null;
-            }
-            // 这里可以使用 LEFT-JOIN 语句优化
-            $bangumi->released_part = $bangumi->released_video_id
-                ? Video::find($bangumi->released_video_id)->pluck('part')
-                : 0;
-            $bangumi->tags = $this->getBangumiTags($bangumi);
-            // json 格式化
-            $bangumi->alias = $bangumi->alias === 'null' ? '' : json_decode($bangumi->alias);
-            $bangumi->season = $bangumi->season === 'null' ? '' : json_decode($bangumi->season);
-
-            return $bangumi;
-        });
-    }
-
-    protected function getBangumiVideo($bangumi)
-    {
-        return Cache::remember('bangumi_'.$bangumi->id.'_video', config('cache.ttl'), function () use ($bangumi)
-        {
-            $season = $bangumi['season'] === 'null' ? '' : $bangumi['season'];
-
-            $list = Cache::remember('video_groupBy_bangumi_'.$bangumi->id, config('cache.ttl'), function () use ($bangumi)
-            {
-                return Video::where('bangumi_id', $bangumi->id)->get()->toArray();
-            });
-
-            if ($season !== '' && isset($season->part) && isset($season->name))
-            {
-                usort($list, function($prev, $next) {
-                    return $prev['part'] - $next['part'];
-                });
-                $part = $season->part;
-                $time = $season->time;
-                $name = $season->name;
-                $videos = [];
-                for ($i=0, $j=1; $j < count($part); $i++, $j++) {
-                    $begin = $part[$i];
-                    $length = $part[$j] - $begin;
-                    array_push($videos, [
-                        'name' => $name[$i],
-                        'time' => $time[$i],
-                        'data' => $length > 0 ? array_slice($list, $begin, $length) : array_slice($list, $begin)
-                    ]);
-                }
-                $repeat = isset($season->re) ? (boolean)$season->re : false;
-            } else {
-                $videos = $list;
-                $repeat = false;
-            }
-
-            return [
-                'videos' => $videos,
-                'repeat' => $repeat
-            ];
-        });
-    }
-
-    protected function getBangumiTags($bangumi)
-    {
-        return Cache::remember('bangumi_'.$bangumi->id.'_tags', config('cache.ttl'), function () use ($bangumi)
-        {
-            // 这个可以使用 LEFT-JOIN 语句优化
-            return $bangumi->tags()->get()->transform(function ($item) {
-                return [
-                    'id' => $item->pivot->tag_id,
-                    'name' => $item->name
-                ];
-            });
-        });
     }
 }
