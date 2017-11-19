@@ -2,8 +2,6 @@
 
 Route::get('/', 'DoorController@index');
 
-Route::post('/deploy', 'DoorController@deploy');
-
 Route::group(['prefix' => '/door'], function ()
 {
     Route::post('/captcha', 'DoorController@captcha');
