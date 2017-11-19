@@ -12,13 +12,19 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use App\Services\GeeCaptcha;
 use Illuminate\Support\Facades\Mail;
 use Overtrue\LaravelPinyin\Facades\Pinyin as Overtrue;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class DoorController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('geetest')->only([
+            'login', 'register'
+        ]);
+    }
+
     public function index()
     {
         return view('welcome');
@@ -93,9 +99,13 @@ class DoorController extends Controller
 
     public function captcha()
     {
-        $captcha = new GeeCaptcha();
+        $token = rand(0, 100) . microtime() . rand(0, 100);
 
-        return $this->resOK(json_decode($captcha->GTServerIsNormal()));
+        return $this->resOK([
+            'id' => config('geetest.id'),
+            'secret' => md5(config('app.key', config('geetest.key') . $token)),
+            'access' => $token
+        ]);
     }
 
     public function login(Request $request)
@@ -130,7 +140,7 @@ class DoorController extends Controller
         return $this->resOK($this->getAuthUser());
     }
 
-    protected function checkAuthCode($code, $access)
+    private function checkAuthCode($code, $access)
     {
         $confirm = Confirm::whereRaw('code = ? and access = ? and created_at > ?', [$code, $access, Carbon::now()->addDay(-1)])->first();
         if (is_null($confirm)) {
@@ -141,7 +151,7 @@ class DoorController extends Controller
         return false;
     }
 
-    protected function makeConfirm($access)
+    private function makeConfirm($access)
     {
         $token = Confirm::whereRaw('access = ? and created_at > ?', [$access, Carbon::now()->addDay(-1)])->first();
         if ( ! is_null($token)) {
@@ -154,7 +164,7 @@ class DoorController extends Controller
         return $token;
     }
 
-    protected function createUserZone($name)
+    private function createUserZone($name)
     {
         $pinyin = Overtrue::permalink($name);
 

@@ -12,7 +12,7 @@ class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
-    public function getAuthUser()
+    protected function getAuthUser()
     {
         try {
 
@@ -39,7 +39,7 @@ class Controller extends BaseController
         return JWTAuth::parseToken()->authenticate();
     }
 
-    public function resOK($data = '', $message = '', $code = 0)
+    protected function resOK($data = '', $message = '', $code = 0)
     {
         return response([
             'code' => $code,
