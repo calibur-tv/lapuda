@@ -6,7 +6,7 @@ Route::post('/deploy', 'DoorController@deploy');
 
 Route::group(['prefix' => '/door'], function ()
 {
-    Route::get('/captcha', 'DoorController@captcha');
+    Route::post('/captcha', 'DoorController@captcha');
 
     Route::post('/check/{method}/{access}', 'DoorController@checkAccessUnique');
 
@@ -16,9 +16,9 @@ Route::group(['prefix' => '/door'], function ()
 
     Route::post('/login', 'DoorController@login');
 
-    Route::get('/user', 'DoorController@refresh');
+    Route::post('/user', 'DoorController@refresh');
 
-    Route::get('/logout', 'DoorController@logout');
+    Route::post('/logout', 'DoorController@logout');
 });
 
 Route::group(['prefix' => '/bangumi'], function ()
