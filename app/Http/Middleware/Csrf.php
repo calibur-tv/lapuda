@@ -7,9 +7,8 @@ use Closure;
 class Csrf
 {
     protected $allows = [
-        'https://www.riuir.com',
-        'https://m.riuir.com',
-        'http://riuir.dev',
+        'https://www.calibur.tv',
+        'https://m.calibur.tv',
         '127.0.0.1',
         ''
     ];
@@ -19,6 +18,7 @@ class Csrf
     public function handle($request, Closure $next)
     {
         if (
+            config('app.env') !== 'production' ||
             in_array($request->method(), ['HEAD', 'GET', 'OPTIONS']) ||
             in_array($request->headers->get('Origin'), $this->allows) ||
             in_array($request->url(), $this->except) ||
