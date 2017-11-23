@@ -14,6 +14,8 @@ Route::group(['prefix' => '/door'], function ()
 
     Route::post('/login', 'DoorController@login');
 
+    Route::get('/update_token/{model}/{type}/{id}','DoorController@getUpdateToken');
+
     Route::post('/user', 'DoorController@refresh');
 
     Route::post('/logout', 'DoorController@logout');
