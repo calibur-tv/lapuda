@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
@@ -63,5 +64,29 @@ class User extends Authenticatable
         }
 
         return $res;
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function sign() {
+        return $this->hasOne(UserSign::Class);
+    }
+
+    /**是否签到了
+     * @return bool
+     */
+    public function isSignToday() {
+        return $this->sign()->where('created_at','>',Carbon::now()->startOfDay())->first() != null;
+    }
+
+    /**是否签到成功
+     * @return bool
+     */
+    public function signNow() {
+        return with(new UserSign(),function (UserSign $sign){
+            $sign->user_id = $this->id;
+            return $sign->save();
+        });
     }
 }
