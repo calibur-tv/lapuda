@@ -1,5 +1,5 @@
 <?php
 
 return [
-    'cdn'=>'https://cdn.calibur.tv/'
+    'cdn'=>'https://image.calibur.tv/'
 ];

@@ -1,21 +1,29 @@
 language: php
+
 php:
-- 7.1
-branches:
-  only:
-  - master
+  - 7.1
+
 before_install:
-- openssl aes-256-cbc -K $encrypted_2b053503124e_key -iv $encrypted_2b053503124e_iv
-  -in id_rsa.enc -out ~/.ssh/id_rsa -d
-- chmod 600 ~/.ssh/id_rsa
-- echo -e "Host 101.132.169.136\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+  - openssl aes-256-cbc -K $encrypted_278b576efbf2_key -iv $encrypted_278b576efbf2_iv -in id_rsa.enc -out ~/.ssh/id_rsa -d
+  - chmod 600 ~/.ssh/id_rsa
+  - echo -e "Host $STAGING_SERVER\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+  - echo -e "Host $PRODUCTION_SERVER\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+
 script:
 - echo "hello world"
-after_success:
-- ssh -p $DEPLOY_PORT $DEPLOY_USER@$DEPLOY_HOST 'cd /var/www/api && git pull'
-- ssh -p $DEPLOY_PORT $DEPLOY_USER@$DEPLOY_HOST 'cd /var/www/api && composer install'
-env:
-  global:
-  - secure: VmCw8otJLeXEUJ4jgBDNl0O5vMA3ApUENurHW8Y2i9FbJjSya5u3uL2uBxRvxO0R87U980971ZYik+WtcFwlQ3lpRrnoVjogyE0BXGEogKZf2I5upTFF1kkVa6NKguGQiHgBmM2Ul6E8tkouls8vrnsqaAWVHm0LpaTM9dxBlwi3H0BfTqOa1tgsfx40m3hiZ+HYqJ/+o4tJgzKczVkxa4Mg120INZ9rXEpuhQAJDPu+r4POJPMuYLmlNrwqAex8N7THVA84xdKSiC6xcYxDrWZR5njDe0ijpzMg7wl6ITvw8f6Ygu4dTJMZkjtjIeyi7sWbqIyj/66+VNZzK34UT0qvo5n3lTIW+yfMr1ZUr/6f6Y6QCT24EVSIEpd8fdxJPlEILcSONDghatVTfqv1PYGww9AIhEdLilaspUYhYyyNYfSnuD8uw4vt8OH7Hg7OQYq8X0cfvT2E/hzmXLlJ2tF4enDnTdUDpy4hZ9q7cqi3LXEgeEuQ1Gj0qhTeZcP9k0O+zrAew3HrLgZvJy9g0qwvBiQIZf3CBjHyFei2TFZDR+DP/BenCHYYPxAUbQX5550F0GPWij6LRB6zlBtbmigWznlfoa9zFM290ALxx2pvELNeWHLie4WTul7fVrpXNcAkHXn1YXpPuzlxhWhkJIvUE4JhrEG29awwegFqdzs=
-  - secure: jtN1p1/l05HSx4y+RgGdqRkC9XpsgpWgxtaAx7XcylCXjK797n/jlUTIO7JFEL+mFMuA8O2h2GdcQzO+DPhEeedDf8rXUBY+Q8Qx7Kg6nulvX3tEfI9MDg0Av/gvrLQBJWIU83a9W+EGgxew1cUouyfY+x9i2kYan7QJf8YfqJ5YtDPl8zxA/dSCMB4xX0saqoIeeuXG3An6Nomh7EUr4NLLBAV/5ukEylekp6mBh72j7zlpj9c8CmbQMQ0NmArQzfbLWojoHEM+t00AJi/odLs1OQkX+VCjFZc053856uY8oocRx9GX6gGhwZp1KdqbQKiaNiW09HO73JuHVDVLqjvyVnGNbsK0K3mSwKarFps0ZVNXm4+bGLjzciddKNuHYMWg+kzmvOqPwDuPHzC/N6+tOJzcYsOOV4G+hFfJp4kdfWl9uN4JCP7fmhx9tjcUv/3j2G8F4NsJ5z49g9e/G99ME7Gzmpgauf5BAIxDYrgeuS1SQLtF7WzDYL8y9TWhcuNM4uYuYe2iv8c1XRI2k0Kti5ZhWEcLlZdWl6VXuy0Yfb1xfdMiRKheyEqd0BBDiVA5xjsgHs9sXB8yzsLYBET6Cbas9Q78UykfxwPR3SDRlHsYGREyUKMQrCMmZ9SQgpP1i9S4ZpImZmYswaJs6GLcWS2/tL9ut3HuhSYYMfI=
-  - secure: sQqnhm7SUCgg9ZeXjWDnihqiVKy4E9pV6XK8HHhTawZrSQ/w7bIYjCi8qoC9xRrjZRTp92YWJ6byzjoPJkgSwNY9TKQ7BE9Xu12co3qaJBE235KLn6UJagG9Q+K+MndhvfRFdTUYqPX3BK6fxfCcFwXMq8yk0bY2jjyI2wI6YP+iW753QYjhc1D00p5aBH9lPFmKI3nfts+SGMCgHMxqAnMfGIIxNajQdXD9scmgCG61oFnAk76qeWwt4VUR79D1dJdVI4M7Wsa8/lNqdw67SCRLVReDyRvWELs/Y3mO5IB2iNX+dESb0zunKhEf7hp7wbovsHy5ZLNfqACNo/awO94p7CHJoRwq6QmMmKFx69TS3haR6iuyXyIaHOVWO23wbn6U4bNaaN3f5emf5jn/b424xWfh8WYMuCVYs8s1S4Ch+tR1u07ufFDJkdHeRfQnMkh3/SpH4jfHm+tkVi6FM8884zMKQmsESn1USjqGaZZLcbxIWHSYs3lNLOj1IMyrVsEN9/JksvntfyDCMDhLeQSpCS97ZP54mXOSWwUGByhPRVhDNZLG5pmBgKgGZvkE2TNguOHcjPb/sKoBXRfuOtLK+A1N1GO59sjfI1ofsWQ6nngG6m5PqBHxDXfkET6L7EvGk79BrQw4tz1YntM8kdG8YeEmjwHOtEfCp7w8ddA=
+
+deploy:
+  - provider: script
+    skip_cleanup: true
+    script:
+      ssh -p $PORT $USER@$STAGING_SERVER 'cd /var/www/api && git pull' &&
+      ssh -p $PORT $USER@$STAGING_SERVER 'cd /var/www/api && composer install'
+    on:
+      branch: master
+  - provider: script
+    skip_cleanup: true
+    script:
+      ssh -p $PORT $USER@$STAGING_SERVER 'cd /var/www/api && git pull' &&
+      ssh -p $PORT $USER@$STAGING_SERVER 'cd /var/www/api && composer install'
+    on:
+      branch: deploy

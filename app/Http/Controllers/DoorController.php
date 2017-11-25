@@ -189,7 +189,8 @@ class DoorController extends Controller
      * @param $id
      * @return string
      */
-    public function getUpdateToken($model, $type, $id) {
+    public function getUpdateToken($model, $type, $id)
+    {
         /* @var QiniuAdapter $disk*/
         $disk = \Storage::disk('qiniu');
         return $disk->getUploadToken("{$model}/{$type}/{$id}/".time(),3600);
