@@ -8,6 +8,7 @@
 
 namespace App\Http\Controllers;
 use App\Models\User;
+use Illuminate\Http\Request;
 
 
 /**
@@ -30,5 +31,18 @@ class UserController extends Controller {
         }
         $user->signNow();
         return $this->resOK('','签到成功');
+    }
+
+    /**上传头像
+     * @param Request $request
+     * @return \Illuminate\Contracts\Routing\ResponseFactory|\Symfony\Component\HttpFoundation\Response
+     */
+    public function avatar(Request $request) {
+        $user = $this->getAuthUser();
+        if ($user === null){
+            return $this->resOK('',"请刷新页面重试",401);
+        }
+        /* @var User $user*/
+        $user->update(['avatar'=>$request->post('avatar')]);
     }
 }
