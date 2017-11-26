@@ -17,7 +17,7 @@ deploy:
     skip_cleanup: true
     script:
       ssh -p $PORT $USER@$STAGING_SERVER 'cd /var/www/api && git pull' &&
-      ssh -p $PORT $USER@$STAGING_SERVER 'cd /var/www/api && composer install'
+      ssh -p $PORT $USER@$STAGING_SERVER 'cd /var/www/api && composer install' &&
       ssh -p $PORT $USER@$STAGING_SERVER 'cd /var/www/api && php artisan migrate'
     on:
       branch: master
