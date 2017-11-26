@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
-    <title>riuir - 天下漫友是一家</title>
+    <title>calibur - 天下漫友是一家</title>
 </head>
 <body style="font-family: NotoSansHans-Regular,'Microsoft YaHei',Arial,sans-serif;">
 <div style="text-align: center">
@@ -28,28 +28,28 @@
         你可以在 24 小时内将验证码复制到注册页面输入框中来激活账户。
     </p>
     <div>
-        <span target="_blank" style="display: inline-block;
-                                    margin-bottom: 0;
-                                    font-weight: normal;
-                                    text-align: center;
-                                    vertical-align: middle;
-                                    background-image: none;
-                                    border: 1px solid #00bfef;
-                                    white-space: nowrap;
-                                    padding: 7px 0;
-                                    font-size: 16px;
-                                    line-height: 2;
-                                    border-radius: 3px;
-                                    min-width: 128px;
-                                    color: #fff;
-                                    background-color: #00bfef;
-                                    outline: none;
-                                    text-decoration: none;
-                                    letter-spacing:3px;"
+        <span style="display: inline-block;
+                     margin-bottom: 0;
+                     font-weight: normal;
+                     text-align: center;
+                     vertical-align: middle;
+                     background-image: none;
+                     border: 1px solid #00bfef;
+                     white-space: nowrap;
+                     padding: 7px 0;
+                     font-size: 16px;
+                     line-height: 2;
+                     border-radius: 3px;
+                     min-width: 128px;
+                     color: #fff;
+                     background-color: #00bfef;
+                     outline: none;
+                     text-decoration: none;
+                     letter-spacing:3px;"
         >{{ $token }}</span>
     </div>
     <div style="margin-top: 50px;color: #a6aeb3;padding-bottom: 100px">
-        如果您没有通过邮箱注册 <a href="https://www.riuir.com" style="color: grey;text-decoration: none">&nbsp;riuir&nbsp;</a>的账号，请忽略此邮件
+        如果您没有通过邮箱注册 <a href="https://calibur.tv" style="color: grey;text-decoration: none">&nbsp;calibur&nbsp;</a>的账号，请忽略此邮件
     </div>
 </div>
 </body>

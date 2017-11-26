@@ -42,9 +42,7 @@ class DoorController extends Controller
 
     public function checkAccessUnique($method, $access)
     {
-        $data = in_array($method, ['phone', 'email'])
-            ? User::where($method, $access)->count()
-            : null;
+        $data = $this->checkAccessCanUse($method, $access);
 
         return $this->resOK($data);
     }
@@ -66,6 +64,8 @@ class DoorController extends Controller
         } else {
             // TODO: send phone message
         }
+
+        return $this->resOK();
     }
 
     public function register(RegisterRequest $request)
@@ -73,12 +73,12 @@ class DoorController extends Controller
         $method = $request->get('method');
         $access = $request->get('access');
 
-        if ($this->checkAccessUnique($method, $access)) {
-            return response('该手机或邮箱已绑定另外一个账号', 403);
+        if ($this->checkAccessCanUse($method, $access)) {
+            return $this->resOK('', '该手机或邮箱已绑定另外一个账号', 403);
         }
 
         if ($this->checkAuthCode($request->get('authCode'), $access)) {
-            return response('验证码无效或已失效', 403);
+            return $this->resOK('', '验证码已过期，请刷新页面重试', 401);
         }
 
         $nickname = $request->get('nickname');
@@ -139,6 +139,13 @@ class DoorController extends Controller
     public function refresh()
     {
         return $this->resOK($this->getAuthUser());
+    }
+
+    private function checkAccessCanUse($method, $access)
+    {
+        return in_array($method, ['phone', 'email'])
+            ? User::where($method, $access)->count()
+            : null;
     }
 
     private function checkAuthCode($code, $access)
