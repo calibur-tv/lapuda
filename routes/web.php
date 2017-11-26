@@ -47,3 +47,8 @@ Route::group(['prefix' => '/cartoon'], function ()
 {
     Route::get('/banner', 'DoorController@banner');
 });
+
+
+Route::group(['prefix'=>'/user'],function (){
+   Route::get('/user_sign','UserController@getUserSign');
+});
