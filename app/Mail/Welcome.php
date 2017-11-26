@@ -35,7 +35,7 @@ class Welcome extends Mailable implements ShouldQueue
     {
         return $this->to($this->email)
             ->view('emails.welcome')
-            ->subject('欢迎加入riuir')
+            ->subject('欢迎加入 - calibur.tv')
             ->with([
                 'name' => $this->name,
                 'token' => $this->token
