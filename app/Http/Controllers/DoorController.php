@@ -40,21 +40,27 @@ class DoorController extends Controller
         return $this->resOK($data);
     }
 
-    public function checkAccessUnique($method, $access)
-    {
-        $data = $this->checkAccessCanUse($method, $access);
-
-        return $this->resOK($data);
-    }
-
     public function sendEmailOrMessage(Request $request)
     {
         $method = $request->get('method');
         $access = $request->get('access');
         $nickname = $request->get('nickname');
+        $mustNotRegister = $request->get('mustNotRegister') || null;
+        $mustRegistered = $request->get('mustRegistered') || null;
 
-        if ( ! in_array($method, ['phone', 'email'])) {
-            return null;
+        if ( ! in_array($method, ['phone', 'email']))
+        {
+            return $this->resErr(['错误的发送渠道']);
+        }
+
+        if ( ! is_null($mustNotRegister) && $this->checkAccessCanUse($method, $access) !== 0)
+        {
+            return $this->resErr([$method === 'email' ? '邮箱已注册' : '手机号已注册']);
+        }
+
+        if ( ! is_null($mustRegistered) && $this->checkAccessCanUse($method, $access) !== 1)
+        {
+            return $this->resErr([$method === 'email' ? '未注册的邮箱' : '未注册的手机号']);
         }
 
         $token = $this->makeConfirm($access);
@@ -74,11 +80,11 @@ class DoorController extends Controller
         $access = $request->get('access');
 
         if ($this->checkAccessCanUse($method, $access)) {
-            return $this->resOK('', '该手机或邮箱已绑定另外一个账号', 403);
+            return $this->resErr(['该手机或邮箱已绑定另外一个账号'], 403);
         }
 
         if ($this->checkAuthCode($request->get('authCode'), $access)) {
-            return $this->resOK('', '验证码已过期，请刷新页面重试', 401);
+            return $this->resErr(['验证码已过期，请刷新页面重试'], 401);
         }
 
         $nickname = $request->get('nickname');
@@ -128,17 +134,37 @@ class DoorController extends Controller
             return $this->resOK(JWTAuth::fromUser($user));
         }
 
-        return $this->resOK('', '用户名或密码错误', 422);
+        return $this->resErr(['用户名或密码错误'], 422);
     }
 
     public function logout()
     {
         Auth::logout();
+
+        return $this->resOK();
     }
 
     public function refresh()
     {
         return $this->resOK($this->getAuthUser());
+    }
+
+    /**获取一个上传Token
+     * @param $model
+     * @param string $type
+     * @param $id
+     * @return string
+     */
+    public function getUpdateToken($model, $type, $id)
+    {
+        if (!$model || !$type || !$id)
+        {
+            return $this->resErr(['缺少参数']);
+        }
+        /* @var QiniuAdapter $disk*/
+        $disk = \Storage::disk('qiniu');
+        $token = $disk->getUploadToken("{$model}/{$type}/{$id}/".time(),3600);
+        return $this->resOK($token);
     }
 
     private function checkAccessCanUse($method, $access)
@@ -188,18 +214,5 @@ class DoorController extends Controller
 
             return $pinyin;
         }
-    }
-
-    /**获取一个上传Token
-     * @param $model
-     * @param string $type
-     * @param $id
-     * @return string
-     */
-    public function getUpdateToken($model, $type, $id)
-    {
-        /* @var QiniuAdapter $disk*/
-        $disk = \Storage::disk('qiniu');
-        return $disk->getUploadToken("{$model}/{$type}/{$id}/".time(),3600);
     }
 }
