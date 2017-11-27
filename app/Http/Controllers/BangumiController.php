@@ -41,7 +41,9 @@ class BangumiController extends Controller
             return $bangumi;
         });
 
-        return $this->resOK($result);
+        return is_null($result)
+            ? $this->resErr(['番剧不存在'])
+            : $this->resOK($result);
     }
 
     public function tags(Request $request)

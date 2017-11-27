@@ -23,7 +23,9 @@ class VideoController extends Controller
             ];
         });
 
-        return $this->resOK($data);
+        return is_null($data)
+            ? $this->resOK($data)
+            : $this->resErr(['视频不存在']);
     }
 
     public function playing($id)
@@ -47,5 +49,7 @@ class VideoController extends Controller
         }
 
         Cache::forever($key, $value);
+
+        return $this->resOK();
     }
 }
