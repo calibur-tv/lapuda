@@ -6,8 +6,6 @@ Route::group(['prefix' => '/door'], function ()
 {
     Route::post('/captcha', 'DoorController@captcha');
 
-    Route::post('/check/{method}/{access}', 'DoorController@checkAccessUnique');
-
     Route::post('/send', 'DoorController@sendEmailOrMessage');
 
     Route::post('/register', 'DoorController@register');

@@ -45,8 +45,8 @@ class DoorController extends Controller
         $method = $request->get('method');
         $access = $request->get('access');
         $nickname = $request->get('nickname');
-        $mustNotRegister = $request->get('mustNotRegister') || null;
-        $mustRegistered = $request->get('mustRegistered') || null;
+        $mustNotRegister = $request->get('mustNotRegister');
+        $mustRegistered = $request->get('mustRegistered');
 
         if ( ! in_array($method, ['phone', 'email']))
         {
