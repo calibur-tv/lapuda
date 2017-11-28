@@ -14,7 +14,7 @@ class VideoController extends Controller
         {
             $info = Video::find($id);
 
-            $info['resource'] = $info['resource'] ? json_decode($info['resource']) : '';
+            $info['resource'] = $info['resource'] === 'null' ? '' : json_decode($info['resource']);
 
             return [
                 'info' => $info,
@@ -24,8 +24,8 @@ class VideoController extends Controller
         });
 
         return is_null($data)
-            ? $this->resOK($data)
-            : $this->resErr(['视频不存在']);
+            ? $this->resErr(['视频不存在'])
+            : $this->resOK($data);
     }
 
     public function playing($id)
