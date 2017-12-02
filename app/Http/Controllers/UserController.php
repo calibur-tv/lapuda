@@ -9,6 +9,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Repositories\UserRepository;
 use Illuminate\Http\Request;
 
 
@@ -43,12 +44,31 @@ class UserController extends Controller
      * @param Request $request
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Symfony\Component\HttpFoundation\Response
      */
-    public function avatar(Request $request) {
+    public function avatar(Request $request)
+    {
         $user = $this->getAuthUser();
-        if ($user === null){
-            return $this->resOK('',"请刷新页面重试",401);
+        if (is_null($user))
+        {
+            return $this->resErr(['请刷新页面重试'], 401);
         }
         /* @var User $user*/
         $user->update(['avatar'=>$request->post('avatar')]);
+        return $this->resOK();
+    }
+
+    public function show(Request $request)
+    {
+        $zone = $request->get('zone');
+
+        $userId = User::where('zone', $zone)->select('id')->first();
+        if (is_null($userId))
+        {
+            return $this->resErr(['该用户不存在'], 404);
+        }
+
+        $repository = new UserRepository();
+        $user = $repository->item($userId);
+
+        return $this->resOK($user);
     }
 }
