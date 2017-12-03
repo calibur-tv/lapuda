@@ -28,6 +28,8 @@ Route::group(['prefix' => '/bangumi'], function ()
     Route::group(['prefix' => '/{id}'], function ()
     {
         Route::get('/show', 'BangumiController@show');
+
+        Route::post('/follow', 'BangumiController@follow');
     });
 });
 

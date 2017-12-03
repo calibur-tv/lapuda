@@ -105,4 +105,15 @@ class BangumiController extends Controller
 
         return $this->resOK($data);
     }
+
+    public function follow($id)
+    {
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr(['用户认证失败'], 404);
+        }
+
+        return $this->resOK($id);
+    }
 }
