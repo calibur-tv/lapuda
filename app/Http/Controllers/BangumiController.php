@@ -38,6 +38,11 @@ class BangumiController extends Controller
 
             $bangumi->videoPackage = $repository->videos($bangumi);
 
+            $user = $this->getAuthUser();
+            $bangumi->followed = is_null($user)
+                ? false
+                : $repository->checkUserFollowed($user->id, $id);
+
             return $bangumi;
         });
 
@@ -114,6 +119,9 @@ class BangumiController extends Controller
             return $this->resErr(['用户认证失败'], 404);
         }
 
-        return $this->resOK($id);
+        $bangumiRepository = new BangumiRepository();
+        $followed = $bangumiRepository->toggleFollow($user->id, $id);
+
+        return $this->resOK($followed);
     }
 }

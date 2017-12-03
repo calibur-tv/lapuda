@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Bangumi;
+use App\Models\BangumiFollow;
 use App\Models\Video;
 use Illuminate\Support\Facades\Cache;
 
@@ -38,6 +39,35 @@ class BangumiRepository
             array_push($result, $this->item($id));
         }
         return $result;
+    }
+
+    public function checkUserFollowed($user_id, $bangumi_id)
+    {
+        return Cache::remember('bangumi_'.$bangumi_id.'_follow_'.$user_id, config('cache.ttl'), function () use ($user_id, $bangumi_id)
+        {
+            return (boolean)BangumiFollow::whereRaw('user_id = ? and bangumi_id = ?', [$user_id, $bangumi_id])->count();
+        });
+    }
+
+    public function toggleFollow($user_id, $bangumi_id)
+    {
+        $followed = BangumiFollow::whereRaw('user_id = ? and bangumi_id = ?', [$user_id, $bangumi_id])
+            ->select('id')
+            ->first();
+        if (is_null($followed))
+        {
+            BangumiFollow::create([
+                'user_id' => $user_id,
+                'bangumi_id' => $bangumi_id
+            ]);
+
+            return true;
+        } else {
+            BangumiFollow::find($followed->id)->delete();
+            Cache::forget('bangumi_'.$bangumi_id.'_follow_'.$user_id);
+
+            return false;
+        }
     }
 
     public function videos($bangumi)
