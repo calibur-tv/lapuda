@@ -18,11 +18,17 @@ class User extends Authenticatable
         'avatar',
         'banner',
         'signature',
-        'sex'
+        'sex',
+        'birthday'
     ];
 
     protected $hidden = [
         'password', 'remember_token'
+    ];
+
+    protected $casts = [
+        'birthday' => 'integer',
+        'sex' => 'integer'
     ];
 
     public function setPasswordAttribute($password)
@@ -38,32 +44,6 @@ class User extends Authenticatable
     public function getBannerAttribute($banner)
     {
         return config('website.cdn').($banner ? $banner : 'default/user-banner');
-    }
-
-    public function getSexAttribute($sex)
-    {
-        switch ($sex)
-        {
-            case 0:
-                $res = '未知';
-                break;
-            case 1:
-                $res = '男';
-                break;
-            case 2:
-                $res = '女';
-                break;
-            case 3:     // 男,保密
-                $res = '保密';
-                break;
-            case 4:     // 女,保密
-                $res = '保密';
-                break;
-            default:
-                $res = '未知';
-        }
-
-        return $res;
     }
 
     /**

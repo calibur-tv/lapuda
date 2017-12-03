@@ -51,6 +51,11 @@ Route::group(['prefix' => '/user'], function ()
 {
     Route::get('/show', 'UserController@show');
 
+    Route::group(['prefix' => '/setting'], function ()
+    {
+        Route::post('/profile', 'UserController@profile');
+    });
+
     Route::get('/user_sign', 'UserController@getUserSign');
 
     Route::post('/avatar/edit', 'UserController@avatar');

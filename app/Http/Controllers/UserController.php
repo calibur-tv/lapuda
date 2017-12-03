@@ -8,9 +8,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\User\SettingsRequest;
 use App\Models\User;
 use App\Repositories\UserRepository;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 
 /**
@@ -19,6 +21,12 @@ use Illuminate\Http\Request;
  */
 class UserController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('throttle:5,10')->only([
+            'profile'
+        ]);
+    }
     /**
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Symfony\Component\HttpFoundation\Response
      */
@@ -27,7 +35,7 @@ class UserController extends Controller
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->resErr(['找不到用户']);
+            return $this->resErr(['找不到用户'], 404);
         }
         /* @var User $user */
         if ($user->isSignToday())
@@ -70,5 +78,25 @@ class UserController extends Controller
         $user = $repository->item($userId);
 
         return $this->resOK($user);
+    }
+
+    public function profile(SettingsRequest $request)
+    {
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr(['找不到用户'], 404);
+        }
+
+        $user->update([
+            'nickname' => $request->get('nickname'),
+            'signature' => $request->get('signature'),
+            'sex' => $request->get('sex'),
+            'birthday' => $request->get('birthday')
+        ]);
+
+        Cache::forget('user_'.$user->id.'_show');
+
+        return $this->resOK();
     }
 }
