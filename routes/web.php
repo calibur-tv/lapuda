@@ -58,6 +58,14 @@ Route::group(['prefix' => '/user'], function ()
         Route::post('/profile', 'UserController@profile');
     });
 
+    Route::group(['prefix' => '/{zone}'], function ()
+    {
+        Route::group(['prefix' => '/followed'], function ()
+        {
+            Route::get('/bangumi', 'UserController@followedBangumis');
+        });
+    });
+
     Route::get('/user_sign', 'UserController@getUserSign');
 
     Route::post('/avatar/edit', 'UserController@avatar');

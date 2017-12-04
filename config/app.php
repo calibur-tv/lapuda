@@ -184,6 +184,7 @@ return [
         ScoutEngines\Elasticsearch\ElasticsearchProvider::class,
         Barryvdh\Cors\ServiceProvider::class,
         Overtrue\LaravelFilesystem\Qiniu\QiniuStorageServiceProvider::class,
+        Mews\Purifier\PurifierServiceProvider::class,
     ],
 
     /*
@@ -234,6 +235,7 @@ return [
         'View' => Illuminate\Support\Facades\View::class,
         'JWTAuth' => Tymon\JWTAuth\Facades\JWTAuth::class,
         'Pinyin' => Overtrue\LaravelPinyin\Facades\Pinyin::class,
+        'Purifier' => Mews\Purifier\Facades\Purifier::class,
     ],
 
 ];

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Bangumi;
 use App\Models\BangumiTag;
+use App\Models\User;
 use App\Repositories\BangumiRepository;
 use App\Repositories\TagRepository;
 use Illuminate\Http\Request;
@@ -42,6 +43,7 @@ class BangumiController extends Controller
             $bangumi->followed = is_null($user)
                 ? false
                 : $repository->checkUserFollowed($user->id, $id);
+            $bangumi->followers = $repository->getFollowers($id);
 
             return $bangumi;
         });

@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Repositories\UserRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Mews\Purifier\Facades\Purifier;
 
 
 /**
@@ -89,8 +90,8 @@ class UserController extends Controller
         }
 
         $user->update([
-            'nickname' => $request->get('nickname'),
-            'signature' => $request->get('signature'),
+            'nickname' => Purifier::clean($request->get('nickname')),
+            'signature' => Purifier::clean($request->get('signature')),
             'sex' => $request->get('sex'),
             'birthday' => $request->get('birthday')
         ]);
@@ -98,5 +99,19 @@ class UserController extends Controller
         Cache::forget('user_'.$user->id.'_show');
 
         return $this->resOK();
+    }
+
+    public function followedBangumis($zone)
+    {
+        $user = User::where('zone', $zone)->select('id')->first();
+        if (is_null($user))
+        {
+            return $this->resErr(['找不到用户'], 404);
+        }
+
+        $repository = new UserRepository();
+        $follows = $repository->bangumis($user->id);
+
+        return $this->resOK($follows);
     }
 }
