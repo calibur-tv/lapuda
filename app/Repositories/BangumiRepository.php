@@ -44,7 +44,7 @@ class BangumiRepository
 
     public function checkUserFollowed($user_id, $bangumi_id)
     {
-        return BangumiFollow::whereRaw('user_id = ? and bangumi_id = ?', [$user_id, $bangumi_id])->count();
+        return (Boolean)BangumiFollow::whereRaw('user_id = ? and bangumi_id = ?', [$user_id, $bangumi_id])->count();
     }
 
     public function toggleFollow($user_id, $bangumi_id)
