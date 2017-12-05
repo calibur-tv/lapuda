@@ -9,7 +9,11 @@ class Banner extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['url', 'user_id', 'bangumi_id'];
+    protected $fillable = ['url', 'user_id', 'bangumi_id', 'gray'];
+
+    protected $casts = [
+        'gray' => 'integer'
+    ];
 
     public function user()
     {

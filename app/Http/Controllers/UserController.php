@@ -8,7 +8,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\User\SettingsRequest;
 use App\Models\User;
+use App\Repositories\UserRepository;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Mews\Purifier\Facades\Purifier;
 
 
 /**
@@ -17,6 +22,12 @@ use App\Models\User;
  */
 class UserController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('throttle:5,10')->only([
+            'profile'
+        ]);
+    }
     /**
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Symfony\Component\HttpFoundation\Response
      */
@@ -25,7 +36,7 @@ class UserController extends Controller
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->resErr(['找不到用户']);
+            return $this->resErr(['找不到用户'], 404);
         }
         /* @var User $user */
         if ($user->isSignToday())
@@ -36,5 +47,71 @@ class UserController extends Controller
         $user->signNow();
 
         return $this->resOK('', '签到成功');
+    }
+
+    /**上传头像
+     * @param Request $request
+     * @return \Illuminate\Contracts\Routing\ResponseFactory|\Symfony\Component\HttpFoundation\Response
+     */
+    public function avatar(Request $request)
+    {
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr(['请刷新页面重试'], 401);
+        }
+        /* @var User $user*/
+        $user->update(['avatar'=>$request->post('avatar')]);
+        return $this->resOK();
+    }
+
+    public function show(Request $request)
+    {
+        $zone = $request->get('zone');
+
+        $userId = User::where('zone', $zone)->select('id')->first();
+        if (is_null($userId))
+        {
+            return $this->resErr(['该用户不存在'], 404);
+        }
+
+        $repository = new UserRepository();
+        $user = $repository->item($userId);
+
+        return $this->resOK($user);
+    }
+
+    public function profile(SettingsRequest $request)
+    {
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr(['找不到用户'], 404);
+        }
+
+        $user->update([
+            'nickname' => Purifier::clean($request->get('nickname')),
+            'signature' => Purifier::clean($request->get('signature')),
+            'sex' => $request->get('sex'),
+            'birthday' => $request->get('birthday')
+        ]);
+
+        Cache::forget('user_'.$user->id.'_show');
+
+        return $this->resOK();
+    }
+
+    public function followedBangumis($zone)
+    {
+        $user = User::where('zone', $zone)->select('id')->first();
+        if (is_null($user))
+        {
+            return $this->resErr(['找不到用户'], 404);
+        }
+
+        $repository = new UserRepository();
+        $follows = $repository->bangumis($user->id);
+
+        return $this->resOK($follows);
     }
 }

@@ -34,8 +34,10 @@ class DoorController extends Controller
     public function banner()
     {
         $data = Cache::remember('index_banner', config('cache.ttl'), function () {
-            return Banner::select('id', 'url', 'user_id', 'bangumi_id')->get()->toArray();
+            return Banner::select('id', 'url', 'user_id', 'bangumi_id', 'gray')->get()->toArray();
         });
+
+        shuffle($data);
 
         return $this->resOK($data);
     }

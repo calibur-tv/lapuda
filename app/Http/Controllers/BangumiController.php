@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Bangumi;
 use App\Models\BangumiTag;
+use App\Models\User;
 use App\Repositories\BangumiRepository;
 use App\Repositories\TagRepository;
 use Illuminate\Http\Request;
@@ -37,6 +38,12 @@ class BangumiController extends Controller
             }
 
             $bangumi->videoPackage = $repository->videos($bangumi);
+
+            $user = $this->getAuthUser();
+            $bangumi->followed = is_null($user)
+                ? false
+                : $repository->checkUserFollowed($user->id, $id);
+            $bangumi->followers = $repository->getFollowers($id);
 
             return $bangumi;
         });
@@ -104,5 +111,19 @@ class BangumiController extends Controller
         $data['bangumis'] = $bangumis;
 
         return $this->resOK($data);
+    }
+
+    public function follow($id)
+    {
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr(['用户认证失败'], 404);
+        }
+
+        $bangumiRepository = new BangumiRepository();
+        $followed = $bangumiRepository->toggleFollow($user->id, $id);
+
+        return $this->resOK($followed);
     }
 }
