@@ -29,6 +29,8 @@ Route::group(['prefix' => '/bangumi'], function ()
     {
         Route::get('/show', 'BangumiController@show');
 
+        Route::get('/post', 'BangumiController@posts');
+
         Route::post('/follow', 'BangumiController@follow');
     });
 });
@@ -64,9 +66,30 @@ Route::group(['prefix' => '/user'], function ()
         {
             Route::get('/bangumi', 'UserController@followedBangumis');
         });
+
+        Route::group(['prefix' => '/manager'], function ()
+        {
+            Route::get('/post', 'UserController@posts');
+        });
     });
 
     Route::get('/user_sign', 'UserController@getUserSign');
 
     Route::post('/avatar/edit', 'UserController@avatar');
+});
+
+Route::group(['prefix' => '/post'], function ()
+{
+    Route::post('/create', 'PostController@create');
+
+    Route::group(['prefix' => '/{id}'], function ()
+    {
+        Route::get('/show', 'PostController@show');
+
+        Route::post('/reply', 'PostController@reply');
+
+        Route::post('/nice', 'PostController@nice');
+
+        Route::post('/delete', 'PostController@delete');
+    });
 });

@@ -17,12 +17,12 @@ class Banner extends Model
 
     public function user()
     {
-        return $this->hasOne(User::class, 'id', 'user_id');
+        return $this->hasOne(User::class);
     }
 
     public function bangumi()
     {
-        return $this->hasOne(Bangumi::class, 'id', 'bangumi_id');
+        return $this->hasOne(Bangumi::class);
     }
 
     public function getUrlAttribute($url)

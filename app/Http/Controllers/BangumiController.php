@@ -126,4 +126,11 @@ class BangumiController extends Controller
 
         return $this->resOK($followed);
     }
+
+    public function posts(Request $request)
+    {
+        // TODO：使用 Redis list 做缓存
+        // TODO：使用 seen_ids 做分页
+        // TODO：应该 new 一个 PostRepository，有一个 listByBangumi 的方法
+    }
 }
