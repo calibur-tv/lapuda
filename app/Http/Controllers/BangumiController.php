@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Bangumi;
 use App\Models\BangumiTag;
-use App\Models\User;
 use App\Repositories\BangumiRepository;
 use App\Repositories\TagRepository;
 use Illuminate\Http\Request;
@@ -28,9 +27,10 @@ class BangumiController extends Controller
 
     public function show($id)
     {
-        $result = Cache::remember('bangumi_'.$id.'_show', config('cache.ttl'), function () use ($id)
+        $repository = new BangumiRepository();
+
+        $result = Cache::remember('bangumi_'.$id.'_show', config('cache.ttl'), function () use ($id, $repository)
         {
-            $repository = new BangumiRepository();
             $bangumi = $repository->item($id);
 
             if (is_null($bangumi)) {
@@ -39,14 +39,15 @@ class BangumiController extends Controller
 
             $bangumi->videoPackage = $repository->videos($bangumi);
 
-            $user = $this->getAuthUser();
-            $bangumi->followed = is_null($user)
-                ? false
-                : $repository->checkUserFollowed($user->id, $id);
-            $bangumi->followers = $repository->getFollowers($id);
-
-            return $bangumi;
+            return $bangumi->toArray();
         });
+
+        $user = $this->getAuthUser();
+
+        $result['followed'] = is_null($user)
+            ? false
+            : $repository->checkUserFollowed($user->id, $id);
+        $result['followers'] = $repository->getFollowers($id);
 
         return is_null($result)
             ? $this->resErr(['番剧不存在'])
