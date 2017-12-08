@@ -53,7 +53,7 @@ class UserController extends Controller
      * @param Request $request
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Symfony\Component\HttpFoundation\Response
      */
-    public function avatar(Request $request)
+    public function image(Request $request)
     {
         $user = $this->getAuthUser();
         if (is_null($user))
@@ -61,7 +61,10 @@ class UserController extends Controller
             return $this->resErr(['请刷新页面重试'], 401);
         }
         /* @var User $user*/
-        $user->update(['avatar'=>$request->post('avatar')]);
+        $user->update([
+            $request->get('type') => $request->get('url')
+        ]);
+
         return $this->resOK();
     }
 
@@ -113,5 +116,12 @@ class UserController extends Controller
         $follows = $repository->bangumis($user->id);
 
         return $this->resOK($follows);
+    }
+
+    public function posts(Request $request)
+    {
+        // TODO：使用 Redis list 做缓存
+        // TODO：使用 seen_ids 做分页
+        // TODO：应该 new 一个 PostRepository，有一个 listByUser 的方法
     }
 }

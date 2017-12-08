@@ -13,7 +13,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
-use Overtrue\Flysystem\Qiniu\QiniuAdapter;
 use Overtrue\LaravelPinyin\Facades\Pinyin as Overtrue;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -149,24 +148,6 @@ class DoorController extends Controller
     public function refresh()
     {
         return $this->resOK($this->getAuthUser());
-    }
-
-    /**获取一个上传Token
-     * @param $model
-     * @param string $type
-     * @param $id
-     * @return string
-     */
-    public function getUpdateToken($model, $type, $id)
-    {
-        if (!$model || !$type || !$id)
-        {
-            return $this->resErr(['缺少参数']);
-        }
-        /* @var QiniuAdapter $disk*/
-        $disk = \Storage::disk('qiniu');
-        $token = $disk->getUploadToken("{$model}/{$type}/{$id}/".time(),3600);
-        return $this->resOK($token);
     }
 
     private function checkAccessCanUse($method, $access)
