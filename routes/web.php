@@ -12,8 +12,6 @@ Route::group(['prefix' => '/door'], function ()
 
     Route::post('/login', 'DoorController@login');
 
-    Route::get('/update_token/{model}/{type}/{id}', 'DoorController@getUpdateToken');
-
     Route::post('/user', 'DoorController@refresh');
 
     Route::post('/logout', 'DoorController@logout');
@@ -58,6 +56,8 @@ Route::group(['prefix' => '/user'], function ()
     Route::group(['prefix' => '/setting'], function ()
     {
         Route::post('/profile', 'UserController@profile');
+
+        Route::post('/image', 'UserController@image');
     });
 
     Route::group(['prefix' => '/{zone}'], function ()
@@ -74,8 +74,6 @@ Route::group(['prefix' => '/user'], function ()
     });
 
     Route::get('/user_sign', 'UserController@getUserSign');
-
-    Route::post('/avatar/edit', 'UserController@avatar');
 });
 
 Route::group(['prefix' => '/post'], function ()
@@ -92,4 +90,9 @@ Route::group(['prefix' => '/post'], function ()
 
         Route::post('/delete', 'PostController@delete');
     });
+});
+
+Route::group(['prefix' => '/image'], function ()
+{
+    Route::post('/token', 'ImageController@token');
 });
