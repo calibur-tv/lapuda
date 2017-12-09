@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Bangumi;
 use App\Models\Video;
+use App\Repositories\BangumiRepository;
 use Illuminate\Support\Facades\Cache;
 
 class VideoController extends Controller
@@ -12,20 +13,29 @@ class VideoController extends Controller
     {
         $data = Cache::remember('video_'.$id.'_show', config('cache.ttl'), function () use ($id)
         {
-            $info = Video::find($id);
+            $info = Video::where('id', $id)->first();
+            if (is_null($info))
+            {
+                return null;
+            }
 
             $info['resource'] = $info['resource'] === 'null' ? '' : json_decode($info['resource']);
 
             return [
                 'info' => $info,
-                'videos' => Video::where('bangumi_id', $info->bangumi_id)->get(),
-                'bangumi' => Bangumi::find($info->bangumi_id)
+                'videos' => Video::where('bangumi_id', $info['bangumi_id'])->get()
             ];
         });
 
-        return is_null($data)
-            ? $this->resErr(['视频不存在'])
-            : $this->resOK($data);
+        if (is_null($data))
+        {
+            return $this->resErr(['视频不存在']);
+        }
+
+        $bangumiRepository = new BangumiRepository();
+        $data['bangumi'] = $bangumiRepository->item($data['info']['bangumi_id']);
+
+        return $this->resOK($data);
     }
 
     public function playing($id)
