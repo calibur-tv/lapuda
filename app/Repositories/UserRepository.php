@@ -8,7 +8,6 @@
 
 namespace App\Repositories;
 
-use App\Models\Bangumi;
 use App\Models\BangumiFollow;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
@@ -21,6 +20,7 @@ class UserRepository
         {
             $user = User::find($id)->first()->toArray();
             $user['sex'] = $this->maskSex($user['sex']);
+
             return $user;
         });
     }
@@ -53,18 +53,14 @@ class UserRepository
 
     public function bangumis($userId)
     {
-        return Cache::remember('user_'.$userId.'_bangumis', config('cache.ttl'), function () use ($userId)
+        $ids = BangumiFollow::where('user_id', $userId)->pluck('bangumi_id');
+        if (empty($ids))
         {
-            $bangumiIds = BangumiFollow::where('user_id', $userId)->pluck('bangumi_id');
-            if (empty($bangumiIds))
-            {
-                return [];
-            }
+            return [];
+        }
 
-            return Bangumi::whereIn('id', $bangumiIds)
-                ->select('id', 'avatar', 'name')
-                ->get()
-                ->toArray();
-        });
+        $bangumiRepository = new BangumiRepository();
+
+        return $bangumiRepository->list($ids);
     }
 }

@@ -34,7 +34,7 @@ class VideoController extends Controller
         $value = Cache::rememberForever($key, function () use ($id)
         {
             return [
-                'data' => Video::where('id', $id)->select('count_played')->first()->count_played,
+                'data' => Video::where('id', $id)->pluck('count_played')->first(),
                 'time' => time()
             ];
         });

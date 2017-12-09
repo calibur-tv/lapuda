@@ -72,7 +72,7 @@ class UserController extends Controller
     {
         $zone = $request->get('zone');
 
-        $userId = User::where('zone', $zone)->select('id')->first();
+        $userId = User::where('zone', $zone)->pluck('id')->first();
         if (is_null($userId))
         {
             return $this->resErr(['该用户不存在'], 404);
@@ -106,22 +106,21 @@ class UserController extends Controller
 
     public function followedBangumis($zone)
     {
-        $user = User::where('zone', $zone)->select('id')->first();
-        if (is_null($user))
+        $userId = User::where('zone', $zone)->pluck('id')->first();
+        if (is_null($userId))
         {
             return $this->resErr(['找不到用户'], 404);
         }
 
         $repository = new UserRepository();
-        $follows = $repository->bangumis($user->id);
+        $follows = $repository->bangumis($userId);
 
         return $this->resOK($follows);
     }
 
     public function posts(Request $request)
     {
-        // TODO：使用 Redis list 做缓存
         // TODO：使用 seen_ids 做分页
-        // TODO：应该 new 一个 PostRepository，有一个 listByUser 的方法
+        // TODO：应该 new 一个 PostRepository，有一个 list 的方法，接收 ids 做参数
     }
 }
