@@ -29,29 +29,21 @@ class BangumiController extends Controller
     {
         $repository = new BangumiRepository();
 
-        $result = Cache::remember('bangumi_'.$id.'_show', config('cache.ttl'), function () use ($id, $repository)
-        {
-            $bangumi = $repository->item($id);
+        $bangumi = $repository->item($id);
+        if (is_null($bangumi)) {
+            return $this->resErr(['番剧不存在'], 404);
+        }
 
-            if (is_null($bangumi)) {
-                return null;
-            }
-
-            $bangumi->videoPackage = $repository->videos($bangumi);
-
-            return $bangumi->toArray();
-        });
+        $bangumi['videoPackage'] = $repository->videos($id, $bangumi['season']);
+        $bangumi['followers'] = $repository->getFollowers($id);
 
         $user = $this->getAuthUser();
 
-        $result['followed'] = is_null($user)
+        $bangumi['followed'] = is_null($user)
             ? false
             : $repository->checkUserFollowed($user->id, $id);
-        $result['followers'] = $repository->getFollowers($id);
 
-        return is_null($result)
-            ? $this->resErr(['番剧不存在'])
-            : $this->resOK($result);
+        return $this->resOK($bangumi);
     }
 
     public function tags(Request $request)
@@ -130,8 +122,7 @@ class BangumiController extends Controller
 
     public function posts(Request $request)
     {
-        // TODO：使用 Redis list 做缓存
         // TODO：使用 seen_ids 做分页
-        // TODO：应该 new 一个 PostRepository，有一个 listByBangumi 的方法
+        // TODO：应该 new 一个 PostRepository，有一个 list 的方法，接收 ids 做参数
     }
 }

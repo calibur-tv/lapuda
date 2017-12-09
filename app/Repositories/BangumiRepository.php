@@ -12,13 +12,14 @@ class BangumiRepository
 {
     public function item($id)
     {
-        return Cache::remember('bangumi_'.$id.'_info', config('cache.ttl'), function () use ($id)
+        return Cache::remember('bangumi_'.$id.'_show', config('cache.ttl'), function () use ($id)
         {
             $bangumi = Bangumi::find($id);
             // 番剧可能不存在
             if (is_null($bangumi)) {
                 return null;
             }
+
             // 这里可以使用 LEFT-JOIN 语句优化
             $bangumi->released_part = $bangumi->released_video_id
                 ? Video::find($bangumi->released_video_id)->pluck('part')
@@ -50,8 +51,9 @@ class BangumiRepository
     public function toggleFollow($user_id, $bangumi_id)
     {
         $followed = BangumiFollow::whereRaw('user_id = ? and bangumi_id = ?', [$user_id, $bangumi_id])
-            ->select('id')
+            ->pluck('id')
             ->first();
+
         if (is_null($followed))
         {
             BangumiFollow::create([
@@ -63,21 +65,16 @@ class BangumiRepository
         }
         else
         {
-            BangumiFollow::find($followed->id)->delete();
+            BangumiFollow::find($followed)->delete();
             return false;
         }
     }
 
-    public function videos($bangumi)
+    public function videos($id, $season)
     {
-        return Cache::remember('bangumi_'.$bangumi->id.'_video', config('cache.ttl'), function () use ($bangumi)
+        return Cache::remember('bangumi_'.$id, config('cache.ttl'), function () use ($id, $season)
         {
-            $season = $bangumi['season'] === 'null' ? '' : $bangumi['season'];
-
-            $list = Cache::remember('video_groupBy_bangumi_'.$bangumi->id, config('cache.ttl'), function () use ($bangumi)
-            {
-                return Video::where('bangumi_id', $bangumi->id)->get()->toArray();
-            });
+            $list = Video::where('bangumi_id', $id)->get()->toArray();
 
             if ($season !== '' && isset($season->part) && isset($season->name))
             {
