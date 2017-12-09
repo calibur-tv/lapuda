@@ -18,7 +18,7 @@ class UserRepository
     {
         return Cache::remember('user_'.$id.'_show', config('cache.ttl'), function () use ($id)
         {
-            $user = User::find($id)->first()->toArray();
+            $user = User::where('id', $id)->first()->toArray();
             $user['sex'] = $this->maskSex($user['sex']);
 
             return $user;
