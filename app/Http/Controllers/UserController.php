@@ -9,6 +9,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\User\SettingsRequest;
+use App\Models\Feedback;
 use App\Models\User;
 use App\Repositories\UserRepository;
 use Illuminate\Http\Request;
@@ -122,5 +123,17 @@ class UserController extends Controller
     {
         // TODO：使用 seen_ids 做分页
         // TODO：应该 new 一个 PostRepository，有一个 list 的方法，接收 ids 做参数
+    }
+
+    public function feedback(Request $request)
+    {
+        $user = $this->getAuthUser();
+        Feedback::create([
+            'type' => $request->get('type'),
+            'desc' => $request->get('desc'),
+            'user_id' => is_null($user) ? 0 : $user->id
+        ]);
+
+        return $this->resOK();
     }
 }
