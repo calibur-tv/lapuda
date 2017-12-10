@@ -74,6 +74,8 @@ Route::group(['prefix' => '/user'], function ()
     });
 
     Route::get('/user_sign', 'UserController@getUserSign');
+
+    Route::post('/feedback', 'UserController@feedback');
 });
 
 Route::group(['prefix' => '/post'], function ()
