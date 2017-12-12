@@ -2,16 +2,40 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Post\CreateRequest;
+use App\Models\Post;
 use Illuminate\Http\Request;
+use Mews\Purifier\Facades\Purifier;
 
 class PostController extends Controller
 {
-    public function create(Request $request)
+    public function __construct()
     {
-        // 只有新建帖子才走 create，其它都走 reply
-        // 创建一个 PostRepository，有一个 create 方法
-        // 新建一个 post-${pid} 格式做缓存
-        // 使用 Purifier 过滤用户传输
+        $this->middleware('throttle:5,10')->only([
+            'create'
+        ]);
+
+        $this->middleware('geetest')->only([
+            'create'
+        ]);
+    }
+
+    public function create(CreateRequest $request)
+    {
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr(['未登录的用户'], 401);
+        }
+
+        $id = Post::insertGetId([
+            'title' => Purifier::clean($request->get('title')),
+            'content' => Purifier::clean($request->get('content')),
+            'bangumi_id' => $request->get('bangumi_id'),
+            'user_id' => $user->id
+        ]);
+
+        return $this->resOK($id);
     }
 
     public function show(Request $request, $id)

@@ -38,4 +38,9 @@ class Post extends Model
     {
         return $this->belongsTo(Bangumi::class);
     }
+
+    public function images()
+    {
+        return $this->hasMany(PostImages::class);
+    }
 }
