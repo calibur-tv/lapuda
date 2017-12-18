@@ -19,9 +19,13 @@ Route::group(['prefix' => '/door'], function ()
 
 Route::group(['prefix' => '/bangumi'], function ()
 {
-    Route::get('/news', 'BangumiController@news');
+    Route::get('/released', 'BangumiController@released');
+
+    Route::get('/timeline', 'BangumiController@timeline');
 
     Route::get('/tags', 'BangumiController@tags');
+
+    Route::get('/category', 'BangumiController@category');
 
     Route::group(['prefix' => '/{id}'], function ()
     {

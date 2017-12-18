@@ -15,14 +15,9 @@ class BangumiRepository
         return Cache::remember('bangumi_'.$id.'_show', config('cache.ttl'), function () use ($id)
         {
             $bangumi = Bangumi::find($id);
-            // 番剧可能不存在
-            if (is_null($bangumi)) {
-                return null;
-            }
-
             // 这里可以使用 LEFT-JOIN 语句优化
             $bangumi->released_part = $bangumi->released_video_id
-                ? Video::find($bangumi->released_video_id)->pluck('part')
+                ? Video::where('id', $bangumi->released_video_id)->pluck('part')->first()
                 : 0;
             $bangumi->tags = $this->tags($bangumi);
             // json 格式化

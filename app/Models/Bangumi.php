@@ -20,7 +20,8 @@ class Bangumi extends Model
         'banner',
         'alias',
         'season',
-        'released_at',
+        'released_at',  // 周几更新
+        'released_time',    // 更新时间
         'released_video_id',
         'published_at',
         'count_like',
