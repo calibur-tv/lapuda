@@ -36,10 +36,23 @@ class BangumiController extends Controller
             foreach ($list as $item)
             {
                 $id = date('Y 年 m 月', $item['published_at']);
+                $item['timeline'] = $id;
                 isset($result[$id]) ? $result[$id][] = $item : $result[$id] = [$item];
             }
 
-            return $result;
+            $keys = array_keys($result);
+            $values = array_values($result);
+            $count = count(array_keys($result));
+            $data = [];
+            for ($i = 0; $i < $count; $i++)
+            {
+                $data[$i] = [
+                    'date' => $keys[$i],
+                    'list' => $values[$i]
+                ];
+            }
+
+            return $data;
         });
 
         return $this->resOK($data);
@@ -54,7 +67,9 @@ class BangumiController extends Controller
             $repository = new BangumiRepository();
             $list = $repository->list($ids);
 
-            $result = [];
+            $result = [
+                [], [], [], [], [], [], []
+            ];
             foreach ($list as $item)
             {
                 $item['update'] = time() - $item['released_time'] < 604800;
