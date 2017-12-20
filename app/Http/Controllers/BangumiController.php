@@ -13,16 +13,16 @@ class BangumiController extends Controller
 {
     public function timeline(Request $request)
     {
-        $year = intval($request->get('year')) ?: 1970;
+        $year = intval($request->get('year'));
+        if (!$year)
+        {
+            return $this->resErr(['请求参数错误']);
+        }
 
         $data = Cache::remember('bangumi_news_page_' . $year, config('cache.ttl'), function () use ($year)
         {
-            $begin = $year === 1970
-                ? 0
-                : mktime(0, 0, 0, 1, 1, $year);
-            $end = $year === 1970
-                ? mktime(0, 0, 0, 1, 1, date('Y') + 1)
-                : mktime(0, 0, 0, 1, 1, $year + 1);
+            $begin = mktime(0, 0, 0, 1, 1, $year);
+            $end = mktime(0, 0, 0, 1, 1, $year + 1);
             $ids = Bangumi::whereRaw('published_at >= ? and published_at < ?', [$begin, $end])
                 ->latest('published_at')
                 ->pluck('id');
@@ -50,7 +50,10 @@ class BangumiController extends Controller
                 ];
             }
 
-            return $data;
+            return [
+                'data' => $data,
+                'min' => intval(date('Y', Bangumi::where('published_at', '<>', '0')->min('published_at')))
+            ];
         });
 
         return $this->resOK($data);
