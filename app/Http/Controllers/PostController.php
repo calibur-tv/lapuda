@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Post\CreateRequest;
 use App\Models\Post;
+use App\Models\PostImages;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Mews\Purifier\Facades\Purifier;
 
@@ -28,12 +30,29 @@ class PostController extends Controller
             return $this->resErr(['未登录的用户'], 401);
         }
 
+        $now = Carbon::now();
+
         $id = Post::insertGetId([
             'title' => Purifier::clean($request->get('title')),
             'content' => Purifier::clean($request->get('content')),
             'bangumi_id' => $request->get('bangumi_id'),
-            'user_id' => $user->id
+            'user_id' => $user->id,
+            'created_at' => $now,
+            'updated_at' => $now
         ]);
+
+        $arr = [];
+        $images = $request->get('images');
+        foreach ($images as $item)
+        {
+            $arr[] = [
+                'post_id' => $id,
+                'src' => $item,
+                'created_at' => $now,
+                'updated_at' => $now
+            ];
+        }
+        PostImages::insert($arr);
 
         return $this->resOK($id);
     }
