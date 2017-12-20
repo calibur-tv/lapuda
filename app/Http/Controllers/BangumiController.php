@@ -6,7 +6,6 @@ use App\Models\Bangumi;
 use App\Models\BangumiTag;
 use App\Repositories\BangumiRepository;
 use App\Repositories\TagRepository;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -14,8 +13,7 @@ class BangumiController extends Controller
 {
     public function timeline(Request $request)
     {
-        $time = intval($request->get('time')) ?: time();
-        $year = Carbon::createFromTimestamp($time)->year;
+        $year = $request->get('year') ?: 1970;
 
         $data = Cache::remember('bangumi_news_page_' . $year, config('cache.ttl'), function () use ($year)
         {
@@ -168,7 +166,7 @@ class BangumiController extends Controller
 
         if (empty($ids))
         {
-            return $this->resOK();
+            return $this->resOK([]);
         }
 
         $bangumiRepository = new BangumiRepository();
