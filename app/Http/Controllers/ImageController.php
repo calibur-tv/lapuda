@@ -15,7 +15,7 @@ class ImageController extends Controller
         if ($setKey)
         {
             $validator = Validator::make($request->all(), [
-                'modal' => [
+                'model' => [
                     'required',
                     Rule::in(['user', 'bangumi', 'post']),
                 ],
@@ -32,7 +32,7 @@ class ImageController extends Controller
         $auth = new \App\Services\Qiniu\Auth();
 
         $key = $setKey
-            ? "{$request->get('modal')}/{$request->get('type')}/{$request->get('id')}/".time()
+            ? "{$request->get('model')}/{$request->get('type')}/{$request->get('id')}/".time()
             : null;
 
         $token = $auth->uploadToken($key);
