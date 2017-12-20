@@ -13,7 +13,7 @@ class BangumiController extends Controller
 {
     public function timeline(Request $request)
     {
-        $year = $request->get('year') ?: 1970;
+        $year = intval($request->get('year')) ?: 1970;
 
         $data = Cache::remember('bangumi_news_page_' . $year, config('cache.ttl'), function () use ($year)
         {
