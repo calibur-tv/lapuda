@@ -15,4 +15,9 @@ class PostImages extends Model
         'post_id',
         'src'
     ];
+
+    public function getSrcAttribute($url)
+    {
+        return config('website.cdn') . $url;
+    }
 }

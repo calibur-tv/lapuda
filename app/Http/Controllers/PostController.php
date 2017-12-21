@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Post\CreateRequest;
 use App\Models\Post;
 use App\Models\PostImages;
+use App\Repositories\BangumiRepository;
+use App\Repositories\PostRepository;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Mews\Purifier\Facades\Purifier;
@@ -64,30 +66,37 @@ class PostController extends Controller
 
     public function show(Request $request, $id)
     {
+        $user = $this->getAuthUser();
         $page = $request->get('page') ?: 1;
         $take = $request->get('take') ?: 10;
 
         $ids = Post::where('parent_id', $id)
-            ->select('id')
             ->orderBy('floor_count', 'asc')
             ->skip(($page - 1) * $take)
             ->take($take)
-            ->get();
+            ->pluck('id');
 
+        $bangumi = null;
         if ($page === 1) {
             $bangumiId = Post::where('id', $id)
                 ->pluck('bangumi_id')
                 ->first();
-        } else {
-            $bangumiId = 0;
+            $bangumiRepository = new BangumiRepository();
+            $bangumi = $bangumiRepository->item($bangumiId);
+        }
+
+        $repository = new PostRepository();
+        $list = $repository->list($ids);
+
+        foreach ($list as $i => $item)
+        {
+            $list[$i]['isMe'] = is_null($user) ? false : $item['user_id'] === $user->id;
         }
 
         return $this->resOK([
-            'ids' => $ids,
-            'bangumi_id' => $bangumiId
+            'list' => $list,
+            'bangumi' => $bangumi
         ]);
-        // 应该 new 一个 PostRepository，有一个 list 的方法，接收 ids 为参数
-        // 根据用户，判读该帖子是否是自己的，判断该楼层是否是自己的，判断该楼层是否有赞等
     }
 
     public function reply(Request $request, $id)
