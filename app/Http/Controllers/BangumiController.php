@@ -117,6 +117,7 @@ class BangumiController extends Controller
     {
         $tags = $request->get('id');
         $page = $request->get('page') ?: 1;
+        $take = $request->get('take') ?: 15;
 
         if (is_null($tags))
         {
@@ -134,7 +135,7 @@ class BangumiController extends Controller
         }
 
         sort($tags);
-        $ids = Cache::remember('bangumi_tags_' . implode('_', $tags) . '_page' . $page, config('cache.ttl'), function () use ($tags, $page)
+        $ids = Cache::remember('bangumi_tags_' . implode('_', $tags) . '_page' . $page, config('cache.ttl'), function () use ($tags, $page, $take)
         {
             $count = count($tags);
             // bangumi 和 tags 是多对多的关系
@@ -149,7 +150,7 @@ class BangumiController extends Controller
             $ids = array_count_values(
                 BangumiTag::whereIn('tag_id', $tags)
                     ->skip(($page - 1) * config('website.list_count'))
-                    ->take(config('website.list_count'))
+                    ->take($take)
                     ->orderBy('id')
                     ->pluck('bangumi_id')
                     ->toArray()

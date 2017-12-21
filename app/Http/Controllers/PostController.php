@@ -41,6 +41,11 @@ class PostController extends Controller
             'updated_at' => $now
         ]);
 
+        Post::where('id', $id)->update([
+            'parent_id' => $id,
+            'updated_at' => $now
+        ]);
+
         $arr = [];
         $images = $request->get('images');
         foreach ($images as $item)
@@ -59,7 +64,28 @@ class PostController extends Controller
 
     public function show(Request $request, $id)
     {
-        // 使用 seen_ids 做分页
+        $page = $request->get('page') ?: 1;
+        $take = $request->get('take') ?: 10;
+
+        $ids = Post::where('parent_id', $id)
+            ->select('id')
+            ->orderBy('floor_count', 'asc')
+            ->skip(($page - 1) * $take)
+            ->take($take)
+            ->get();
+
+        if ($page === 1) {
+            $bangumiId = Post::where('id', $id)
+                ->pluck('bangumi_id')
+                ->first();
+        } else {
+            $bangumiId = 0;
+        }
+
+        return $this->resOK([
+            'ids' => $ids,
+            'bangumi_id' => $bangumiId
+        ]);
         // 应该 new 一个 PostRepository，有一个 list 的方法，接收 ids 为参数
         // 根据用户，判读该帖子是否是自己的，判断该楼层是否是自己的，判断该楼层是否有赞等
     }
