@@ -38,6 +38,43 @@ class BangumiRepository
         return $result;
     }
 
+    public function timeline($year)
+    {
+        return Cache::remember('bangumi_news_page_' . $year, config('cache.ttl'), function () use ($year)
+        {
+            $begin = mktime(0, 0, 0, 1, 1, $year);
+            $end = mktime(0, 0, 0, 1, 1, $year + 1);
+            $ids = Bangumi::whereRaw('published_at >= ? and published_at < ?', [$begin, $end])
+                ->latest('published_at')
+                ->pluck('id');
+
+            $repository = new BangumiRepository();
+            $list = $repository->list($ids);
+
+            $result = [];
+            foreach ($list as $item)
+            {
+                $id = date('Y 年 m 月', $item['published_at']);
+                $item['timeline'] = $id;
+                isset($result[$id]) ? $result[$id][] = $item : $result[$id] = [$item];
+            }
+
+            $keys = array_keys($result);
+            $values = array_values($result);
+            $count = count(array_keys($result));
+            $data = [];
+            for ($i = 0; $i < $count; $i++)
+            {
+                $data[$i] = [
+                    'date' => $keys[$i],
+                    'list' => $values[$i]
+                ];
+            }
+
+            return $data;
+        });
+    }
+
     public function checkUserFollowed($user_id, $bangumi_id)
     {
         return (Boolean)BangumiFollow::whereRaw('user_id = ? and bangumi_id = ?', [$user_id, $bangumi_id])->count();

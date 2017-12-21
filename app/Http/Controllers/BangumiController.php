@@ -6,6 +6,7 @@ use App\Models\Bangumi;
 use App\Models\BangumiTag;
 use App\Repositories\BangumiRepository;
 use App\Repositories\TagRepository;
+use function foo\func;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -14,49 +15,28 @@ class BangumiController extends Controller
     public function timeline(Request $request)
     {
         $year = intval($request->get('year'));
+        $take = $request->get('take') ?: 3;
         if (!$year)
         {
             return $this->resErr(['请求参数错误']);
         }
 
-        $data = Cache::remember('bangumi_news_page_' . $year, config('cache.ttl'), function () use ($year)
+        $repository = new BangumiRepository();
+        $data = [];
+
+        for ($i = 0; $i < $take; $i++) {
+            $data = array_merge($data, $repository->timeline($year - $i));
+        }
+
+        $min = Cache::remember('bangumi_news_year_min', config('cache.ttl'), function ()
         {
-            $begin = mktime(0, 0, 0, 1, 1, $year);
-            $end = mktime(0, 0, 0, 1, 1, $year + 1);
-            $ids = Bangumi::whereRaw('published_at >= ? and published_at < ?', [$begin, $end])
-                ->latest('published_at')
-                ->pluck('id');
-
-            $repository = new BangumiRepository();
-            $list = $repository->list($ids);
-
-            $result = [];
-            foreach ($list as $item)
-            {
-                $id = date('Y 年 m 月', $item['published_at']);
-                $item['timeline'] = $id;
-                isset($result[$id]) ? $result[$id][] = $item : $result[$id] = [$item];
-            }
-
-            $keys = array_keys($result);
-            $values = array_values($result);
-            $count = count(array_keys($result));
-            $data = [];
-            for ($i = 0; $i < $count; $i++)
-            {
-                $data[$i] = [
-                    'date' => $keys[$i],
-                    'list' => $values[$i]
-                ];
-            }
-
-            return [
-                'data' => $data,
-                'min' => intval(date('Y', Bangumi::where('published_at', '<>', '0')->min('published_at')))
-            ];
+            return intval(date('Y', Bangumi::where('published_at', '<>', '0')->min('published_at')));
         });
 
-        return $this->resOK($data);
+        return $this->resOK([
+            'data' => $data,
+            'min' => $min
+        ]);
     }
 
     public function released()
