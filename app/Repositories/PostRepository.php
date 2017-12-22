@@ -24,16 +24,19 @@ class PostRepository
 
     public function item($id)
     {
-        return Cache::remember('post_'.$id, config('cache.ttl'), function () use ($id)
+        $post = Cache::remember('post_'.$id, config('cache.ttl'), function () use ($id)
         {
             $data = Post::where('id', $id)->first();
             $data['images'] = PostImages::where('post_id', $id)
                 ->orderBy('created_at', 'asc')
                 ->pluck('src');
-            $data['user'] = $this->userRepository->item($data['user_id']);
 
             return $data;
         });
+
+        $post['user'] = $this->userRepository->item($post['user_id']);
+
+        return $post;
     }
 
     public function list($ids)
