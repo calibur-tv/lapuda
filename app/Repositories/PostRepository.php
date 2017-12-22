@@ -22,17 +22,14 @@ class PostRepository
         $this->userRepository = new UserRepository();
     }
 
-    public function item($id, $fetchImage = true)
+    public function item($id)
     {
-        return Cache::remember('post_'.$id, config('cache.ttl'), function () use ($id, $fetchImage)
+        return Cache::remember('post_'.$id, config('cache.ttl'), function () use ($id)
         {
             $data = Post::where('id', $id)->first();
-            if ($fetchImage)
-            {
-                $data['images'] = PostImages::where('post_id', $id)
-                    ->orderBy('created_at', 'asc')
-                    ->pluck('src');
-            }
+            $data['images'] = PostImages::where('post_id', $id)
+                ->orderBy('created_at', 'asc')
+                ->pluck('src');
             $data['user'] = $this->userRepository->item($data['user_id']);
 
             return $data;
