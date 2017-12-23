@@ -2,44 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Repositories\ImageRepository;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 
 class ImageController extends Controller
 {
-    public function token(Request $request)
+    public function token()
     {
-        $setKey = $request->get('setKey');
+        $repository = new ImageRepository();
 
-        if ($setKey)
-        {
-            $validator = Validator::make($request->all(), [
-                'model' => [
-                    'required',
-                    Rule::in(['user', 'bangumi', 'post']),
-                ],
-                'type' => 'required|string',
-                'id' => 'required|integer'
-            ]);
-
-            if ($validator->fails())
-            {
-                return $this->resErr(['参数校验失败']);
-            }
-        }
-
-        $auth = new \App\Services\Qiniu\Auth();
-
-        $key = $setKey
-            ? "{$request->get('model')}/{$request->get('type')}/{$request->get('id')}/".time()
-            : null;
-
-        $token = $auth->uploadToken($key);
-
-        return $this->resOK([
-            'token' => $token,
-            'key' => $key
-        ]);
+        return $this->resOK($repository->uptoken());
     }
 }

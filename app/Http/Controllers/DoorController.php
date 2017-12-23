@@ -8,6 +8,7 @@ use App\Models\Banner;
 use App\Models\Confirm;
 use App\Models\User;
 use App\Models\UserZone;
+use App\Repositories\ImageRepository;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -147,7 +148,11 @@ class DoorController extends Controller
 
     public function refresh()
     {
-        return $this->resOK($this->getAuthUser());
+        $user = $this->getAuthUser();
+        $repository = new ImageRepository();
+        $user['uptoken'] = $repository->uptoken();
+
+        return $this->resOK($user);
     }
 
     private function checkAccessCanUse($method, $access)
