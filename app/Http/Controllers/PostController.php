@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Post\CreateRequest;
+use App\Http\Requests\Post\ReplyRequest;
 use App\Models\Post;
 use App\Models\PostImages;
 use App\Repositories\BangumiRepository;
@@ -16,11 +17,11 @@ class PostController extends Controller
     public function __construct()
     {
         $this->middleware('throttle:5,10')->only([
-            'create'
+            'create', 'reply'
         ]);
 
         $this->middleware('geetest')->only([
-            'create'
+            'create', 'reply'
         ]);
     }
 
@@ -48,18 +49,23 @@ class PostController extends Controller
             'updated_at' => $now
         ]);
 
-        $arr = [];
         $images = $request->get('images');
-        foreach ($images as $item)
+        if (!empty($images))
         {
-            $arr[] = [
-                'post_id' => $id,
-                'src' => $item,
-                'created_at' => $now,
-                'updated_at' => $now
-            ];
+            $arr = [];
+
+            foreach ($images as $item)
+            {
+                $arr[] = [
+                    'post_id' => $id,
+                    'src' => $item,
+                    'created_at' => $now,
+                    'updated_at' => $now
+                ];
+            }
+
+            PostImages::insert($arr);
         }
-        PostImages::insert($arr);
 
         return $this->resOK($id);
     }
@@ -99,9 +105,66 @@ class PostController extends Controller
         ]);
     }
 
-    public function reply(Request $request, $id)
+    public function reply(ReplyRequest $request, $id)
     {
-        // 要写入主题帖的缓存
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr(['未登录的用户'], 401);
+        }
+
+        $now = Carbon::now();
+
+        $newId = Post::insertGetId([
+            'content' => Purifier::clean($request->get('content')),
+            'bangumi_id' => $request->get('bangumiId'),
+            'parent_id' => $id,
+            'user_id' => $user->id,
+            'created_at' => $now,
+            'updated_at' => $now
+        ]);
+
+        $images = $request->get('images');
+        if (!empty($images))
+        {
+            $arr = [];
+
+            foreach ($images as $item)
+            {
+                $arr[] = [
+                    'post_id' => $newId,
+                    'src' => $item,
+                    'created_at' => $now,
+                    'updated_at' => $now
+                ];
+            }
+
+            PostImages::insert($arr);
+        }
+
+        $take = $request->get('take') ?: 0;
+        if ($take)
+        {
+            $ids = Post::whereRaw('id > ? and id <= ?', [$request->get('lastId'), $newId])
+                ->take($take)
+                ->pluck('id');
+        }
+        else
+        {
+            $ids = [$newId];
+        }
+
+        $repository = new PostRepository();
+        $list = $repository->list($ids);
+
+        foreach ($list as $i => $item)
+        {
+            $list[$i]['isMe'] = is_null($user) ? false : $item['user_id'] === $user->id;
+        }
+
+        return $this->resOK([
+            'list' => $list
+        ]);
     }
 
     public function nice($id)
