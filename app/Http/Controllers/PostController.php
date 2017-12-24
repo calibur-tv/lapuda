@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Post\CommitRequest;
 use App\Http\Requests\Post\CreateRequest;
 use App\Http\Requests\Post\ReplyRequest;
 use App\Models\Post;
 use App\Models\PostImages;
 use App\Repositories\BangumiRepository;
 use App\Repositories\PostRepository;
+use App\Repositories\UserRepository;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Mews\Purifier\Facades\Purifier;
@@ -16,10 +18,6 @@ class PostController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('throttle:5,10')->only([
-            'create', 'reply'
-        ]);
-
         $this->middleware('geetest')->only([
             'create', 'reply'
         ]);
@@ -40,6 +38,7 @@ class PostController extends Controller
             'content' => Purifier::clean($request->get('content')),
             'bangumi_id' => $request->get('bangumi_id'),
             'user_id' => $user->id,
+            'target_user_id' => $user->id,
             'created_at' => $now,
             'updated_at' => $now
         ]);
@@ -77,7 +76,7 @@ class PostController extends Controller
         $take = $request->get('take') ?: 10;
 
         $ids = Post::where('parent_id', $id)
-            ->orderBy('floor_count', 'asc')
+            ->orderBy('id', 'asc')
             ->skip(($page - 1) * $take)
             ->take($take)
             ->pluck('id');
@@ -91,11 +90,13 @@ class PostController extends Controller
             $bangumi = $bangumiRepository->item($bangumiId);
         }
 
-        $repository = new PostRepository();
-        $list = $repository->list($ids);
+        $postRepository = new PostRepository();
+        $userRepository = new UserRepository();
+        $list = $postRepository->list($ids);
 
         foreach ($list as $i => $item)
         {
+            $list[$i]['user'] = $userRepository->item($item['user_id']);
             $list[$i]['isMe'] = is_null($user) ? false : $item['user_id'] === $user->id;
         }
 
@@ -117,9 +118,9 @@ class PostController extends Controller
 
         $newId = Post::insertGetId([
             'content' => Purifier::clean($request->get('content')),
-            'bangumi_id' => $request->get('bangumiId'),
             'parent_id' => $id,
             'user_id' => $user->id,
+            'target_user_id' => $request->get('targetUserId'),
             'created_at' => $now,
             'updated_at' => $now
         ]);
@@ -155,16 +156,55 @@ class PostController extends Controller
         }
 
         $repository = new PostRepository();
+        $userRepository = new UserRepository();
         $list = $repository->list($ids);
 
         foreach ($list as $i => $item)
         {
+            $list[$i]['user'] = $userRepository->item($item['user_id']);
             $list[$i]['isMe'] = is_null($user) ? false : $item['user_id'] === $user->id;
         }
 
         return $this->resOK([
             'list' => $list
         ]);
+    }
+
+    public function commit(CommitRequest $request, $id)
+    {
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr(['未登录的用户'], 401);
+        }
+
+        $now = Carbon::now();
+
+        $newId = Post::insertGetId([
+            'content' => Purifier::clean($request->get('content')),
+            'parent_id' => $id,
+            'user_id' => $user->id,
+            'target_user_id' => $request->get('targetUserId'),
+            'created_at' => $now,
+            'updated_at' => $now
+        ]);
+
+        $post = Post::where('posts.id', $newId)
+            ->leftJoin('users AS from', 'from.id', '=', 'posts.user_id')
+            ->leftJoin('users AS to', 'to.id', '=', 'posts.target_user_id')
+            ->select(
+                'posts.id',
+                'posts.content',
+                'posts.created_at',
+                'posts.user_id',
+                'from.nickname AS from_user_name',
+                'from.zone AS from_user_zone',
+                'from.avatar AS from_user_avatar',
+                'to.nickname AS to_user_name',
+                'to.zone AS to_user_zone'
+            )->first();
+
+        return $this->resOK($post);
     }
 
     public function nice($id)

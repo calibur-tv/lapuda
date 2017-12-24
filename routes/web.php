@@ -59,7 +59,7 @@ Route::group(['prefix' => '/user'], function ()
 
     Route::group(['prefix' => '/setting'], function ()
     {
-        Route::post('/profile', 'UserController@profile');
+        Route::post('/profile', 'UserController@profile')->middleware('throttle:5,10');
 
         Route::post('/image', 'UserController@image');
     });
@@ -84,13 +84,15 @@ Route::group(['prefix' => '/user'], function ()
 
 Route::group(['prefix' => '/post'], function ()
 {
-    Route::post('/create', 'PostController@create');
+    Route::post('/create', 'PostController@create')->middleware('throttle:5,10');
 
     Route::group(['prefix' => '/{id}'], function ()
     {
         Route::get('/show', 'PostController@show');
 
-        Route::post('/reply', 'PostController@reply');
+        Route::post('/reply', 'PostController@reply')->middleware('throttle:5,10');
+
+        Route::post('/commit', 'PostController@commit')->middleware('throttle:20,1');
 
         Route::post('/nice', 'PostController@nice');
 

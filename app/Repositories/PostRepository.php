@@ -15,13 +15,6 @@ use Illuminate\Support\Facades\Cache;
 
 class PostRepository
 {
-    private $userRepository;
-
-    public function __construct()
-    {
-        $this->userRepository = new UserRepository();
-    }
-
     public function item($id)
     {
         $post = Cache::remember('post_'.$id, config('cache.ttl'), function () use ($id)
@@ -30,11 +23,10 @@ class PostRepository
             $data['images'] = PostImages::where('post_id', $id)
                 ->orderBy('created_at', 'asc')
                 ->pluck('src');
+            $data['comments'] = $this->comments($id, 1);
 
             return $data;
         });
-
-        $post['user'] = $this->userRepository->item($post['user_id']);
 
         return $post;
     }
@@ -47,5 +39,30 @@ class PostRepository
             $result[] = $this->item($id);
         }
         return $result;
+    }
+
+    public function comments($id, $page)
+    {
+        return Cache::remember('post_'.$id.'_comments_'.$page, config('cache.ttl'), function () use ($id, $page)
+        {
+            return Post::where('parent_id', $id)
+                ->orderBy('posts.id', 'asc')
+                ->take(5)
+                ->skip(($page - 1) * 5)
+                ->leftJoin('users AS from', 'from.id', '=', 'posts.user_id')
+                ->leftJoin('users AS to', 'to.id', '=', 'posts.target_user_id')
+                ->select(
+                    'posts.id',
+                    'posts.content',
+                    'posts.created_at',
+                    'posts.user_id',
+                    'from.nickname AS from_user_name',
+                    'from.zone AS from_user_zone',
+                    'from.avatar AS from_user_avatar',
+                    'to.nickname AS to_user_name',
+                    'to.zone AS to_user_zone'
+                )
+                ->get();
+        });
     }
 }

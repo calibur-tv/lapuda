@@ -23,12 +23,6 @@ use Mews\Purifier\Facades\Purifier;
  */
 class UserController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('throttle:5,10')->only([
-            'profile'
-        ]);
-    }
     /**
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Symfony\Component\HttpFoundation\Response
      */

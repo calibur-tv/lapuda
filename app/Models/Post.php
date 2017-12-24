@@ -24,7 +24,8 @@ class Post extends Model
         'bangumi_id',       // 帖子所属番剧的 id
         'parent_id',        // 如果帖子不是 1 楼，则 parent_id 是一楼的 id，否则就是 0
         'comment_count',    // 如果是 1 楼，就是回帖数量，否则就是回复数量
-        'like_count'        // 喜欢或点赞的数量
+        'like_count',       // 喜欢或点赞的数量
+        'target_user_id',   // 回复的用户id
     ];
 
     protected $casts = [
@@ -32,7 +33,8 @@ class Post extends Model
         'user_id' => 'integer',
         'like_count' => 'integer',
         'comment_count' => 'integer',
-        'parent_id' => 'integer'
+        'parent_id' => 'integer',
+        'target_user_id' => 'integer',
     ];
 
     public function user()
