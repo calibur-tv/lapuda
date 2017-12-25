@@ -47,8 +47,8 @@ class PostRepository
         {
             return Post::where('parent_id', $id)
                 ->orderBy('posts.id', 'asc')
-                ->take(5)
-                ->skip(($page - 1) * 5)
+                ->take(10)
+                ->skip(($page - 1) * 10)
                 ->leftJoin('users AS from', 'from.id', '=', 'posts.user_id')
                 ->leftJoin('users AS to', 'to.id', '=', 'posts.target_user_id')
                 ->select(

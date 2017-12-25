@@ -143,6 +143,8 @@ class PostController extends Controller
             PostImages::insert($arr);
         }
 
+        Post::where('id', $id)->increment('comment_count');
+
         $take = $request->get('take') ?: 0;
         if ($take)
         {
@@ -188,6 +190,8 @@ class PostController extends Controller
             'created_at' => $now,
             'updated_at' => $now
         ]);
+
+        Post::where('id', $id)->increment('comment_count');
 
         $post = Post::where('posts.id', $newId)
             ->leftJoin('users AS from', 'from.id', '=', 'posts.user_id')
