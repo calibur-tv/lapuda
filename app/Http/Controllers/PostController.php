@@ -36,7 +36,7 @@ class PostController extends Controller
         $id = Post::insertGetId([
             'title' => Purifier::clean($request->get('title')),
             'content' => Purifier::clean($request->get('content')),
-            'bangumi_id' => $request->get('bangumi_id'),
+            'bangumi_id' => $request->get('bangumiId'),
             'user_id' => $user->id,
             'target_user_id' => $user->id,
             'created_at' => $now,
@@ -93,18 +93,14 @@ class PostController extends Controller
 
         foreach ($list as $i => $item)
         {
-            $list[$i]['user'] = $userRepository->item($item['user_id']);
-            $list[$i]['isMe'] = is_null($user) ? false : $item['user_id'] === $user->id;
-            // isMe 可以不要，要加上是否评论过和是否赞过
+            $list[$i] = $this->transform($item, $user, $userRepository);
         }
 
         if ($page === 1) {
             $post = $list[0];
         } else {
             $post = $postRepository->item($id);
-            $post['user'] = $userRepository->item($post['user_id']);
-            $post['isMe'] = is_null($user) ? false : $post['user_id'] === $user->id;
-            // isMe 可以不要，要加上是否评论过和是否赞过
+            $post = $this->transform($post, $user, $userRepository);
         }
 
         return $this->resOK([
@@ -153,31 +149,7 @@ class PostController extends Controller
 
         Post::where('id', $id)->increment('comment_count');
 
-        $take = $request->get('take') ?: 0;
-        if ($take)
-        {
-            $ids = Post::whereRaw('id > ? and id <= ?', [$request->get('lastId'), $newId])
-                ->take($take)
-                ->pluck('id');
-        }
-        else
-        {
-            $ids = [$newId];
-        }
-
-        $repository = new PostRepository();
-        $userRepository = new UserRepository();
-        $list = $repository->list($ids);
-
-        foreach ($list as $i => $item)
-        {
-            $list[$i]['user'] = $userRepository->item($item['user_id']);
-            $list[$i]['isMe'] = is_null($user) ? false : $item['user_id'] === $user->id;
-        }
-
-        return $this->resOK([
-            'list' => $list
-        ]);
+        return $this->resOK();
     }
 
     public function commit(CommitRequest $request, $id)
@@ -237,5 +209,14 @@ class PostController extends Controller
     public function delete($id)
     {
         // 软删除，并删除缓存中的 item
+    }
+
+    private function transform($post, $currentUser, $userRepository)
+    {
+        // isMe 可以不要，要加上是否评论过和是否赞过
+        $post['user'] = $userRepository->item($post['user_id']);
+        $post['isMe'] = is_null($currentUser) ? false : $post['user_id'] === $currentUser->id;
+
+        return $post;
     }
 }

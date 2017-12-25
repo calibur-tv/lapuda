@@ -45,7 +45,7 @@ class PostRepository
     {
         return Cache::remember('post_'.$id.'_comments_'.$page, config('cache.ttl'), function () use ($id, $page)
         {
-            return Post::where('parent_id', $id)
+            return Post::whereRaw('posts.parent_id = ? and posts.id <> ?', [$id, $id])
                 ->orderBy('posts.id', 'asc')
                 ->take(10)
                 ->skip(($page - 1) * 10)

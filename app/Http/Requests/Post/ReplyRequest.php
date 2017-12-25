@@ -24,8 +24,6 @@ class ReplyRequest extends FormRequest
     public function rules()
     {
         return [
-            'take' => 'required|integer',
-            'lastId' => 'required|integer',
             'targetUserId' => 'required|integer',
             'content' => 'required|max:1000',
             'images' => 'array'
