@@ -81,14 +81,11 @@ class PostController extends Controller
             ->take($take)
             ->pluck('id');
 
-        $bangumi = null;
-        if ($page === 1) {
-            $bangumiId = Post::where('id', $id)
-                ->pluck('bangumi_id')
-                ->first();
-            $bangumiRepository = new BangumiRepository();
-            $bangumi = $bangumiRepository->item($bangumiId);
-        }
+        $bangumiId = Post::where('id', $id)
+            ->pluck('bangumi_id')
+            ->first();
+        $bangumiRepository = new BangumiRepository();
+        $bangumi = $bangumiRepository->item($bangumiId);
 
         $postRepository = new PostRepository();
         $userRepository = new UserRepository();
@@ -98,9 +95,20 @@ class PostController extends Controller
         {
             $list[$i]['user'] = $userRepository->item($item['user_id']);
             $list[$i]['isMe'] = is_null($user) ? false : $item['user_id'] === $user->id;
+            // isMe 可以不要，要加上是否评论过和是否赞过
+        }
+
+        if ($page === 1) {
+            $post = $list[0];
+        } else {
+            $post = $postRepository->item($id);
+            $post['user'] = $userRepository->item($post['user_id']);
+            $post['isMe'] = is_null($user) ? false : $post['user_id'] === $user->id;
+            // isMe 可以不要，要加上是否评论过和是否赞过
         }
 
         return $this->resOK([
+            'post' => $post,
             'list' => $list,
             'bangumi' => $bangumi
         ]);
@@ -209,6 +217,16 @@ class PostController extends Controller
             )->first();
 
         return $this->resOK($post);
+    }
+
+    public function comments(Request $request, $id)
+    {
+        $page = $request->get('page') ?: 1;
+
+        $repository = new PostRepository();
+        $data = $repository->comments($id, $page);
+
+        return $this->resOK($data);
     }
 
     public function nice($id)

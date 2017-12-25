@@ -90,6 +90,8 @@ Route::group(['prefix' => '/post'], function ()
     {
         Route::get('/show', 'PostController@show');
 
+        Route::get('/comments', 'PostController@comments');
+
         Route::post('/reply', 'PostController@reply')->middleware('throttle:5,10');
 
         Route::post('/commit', 'PostController@commit')->middleware('throttle:20,1');
