@@ -9,9 +9,9 @@ use App\Models\Post;
 use App\Models\PostImages;
 use App\Repositories\BangumiRepository;
 use App\Repositories\PostRepository;
-use App\Repositories\UserRepository;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
 class PostController extends Controller
@@ -32,11 +32,13 @@ class PostController extends Controller
         }
 
         $now = Carbon::now();
+        $bangumiId = $request->get('bangumiId');
 
         $id = Post::insertGetId([
             'title' => Purifier::clean($request->get('title')),
             'content' => Purifier::clean($request->get('content')),
-            'bangumi_id' => $request->get('bangumiId'),
+            'desc' => Purifier::clean($request->get('desc')),
+            'bangumi_id' => $bangumiId,
             'user_id' => $user->id,
             'target_user_id' => $user->id,
             'created_at' => $now,
@@ -66,6 +68,10 @@ class PostController extends Controller
             PostImages::insert($arr);
         }
 
+        $repository = new PostRepository();
+        $cacheKey = $repository->bangumiListCacheKey($bangumiId);
+        Redis::LPUSH($cacheKey, $id);
+
         return $this->resOK($id);
     }
 
@@ -88,19 +94,12 @@ class PostController extends Controller
         $bangumi = $bangumiRepository->item($bangumiId);
 
         $postRepository = new PostRepository();
-        $userRepository = new UserRepository();
-        $list = $postRepository->list($ids);
-
-        foreach ($list as $i => $item)
-        {
-            $list[$i] = $this->transform($item, $user, $userRepository);
-        }
+        $list = $postRepository->list($ids, $user);
 
         if ($page === 1) {
             $post = $list[0];
         } else {
-            $post = $postRepository->item($id);
-            $post = $this->transform($post, $user, $userRepository);
+            $post = $postRepository->item($id, $user);
         }
 
         return $this->resOK([
@@ -209,14 +208,5 @@ class PostController extends Controller
     public function delete($id)
     {
         // 软删除，并删除缓存中的 item
-    }
-
-    private function transform($post, $currentUser, $userRepository)
-    {
-        // isMe 可以不要，要加上是否评论过和是否赞过
-        $post['user'] = $userRepository->item($post['user_id']);
-        $post['isMe'] = is_null($currentUser) ? false : $post['user_id'] === $currentUser->id;
-
-        return $post;
     }
 }

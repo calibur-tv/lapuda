@@ -31,7 +31,7 @@ Route::group(['prefix' => '/bangumi'], function ()
     {
         Route::get('/show', 'BangumiController@show');
 
-        Route::get('/post', 'BangumiController@posts');
+        Route::get('/posts', 'BangumiController@posts');
 
         Route::post('/follow', 'BangumiController@follow');
     });

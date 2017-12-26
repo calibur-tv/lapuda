@@ -26,6 +26,7 @@ class CreateRequest extends FormRequest
         return [
             'title' => 'required|max:20',
             'bangumiId' => 'required|integer',
+            'desc' => 'required|max:120',
             'content' => 'required|max:1000',
             'images' => 'array'
         ];

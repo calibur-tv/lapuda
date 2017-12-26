@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Bangumi;
 use App\Models\BangumiTag;
 use App\Repositories\BangumiRepository;
+use App\Repositories\PostRepository;
 use App\Repositories\TagRepository;
 use function foo\func;
 use Illuminate\Http\Request;
@@ -172,9 +173,26 @@ class BangumiController extends Controller
         return $this->resOK($followed);
     }
 
-    public function posts(Request $request)
+    public function posts(Request $request, $id)
     {
-        // TODO：使用 seen_ids 做分页
-        // TODO：应该 new 一个 PostRepository，有一个 list 的方法，接收 ids 做参数
+        $user = $this->getAuthUser();
+        $last = intval($request->get('lastId')) ?: 0;
+        $take = intval($request->get('take')) ?: 10;
+        $type = $request->get('type') ?: 'new';
+
+        $bangumiRepository = new BangumiRepository();
+        $ids = $bangumiRepository->getPostIds($id, $last, $type, $take);
+
+        if (empty($ids))
+        {
+            $list = [];
+        }
+        else
+        {
+            $postRepository = new PostRepository();
+            $list = $postRepository->list($ids, $user);
+        }
+
+        return $this->resOK($list);
     }
 }

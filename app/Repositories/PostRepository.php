@@ -15,7 +15,13 @@ use Illuminate\Support\Facades\Cache;
 
 class PostRepository
 {
-    public function item($id)
+    public function bangumiListCacheKey($bangumiId, $listType = 'new')
+    {
+        $day = strtotime(date('Y-m-d'));
+        return 'bangumi_'.$bangumiId.'_posts_'.$listType.'_ids_'.$day;
+    }
+
+    public function item($id, $user)
     {
         $post = Cache::remember('post_'.$id, config('cache.ttl'), function () use ($id)
         {
@@ -28,15 +34,15 @@ class PostRepository
             return $data;
         });
 
-        return $post;
+        return $this->transform($post, $user);
     }
 
-    public function list($ids)
+    public function list($ids, $user)
     {
         $result = [];
         foreach ($ids as $id)
         {
-            $result[] = $this->item($id);
+            $result[] = $this->item($id, $user);
         }
         return $result;
     }
@@ -64,5 +70,15 @@ class PostRepository
                 )
                 ->get();
         });
+    }
+
+    private function transform($post, $currentUser)
+    {
+        $userRepository = new UserRepository();
+        // isMe 可以不要，要加上是否评论过和是否赞过
+        $post['user'] = $userRepository->item($post['user_id']);
+        $post['isMe'] = is_null($currentUser) ? false : $post['user_id'] === $currentUser->id;
+
+        return $post;
     }
 }

@@ -26,6 +26,7 @@ class Post extends Model
         'comment_count',    // 如果是 1 楼，就是回帖数量，否则就是回复数量
         'like_count',       // 喜欢或点赞的数量
         'target_user_id',   // 回复的用户id
+        'desc',             // content 的纯文本，最多 200 个字
     ];
 
     protected $casts = [
