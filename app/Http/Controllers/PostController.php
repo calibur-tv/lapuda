@@ -70,7 +70,7 @@ class PostController extends Controller
 
         $repository = new PostRepository();
         $cacheKey = $repository->bangumiListCacheKey($bangumiId);
-        Redis::LPUSH($cacheKey, $id);
+        Redis::LPUSHX($cacheKey, $id);
 
         return $this->resOK($id);
     }
@@ -148,6 +148,11 @@ class PostController extends Controller
 
         Post::where('id', $id)->increment('comment_count');
 
+        $repository = new PostRepository();
+        $cacheKey = $repository->bangumiListCacheKey($request->get('bangumiId'));
+        Redis::LREM($cacheKey, 1, $id);
+        Redis::LPUSHX($cacheKey, $id);
+
         return $this->resOK();
     }
 
@@ -192,10 +197,8 @@ class PostController extends Controller
 
     public function comments(Request $request, $id)
     {
-        $page = $request->get('page') ?: 1;
-
         $repository = new PostRepository();
-        $data = $repository->comments($id, $page);
+        $data = $repository->comments($id, $request->get('seenIds') ?: []);
 
         return $this->resOK($data);
     }

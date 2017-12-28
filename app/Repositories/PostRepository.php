@@ -12,27 +12,40 @@ namespace App\Repositories;
 use App\Models\Post;
 use App\Models\PostImages;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redis;
 
-class PostRepository
+class PostRepository extends Repository
 {
+    private $userRepository;
+
     public function bangumiListCacheKey($bangumiId, $listType = 'new')
     {
-        $day = strtotime(date('Y-m-d'));
-        return 'bangumi_'.$bangumiId.'_posts_'.$listType.'_ids_'.$day;
+        return 'bangumi_'.$bangumiId.'_posts_'.$listType.'_ids';
     }
 
     public function item($id, $user)
     {
-        $post = Cache::remember('post_'.$id, config('cache.ttl'), function () use ($id)
+        $cacheKey = 'post_'.$id;
+        $post = $this->RedisHash($cacheKey, function () use ($id)
         {
-            $data = Post::where('id', $id)->first();
-            $data['images'] = PostImages::where('post_id', $id)
+            return Post::where('id', $id)->first();
+        });
+
+        $post['images'] = $this->RedisList($cacheKey.'_images', function () use ($id)
+        {
+            return PostImages::where('post_id', $id)
                 ->orderBy('created_at', 'asc')
                 ->pluck('src');
-            $data['comments'] = $this->comments($id, 1);
-
-            return $data;
         });
+
+        if (is_null($this->userRepository))
+        {
+            $this->userRepository = new UserRepository();
+        }
+
+        $post['user'] = $this->userRepository->item($post['user_id']);
+
+        $post['comments'] = $this->comments($id);
 
         return $this->transform($post, $user);
     }
@@ -47,14 +60,28 @@ class PostRepository
         return $result;
     }
 
-    public function comments($id, $page)
+    public function comments($postId, $seenIds = [])
     {
-        return Cache::remember('post_'.$id.'_comments_'.$page, config('cache.ttl'), function () use ($id, $page)
+        $cache = $this->RedisSort('post_'.$postId.'_commentIds', function () use ($postId)
         {
-            return Post::whereRaw('posts.parent_id = ? and posts.id <> ?', [$id, $id])
-                ->orderBy('posts.id', 'asc')
-                ->take(10)
-                ->skip(($page - 1) * 10)
+            return Post::whereRaw('parent_id = ? and id <> ?', [$postId, $postId])
+                ->pluck('id', 'created_at');
+        });
+
+        $ids = array_slice(array_diff($cache, $seenIds), 0, 10);
+        $result = [];
+        foreach ($ids as $id)
+        {
+            $result[] = $this->comment($postId, $id);
+        }
+        return $result;
+    }
+
+    private function comment($postId, $commentId)
+    {
+        return $this->RedisHash('post_'.$postId.'_comment_'.$commentId, function () use ($commentId)
+        {
+            return Post::where('posts.id', $commentId)
                 ->leftJoin('users AS from', 'from.id', '=', 'posts.user_id')
                 ->leftJoin('users AS to', 'to.id', '=', 'posts.target_user_id')
                 ->select(
@@ -67,16 +94,12 @@ class PostRepository
                     'from.avatar AS from_user_avatar',
                     'to.nickname AS to_user_name',
                     'to.zone AS to_user_zone'
-                )
-                ->get();
+                )->first();
         });
     }
 
     private function transform($post, $currentUser)
     {
-        $userRepository = new UserRepository();
-        // isMe 可以不要，要加上是否评论过和是否赞过
-        $post['user'] = $userRepository->item($post['user_id']);
         $post['isMe'] = is_null($currentUser) ? false : $post['user_id'] === $currentUser->id;
 
         return $post;

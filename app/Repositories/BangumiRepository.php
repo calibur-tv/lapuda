@@ -10,7 +10,7 @@ use App\Models\Video;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 
-class BangumiRepository
+class BangumiRepository extends Repository
 {
     public function item($id)
     {
@@ -172,40 +172,17 @@ class BangumiRepository
         });
     }
 
-    public function getPostIds($id, $lastId, $type, $take)
+    public function getPostIds($id, $type)
     {
         $postRepository = new PostRepository();
         $cacheKey = $postRepository->bangumiListCacheKey($id, $type);
-        $end = $lastId ? -1 : $take - 1;
-        $cache = Redis::LRANGE($cacheKey, 0, $end);
 
-        if (empty($cache))
+        return $this->RedisSort($cacheKey, function () use ($id)
         {
-            // type === 'new'，其它 type 要做算法
-            $ids = Post::where('bangumi_id', $id)
+            return $ids = Post::where('bangumi_id', $id)
                 ->orderBy('id', 'desc')
-                ->pluck('id')
-                ->toArray();
+                ->pluck('id', 'updated_at');
 
-            Redis::RPUSH($cacheKey, $ids);
-            // 次日凌晨过期
-            Redis::EXPIREAT($cacheKey, strtotime(date('Y-m-d')) + 90000);
-
-            $ids = array_slice($cache, 0, $take);
-        }
-        else
-        {
-            if ($lastId)
-            {
-                $begin = array_search((String)$lastId, $cache);
-                $ids = $begin ? array_slice($cache, $begin, $take) : [];
-            }
-            else
-            {
-                $ids = $cache;
-            }
-        }
-
-        return $ids;
+        }, strtotime(date('Y-m-d')) + 86400 + rand(3600, 10800));
     }
 }

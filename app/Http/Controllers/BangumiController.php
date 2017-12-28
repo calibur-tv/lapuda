@@ -176,12 +176,12 @@ class BangumiController extends Controller
     public function posts(Request $request, $id)
     {
         $user = $this->getAuthUser();
-        $last = intval($request->get('lastId')) ?: 0;
+        $seen = intval($request->get('seenIds')) ?: [];
         $take = intval($request->get('take')) ?: 10;
         $type = $request->get('type') ?: 'new';
 
         $bangumiRepository = new BangumiRepository();
-        $ids = $bangumiRepository->getPostIds($id, $last, $type, $take);
+        $ids = $bangumiRepository->getPostIds($id, $type);
 
         if (empty($ids))
         {
@@ -190,7 +190,7 @@ class BangumiController extends Controller
         else
         {
             $postRepository = new PostRepository();
-            $list = $postRepository->list($ids, $user);
+            $list = $postRepository->list(array_slice(array_diff($ids, $seen), 0, $take), $user);
         }
 
         return $this->resOK($list);

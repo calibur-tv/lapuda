@@ -25,6 +25,7 @@ class ReplyRequest extends FormRequest
     {
         return [
             'targetUserId' => 'required|integer',
+            'bangumiId' => 'required|integer',
             'content' => 'required|max:1000',
             'images' => 'array'
         ];

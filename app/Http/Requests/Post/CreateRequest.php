@@ -24,7 +24,7 @@ class CreateRequest extends FormRequest
     public function rules()
     {
         return [
-            'title' => 'required|max:20',
+            'title' => 'required|max:40',
             'bangumiId' => 'required|integer',
             'desc' => 'required|max:120',
             'content' => 'required|max:1000',
