@@ -29,15 +29,6 @@ class Post extends Model
         'desc',             // content 的纯文本，最多 200 个字
     ];
 
-    protected $casts = [
-        'bangumi_id' => 'integer',
-        'user_id' => 'integer',
-        'like_count' => 'integer',
-        'comment_count' => 'integer',
-        'parent_id' => 'integer',
-        'target_user_id' => 'integer',
-    ];
-
     public function user()
     {
         return $this->belongsTo(User::class);

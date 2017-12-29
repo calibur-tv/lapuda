@@ -25,7 +25,7 @@ class Repository
                 return null;
             }
 
-            Redis::HMSET($key, $cache->toArray());
+            Redis::HMSET($key, gettype($cache) === 'array' ? $cache : $cache->toArray());
 
             $expireAt
                 ? Redis::EXPIREAT($key, $expireAt)
@@ -39,13 +39,13 @@ class Repository
         }
     }
 
-    public function RedisList($key, $func, $start = 0, $stop = -1, $expireAt = 0)
+    public function RedisList($key, $func, $start = 0, $stop = -1)
     {
         $cache = Redis::LRANGE($key, $start, $stop);
         if (empty($cache))
         {
             $cache = $func();
-            $cache = $cache->toArray();
+            $cache = gettype($cache) === 'array' ? $cache : $cache->toArray();
 
             if (empty($cache))
             {
@@ -53,10 +53,7 @@ class Repository
             }
 
             Redis::RPUSH($key, $cache);
-
-            $expireAt
-                ? Redis::EXPIREAT($key, $expireAt)
-                : Redis::EXPIRE($key, config('cache.ttl') * 60);
+            Redis::EXPIREAT($key, strtotime(date('Y-m-d')) + 86400 + rand(3600, 10800));
 
             return array_slice($cache, $start, $stop);
         }
@@ -66,26 +63,35 @@ class Repository
         }
     }
 
-    public function RedisSort($key, $func, $expireAt = 0)
+    public function RedisSort($key, $func, $isTime = false)
     {
-        $cache = Redis::ZREVRANGE($key, 0, -1, 'WITHSCORES');
+        $cache = Redis::ZREVRANGE($key, 0, -1);
         if (empty($cache))
         {
             $cache = $func();
-            $cache = $cache->toArray();
+            $cache = gettype($cache) === 'array' ? $cache : $cache->toArray();
 
             if (empty($cache))
             {
                 return [];
             }
 
+            if ($isTime)
+            {
+                foreach ($cache as $i => $item)
+                {
+                    $cache[$i] = $item->timestamp;
+                }
+            }
+
             Redis::ZADD($key, $cache);
+            Redis::EXPIREAT($key, strtotime(date('Y-m-d')) + 86400 + rand(3600, 10800));
 
-            $expireAt
-                ? Redis::EXPIREAT($key, $expireAt)
-                : Redis::EXPIRE($key, config('cache.ttl') * 60);
+            return array_keys($cache);
         }
-
-        return array_values($cache);
+        else
+        {
+            return $cache;
+        }
     }
 }

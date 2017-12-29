@@ -8,7 +8,6 @@ use App\Models\Post;
 use App\Models\User;
 use App\Models\Video;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Redis;
 
 class BangumiRepository extends Repository
 {
@@ -179,10 +178,10 @@ class BangumiRepository extends Repository
 
         return $this->RedisSort($cacheKey, function () use ($id)
         {
-            return $ids = Post::where('bangumi_id', $id)
+            return Post::where('bangumi_id', $id)
                 ->orderBy('id', 'desc')
-                ->pluck('id', 'updated_at');
+                ->pluck('updated_at', 'id');
 
-        }, strtotime(date('Y-m-d')) + 86400 + rand(3600, 10800));
+        }, true);
     }
 }

@@ -11,8 +11,7 @@ namespace App\Repositories;
 
 use App\Models\Post;
 use App\Models\PostImages;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Redis;
+use Carbon\Carbon;
 
 class PostRepository extends Repository
 {
@@ -23,15 +22,44 @@ class PostRepository extends Repository
         return 'bangumi_'.$bangumiId.'_posts_'.$listType.'_ids';
     }
 
-    public function item($id, $user)
+    public function create($data, $images)
     {
-        $cacheKey = 'post_'.$id;
-        $post = $this->RedisHash($cacheKey, function () use ($id)
+        $now = Carbon::now();
+        $newId = Post::insertGetId($data);
+
+        if (!empty($images))
         {
-            return Post::where('id', $id)->first();
+            $arr = [];
+
+            foreach ($images as $item)
+            {
+                $arr[] = [
+                    'post_id' => $newId,
+                    'src' => $item,
+                    'created_at' => $now,
+                    'updated_at' => $now
+                ];
+            }
+
+            PostImages::insert($arr);
+        }
+
+        return $newId;
+    }
+
+    public function item($id)
+    {
+        $post = $this->RedisHash('post_'.$id, function () use ($id)
+        {
+            return Post::find($id)->toArray();
         });
 
-        $post['images'] = $this->RedisList($cacheKey.'_images', function () use ($id)
+        if (is_null($post))
+        {
+            return null;
+        }
+
+        $post['images'] = $this->RedisList('post_'.$id.'_images', function () use ($id)
         {
             return PostImages::where('post_id', $id)
                 ->orderBy('created_at', 'asc')
@@ -47,15 +75,15 @@ class PostRepository extends Repository
 
         $post['comments'] = $this->comments($id);
 
-        return $this->transform($post, $user);
+        return $post;
     }
 
-    public function list($ids, $user)
+    public function list($ids)
     {
         $result = [];
         foreach ($ids as $id)
         {
-            $result[] = $this->item($id, $user);
+            $result[] = $this->item($id);
         }
         return $result;
     }
@@ -64,9 +92,15 @@ class PostRepository extends Repository
     {
         $cache = $this->RedisSort('post_'.$postId.'_commentIds', function () use ($postId)
         {
-            return Post::whereRaw('parent_id = ? and id <> ?', [$postId, $postId])
-                ->pluck('id', 'created_at');
-        });
+            return Post::where('parent_id', $postId)
+                ->pluck('created_at', 'id');
+
+        }, true);
+
+        if (empty($cache))
+        {
+            return [];
+        }
 
         $ids = array_slice(array_diff($cache, $seenIds), 0, 10);
         $result = [];
@@ -77,7 +111,20 @@ class PostRepository extends Repository
         return $result;
     }
 
-    private function comment($postId, $commentId)
+    public function getPostIds($id, $page, $take)
+    {
+        $start = $page === 1 ? 1 : ($page - 1) * $take;
+        $stop = $page === 1 ? $take - 1 : $page * $take;
+        return $this->RedisList('post_'.$id.'_ids', function () use ($id)
+        {
+            return Post::where('parent_id', $id)
+                ->orderBy('id', 'asc')
+                ->pluck('id');
+
+        }, $start, $stop);
+    }
+
+    public function comment($postId, $commentId)
     {
         return $this->RedisHash('post_'.$postId.'_comment_'.$commentId, function () use ($commentId)
         {
@@ -96,12 +143,5 @@ class PostRepository extends Repository
                     'to.zone AS to_user_zone'
                 )->first();
         });
-    }
-
-    private function transform($post, $currentUser)
-    {
-        $post['isMe'] = is_null($currentUser) ? false : $post['user_id'] === $currentUser->id;
-
-        return $post;
     }
 }
