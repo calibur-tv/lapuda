@@ -102,7 +102,7 @@ class PostRepository extends Repository
             return [];
         }
 
-        $ids = array_slice(array_diff($cache, $seenIds), 0, 10);
+        $ids = array_slice(array_reverse(array_diff($cache, $seenIds)), 0, 10);
         $result = [];
         foreach ($ids as $id)
         {
@@ -113,8 +113,8 @@ class PostRepository extends Repository
 
     public function getPostIds($id, $page, $take)
     {
-        $start = ($page - 1) * $take;
-        $stop = $page === 1 ? $take - 1 : $page * $take;
+        $start = $page === 1 ? 0 : ($page - 1) * $take - 1;
+        $stop = $page === 1 ? $take - 1 : $start + $take;
         return $this->RedisList('post_'.$id.'_ids', function () use ($id)
         {
             return Post::where('parent_id', $id)

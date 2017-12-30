@@ -104,13 +104,14 @@ class PostController extends Controller
             'updated_at' => $now
         ], $request->get('images'));
 
-        $timestamp = $now->timestamp;
-
         Post::where('id', $id)->increment('comment_count');
-        Redis::HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
-        Redis::HSET('post_'.$id, 'updated_at', $now->toDateTimeString());
+        if (Redis::EXISTS('post_'.$id))
+        {
+            Redis::HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
+            Redis::HSET('post_'.$id, 'updated_at', $now->toDateTimeString());
+        }
         Redis::RPUSH('post_'.$id.'_ids', $newId);
-        Redis::ZADD($repository->bangumiListCacheKey($request->get('bangumiId')), $timestamp, $id);
+        Redis::ZADD($repository->bangumiListCacheKey($request->get('bangumiId')), $now->timestamp, $id);
 
         return $this->resOK();
     }
@@ -136,7 +137,10 @@ class PostController extends Controller
         ], []);
 
         Post::where('id', $id)->increment('comment_count');
-        Redis::HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
+        if (Redis::EXISTS('post_'.$id))
+        {
+            Redis::HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
+        }
         Redis::ZADD('post_'.$id.'_commentIds', $now->timestamp, $newId);
 
         return $this->resOK($repository->comment($id, $newId));

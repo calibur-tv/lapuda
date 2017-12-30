@@ -52,10 +52,13 @@ class Repository
                 return [];
             }
 
-            Redis::RPUSH($key, $cache);
-            Redis::EXPIREAT($key, strtotime(date('Y-m-d')) + 86400 + rand(3600, 10800));
+            if ($start === 0)
+            {
+                Redis::RPUSH($key, $cache);
+                Redis::EXPIREAT($key, strtotime(date('Y-m-d')) + 86400 + rand(3600, 10800));
+            }
 
-            return array_slice($cache, $start, $stop);
+            return $stop === -1 ? array_slice($cache, $start) : array_slice($cache, $start, $stop);
         }
         else
         {
