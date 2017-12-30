@@ -73,7 +73,7 @@ class PostRepository extends Repository
 
         $post['user'] = $this->userRepository->item($post['user_id']);
 
-        $post['comments'] = $this->comments($id);
+        $post['comments'] = $post['parent_id'] === '0' ? [] : $this->comments($id);
 
         return $post;
     }
@@ -113,7 +113,7 @@ class PostRepository extends Repository
 
     public function getPostIds($id, $page, $take)
     {
-        $start = $page === 1 ? 1 : ($page - 1) * $take;
+        $start = ($page - 1) * $take;
         $stop = $page === 1 ? $take - 1 : $page * $take;
         return $this->RedisList('post_'.$id.'_ids', function () use ($id)
         {

@@ -46,8 +46,7 @@ class PostController extends Controller
             'updated_at' => $now
         ], $request->get('images'));
 
-        $cacheKey = $repository->bangumiListCacheKey($bangumiId);
-        Redis::ZADD($cacheKey, $now->timestamp, $id);
+        Redis::ZADD($repository->bangumiListCacheKey($bangumiId), $now->timestamp, $id);
 
         return $this->resOK($id);
     }
@@ -107,13 +106,11 @@ class PostController extends Controller
 
         $timestamp = $now->timestamp;
 
-        $cacheKey = 'post_'.$id;
         Post::where('id', $id)->increment('comment_count');
-        Redis::HINCRBY($cacheKey, 'comment_count', 1);
-        Redis::RPUSH($cacheKey, $newId);
-
-        $cacheKey = $repository->bangumiListCacheKey($request->get('bangumiId'));
-        Redis::ZADD($cacheKey, $timestamp, $id);
+        Redis::HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
+        Redis::HSET('post_'.$id, 'updated_at', $now->toDateTimeString());
+        Redis::RPUSH('post_'.$id.'_ids', $newId);
+        Redis::ZADD($repository->bangumiListCacheKey($request->get('bangumiId')), $timestamp, $id);
 
         return $this->resOK();
     }
@@ -139,7 +136,7 @@ class PostController extends Controller
         ], []);
 
         Post::where('id', $id)->increment('comment_count');
-        Redis::HINCRBY('post_'.$id, 'comment_count', 1);
+        Redis::HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
         Redis::ZADD('post_'.$id.'_commentIds', $now->timestamp, $newId);
 
         return $this->resOK($repository->comment($id, $newId));
