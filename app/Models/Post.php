@@ -27,6 +27,7 @@ class Post extends Model
         'like_count',       // 喜欢或点赞的数量
         'target_user_id',   // 回复的用户id
         'desc',             // content 的纯文本，最多 200 个字
+        'state',            // 帖子状态，0 是正常，1 是用户删除，2 是楼主删除
     ];
 
     public function user()

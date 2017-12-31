@@ -65,12 +65,13 @@ class PostController extends Controller
         // $user = $this->getAuthUser();
         $page = intval($request->get('page')) ?: 1;
         $take = intval($request->get('take')) ?: 10;
-        $ids = $postRepository->getPostIds($id, $page, $take);
+        $only = intval($request->get('only')) ?: 0;
+        $data = $postRepository->getPostIds($id, $page, $take, $only ? $post['user_id'] : false);
 
         $bangumiRepository = new BangumiRepository();
         $bangumi = $bangumiRepository->item($post['bangumi_id']);
 
-        $list = $postRepository->list($ids);
+        $list = $postRepository->list($data['ids']);
         if ($page === 1)
         {
             array_unshift($list, $post);
@@ -79,7 +80,8 @@ class PostController extends Controller
         return $this->resOK([
             'post' => $post,
             'list' => $list,
-            'bangumi' => $bangumi
+            'bangumi' => $bangumi,
+            'total' => $data['total'] + 1
         ]);
     }
 
@@ -104,13 +106,17 @@ class PostController extends Controller
         ], $request->get('images'));
 
         Post::where('id', $id)->increment('comment_count');
-        if (Redis::EXISTS('post_'.$id))
+        $cacheKey = $repository->bangumiListCacheKey($request->get('bangumiId'));
+        Redis::pipeline(function ($pipe) use ($id, $cacheKey, $now, $newId)
         {
-            Redis::HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
-            Redis::HSET('post_'.$id, 'updated_at', $now->toDateTimeString());
-        }
-        Redis::RPUSH('post_'.$id.'_ids', $newId);
-        Redis::ZADD($repository->bangumiListCacheKey($request->get('bangumiId')), $now->timestamp, $id);
+            if ($pipe->EXISTS('post_'.$id))
+            {
+                $pipe->HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
+                $pipe->HSET('post_'.$id, 'updated_at', $now->toDateTimeString());
+            }
+            $pipe->RPUSH('post_'.$id.'_ids', $newId);
+            $pipe->ZADD($cacheKey, $now->timestamp, $id);
+        });
 
         return $this->resOK();
     }
@@ -136,11 +142,14 @@ class PostController extends Controller
         ], []);
 
         Post::where('id', $id)->increment('comment_count');
-        if (Redis::EXISTS('post_'.$id))
+        Redis::pipeline(function ($pipe) use ($id, $now, $newId)
         {
-            Redis::HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
-        }
-        Redis::ZADD('post_'.$id.'_commentIds', $now->timestamp, $newId);
+            if ($pipe->EXISTS('post_'.$id))
+            {
+                $pipe->HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
+            }
+            $pipe->ZADD('post_'.$id.'_commentIds', $now->timestamp, $newId);
+        });
 
         return $this->resOK($repository->comment($id, $newId));
     }
@@ -165,6 +174,39 @@ class PostController extends Controller
 
     public function delete($id)
     {
-        // 软删除，并删除缓存中的 item
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr(['未登录的用户'], 401);
+        }
+
+        $postRepository = new PostRepository();
+        $post = $postRepository->item($id);
+
+        $delete = false;
+        $state = 0;
+        if ($post['user_id'] == $user->id)
+        {
+            $delete = true;
+            $state = 1;
+        }
+        else if ($post['parent_id'] != 0)
+        {
+            $post = $postRepository->item($post['parent_id']);
+            if ($post['user_id'] == $user->id)
+            {
+                $delete = true;
+                $state = 2;
+            }
+        }
+
+        if (!$delete)
+        {
+            return $this->resErr(['权限不足'], 401);
+        }
+
+        $postRepository->deletePost($id, $post['parent_id'], $state, $post['bangumi_id']);
+
+        return $this->resOK();
     }
 }

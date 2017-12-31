@@ -12,6 +12,8 @@ namespace App\Repositories;
 use App\Models\Post;
 use App\Models\PostImages;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class PostRepository extends Repository
 {
@@ -51,7 +53,7 @@ class PostRepository extends Repository
     {
         $post = $this->RedisHash('post_'.$id, function () use ($id)
         {
-            return Post::find($id)->toArray();
+            return Post::find($id);
         });
 
         if (is_null($post))
@@ -111,17 +113,38 @@ class PostRepository extends Repository
         return $result;
     }
 
-    public function getPostIds($id, $page, $take)
+    public function getPostIds($id, $page, $take, $postMasterId)
     {
         $start = $page === 1 ? 0 : ($page - 1) * $take - 1;
         $stop = $page === 1 ? $take - 1 : $start + $take;
-        return $this->RedisList('post_'.$id.'_ids', function () use ($id)
-        {
-            return Post::where('parent_id', $id)
-                ->orderBy('id', 'asc')
-                ->pluck('id');
 
-        }, $start, $stop);
+        if ($postMasterId)
+        {
+            $key = 'post_'.$id.'_ids_only';
+            $ids = $this->RedisList($key, function () use ($id, $postMasterId)
+            {
+                return Post::whereRaw('parent_id = ? and user_id = ?', [$id, $postMasterId])
+                    ->orderBy('id', 'asc')
+                    ->pluck('id');
+
+            }, $start, $stop);
+        }
+        else
+        {
+            $key = 'post_'.$id.'_ids';
+            $ids = $this->RedisList($key, function () use ($id)
+            {
+                return Post::where('parent_id', $id)
+                    ->orderBy('id', 'asc')
+                    ->pluck('id');
+
+            }, $start, $stop);
+        }
+
+        return [
+            'ids' => $ids,
+            'total' => Redis::LLEN($key)
+        ];
     }
 
     public function comment($postId, $commentId)
@@ -143,5 +166,48 @@ class PostRepository extends Repository
                     'to.zone AS to_user_zone'
                 )->first();
         });
+    }
+
+    public function deletePost($postId, $parentId, $state, $bangumiId)
+    {
+        DB::table('posts')
+            ->where('id', $postId)
+            ->update([
+                'state' => $state,
+                'deleted_at' => Carbon::now()
+            ]);
+
+        if ($parentId != 0)
+        {
+            /*
+             * 如果是回帖，那么主题帖不会被删
+             * 主题帖的回复数要 - 1 （数据库和缓存）
+             * 删除主题帖的 ids （所有列表和仅楼主列表）
+             */
+            Post::where('id', $parentId)->increment('comment_count', -1);
+            Redis::pipeline(function ($pipe) use ($parentId)
+            {
+                if ($pipe->EXISTS('post_'.$parentId))
+                {
+                    $pipe->HINCRBYFLOAT('post_'.$parentId, 'comment_count', -1);
+                }
+                $pipe->DEL('post_'.$parentId.'_ids');
+                $pipe->DEL('post_'.$parentId.'_ids_only');
+            });
+        }
+        else
+        {
+            /*
+             * 删除主题帖
+             * 删除 bangumi-cache-ids-list 中的这个帖子 id
+             * 删掉主题帖的缓存
+             * 其它缓存自然过期
+             */
+            Redis::pipeline(function ($pipe) use ($bangumiId, $postId)
+            {
+                $pipe->ZREM($this->bangumiListCacheKey($bangumiId), $postId);
+                $pipe->DEL('post_'.$postId);
+            });
+        }
     }
 }
