@@ -115,8 +115,14 @@ class PostRepository extends Repository
 
     public function getPostIds($id, $page, $take, $postMasterId)
     {
-        $start = $page === 1 ? 0 : ($page - 1) * $take - 1;
-        $stop = $page === 1 ? $take - 1 : $start + $take;
+        /**
+         * 因为：page = 1 的时候，不用获取 1 楼
+         * 所以，当 take = 10 时：
+         * page = 1 -> start = 1 end = 9
+         * page = 2 -> start = 10, end = 19
+         */
+        $start = $page === 1 ? 1 : ($page - 1) * $take;
+        $stop = $page === 1 ? $take - 1 : $start + $take - 1;
 
         if ($postMasterId)
         {

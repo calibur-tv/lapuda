@@ -81,7 +81,7 @@ class PostController extends Controller
             'post' => $post,
             'list' => $list,
             'bangumi' => $bangumi,
-            'total' => $data['total'] + 1
+            'total' => $data['total']
         ]);
     }
 
