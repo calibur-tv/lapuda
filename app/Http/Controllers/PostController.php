@@ -6,7 +6,6 @@ use App\Http\Requests\Post\CommitRequest;
 use App\Http\Requests\Post\CreateRequest;
 use App\Http\Requests\Post\ReplyRequest;
 use App\Models\Post;
-use App\Models\PostImages;
 use App\Repositories\BangumiRepository;
 use App\Repositories\PostRepository;
 use Carbon\Carbon;
@@ -149,7 +148,12 @@ class PostController extends Controller
     public function comments(Request $request, $id)
     {
         $repository = new PostRepository();
-        $data = $repository->comments($id, $request->get('seenIds') ?: []);
+        $data = $repository->comments(
+            $id,
+            $request->get('seenIds')
+                ? explode(',', $request->get('seenIds'))
+                : []
+        );
 
         return $this->resOK($data);
     }
