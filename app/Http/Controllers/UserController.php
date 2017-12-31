@@ -13,7 +13,7 @@ use App\Models\Feedback;
 use App\Models\User;
 use App\Repositories\UserRepository;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
 
@@ -55,10 +55,19 @@ class UserController extends Controller
         {
             return $this->resErr(['请刷新页面重试'], 401);
         }
-        /* @var User $user*/
+
+        $key = $request->get('type');
+        $val = $request->get('url');
+
         $user->update([
-            $request->get('type') => $request->get('url')
+            $key => $val
         ]);
+
+        $cache = 'user_'.$user->id.'_show';
+        if (Redis::EXISTS($cache))
+        {
+            Redis::HSET($cache, $key, $val);
+        }
 
         return $this->resOK();
     }
@@ -94,7 +103,7 @@ class UserController extends Controller
             'birthday' => $request->get('birthday')
         ]);
 
-        Cache::forget('user_'.$user->id.'_show');
+        Redis::DEL('user_'.$user->id.'_show');
 
         return $this->resOK();
     }

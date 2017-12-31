@@ -12,13 +12,13 @@ use App\Models\BangumiFollow;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 
-class UserRepository
+class UserRepository extends Repository
 {
     public function item($id)
     {
-        return Cache::remember('user_'.$id.'_show', config('cache.ttl'), function () use ($id)
+        return $this->RedisHash('user_'.$id.'_show', function () use ($id)
         {
-            $user = User::where('id', $id)->first()->toArray();
+            $user = User::find($id);
             $user['sex'] = $this->maskSex($user['sex']);
 
             return $user;

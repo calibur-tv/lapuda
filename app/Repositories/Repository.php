@@ -31,7 +31,6 @@ class Repository
 
             Redis::pipeline(function ($pipe) use ($key, $cache)
             {
-                $pipe->DEL($key);
                 $pipe->HMSET($key, gettype($cache) === 'array' ? $cache : $cache->toArray());
                 $pipe->EXPIREAT($key, strtotime(date('Y-m-d')) + 86400 + rand(3600, 10800));
             });
