@@ -138,7 +138,8 @@ class BangumiRepository extends Repository
 
             return [
                 'videos' => $videos,
-                'repeat' => $repeat
+                'repeat' => $repeat,
+                'total' => count($list)
             ];
         });
     }

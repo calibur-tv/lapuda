@@ -33,7 +33,7 @@ Route::group(['prefix' => '/bangumi'], function ()
 
         Route::get('/videos', 'BangumiController@videos');
 
-        Route::get('/posts', 'BangumiController@posts');
+        Route::post('/posts', 'BangumiController@posts');
 
         Route::post('/follow', 'BangumiController@follow');
     });
@@ -92,7 +92,7 @@ Route::group(['prefix' => '/post'], function ()
     {
         Route::get('/show', 'PostController@show');
 
-        Route::get('/comments', 'PostController@comments');
+        Route::post('/comments', 'PostController@comments');
 
         Route::post('/reply', 'PostController@reply')->middleware('throttle');
 

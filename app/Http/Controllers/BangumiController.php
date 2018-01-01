@@ -204,6 +204,9 @@ class BangumiController extends Controller
             $list = $postRepository->list(array_slice(array_diff($ids, $seen), 0, $take));
         }
 
-        return $this->resOK($list);
+        return $this->resOK([
+            'data' => $list,
+            'total' => count($ids)
+        ]);
     }
 }
