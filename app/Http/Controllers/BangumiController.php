@@ -67,15 +67,14 @@ class BangumiController extends Controller
 
     public function show($id)
     {
-        $bangumi_id = Bangumi::where('id', $id)->first();
-        if (is_null($bangumi_id)) {
+        $bangumiId = Bangumi::where('id', $id)->pluck('id')->first();
+        if (is_null($bangumiId)) {
             return $this->resErr(['番剧不存在'], 404);
         }
 
         $repository = new BangumiRepository();
         $bangumi = $repository->item($id);
 
-        $bangumi['videoPackage'] = $repository->videos($id, $bangumi['season']);
         $bangumi['followers'] = $repository->getFollowers($id);
 
         $user = $this->getAuthUser();
@@ -85,6 +84,18 @@ class BangumiController extends Controller
             : $repository->checkUserFollowed($user->id, $id);
 
         return $this->resOK($bangumi);
+    }
+
+    public function videos($id)
+    {
+        $bangumi = Bangumi::where('id', $id)->select('id', 'season')->first();
+        if (is_null($bangumi)) {
+            return $this->resErr(['番剧不存在'], 404);
+        }
+
+        $repository = new BangumiRepository();
+
+        return $this->resOK($repository->videos($id, $bangumi['season']));
     }
 
     public function tags()

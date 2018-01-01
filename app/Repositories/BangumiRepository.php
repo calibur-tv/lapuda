@@ -107,7 +107,10 @@ class BangumiRepository extends Repository
     {
         return Cache::remember('bangumi_'.$id, config('cache.ttl'), function () use ($id, $season)
         {
-            $list = Video::where('bangumi_id', $id)->get()->toArray();
+            $list = Video::where('bangumi_id', $id)
+                ->orderBy('part', 'ASC')
+                ->get()
+                ->toArray();
 
             if ($season !== '' && isset($season->part) && isset($season->name))
             {
