@@ -219,11 +219,11 @@ class PostRepository extends Repository
 
     public function getNewIds()
     {
-        // event fire
+        return Redis::ZREVRANGE('post_new_ids', 0, -1);
     }
 
     public function getHotIds()
     {
-        // crontab 计算
+        return Redis::ZREVRANGE('post_hot_ids', 0, -1);
     }
 }

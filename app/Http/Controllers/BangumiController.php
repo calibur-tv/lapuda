@@ -7,7 +7,6 @@ use App\Models\BangumiTag;
 use App\Repositories\BangumiRepository;
 use App\Repositories\PostRepository;
 use App\Repositories\TagRepository;
-use function foo\func;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
