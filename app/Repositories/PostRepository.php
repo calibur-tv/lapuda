@@ -216,4 +216,14 @@ class PostRepository extends Repository
             });
         }
     }
+
+    public function getNewIds()
+    {
+        // event fire
+    }
+
+    public function getHotIds()
+    {
+        // crontab 计算
+    }
 }

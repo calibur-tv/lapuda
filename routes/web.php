@@ -108,3 +108,13 @@ Route::group(['prefix' => '/image'], function ()
 {
     Route::post('/token', 'ImageController@token');
 });
+
+Route::group(['prefix' => '/trending'], function ()
+{
+    Route::group(['prefix' => '/post'], function ()
+    {
+        Route::post('/new', 'TrendingController@postNew');
+
+        Route::post('/hot', 'TrendingController@postHot');
+    });
+});
