@@ -219,7 +219,14 @@ class PostRepository extends Repository
 
     public function getNewIds()
     {
-        return Redis::ZREVRANGE('post_new_ids', 0, -1);
+        return $this->RedisSort('post_new_ids', function ()
+        {
+            return Post::whereIn('state', [3, 7])
+                ->orderBy('created_at', 'desc')
+                ->latest()
+                ->pluck('created_at', 'id');
+
+        }, true);
     }
 
     public function getHotIds()

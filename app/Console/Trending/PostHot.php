@@ -40,25 +40,8 @@ class PostHot extends Command
             Carbon::now()->addDays(-7), 0
         ])->pluck('id')->get();
 
-        $list = [];
-
-        Redis::pipeline(function ($pipe) use ($ids)
-        {
-            foreach ($ids as $i => $id)
-            {
-                $list[$i] = $pipe->HGETALL('post_'.$id);
-            }
-        });
-
         $repository = new PostRepository();
-
-        foreach ($list as $i => $v)
-        {
-            if (empty($list[$i]))
-            {
-                $list[$i] = $repository->item($ids[$i]);
-            }
-        }
+        $list = $repository->list($ids);
 
         $result = [
             'id1' => 'score1',

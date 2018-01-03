@@ -46,7 +46,9 @@ class PostController extends Controller
         ], $request->get('images'));
 
         Redis::ZADD($repository->bangumiListCacheKey($bangumiId), $now->timestamp, $id);
-        dispatch(new \App\Jobs\Trial\Post($id));
+
+        $job = (new \App\Jobs\Trial\Post($id))->onQueue('post-create');
+        dispatch($job);
 
         return $this->resOK($id);
     }
