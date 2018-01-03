@@ -34,8 +34,10 @@ class Kernel extends HttpKernel
             //\Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
         'api' => [
-            'throttle:60,1',
-            'bindings',
+            \Barryvdh\Cors\HandleCors::class,
+            \App\Http\Middleware\Csrf::class,
+            //'throttle:60,1',
+            //'bindings',
         ],
     ];
 

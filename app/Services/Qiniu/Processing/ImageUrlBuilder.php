@@ -2,8 +2,6 @@
 
 namespace App\Services\Qiniu\Processing;
 
-use App\Services\Qiniu;
-
 /**
  * 主要涉及图片链接拼接
  *
@@ -133,7 +131,7 @@ final class ImageUrlBuilder
             return $url;
         }
 
-        $waterStr = 'watermark/1/image/' . \Qiniu\base64_urlSafeEncode($image) . '/';
+        $waterStr = 'watermark/1/image/' . \App\Services\Qiniu\base64_urlSafeEncode($image) . '/';
 
         // 拼接水印透明度
         if (is_numeric($dissolve)
@@ -208,8 +206,8 @@ final class ImageUrlBuilder
         }
 
         $waterStr = 'watermark/2/text/'
-            . \Qiniu\base64_urlSafeEncode($text) . '/font/'
-            . \Qiniu\base64_urlSafeEncode($font) . '/';
+            . \App\Services\Qiniu\base64_urlSafeEncode($text) . '/font/'
+            . \App\Services\Qiniu\base64_urlSafeEncode($font) . '/';
 
         // 拼接文字大小
         if (is_int($fontSize)) {
@@ -220,7 +218,7 @@ final class ImageUrlBuilder
         if (!is_null($fontColor)
             && $fontColor
         ) {
-            $waterStr .= 'fill/' . \Qiniu\base64_urlSafeEncode($fontColor) . '/';
+            $waterStr .= 'fill/' . \App\Services\Qiniu\base64_urlSafeEncode($fontColor) . '/';
         }
 
         // 拼接水印透明度

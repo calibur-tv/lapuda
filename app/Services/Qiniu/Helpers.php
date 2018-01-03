@@ -1,10 +1,16 @@
 <?php
+/**
+ * Created by PhpStorm.
+ * User: yuistack
+ * Date: 2018/1/3
+ * Time: 下午10:54
+ */
 
 namespace App\Services\Qiniu;
 
-if (!defined('QINIU_FUNCTIONS_VERSION')) {
-    define('QINIU_FUNCTIONS_VERSION', Config::SDK_VER);
 
+class Helpers
+{
     /**
      * 计算文件的crc32检验码:
      *
@@ -12,7 +18,7 @@ if (!defined('QINIU_FUNCTIONS_VERSION')) {
      *
      * @return string 文件内容的crc32校验码
      */
-    function crc32_file($file)
+    public function crc32_file($file)
     {
         $hash = hash_file('crc32b', $file);
         $array = unpack('N', pack('H*', $hash));
@@ -26,7 +32,7 @@ if (!defined('QINIU_FUNCTIONS_VERSION')) {
      *
      * @return string 输入字符串的crc32校验码
      */
-    function crc32_data($data)
+    public function crc32_data($data)
     {
         $hash = hash('crc32b', $data);
         $array = unpack('N', pack('H*', $hash));
@@ -41,7 +47,7 @@ if (!defined('QINIU_FUNCTIONS_VERSION')) {
      * @return string 编码后的字符串
      * @link http://developer.qiniu.com/docs/v6/api/overview/appendix.html#urlsafe-base64
      */
-    function base64_urlSafeEncode($data)
+    public function base64_urlSafeEncode($data)
     {
         $find = array('+', '/');
         $replace = array('-', '_');
@@ -55,7 +61,7 @@ if (!defined('QINIU_FUNCTIONS_VERSION')) {
      *
      * @return string 解码后的字符串
      */
-    function base64_urlSafeDecode($str)
+    public function base64_urlSafeDecode($str)
     {
         $find = array('-', '_');
         $replace = array('+', '/');
@@ -73,9 +79,9 @@ if (!defined('QINIU_FUNCTIONS_VERSION')) {
      *
      * @return mixed
      * @throws \InvalidArgumentException if the JSON cannot be parsed.
-     * @link http://www.php.net/manual/en/function.json-decode.php
+     * @link http://www.php.net/manual/en/public function.json-decode.php
      */
-    function json_decode($json, $assoc = false, $depth = 512)
+    public function json_decode($json, $assoc = false, $depth = 512)
     {
         static $jsonErrors = array(
             JSON_ERROR_DEPTH => 'JSON_ERROR_DEPTH - Maximum stack depth exceeded',
@@ -112,7 +118,7 @@ if (!defined('QINIU_FUNCTIONS_VERSION')) {
      * @return string  符合七牛API规格的数据格式
      * @link http://developer.qiniu.com/docs/v6/api/reference/data-formats.html
      */
-    function entry($bucket, $key)
+    public function entry($bucket, $key)
     {
         $en = $bucket;
         if (!empty($key)) {
@@ -130,7 +136,7 @@ if (!defined('QINIU_FUNCTIONS_VERSION')) {
      *
      * @return array 原来的array，便于连续操作
      */
-    function setWithoutEmpty(&$array, $key, $value)
+    public function setWithoutEmpty(&$array, $key, $value)
     {
         if (!empty($value)) {
             $array[$key] = $value;
@@ -153,7 +159,7 @@ if (!defined('QINIU_FUNCTIONS_VERSION')) {
      * @link http://developer.qiniu.com/code/v6/api/kodo-api/image/imageview2.html
      * @author Sherlock Ren <sherlock_ren@icloud.com>
      */
-    function thumbnail(
+    public function thumbnail(
         $url,
         $mode,
         $width,
@@ -187,7 +193,7 @@ if (!defined('QINIU_FUNCTIONS_VERSION')) {
      * @return string
      * @author Sherlock Ren <sherlock_ren@icloud.com>
      */
-    function waterImg(
+    public function waterImg(
         $url,
         $image,
         $dissolve = 100,
@@ -222,7 +228,7 @@ if (!defined('QINIU_FUNCTIONS_VERSION')) {
      * @return string
      * @author Sherlock Ren <sherlock_ren@icloud.com>
      */
-    function waterText(
+    public function waterText(
         $url,
         $text,
         $font = '黑体',
@@ -249,7 +255,7 @@ if (!defined('QINIU_FUNCTIONS_VERSION')) {
      * @param $upToken
      * @return array(ak,bucket,err=null)
      */
-    function explodeUpToken($upToken)
+    public function explodeUpToken($upToken)
     {
         $items = explode(':', $upToken);
         if (count($items) != 3) {

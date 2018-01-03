@@ -58,7 +58,7 @@ final class ResumeUploader
         $this->contexts = array();
         $this->config = $config;
 
-        list($accessKey, $bucket, $err) = \Qiniu\explodeUpToken($upToken);
+        list($accessKey, $bucket, $err) = \App\Services\Qiniu\explodeUpToken($upToken);
         if ($err != null) {
             return array(null, $err);
         }
@@ -82,14 +82,14 @@ final class ResumeUploader
             if ($data === false) {
                 throw new \Exception("file read failed", 1);
             }
-            $crc = \Qiniu\crc32_data($data);
+            $crc = \App\Services\Qiniu\crc32_data($data);
             $response = $this->makeBlock($data, $blockSize);
             $ret = null;
             if ($response->ok() && $response->json() != null) {
                 $ret = $response->json();
             }
             if ($response->statusCode < 0) {
-                list($accessKey, $bucket, $err) = \Qiniu\explodeUpToken($this->upToken);
+                list($accessKey, $bucket, $err) = \App\Services\Qiniu\explodeUpToken($this->upToken);
                 if ($err != null) {
                     return array(null, $err);
                 }
@@ -123,13 +123,13 @@ final class ResumeUploader
     private function fileUrl()
     {
         $url = $this->host . '/mkfile/' . $this->size;
-        $url .= '/mimeType/' . \Qiniu\base64_urlSafeEncode($this->mime);
+        $url .= '/mimeType/' . \App\Services\Qiniu\base64_urlSafeEncode($this->mime);
         if ($this->key != null) {
-            $url .= '/key/' . \Qiniu\base64_urlSafeEncode($this->key);
+            $url .= '/key/' . \App\Services\Qiniu\base64_urlSafeEncode($this->key);
         }
         if (!empty($this->params)) {
             foreach ($this->params as $key => $value) {
-                $val = \Qiniu\base64_urlSafeEncode($value);
+                $val = \App\Services\Qiniu\base64_urlSafeEncode($value);
                 $url .= "/$key/$val";
             }
         }
