@@ -28,6 +28,7 @@ class Post extends Model
         'target_user_id',   // 回复的用户id
         'desc',             // content 的纯文本，最多 200 个字
         'state',            // 帖子状态，0 待审，1 用户删除，2 楼主删除, 3 系统审核通过，4 人工审核中，5 系统删除，6 审核员删除，7 审核员通过
+        'view_count',       // 帖子的阅读数
     ];
 
     public function user()

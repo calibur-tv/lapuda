@@ -80,6 +80,12 @@ class PostController extends Controller
             array_unshift($list, $post);
         }
 
+        Post::where('id', $post['id'])->increment('view_count');
+        if (Redis::EXISTS('post_'.$id))
+        {
+            Redis::HINCRBYFLOAT('post_'.$id, 'view_count', 1);
+        }
+
         return $this->resOK([
             'post' => $post,
             'list' => $list,
