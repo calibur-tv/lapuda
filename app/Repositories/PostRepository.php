@@ -231,6 +231,30 @@ class PostRepository extends Repository
 
     public function getHotIds()
     {
-        return Redis::ZREVRANGE('post_hot_ids', 0, -1);
+        return $this->RedisSort('post_hot_ids', function ()
+        {
+            $ids = Post::whereRaw('created_at > ? and parent_id = ?', [
+                Carbon::now()->addDays(-7), 0
+            ])->pluck('id')->get();
+
+            $list = $this->list($ids);
+            $result = [];
+            // https://segmentfault.com/a/1190000004253816
+            foreach ($list as $item)
+            {
+                $result[$item['id']] = (
+                    log($item['view_count'], 10) * 4 +
+                    $item['like_count'] +
+                    log($item['comment_count'], M_E)
+                ) / pow((((strtotime($item['created_at']) + strtotime($item['updated_at'])) / 7200) + 1), 0.5);
+            }
+
+            Redis::pipeline(function ($pipe) use ($result)
+            {
+                $key = 'post_hot_ids';
+                $pipe->DEL($key);
+                $pipe->ZADD($key, $result);
+            });
+        });
     }
 }
