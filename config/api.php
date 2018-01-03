@@ -46,7 +46,7 @@ return [
     |
     */
 
-    'version' => env('API_VERSION', 'v1'),
+    'version' => env('API_VERSION', 'latest'),
 
     /*
     |--------------------------------------------------------------------------
@@ -110,7 +110,7 @@ return [
     |
     */
 
-    'strict' => env('API_STRICT', false),
+    'strict' => env('API_STRICT', env('APP_ENV') !== 'local'),
 
     /*
     |--------------------------------------------------------------------------

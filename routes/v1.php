@@ -7,7 +7,7 @@
  */
 $api = app('Dingo\Api\Routing\Router');
 
-$api->version('v1', ['middleware' => 'api'], function ($api)
+$api->version(['v1', 'latest'], ['middleware' => 'api'], function ($api)
 {
     $api->group(['prefix' => '/door'], function ($api)
     {
