@@ -5,6 +5,7 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Requests\Post\CommitRequest;
 use App\Api\V1\Requests\Post\CreateRequest;
 use App\Api\V1\Requests\Post\ReplyRequest;
+use App\Api\V1\Transformers\PostTransformer;
 use App\Models\Post;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\PostRepository;
@@ -86,9 +87,11 @@ class PostController extends Controller
             Redis::HINCRBYFLOAT('post_'.$id, 'view_count', 1);
         }
 
+        $postTransformer = new PostTransformer();
+
         return $this->resOK([
-            'post' => $post,
-            'list' => $list,
+            'post' => $postTransformer->show($post),
+            'list' => $postTransformer->list($list),
             'bangumi' => $bangumi,
             'total' => $data['total']
         ]);

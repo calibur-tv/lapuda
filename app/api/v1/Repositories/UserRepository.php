@@ -18,7 +18,7 @@ class UserRepository extends Repository
     {
         return $this->RedisHash('user_'.$id.'_show', function () use ($id)
         {
-            $user = User::find($id);
+            $user = User::findOrFail($id)->toArray();
             $user['sex'] = $this->maskSex($user['sex']);
 
             return $user;

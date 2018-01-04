@@ -53,19 +53,15 @@ class PostRepository extends Repository
     {
         $post = $this->RedisHash('post_'.$id, function () use ($id)
         {
-            return Post::find($id);
+            return Post::findOrFail($id)->toArray();
         });
-
-        if (is_null($post))
-        {
-            return null;
-        }
 
         $post['images'] = $this->RedisList('post_'.$id.'_images', function () use ($id)
         {
             return PostImages::where('post_id', $id)
                 ->orderBy('created_at', 'asc')
-                ->pluck('src');
+                ->pluck('src')
+                ->toArray();
         });
 
         if (is_null($this->userRepository))
@@ -164,13 +160,13 @@ class PostRepository extends Repository
                     'posts.id',
                     'posts.content',
                     'posts.created_at',
-                    'posts.user_id',
+                    'posts.user_id AS from_user_id',
                     'from.nickname AS from_user_name',
                     'from.zone AS from_user_zone',
                     'from.avatar AS from_user_avatar',
                     'to.nickname AS to_user_name',
                     'to.zone AS to_user_zone'
-                )->first();
+                )->first()->toArray();
         });
     }
 

@@ -32,9 +32,9 @@ class BangumiRepository extends Repository
     public function list($ids)
     {
         $result = [];
-        foreach ($ids as $id) {
-            // 这里是多次 where，可以优化成 whereIn
-            array_push($result, $this->item($id));
+        foreach ($ids as $id)
+        {
+            $result[] = $this->item($id);
         }
         return $result;
     }
