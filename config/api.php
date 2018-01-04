@@ -123,7 +123,7 @@ return [
     |
     */
 
-    'debug' => env('API_DEBUG', false),
+    'debug' => env('API_DEBUG', env('APP_ENV') === 'local'),
 
     /*
     |--------------------------------------------------------------------------
@@ -155,7 +155,8 @@ return [
     */
 
     'middleware' => [
-
+        \Barryvdh\Cors\HandleCors::class,
+        \App\Http\Middleware\Csrf::class,
     ],
 
     /*
