@@ -12,6 +12,10 @@ class Csrf
         '127.0.0.1',
     ];
 
+    protected $methods = [
+        'HEAD', 'GET', 'OPTIONS'
+    ];
+
     protected $apps = [
         'innocence',
         'geass'
@@ -27,10 +31,13 @@ class Csrf
     {
         if (
             config('app.env') !== 'production' ||
-            in_array($request->method(), ['HEAD', 'GET', 'OPTIONS']) ||
+            in_array($request->method(), $this->methods) ||
             in_array($request->headers->get('Origin'), $this->domains) ||
             in_array($request->url(), $this->except) ||
-            md5(config('app.md5_salt') . $request->headers->get('X-Auth-Timestamp')) === $request->headers->get('X-Auth-Token')
+            (
+                in_array($request->headers->get('X-Auth-Timestamp'), $this->apps) &&
+                md5(config('app.md5_salt') . $request->headers->get('X-Auth-Timestamp')) === $request->headers->get('X-Auth-Token')
+            )
         ) {
             return $next($request);
         }

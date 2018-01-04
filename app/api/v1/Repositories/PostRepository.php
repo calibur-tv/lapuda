@@ -243,10 +243,10 @@ class PostRepository extends Repository
             foreach ($list as $item)
             {
                 $result[$item['id']] = (
-                    log($item['view_count'], 10) * 4 +
                     $item['like_count'] +
+                    log($item['view_count'], 10) * 4 +
                     log($item['comment_count'], M_E)
-                ) / pow((((strtotime($item['created_at']) + strtotime($item['updated_at'])) / 7200) + 1), 0.5);
+                ) / pow((((time() * 2 - strtotime($item['created_at']) - strtotime($item['updated_at'])) / 2) + 1), 0.5);
             }
 
             Redis::pipeline(function ($pipe) use ($result)
