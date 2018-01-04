@@ -224,6 +224,7 @@ class PostRepository extends Repository
             return Post::whereIn('state', [3, 7])
                 ->orderBy('created_at', 'desc')
                 ->latest()
+                ->take(1000)
                 ->pluck('created_at', 'id');
 
         }, true);
@@ -235,7 +236,7 @@ class PostRepository extends Repository
         {
             $ids = Post::whereRaw('created_at > ? and parent_id = ?', [
                 Carbon::now()->addDays(-7), 0
-            ])->pluck('id')->get();
+            ])->pluck('id');
 
             $list = $this->list($ids);
             $result = [];
@@ -244,17 +245,12 @@ class PostRepository extends Repository
             {
                 $result[$item['id']] = (
                     $item['like_count'] +
-                    log($item['view_count'], 10) * 4 +
-                    log($item['comment_count'], M_E)
+                    (intval($item['view_count']) === 0 ? 0 : log($item['view_count'], 10) * 4) +
+                    (intval($item['comment_count']) === 0 ? 0 : log($item['comment_count'], M_E))
                 ) / pow((((time() * 2 - strtotime($item['created_at']) - strtotime($item['updated_at'])) / 2) + 1), 0.5);
             }
 
-            Redis::pipeline(function ($pipe) use ($result)
-            {
-                $key = 'post_hot_ids';
-                $pipe->DEL($key);
-                $pipe->ZADD($key, $result);
-            });
+            return $result;
         });
     }
 }
