@@ -2,10 +2,13 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Requests\Post\CommitRequest;
 use App\Api\V1\Requests\Post\CreateRequest;
 use App\Api\V1\Requests\Post\ReplyRequest;
+use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\PostTransformer;
+use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Post;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\PostRepository;
@@ -73,7 +76,7 @@ class PostController extends Controller
         $data = $postRepository->getPostIds($id, $page, $take, $only ? $post['user_id'] : false);
 
         $bangumiRepository = new BangumiRepository();
-        $bangumi = $bangumiRepository->item($post['bangumi_id']);
+        $userRepository = new UserRepository();
 
         $list = $postRepository->list($data['ids']);
         if ($page === 1)
@@ -88,11 +91,14 @@ class PostController extends Controller
         }
 
         $postTransformer = new PostTransformer();
+        $bangumiTransformer = new BangumiTransformer();
+        $userTransformer = new UserTransformer();
 
         return $this->resOK([
             'post' => $postTransformer->show($post),
-            'list' => $postTransformer->list($list),
-            'bangumi' => $bangumi,
+            'list' => $postTransformer->reply($list),
+            'bangumi' => $bangumiTransformer->item($bangumiRepository->item($post['bangumi_id'])),
+            'user' => $userTransformer->item($userRepository->item($post['user_id'])),
             'total' => $data['total']
         ]);
     }
@@ -108,6 +114,7 @@ class PostController extends Controller
         $now = Carbon::now();
         $repository = new PostRepository();
 
+        $images = $request->get('images');
         $newId = $repository->create([
             'content' => Purifier::clean($request->get('content')),
             'parent_id' => $id,
@@ -115,19 +122,33 @@ class PostController extends Controller
             'target_user_id' => $request->get('targetUserId'),
             'created_at' => $now,
             'updated_at' => $now
-        ], $request->get('images'));
+        ], $images);
 
         Post::where('id', $id)->increment('comment_count');
         $cacheKey = $repository->bangumiListCacheKey($request->get('bangumiId'));
-        Redis::pipeline(function ($pipe) use ($id, $cacheKey, $now, $newId)
+        Redis::pipeline(function ($pipe) use ($id, $cacheKey, $now, $newId, $images)
         {
             if ($pipe->EXISTS('post_'.$id))
             {
                 $pipe->HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
                 $pipe->HSET('post_'.$id, 'updated_at', $now->toDateTimeString());
             }
-            $pipe->RPUSH('post_'.$id.'_ids', $newId);
-            $pipe->ZADD($cacheKey, $now->timestamp, $id);
+            if ($pipe->EXISTS('post_'.$id.'_ids'))
+            {
+                $pipe->RPUSH('post_'.$id.'_ids', $newId);
+            }
+            if ($pipe->EXISTS('post_'.$id.'_images') && !empty($images))
+            {
+                foreach ($images as $i => $val)
+                {
+                    $images[$i] = config('website.cdn') . $val;
+                }
+                $pipe->RPUSH('post_'.$id.'_images', $images);
+            }
+            if ($pipe->EXISTS($cacheKey))
+            {
+                $pipe->ZADD($cacheKey, $now->timestamp, $id);
+            }
         });
 
         return $this->resOK();
@@ -163,7 +184,9 @@ class PostController extends Controller
             $pipe->ZADD('post_'.$id.'_commentIds', $now->timestamp, $newId);
         });
 
-        return $this->resOK($repository->comment($id, $newId));
+        $postTransformer = new PostTransformer();
+
+        return $this->resOK($postTransformer->comments([$repository->comment($id, $newId)])[0]);
     }
 
     public function comments(Request $request, $id)
@@ -176,7 +199,9 @@ class PostController extends Controller
                 : []
         );
 
-        return $this->resOK($data);
+        $postTransformer = new PostTransformer();
+
+        return $this->resOK($postTransformer->comments($data));
     }
 
     public function nice($id)

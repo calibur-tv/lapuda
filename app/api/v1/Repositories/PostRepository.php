@@ -56,13 +56,28 @@ class PostRepository extends Repository
             return Post::findOrFail($id)->toArray();
         });
 
-        $post['images'] = $this->RedisList('post_'.$id.'_images', function () use ($id)
+        if ($post['parent_id'] === '0')
         {
-            return PostImages::where('post_id', $id)
-                ->orderBy('created_at', 'asc')
-                ->pluck('src')
-                ->toArray();
-        });
+            $ids = $this->commentIds($id);
+            $ids[] = $id;
+            $post['images'] = $this->RedisList('post_'.$id.'_images', function () use ($ids)
+            {
+                return PostImages::whereIn('post_id', $ids)
+                    ->orderBy('created_at', 'asc')
+                    ->pluck('src')
+                    ->toArray();
+            });
+        }
+        else
+        {
+            $post['images'] = $this->RedisList('post_'.$id.'_images', function () use ($id)
+            {
+                return PostImages::where('post_id', $id)
+                    ->orderBy('created_at', 'asc')
+                    ->pluck('src')
+                    ->toArray();
+            });
+        }
 
         if (is_null($this->userRepository))
         {
@@ -86,14 +101,19 @@ class PostRepository extends Repository
         return $result;
     }
 
-    public function comments($postId, $seenIds = [])
+    private function commentIds($postId)
     {
-        $cache = $this->RedisSort('post_'.$postId.'_commentIds', function () use ($postId)
+        return $this->RedisSort('post_'.$postId.'_commentIds', function () use ($postId)
         {
             return Post::where('parent_id', $postId)
                 ->pluck('created_at', 'id');
 
         }, true);
+    }
+
+    public function comments($postId, $seenIds = [])
+    {
+        $cache = $this->commentIds($postId);
 
         if (empty($cache))
         {
