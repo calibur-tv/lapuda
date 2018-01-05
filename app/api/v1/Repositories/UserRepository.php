@@ -25,6 +25,20 @@ class UserRepository extends Repository
         });
     }
 
+    public function list($ids)
+    {
+        if (empty($ids))
+        {
+            return [];
+        }
+        $result = [];
+        foreach ($ids as $id)
+        {
+            $result[] = $this->item($id);
+        }
+        return $result;
+    }
+
     public function maskSex($sex)
     {
         switch ($sex)

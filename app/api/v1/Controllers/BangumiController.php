@@ -72,7 +72,7 @@ class BangumiController extends Controller
         $repository = new BangumiRepository();
         $bangumi = $repository->item($id);
 
-        $bangumi['followers'] = $repository->getFollowers($id);
+        $bangumi['followers'] = $repository->getFollowers($id, []);
 
         $user = $this->getAuthUser();
 

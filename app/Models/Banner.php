@@ -12,7 +12,9 @@ class Banner extends Model
     protected $fillable = ['url', 'user_id', 'bangumi_id', 'gray'];
 
     protected $casts = [
-        'gray' => 'integer'
+        'gray' => 'integer',
+        'user_id' => 'integer',
+        'bangumi_id' => 'integer',
     ];
 
     public function user()

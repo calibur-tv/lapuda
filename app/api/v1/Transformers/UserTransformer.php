@@ -23,4 +23,17 @@ class UserTransformer extends Transformer
             ];
         });
     }
+
+    public function list($users)
+    {
+        return $this->collection($users, function ($user)
+        {
+            return [
+                'id' => (int)$user['id'],
+                'zone' => $user['zone'],
+                'avatar' => $user['avatar'],
+                'nickname' => $user['nickname']
+            ];
+        });
+    }
 }

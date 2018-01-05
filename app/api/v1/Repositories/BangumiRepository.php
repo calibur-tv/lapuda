@@ -3,6 +3,7 @@
 namespace App\Api\V1\Repositories;
 
 use App\Api\V1\Transformers\BangumiTransformer;
+use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Bangumi;
 use App\Models\BangumiFollow;
 use App\Models\BangumiTag;
@@ -188,21 +189,19 @@ class BangumiRepository extends Repository
         });
     }
 
-    public function getFollowers($bangumiId)
+    public function getFollowers($bangumiId, $seenIds)
     {
-        return Cache::remember('bangumi_'.$bangumiId.'_followers', config('cache.ttl'), function () use ($bangumiId)
+        $cache = $this->RedisSort('bangumi_'.$bangumiId.'_followersIds', function () use ($bangumiId)
         {
-            $ids = BangumiFollow::where('bangumi_id', $bangumiId)->pluck('user_id');
-            if (empty($ids))
-            {
-                return [];
-            }
+            return BangumiFollow::where('bangumi_id', $bangumiId)->pluck('created_at', 'user_id');
+        }, true);
 
-            return User::whereIn('id', $ids)
-                ->select('id', 'avatar', 'zone', 'nickname')
-                ->get()
-                ->toArray();
-        });
+        $ids = array_slice(array_reverse(array_diff($cache, $seenIds)), 0, 10);
+
+        $repository = new UserRepository();
+        $transformer = new UserTransformer();
+
+        return $transformer->list($repository->list($ids));
     }
 
     public function getPostIds($id, $type)
