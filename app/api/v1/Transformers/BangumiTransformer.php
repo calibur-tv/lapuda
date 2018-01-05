@@ -39,7 +39,7 @@ class BangumiTransformer extends Transformer
                 'season' => $bangumi['season'] === 'null' ? null : $this->transformer(json_decode($bangumi['season'], true), function ($season)
                 {
                     return [
-                        're' => (boolean)$season['re'],
+                        're' => isset($season['re']) ?(boolean)$season['re'] : false,
                         'name' => $season['name'],
                         'part' => $season['part'],
                         'time' => $season['time']

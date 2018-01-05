@@ -3,6 +3,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Transformers\PostTransformer;
 use Illuminate\Http\Request;
 
 class TrendingController extends Controller
@@ -24,10 +25,9 @@ class TrendingController extends Controller
             $list = $repository->list(array_slice(array_diff($ids, $seen), 0, $take));
         }
 
-        return $this->resOK([
-            'data' => $list,
-            'total' => count($ids)
-        ]);
+        $transformer = new PostTransformer();
+
+        return $this->resOK($transformer->trending($list));
     }
 
     public function postHot(Request $request)
@@ -47,9 +47,8 @@ class TrendingController extends Controller
             $list = $repository->list(array_slice(array_diff($ids, $seen), 0, $take));
         }
 
-        return $this->resOK([
-            'data' => $list,
-            'total' => count($ids)
-        ]);
+        $transformer = new PostTransformer();
+
+        return $this->resOK($transformer->trending($list));
     }
 }

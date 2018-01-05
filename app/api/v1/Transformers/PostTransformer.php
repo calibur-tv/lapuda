@@ -96,4 +96,38 @@ class PostTransformer extends Transformer
            ];
         });
     }
+
+    public function trending($list)
+    {
+        return $this->collection($list, function ($post)
+        {
+            return [
+                'id' => (int)$post['id'],
+                'title' => $post['title'],
+                'desc' => $post['desc'],
+                'images' => $post['images'],
+                'created_at' => $post['created_at'],
+                'updated_at' => $post['updated_at'],
+                'view_count' => (int)$post['view_count'],
+                'like_count' => (int)$post['like_count'],
+                'comment_count' => (int)$post['comment_count'],
+                'user' => $this->transformer($post['user'], function ($user)
+                {
+                    return [
+                        'id' => (int)$user['id'],
+                        'zone' => $user['zone'],
+                        'nickname' => $user['nickname']
+                    ];
+                }),
+                'bangumi' => $this->transformer($post['bangumi'], function ($bangumi)
+                {
+                   return [
+                       'id' => (int)$bangumi['id'],
+                       'name' => $bangumi['name'],
+                       'avatar' => $bangumi['avatar']
+                   ];
+                })
+            ];
+        });
+    }
 }

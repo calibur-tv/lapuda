@@ -9,9 +9,7 @@ use App\Models\BangumiFollow;
 use App\Models\BangumiTag;
 use App\Models\Post;
 use App\Models\Tag;
-use App\Models\User;
 use App\Models\Video;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 
 class BangumiRepository extends Repository

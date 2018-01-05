@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Redis;
 class PostRepository extends Repository
 {
     private $userRepository;
+    private $bangumiRepository;
 
     public function bangumiListCacheKey($bangumiId, $listType = 'new')
     {
@@ -72,6 +73,16 @@ class PostRepository extends Repository
         $post['user'] = $this->userRepository->item($post['user_id']);
 
         $post['comments'] = $post['parent_id'] === '0' ? [] : $this->comments($id);
+
+        if ($post['bangumi_id'] !== '0')
+        {
+            if (is_null($this->bangumiRepository))
+            {
+                $this->bangumiRepository = new BangumiRepository();
+            }
+
+            $post['bangumi'] = $this->bangumiRepository->item($post['bangumi_id']);
+        }
 
         return $post;
     }
