@@ -80,10 +80,9 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->get('/bangumi', 'App\Api\V1\Controllers\UserController@followedBangumis');
             });
 
-            $api->group(['prefix' => '/manager'], function ($api)
-            {
-                $api->get('/post', 'App\Api\V1\Controllers\UserController@posts');
-            });
+            $api->post('/posts/mine', 'App\Api\V1\Controllers\UserController@postsOfMine');
+
+            $api->post('/posts/reply', 'App\Api\V1\Controllers\UserController@postsOfReply');
         });
 
         $api->get('/user_sign', 'App\Api\V1\Controllers\UserController@getUserSign');

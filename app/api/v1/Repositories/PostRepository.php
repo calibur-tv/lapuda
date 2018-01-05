@@ -57,13 +57,7 @@ class PostRepository extends Repository
             return Post::findOrFail($id)->toArray();
         });
 
-        $post['images'] = $this->RedisList('post_'.$id.'_images', function () use ($id)
-        {
-            return PostImages::where('post_id', $id)
-                ->orderBy('created_at', 'asc')
-                ->pluck('src')
-                ->toArray();
-        });
+        $post['images'] = $this->images($id);
 
         if (is_null($this->userRepository))
         {
@@ -86,10 +80,21 @@ class PostRepository extends Repository
 
         if ($post['parent_id'] === '0')
         {
-            $post['previewImages'] = $this->images($post['id'], false);
+            $post['previewImages'] = $this->previewImages($post['id'], false);
         }
 
         return $post;
+    }
+
+    public function images($postId)
+    {
+        return $this->RedisList('post_'.$postId.'_images', function () use ($postId)
+        {
+            return PostImages::where('post_id', $postId)
+                ->orderBy('created_at', 'asc')
+                ->pluck('src')
+                ->toArray();
+        });
     }
 
     public function list($ids)
@@ -162,7 +167,7 @@ class PostRepository extends Repository
         ];
     }
 
-    public function images($id, $onlySeeMaster)
+    public function previewImages($id, $onlySeeMaster)
     {
         return $this->RedisList('post_'.$id.'_previewImages', function () use ($id, $onlySeeMaster)
         {

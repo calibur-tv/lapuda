@@ -8,15 +8,16 @@
 
 namespace App\Api\V1\Repositories;
 
+use App\Api\V1\Transformers\BangumiTransformer;
 use App\Models\BangumiFollow;
+use App\Models\Post;
 use App\Models\User;
-use Illuminate\Support\Facades\Cache;
 
 class UserRepository extends Repository
 {
     public function item($id)
     {
-        return $this->RedisHash('user_'.$id.'_show', function () use ($id)
+        return $this->RedisHash('user_'.$id, function () use ($id)
         {
             $user = User::findOrFail($id)->toArray();
             $user['sex'] = $this->maskSex($user['sex']);
@@ -67,14 +68,45 @@ class UserRepository extends Repository
 
     public function bangumis($userId)
     {
-        $ids = BangumiFollow::where('user_id', $userId)->pluck('bangumi_id');
+        $ids = $this->RedisList('user_'.$userId.'_followBangumiIds', function () use ($userId)
+        {
+           return  BangumiFollow::where('user_id', $userId)->pluck('bangumi_id');
+        });
         if (empty($ids))
         {
             return [];
         }
 
         $bangumiRepository = new BangumiRepository();
+        $data = $bangumiRepository->list($ids);
 
-        return $bangumiRepository->list($ids);
+        foreach ($data as $i => $item)
+        {
+            $data[$i]['followed'] = true;
+        }
+
+        $bangumiTransformer = new BangumiTransformer();
+
+        return $bangumiTransformer->list($data);
+    }
+
+    public function minePostIds($userId)
+    {
+        return $this->RedisList('user_'.$userId.'_minePostIds', function () use ($userId)
+        {
+           return Post::whereRaw('parent_id = ? and user_id = ?', [0, $userId])
+               ->orderBy('created_at', 'DESC')
+               ->pluck('id');
+        });
+    }
+
+    public function replyPostIds($userId)
+    {
+        return $this->RedisList('user_'.$userId.'_replyPostIds', function () use ($userId)
+        {
+            return Post::whereRaw('parent_id <> ? and user_id = ? and target_user_id <> ?', [0, $userId, $userId])
+                ->orderBy('created_at', 'DESC')
+                ->pluck('id');
+        });
     }
 }

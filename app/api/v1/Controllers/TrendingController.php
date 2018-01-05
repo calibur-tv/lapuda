@@ -18,13 +18,10 @@ class TrendingController extends Controller
 
         if (empty($ids))
         {
-            $list = [];
-        }
-        else
-        {
-            $list = $repository->list(array_slice(array_diff($ids, $seen), 0, $take));
+            return $this->resOK();
         }
 
+        $list = $repository->list(array_slice(array_diff($ids, $seen), 0, $take));
         $transformer = new PostTransformer();
 
         return $this->resOK($transformer->trending($list));
@@ -40,13 +37,10 @@ class TrendingController extends Controller
 
         if (empty($ids))
         {
-            $list = [];
-        }
-        else
-        {
-            $list = $repository->list(array_slice(array_diff($ids, $seen), 0, $take));
+            return $this->resOK();
         }
 
+        $list = $repository->list(array_slice(array_diff($ids, $seen), 0, $take));
         $transformer = new PostTransformer();
 
         return $this->resOK($transformer->trending($list));

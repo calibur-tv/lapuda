@@ -133,4 +133,68 @@ class PostTransformer extends Transformer
             ];
         });
     }
+
+    public function usersMine($list)
+    {
+        return $this->collection($list, function ($post)
+        {
+            return [
+                'id' => (int)$post['id'],
+                'title' => $post['title'],
+                'desc' => $post['desc'],
+                'images' => $post['images'],
+                'created_at' => $post['created_at'],
+                'view_count' => (int)$post['view_count'],
+                'like_count' => (int)$post['like_count'],
+                'comment_count' => (int)$post['comment_count'],
+                'previewImages' => $post['previewImages'],
+                'bangumi' => $this->transformer($post['bangumi'], function ($bangumi)
+                {
+                    return [
+                        'id' => (int)$bangumi['id'],
+                        'name' => $bangumi['name'],
+                        'avatar' => $bangumi['avatar']
+                    ];
+                }),
+            ];
+        });
+    }
+
+    public function userReply($list)
+    {
+        return $this->collection($list, function ($post)
+        {
+            return [
+                'id' => (int)$post['id'],
+                'content' => $post['content'],
+                'images' => $post['images'],
+                'created_at' => $post['created_at'],
+                'like_count' => (int)$post['like_count'],
+                'bangumi' => $this->transformer($post['bangumi'], function ($bangumi)
+                {
+                    return [
+                        'id' => (int)$bangumi['id'],
+                        'name' => $bangumi['name'],
+                        'avatar' => $bangumi['avatar']
+                    ];
+                }),
+                'user' => $this->transformer($post['user'], function ($user)
+                {
+                    return [
+                        'id' => (int)$user['id'],
+                        'zone' => $user['zone'],
+                        'nickname' => $user['nickname']
+                    ];
+                }),
+                'parent' => $this->transformer($post['parent'], function ($parent)
+                {
+                    return [
+                        'id' => (int)$parent['id'],
+                        'title' => $parent['title'],
+                        'desc' => $parent['desc']
+                    ];
+                })
+            ];
+        });
+    }
 }

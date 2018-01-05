@@ -8,8 +8,13 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\BangumiRepository;
+use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Requests\User\SettingsRequest;
+use App\Api\V1\Transformers\PostTransformer;
+use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
+use App\Models\Post;
 use App\Models\User;
 use App\Api\V1\Repositories\UserRepository;
 use Illuminate\Http\Request;
@@ -83,9 +88,10 @@ class UserController extends Controller
         }
 
         $repository = new UserRepository();
+        $transformer = new UserTransformer();
         $user = $repository->item($userId);
 
-        return $this->resOK($user);
+        return $this->resOK($transformer->show($user));
     }
 
     public function profile(SettingsRequest $request)
@@ -103,7 +109,7 @@ class UserController extends Controller
             'birthday' => $request->get('birthday')
         ]);
 
-        Redis::DEL('user_'.$user->id.'_show');
+        Redis::DEL('user_'.$user->id);
 
         return $this->resOK();
     }
@@ -122,10 +128,73 @@ class UserController extends Controller
         return $this->resOK($follows);
     }
 
-    public function posts(Request $request)
+    public function postsOfMine(Request $request, $zone)
     {
-        // TODO：使用 seen_ids 做分页
-        // TODO：应该 new 一个 PostRepository，有一个 list 的方法，接收 ids 做参数
+        $userId = User::where('zone', $zone)->pluck('id')->first();
+        if (is_null($userId))
+        {
+            return $this->resErr(['找不到用户'], 404);
+        }
+
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = intval($request->get('take')) ?: 10;
+
+        $userRepository = new UserRepository();
+        $ids = $userRepository->minePostIds($userId);
+
+        if (empty($ids))
+        {
+            return $this->resOK();
+        }
+
+        $postRepository = new PostRepository();
+        $postTransformer = new PostTransformer();
+        $list = $postRepository->list(array_slice(array_diff($ids, $seen), 0, $take));
+
+        return $this->resOK($postTransformer->usersMine($list));
+    }
+
+    public function postsOfReply(Request $request, $zone)
+    {
+        $userId = User::where('zone', $zone)->pluck('id')->first();
+        if (is_null($userId))
+        {
+            return $this->resErr(['找不到用户'], 404);
+        }
+
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = intval($request->get('take')) ?: 10;
+
+        $userRepository = new UserRepository();
+        $ids = $userRepository->replyPostIds($userId);
+
+        if (empty($ids))
+        {
+            return $this->resOK();
+        }
+
+        $ids = array_slice(array_diff($ids, $seen), 0, $take);
+        $data = Post::whereIn('id', $ids)
+            ->orderBy('created_at', 'DESC')
+            ->select('id', 'parent_id', 'content', 'like_count', 'created_at', 'target_user_id')
+            ->get()
+            ->toArray();
+
+        $postRepository = new PostRepository();
+        $bangumiRepository = new BangumiRepository();
+
+        foreach ($data as $i => $item)
+        {
+            $parent = $postRepository->item($item['parent_id']);
+            $data[$i]['parent'] = $parent;
+//            $data[$i]['images'] = $postRepository->images($item['id']);
+//            $data[$i]['user'] = $userRepository->item($item['target_user_id']);
+//            $data[$i]['bangumi'] = $bangumiRepository->item($parent['bangumi_id']);
+        }
+
+//        $postTransformer = new PostTransformer();
+
+        return $this->resOK($data);
     }
 
     public function feedback(Request $request)
