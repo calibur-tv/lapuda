@@ -11,13 +11,16 @@ namespace App\Api\V1\Repositories;
 use App\Models\Tag;
 use Illuminate\Support\Facades\Cache;
 
-class TagRepository
+class TagRepository extends Repository
 {
     public function all($modal)
     {
-        return Cache::remember('bangumi_tags_all', config('cache.ttl'), function () use ($modal)
+        return $this->Cache('bangumi_tags_all', function () use ($modal)
         {
-            return Tag::where('model', $modal)->select('id', 'name')->get()->toArray();
+            return Tag::where('model', $modal)
+                ->select('id', 'name')
+                ->get()
+                ->toArray();
         });
     }
 }

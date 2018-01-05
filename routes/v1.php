@@ -41,6 +41,7 @@ $api->version(['v1', 'latest'], function ($api)
             $api->get('/videos', 'App\Api\V1\Controllers\BangumiController@videos');
 
             $api->post('/posts', 'App\Api\V1\Controllers\BangumiController@posts');
+            $api->get('/posts', 'App\Api\V1\Controllers\BangumiController@posts');
 
             $api->post('/follow', 'App\Api\V1\Controllers\BangumiController@follow');
         });

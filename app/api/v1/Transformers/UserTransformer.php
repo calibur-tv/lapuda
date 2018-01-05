@@ -9,15 +9,18 @@
 namespace App\Api\V1\Transformers;
 
 
-class UserTransformer
+class UserTransformer extends Transformer
 {
     public function item($user)
     {
-        return [
-            'id' => (int)$user['id'],
-            'zone' => $user['zone'],
-            'avatar' => $user['avatar'],
-            'nickname' => $user['nickname']
-        ];
+        return $this->transformer($user, function ($user)
+        {
+            return [
+                'id' => (int)$user['id'],
+                'zone' => $user['zone'],
+                'avatar' => $user['avatar'],
+                'nickname' => $user['nickname']
+            ];
+        });
     }
 }

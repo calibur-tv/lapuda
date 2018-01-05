@@ -2,31 +2,34 @@
 
 namespace App\Api\V1\Repositories;
 
+use App\Api\V1\Transformers\BangumiTransformer;
 use App\Models\Bangumi;
 use App\Models\BangumiFollow;
+use App\Models\BangumiTag;
 use App\Models\Post;
+use App\Models\Tag;
 use App\Models\User;
 use App\Models\Video;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redis;
 
 class BangumiRepository extends Repository
 {
     public function item($id)
     {
-        return Cache::remember('bangumi_'.$id.'_show', config('cache.ttl'), function () use ($id)
+        $bangumi = $this->RedisHash('bangumi_'.$id, function () use ($id)
         {
-            $bangumi = Bangumi::find($id);
+            $bangumi = Bangumi::findOrFail($id)->toArray();
             // 这里可以使用 LEFT-JOIN 语句优化
-            $bangumi->released_part = $bangumi->released_video_id
-                ? Video::where('id', $bangumi->released_video_id)->pluck('part')->first()
+            $bangumi['released_part'] = $bangumi['released_video_id']
+                ? Video::where('id', $bangumi['released_video_id'])->pluck('part')->first()
                 : 0;
-            $bangumi->tags = $this->tags($bangumi);
-            // json 格式化
-            $bangumi->alias = $bangumi->alias === 'null' ? '' : json_decode($bangumi->alias);
-            $bangumi->season = $bangumi->season === 'null' ? '' : json_decode($bangumi->season);
-
             return $bangumi;
         });
+
+        $bangumi['tags'] = $this->tags($bangumi['id']);
+
+        return $bangumi;
     }
 
     public function list($ids)
@@ -41,7 +44,7 @@ class BangumiRepository extends Repository
 
     public function timeline($year)
     {
-        return Cache::remember('bangumi_news_page_' . $year, config('cache.ttl'), function () use ($year)
+        return $this->Cache('bangumi_news_' . $year, function () use ($year)
         {
             $begin = mktime(0, 0, 0, 1, 1, $year);
             $end = mktime(0, 0, 0, 1, 1, $year + 1);
@@ -50,7 +53,8 @@ class BangumiRepository extends Repository
                 ->pluck('id');
 
             $repository = new BangumiRepository();
-            $list = $repository->list($ids);
+            $transformer = new BangumiTransformer();
+            $list = $transformer->timeline($repository->list($ids));
 
             $result = [];
             foreach ($list as $item)
@@ -63,16 +67,24 @@ class BangumiRepository extends Repository
             $keys = array_keys($result);
             $values = array_values($result);
             $count = count(array_keys($result));
-            $data = [];
+            $cache = [];
             for ($i = 0; $i < $count; $i++)
             {
-                $data[$i] = [
+                $cache[$i] = [
                     'date' => $keys[$i],
                     'list' => $values[$i]
                 ];
             }
 
-            return $data;
+            return $cache;
+        });
+    }
+
+    public function timelineMinYear()
+    {
+        return $this->Cache('bangumi_news_year_min', function ()
+        {
+            return intval(date('Y', Bangumi::where('published_at', '<>', '0')->min('published_at')));
         });
     }
 
@@ -94,21 +106,33 @@ class BangumiRepository extends Repository
                 'bangumi_id' => $bangumi_id
             ]);
 
-            return true;
+            $result = true;
+            $num = 1;
         }
         else
         {
             BangumiFollow::find($followed)->delete();
-            return false;
+
+            $result = false;
+            $num = -1;
         }
+
+        Bangumi::where('id', $bangumi_id)->increment('count_like', $num);
+        if (Redis::EXISTS('bangumi_'.$bangumi_id))
+        {
+            Redis::HINCRBYFLOAT('bangumi_'.$bangumi_id, 'count_like', $num);
+        }
+
+        return $result;
     }
 
     public function videos($id, $season)
     {
-        return Cache::remember('bangumi_'.$id, config('cache.ttl'), function () use ($id, $season)
+        return $this->Cache('bangumi_'.$id.'_videos', function () use ($id, $season)
         {
             $list = Video::where('bangumi_id', $id)
                 ->orderBy('part', 'ASC')
+                ->select('id', 'name', 'poster', 'part')
                 ->get()
                 ->toArray();
 
@@ -144,17 +168,23 @@ class BangumiRepository extends Repository
         });
     }
 
-    public function tags($bangumi)
+    public function tags($bangumiId)
     {
-        return Cache::remember('bangumi_'.$bangumi->id.'_tags', config('cache.ttl'), function () use ($bangumi)
+        return $this->Cache('bangumi_'.$bangumiId.'_tags', function () use ($bangumiId)
         {
-            // 这个可以使用 LEFT-JOIN 语句优化
-            return $bangumi->tags()->get()->transform(function ($item) {
-                return [
-                    'id' => $item->pivot->tag_id,
-                    'name' => $item->name
-                ];
-            });
+            $ids = BangumiTag::where('bangumi_id', $bangumiId)
+                ->pluck('tag_id')
+                ->toArray();
+
+            if (empty($ids))
+            {
+                return [];
+            }
+
+            return Tag::whereIn('id', $ids)
+                ->select('id', 'name')
+                ->get()
+                ->toArray();
         });
     }
 
@@ -169,7 +199,7 @@ class BangumiRepository extends Repository
             }
 
             return User::whereIn('id', $ids)
-                ->select('avatar', 'zone', 'nickname')
+                ->select('id', 'avatar', 'zone', 'nickname')
                 ->get()
                 ->toArray();
         });
@@ -187,5 +217,45 @@ class BangumiRepository extends Repository
                 ->pluck('updated_at', 'id');
 
         }, true);
+    }
+
+    public function category($tags, $page)
+    {
+        return $this->Cache('bangumi_tags_' . implode('_', $tags) . '_page_'.$page, function () use ($tags, $page)
+        {
+            $take = config('website.list_count');
+            $start = ($page - 1) * $take;
+            $count = count($tags);
+            // bangumi 和 tags 是多对多的关系
+            // 这里通过一个 tag_id Array 拿到一个 bangumi_id 的 Array
+            // bangumi_id Array 中，同一个 bangumi_id 会重复出现
+            // tags_id = [1, 2, 3]
+            // bangumi_id 可能是
+            // A 命中 1
+            // B 命中 1, 2, 3
+            // C 命中 1, 3
+            // 我们要拿的是 B，而 ids 是：[A, B, B, B, C, C]
+            $temp = array_count_values(
+                BangumiTag::whereIn('tag_id', $tags)
+                    ->orderBy('id')
+                    ->pluck('bangumi_id')
+                    ->toArray()
+            );
+
+            $data = [];
+            foreach ($temp as $id => $c)
+            {
+                // 因此当 count(B) === count($tags) 时，就是我们要的
+                if ($c === $count)
+                {
+                    $data[] = $id;
+                }
+            }
+
+            $ids = array_slice($data, $start, $take);
+
+            $transformer = new BangumiTransformer();
+            return $transformer->category($this->list($ids));
+        });
     }
 }

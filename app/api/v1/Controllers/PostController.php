@@ -61,10 +61,6 @@ class PostController extends Controller
     {
         $postRepository = new PostRepository();
         $post = $postRepository->item($id);
-        if (is_null($post))
-        {
-            return $this->resErr(['不存在的帖子']);
-        }
         if ($post['parent_id'] !== '0')
         {
             return $this->resErr(['不是主题帖']);
@@ -99,7 +95,8 @@ class PostController extends Controller
             'list' => $postTransformer->reply($list),
             'bangumi' => $bangumiTransformer->item($bangumiRepository->item($post['bangumi_id'])),
             'user' => $userTransformer->item($userRepository->item($post['user_id'])),
-            'total' => $data['total']
+            'total' => $data['total'],
+            'images' => $postRepository->images($id, $only)
         ]);
     }
 
@@ -137,13 +134,13 @@ class PostController extends Controller
             {
                 $pipe->RPUSH('post_'.$id.'_ids', $newId);
             }
-            if ($pipe->EXISTS('post_'.$id.'_images') && !empty($images))
+            if ($pipe->EXISTS('post_'.$id.'_previewImages') && !empty($images))
             {
                 foreach ($images as $i => $val)
                 {
                     $images[$i] = config('website.cdn') . $val;
                 }
-                $pipe->RPUSH('post_'.$id.'_images', $images);
+                $pipe->RPUSH('post_'.$id.'_previewImages', $images);
             }
             if ($pipe->EXISTS($cacheKey))
             {

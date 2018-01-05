@@ -2,6 +2,8 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Transformers\BangumiTransformer;
+use App\Api\V1\Transformers\PostTransformer;
 use App\Models\Bangumi;
 use App\Models\BangumiTag;
 use App\Api\V1\Repositories\BangumiRepository;
@@ -28,14 +30,9 @@ class BangumiController extends Controller
             $data = array_merge($data, $repository->timeline($year - $i));
         }
 
-        $min = Cache::remember('bangumi_news_year_min', config('cache.ttl'), function ()
-        {
-            return intval(date('Y', Bangumi::where('published_at', '<>', '0')->min('published_at')));
-        });
-
         return $this->resOK([
             'data' => $data,
-            'min' => $min
+            'min' => $repository->timelineMinYear()
         ]);
     }
 
@@ -66,11 +63,6 @@ class BangumiController extends Controller
 
     public function show($id)
     {
-        $bangumiId = Bangumi::where('id', $id)->pluck('id')->first();
-        if (is_null($bangumiId)) {
-            return $this->resErr(['番剧不存在'], 404);
-        }
-
         $repository = new BangumiRepository();
         $bangumi = $repository->item($id);
 
@@ -82,19 +74,17 @@ class BangumiController extends Controller
             ? false
             : $repository->checkUserFollowed($user->id, $id);
 
-        return $this->resOK($bangumi);
+        $transformer = new BangumiTransformer();
+
+        return $this->resOK($transformer->show($bangumi));
     }
 
     public function videos($id)
     {
-        $bangumi = Bangumi::where('id', $id)->select('id', 'season')->first();
-        if (is_null($bangumi)) {
-            return $this->resErr(['番剧不存在'], 404);
-        }
-
         $repository = new BangumiRepository();
+        $bangumi = $repository->item($id);
 
-        return $this->resOK($repository->videos($id, $bangumi['season']));
+        return $this->resOK($repository->videos($id, json_decode($bangumi['season'])));
     }
 
     public function tags()
@@ -108,7 +98,6 @@ class BangumiController extends Controller
     {
         $tags = $request->get('id');
         $page = $request->get('page') ?: 1;
-        $take = $request->get('take') ?: 15;
 
         if (is_null($tags))
         {
@@ -126,47 +115,9 @@ class BangumiController extends Controller
         }
 
         sort($tags);
-        $ids = Cache::remember('bangumi_tags_' . implode('_', $tags) . '_page' . $page, config('cache.ttl'), function () use ($tags, $page, $take)
-        {
-            $count = count($tags);
-            // bangumi 和 tags 是多对多的关系
-            // 这里通过一个 tag_id Array 拿到一个 bangumi_id 的 Array
-            // bangumi_id Array 中，同一个 bangumi_id 会重复出现
-            // tags_id = [1, 2, 3]
-            // bangumi_id 可能是
-            // A 命中 1
-            // B 命中 1, 2, 3
-            // C 命中 1, 3
-            // 我们要拿的是 B，而 ids 是：[A, B, B, B, C, C]
-            $ids = array_count_values(
-                BangumiTag::whereIn('tag_id', $tags)
-                    ->skip(($page - 1) * config('website.list_count'))
-                    ->take($take)
-                    ->orderBy('id')
-                    ->pluck('bangumi_id')
-                    ->toArray()
-            );
+        $repository = new BangumiRepository();
 
-            $result = [];
-            foreach ($ids as $id => $c)
-            {
-                // 因此当 count(B) === count($tags) 时，就是我们要的
-                if ($c === $count)
-                {
-                    array_push($result, $id);
-                }
-            }
-            return $result;
-        });
-
-        if (empty($ids))
-        {
-            return $this->resOK([]);
-        }
-
-        $bangumiRepository = new BangumiRepository();
-
-        return $this->resOK($bangumiRepository->list($ids));
+        return $this->resOK($repository->category($tags, $page));
     }
 
     public function follow($id)
@@ -203,8 +154,10 @@ class BangumiController extends Controller
             $list = $postRepository->list(array_slice(array_diff($ids, $seen), 0, $take));
         }
 
+        $transformer = new PostTransformer();
+
         return $this->resOK([
-            'data' => $list,
+            'data' => $transformer->bangumi($list),
             'total' => count($ids)
         ]);
     }

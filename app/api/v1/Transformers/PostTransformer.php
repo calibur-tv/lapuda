@@ -10,16 +10,12 @@
 namespace App\Api\V1\Transformers;
 
 
-class PostTransformer
+class PostTransformer extends Transformer
 {
-    public function item($post)
-    {
-        return $this->list([$post])[0];
-    }
-
     public function show($post)
     {
-        return fractal([$post], function (array $post) {
+        return $this->transformer($post, function ($post)
+        {
             return [
                 'id' => (int)$post['id'],
                 'comment_count' => (int)$post['comment_count'],
@@ -31,12 +27,13 @@ class PostTransformer
                 'created_at' => $post['created_at'],
                 'updated_at' => $post['updated_at']
             ];
-        })->toArray()['data'][0];
+        });
     }
 
     public function reply($list)
     {
-        return fractal($list, function (array $post) {
+        return $this->collection($list, function ($post)
+        {
             return [
                 'id' => (int)$post['id'],
                 'comment_count' => (int)$post['comment_count'],
@@ -52,12 +49,13 @@ class PostTransformer
                 'comments' => $this->comments($post['comments']),
                 'created_at' => $post['created_at']
             ];
-        })->toArray()['data'];
+        });
     }
 
     public function comments($list)
     {
-        return fractal($list, function (array $comment) {
+        return $this->collection($list, function ($comment)
+        {
             return [
                 'id' => (int)$comment['id'],
                 'content' => $comment['content'],
@@ -69,6 +67,33 @@ class PostTransformer
                 'to_user_name' => $comment['to_user_name'] ? $comment['to_user_name'] : null,
                 'to_user_zone' => $comment['to_user_zone'] ? $comment['to_user_zone'] : null,
             ];
-        })->toArray()['data'];
+        });
+    }
+
+    public function bangumi($list)
+    {
+        return $this->collection($list, function ($post)
+        {
+           return [
+               'id' => (int)$post['id'],
+               'title' => $post['title'],
+               'desc' => $post['desc'],
+               'images' => $post['images'],
+               'created_at' => $post['created_at'],
+               'updated_at' => $post['updated_at'],
+               'view_count' => (int)$post['view_count'],
+               'like_count' => (int)$post['like_count'],
+               'comment_count' => (int)$post['comment_count'],
+               'user' => $this->transformer($post['user'], function ($user)
+               {
+                   return [
+                       'id' => (int)$user['id'],
+                       'zone' => $user['zone'],
+                       'avatar' => $user['avatar'],
+                       'nickname' => $user['nickname']
+                   ];
+               })
+           ];
+        });
     }
 }

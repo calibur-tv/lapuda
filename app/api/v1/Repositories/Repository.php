@@ -10,6 +10,7 @@ namespace App\Api\V1\Repositories;
 
 
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Cache;
 
 class Repository
 {
@@ -32,7 +33,7 @@ class Repository
             Redis::pipeline(function ($pipe) use ($key, $cache)
             {
                 $pipe->HMSET($key, gettype($cache) === 'array' ? $cache : $cache->toArray());
-                $pipe->EXPIREAT($key, strtotime(date('Y-m-d')) + 86400 + rand(3600, 10800));
+                $pipe->EXPIREAT($key, $this->expire());
             });
 
             return $cache;
@@ -43,9 +44,9 @@ class Repository
         }
     }
 
-    public function RedisList($key, $func, $start = 0, $stop = -1)
+    public function RedisList($key, $func, $start = 0, $count = -1)
     {
-        $cache = Redis::LRANGE($key, $start, $stop);
+        $cache = Redis::LRANGE($key, $start, $count === -1 ? -1 : $count + $start - 1);
         if (empty($cache))
         {
             $cache = $func();
@@ -60,10 +61,10 @@ class Repository
             {
                 $pipe->DEL($key);
                 $pipe->RPUSH($key, $cache);
-                $pipe->EXPIREAT($key, strtotime(date('Y-m-d')) + 86400 + rand(3600, 10800));
+                $pipe->EXPIREAT($key, $this->expire());
             });
 
-            return $stop === -1 ? array_slice($cache, $start) : array_slice($cache, $start, $stop);
+            return $count === -1 ? array_slice($cache, $start) : array_slice($cache, $start, $count);
         }
         else
         {
@@ -96,7 +97,7 @@ class Repository
             {
                 $pipe->DEL($key);
                 $pipe->ZADD($key, $cache);
-                $pipe->EXPIREAT($key, strtotime(date('Y-m-d')) + 86400 + rand(3600, 10800));
+                $pipe->EXPIREAT($key, $this->expire());
             });
 
             return array_keys($cache);
@@ -105,5 +106,18 @@ class Repository
         {
             return $cache;
         }
+    }
+
+    public function Cache($key, $func)
+    {
+        return Cache::remember($key, $this->expire(), function () use ($func)
+        {
+            return $func();
+        });
+    }
+
+    private function expire()
+    {
+        return strtotime(date('Y-m-d')) + 86400 + rand(3600, 10800);
     }
 }

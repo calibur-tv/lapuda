@@ -56,28 +56,13 @@ class PostRepository extends Repository
             return Post::findOrFail($id)->toArray();
         });
 
-        if ($post['parent_id'] === '0')
+        $post['images'] = $this->RedisList('post_'.$id.'_images', function () use ($id)
         {
-            $ids = $this->commentIds($id);
-            $ids[] = $id;
-            $post['images'] = $this->RedisList('post_'.$id.'_images', function () use ($ids)
-            {
-                return PostImages::whereIn('post_id', $ids)
-                    ->orderBy('created_at', 'asc')
-                    ->pluck('src')
-                    ->toArray();
-            });
-        }
-        else
-        {
-            $post['images'] = $this->RedisList('post_'.$id.'_images', function () use ($id)
-            {
-                return PostImages::where('post_id', $id)
-                    ->orderBy('created_at', 'asc')
-                    ->pluck('src')
-                    ->toArray();
-            });
-        }
+            return PostImages::where('post_id', $id)
+                ->orderBy('created_at', 'asc')
+                ->pluck('src')
+                ->toArray();
+        });
 
         if (is_null($this->userRepository))
         {
@@ -101,19 +86,14 @@ class PostRepository extends Repository
         return $result;
     }
 
-    private function commentIds($postId)
+    public function comments($postId, $seenIds = [])
     {
-        return $this->RedisSort('post_'.$postId.'_commentIds', function () use ($postId)
+        $cache = $this->RedisSort('post_'.$postId.'_commentIds', function () use ($postId)
         {
             return Post::where('parent_id', $postId)
                 ->pluck('created_at', 'id');
 
-        }, true);
-    }
-
-    public function comments($postId, $seenIds = [])
-    {
-        $cache = $this->commentIds($postId);
+        }, true);;
 
         if (empty($cache))
         {
@@ -129,27 +109,24 @@ class PostRepository extends Repository
         return $result;
     }
 
-    public function getPostIds($id, $page, $take, $postMasterId)
+    public function getPostIds($id, $page, $take, $onlySeeMaster)
     {
         /**
-         * 因为：page = 1 的时候，不用获取 1 楼
-         * 所以，当 take = 10 时：
-         * page = 1 -> start = 0 end = 9
-         * page = 2 -> start = 10, end = 19
+         * page = 1 的时候，不用获取 1 楼
          */
-        $start = $page === 1 ? 0 : ($page - 1) * $take;
-        $stop = $page === 1 ? $take - 1 : $start + $take - 1;
+        $start = ($page - 1) * $take;
+        $count = $page === 1 ? $take - 1 : $take;
 
-        if ($postMasterId)
+        if ($onlySeeMaster)
         {
             $key = 'post_'.$id.'_ids_only';
-            $ids = $this->RedisList($key, function () use ($id, $postMasterId)
+            $ids = $this->RedisList($key, function () use ($id, $onlySeeMaster)
             {
-                return Post::whereRaw('parent_id = ? and user_id = ?', [$id, $postMasterId])
+                return Post::whereRaw('parent_id = ? and user_id = ?', [$id, $onlySeeMaster])
                     ->orderBy('id', 'asc')
                     ->pluck('id');
 
-            }, $start, $stop);
+            }, $start, $count);
         }
         else
         {
@@ -160,13 +137,26 @@ class PostRepository extends Repository
                     ->orderBy('id', 'asc')
                     ->pluck('id');
 
-            }, $start, $stop);
+            }, $start, $count);
         }
 
         return [
             'ids' => $ids,
             'total' => Redis::LLEN($key)
         ];
+    }
+
+    public function images($id, $onlySeeMaster)
+    {
+        return $this->RedisList('post_'.$id.'_previewImages', function () use ($id, $onlySeeMaster)
+        {
+            $ids = $this->getPostIds($id, 1, 0, $onlySeeMaster)['ids'];
+
+            return PostImages::whereIn('post_id', $ids)
+                ->orderBy('created_at', 'asc')
+                ->pluck('src')
+                ->toArray();
+        });
     }
 
     public function comment($postId, $commentId)
