@@ -95,8 +95,7 @@ class PostController extends Controller
             'list' => $postTransformer->reply($list),
             'bangumi' => $bangumiTransformer->item($bangumiRepository->item($post['bangumi_id'])),
             'user' => $userTransformer->item($userRepository->item($post['user_id'])),
-            'total' => $data['total'],
-            'images' => $postRepository->images($id, $only)
+            'total' => $data['total']
         ]);
     }
 

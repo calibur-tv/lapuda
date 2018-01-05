@@ -25,7 +25,8 @@ class PostTransformer extends Transformer
                 'desc' => $post['desc'],
                 'images' => $post['images'],
                 'created_at' => $post['created_at'],
-                'updated_at' => $post['updated_at']
+                'updated_at' => $post['updated_at'],
+                'previewImages' => $post['previewImages']
             ];
         });
     }
@@ -92,7 +93,8 @@ class PostTransformer extends Transformer
                        'avatar' => $user['avatar'],
                        'nickname' => $user['nickname']
                    ];
-               })
+               }),
+               'previewImages' => $post['previewImages']
            ];
         });
     }
@@ -126,7 +128,8 @@ class PostTransformer extends Transformer
                        'name' => $bangumi['name'],
                        'avatar' => $bangumi['avatar']
                    ];
-                })
+                }),
+                'previewImages' => $post['previewImages']
             ];
         });
     }

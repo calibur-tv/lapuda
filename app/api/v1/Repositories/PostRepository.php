@@ -84,6 +84,11 @@ class PostRepository extends Repository
             $post['bangumi'] = $this->bangumiRepository->item($post['bangumi_id']);
         }
 
+        if ($post['parent_id'] === '0')
+        {
+            $post['previewImages'] = $this->images($post['id'], false);
+        }
+
         return $post;
     }
 
@@ -162,6 +167,8 @@ class PostRepository extends Repository
         return $this->RedisList('post_'.$id.'_previewImages', function () use ($id, $onlySeeMaster)
         {
             $ids = $this->getPostIds($id, 1, 0, $onlySeeMaster)['ids'];
+
+            $ids[] = $id;
 
             return PostImages::whereIn('post_id', $ids)
                 ->orderBy('created_at', 'asc')
