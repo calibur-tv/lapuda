@@ -74,7 +74,7 @@ class BangumiTransformer extends Transformer
                 'id' => (int)$bangumi['id'],
                 'name' => $bangumi['name'],
                 'tags' => $bangumi['tags'],
-                'published_at' => $bangumi['published_at'],
+                'timeline' => $bangumi['timeline'],
                 'avatar' => $bangumi['avatar'],
                 'summary' => $bangumi['summary']
             ];
@@ -90,6 +90,21 @@ class BangumiTransformer extends Transformer
                 'name' => $bangumi['name'],
                 'avatar' => $bangumi['avatar'],
                 'summary' => $bangumi['summary']
+            ];
+        });
+    }
+
+    public function released($list)
+    {
+        return $this->collection($list, function ($bangumi)
+        {
+            return [
+                'id' => (int)$bangumi['id'],
+                'name' => $bangumi['name'],
+                'avatar' => $bangumi['avatar'],
+                'update' => $bangumi['update'],
+                'released_video_id' => $bangumi['released_video_id'],
+                'released_part' => $bangumi['released_part']
             ];
         });
     }

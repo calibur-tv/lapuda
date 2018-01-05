@@ -38,7 +38,7 @@ class BangumiController extends Controller
 
     public function released()
     {
-        $data = Cache::remember('bangumi_release_list', config('cache.ttl'), function ()
+        $data = Cache::remember('bangumi_release_list', 60, function ()
         {
             $ids = Bangumi::where('released_at', '<>', 0)->pluck('id');
 
@@ -53,6 +53,12 @@ class BangumiController extends Controller
                 $item['update'] = time() - $item['released_time'] < 604800;
                 $id = $item['released_at'];
                 isset($result[$id]) ? $result[$id][] = $item : $result[$id] = [$item];
+            }
+
+            $transformer = new BangumiTransformer();
+            foreach ($result as $i => $arr)
+            {
+                $result[$i] = $transformer->released($arr);
             }
 
             return $result;

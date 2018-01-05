@@ -54,7 +54,7 @@ class BangumiRepository extends Repository
 
             $repository = new BangumiRepository();
             $transformer = new BangumiTransformer();
-            $list = $transformer->timeline($repository->list($ids));
+            $list = $repository->list($ids);
 
             $result = [];
             foreach ($list as $item)
@@ -72,7 +72,7 @@ class BangumiRepository extends Repository
             {
                 $cache[$i] = [
                     'date' => $keys[$i],
-                    'list' => $values[$i]
+                    'list' => $transformer->timeline($values[$i])
                 ];
             }
 
