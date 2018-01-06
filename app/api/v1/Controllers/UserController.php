@@ -21,15 +21,8 @@ use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
 
-/**
- * Class UserController
- * @package App\Http\Controllers
- */
 class UserController extends Controller
 {
-    /**
-     * @return \Illuminate\Contracts\Routing\ResponseFactory|\Symfony\Component\HttpFoundation\Response
-     */
     public function daySign()
     {
         $user = $this->getAuthUser();
@@ -52,10 +45,6 @@ class UserController extends Controller
         return $this->resOK();
     }
 
-    /**上传头像
-     * @param Request $request
-     * @return \Illuminate\Contracts\Routing\ResponseFactory|\Symfony\Component\HttpFoundation\Response
-     */
     public function image(Request $request)
     {
         $user = $this->getAuthUser();
