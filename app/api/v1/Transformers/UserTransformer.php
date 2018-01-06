@@ -19,6 +19,7 @@ class UserTransformer extends Transformer
                 'id' => (int)$user['id'],
                 'zone' => $user['zone'],
                 'avatar' => $user['avatar'],
+                'banner' => $user['banner'],
                 'nickname' => $user['nickname'],
                 'birthday' => (int)$user['birthday'],
                 'sex' => $user['sex'],
