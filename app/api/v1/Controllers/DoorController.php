@@ -2,7 +2,9 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Requests\User\RegisterRequest;
+use App\Api\V1\Transformers\UserTransformer;
 use App\Mail\Welcome;
 use App\Models\Banner;
 use App\Models\Confirm;
@@ -148,11 +150,14 @@ class DoorController extends Controller
 
     public function refresh()
     {
-        $user = $this->getAuthUser();
-        $repository = new ImageRepository();
-        $user['uptoken'] = $repository->uptoken();
+        $user = $this->getAuthUser()->toArray();
+        $imageRepository = new ImageRepository();
+        $userRepository = new UserRepository();
+        $user['uptoken'] = $imageRepository->uptoken();
+        $user['daySign'] = $userRepository->daySigned($user['id']);
+        $transformer = new UserTransformer();
 
-        return $this->resOK($user);
+        return $this->resOK($transformer->self($user));
     }
 
     private function checkAccessCanUse($method, $access)

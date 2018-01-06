@@ -8,15 +8,14 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Requests\User\SettingsRequest;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
-use App\Models\Post;
 use App\Models\User;
 use App\Api\V1\Repositories\UserRepository;
+use App\Models\UserSign;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
@@ -31,22 +30,26 @@ class UserController extends Controller
     /**
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Symfony\Component\HttpFoundation\Response
      */
-    public function getUserSign()
+    public function daySign()
     {
         $user = $this->getAuthUser();
         if (is_null($user))
         {
             return $this->resErr(['找不到用户'], 404);
         }
-        /* @var User $user */
-        if ($user->isSignToday())
+
+        $repository = new UserRepository();
+
+        if ($repository->daySigned($user->id))
         {
             return $this->resErr(['已签到']);
         }
 
-        $user->signNow();
+        UserSign::create([
+            'user_id' => $user->id
+        ]);
 
-        return $this->resOK('', '签到成功');
+        return $this->resOK();
     }
 
     /**上传头像

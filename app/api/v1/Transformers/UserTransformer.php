@@ -11,6 +11,23 @@ namespace App\Api\V1\Transformers;
 
 class UserTransformer extends Transformer
 {
+    public function self($user)
+    {
+        return $this->transformer($user, function ($user)
+        {
+            return [
+                'id' => (int)$user['id'],
+                'zone' => $user['zone'],
+                'avatar' => $user['avatar'],
+                'nickname' => $user['nickname'],
+                'birthday' => (int)$user['birthday'],
+                'sex' => $user['sex'],
+                'signature' => $user['signature'],
+                'uptoken' => $user['uptoken'],
+                'daySign' => (boolean)$user['daySign']
+            ];
+        });
+    }
     public function item($user)
     {
         return $this->transformer($user, function ($user)

@@ -85,7 +85,7 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/posts/reply', 'App\Api\V1\Controllers\UserController@postsOfReply');
         });
 
-        $api->get('/user_sign', 'App\Api\V1\Controllers\UserController@getUserSign');
+        $api->post('/daySign', 'App\Api\V1\Controllers\UserController@daySign');
 
         $api->post('/feedback', 'App\Api\V1\Controllers\UserController@feedback');
     });

@@ -13,6 +13,8 @@ use App\Api\V1\Transformers\PostTransformer;
 use App\Models\BangumiFollow;
 use App\Models\Post;
 use App\Models\User;
+use App\Models\UserSign;
+use Carbon\Carbon;
 
 class UserRepository extends Repository
 {
@@ -102,6 +104,11 @@ class UserRepository extends Repository
                ->orderBy('created_at', 'DESC')
                ->pluck('id');
         });
+    }
+
+    public function daySigned($userId)
+    {
+        return UserSign::whereRaw('user_id = ? and created_at > ?', [$userId, Carbon::now()->startOfDay()])->first() !== null;
     }
 
     public function replyPostIds($userId)
