@@ -26,7 +26,7 @@ class UserTransformer extends Transformer
                 'signature' => $user['signature'],
                 'uptoken' => $user['uptoken'],
                 'daySign' => (boolean)$user['daySign'],
-                'coin' => (int)$user['user_coin']
+                'coin' => (int)$user['coin_count']
             ];
         });
     }
