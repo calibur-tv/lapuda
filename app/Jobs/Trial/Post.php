@@ -2,7 +2,7 @@
 
 namespace App\Jobs\Trial;
 
-use App\Repositories\PostRepository;
+use App\Api\V1\Repositories\PostRepository;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;

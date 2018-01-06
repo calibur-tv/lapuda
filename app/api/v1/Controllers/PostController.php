@@ -36,6 +36,7 @@ class PostController extends Controller
 
         $now = Carbon::now();
         $bangumiId = $request->get('bangumiId');
+        $userId = $user->id;
         $repository = new PostRepository();
 
         $id = $repository->create([
@@ -43,13 +44,21 @@ class PostController extends Controller
             'content' => Purifier::clean($request->get('content')),
             'desc' => Purifier::clean($request->get('desc')),
             'bangumi_id' => $bangumiId,
-            'user_id' => $user->id,
-            'target_user_id' => $user->id,
+            'user_id' => $userId,
+            'target_user_id' => 0,
             'created_at' => $now,
             'updated_at' => $now
         ], $request->get('images'));
 
-        Redis::ZADD($repository->bangumiListCacheKey($bangumiId), $now->timestamp, $id);
+        $cacheKey = $repository->bangumiListCacheKey($bangumiId);
+        Redis::pipeline(function ($pipe) use ($id, $cacheKey, $now, $userId)
+        {
+            if ($pipe->EXISTS($cacheKey))
+            {
+                $pipe->ZADD($cacheKey, $now->timestamp, $id);
+            }
+            $pipe->LPUSHX('user_'.$userId.'_minePostIds', $id);
+        });
 
         $job = (new \App\Jobs\Trial\Post($id))->onQueue('post-create');
         dispatch($job);
@@ -109,12 +118,13 @@ class PostController extends Controller
 
         $now = Carbon::now();
         $repository = new PostRepository();
+        $userId = $user->id;
 
         $images = $request->get('images');
         $newId = $repository->create([
             'content' => Purifier::clean($request->get('content')),
             'parent_id' => $id,
-            'user_id' => $user->id,
+            'user_id' => $userId,
             'target_user_id' => $request->get('targetUserId'),
             'created_at' => $now,
             'updated_at' => $now
@@ -122,17 +132,14 @@ class PostController extends Controller
 
         Post::where('id', $id)->increment('comment_count');
         $cacheKey = $repository->bangumiListCacheKey($request->get('bangumiId'));
-        Redis::pipeline(function ($pipe) use ($id, $cacheKey, $now, $newId, $images)
+        Redis::pipeline(function ($pipe) use ($id, $cacheKey, $now, $newId, $images, $userId)
         {
             if ($pipe->EXISTS('post_'.$id))
             {
                 $pipe->HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
                 $pipe->HSET('post_'.$id, 'updated_at', $now->toDateTimeString());
             }
-            if ($pipe->EXISTS('post_'.$id.'_ids'))
-            {
-                $pipe->RPUSH('post_'.$id.'_ids', $newId);
-            }
+            $pipe->RPUSHX('post_'.$id.'_ids', $newId);
             if ($pipe->EXISTS('post_'.$id.'_previewImages') && !empty($images))
             {
                 foreach ($images as $i => $val)
@@ -141,6 +148,7 @@ class PostController extends Controller
                 }
                 $pipe->RPUSH('post_'.$id.'_previewImages', $images);
             }
+            $pipe->LPUSHX('user_'.$userId.'_replyPostIds', $newId);
             if ($pipe->EXISTS($cacheKey))
             {
                 $pipe->ZADD($cacheKey, $now->timestamp, $id);
@@ -160,24 +168,26 @@ class PostController extends Controller
 
         $now = Carbon::now();
         $repository = new PostRepository();
+        $userId = $user->id;
 
         $newId = $repository->create([
             'content' => Purifier::clean($request->get('content')),
             'parent_id' => $id,
-            'user_id' => $user->id,
+            'user_id' => $userId,
             'target_user_id' => $request->get('targetUserId'),
             'created_at' => $now,
             'updated_at' => $now
         ], []);
 
         Post::where('id', $id)->increment('comment_count');
-        Redis::pipeline(function ($pipe) use ($id, $now, $newId)
+        Redis::pipeline(function ($pipe) use ($id, $now, $newId, $userId)
         {
             if ($pipe->EXISTS('post_'.$id))
             {
                 $pipe->HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
             }
             $pipe->ZADD('post_'.$id.'_commentIds', $now->timestamp, $newId);
+            $pipe->LPUSHX('user_'.$userId.'_replyPostIds', $newId);
         });
 
         $postTransformer = new PostTransformer();

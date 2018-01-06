@@ -174,25 +174,11 @@ class UserController extends Controller
         }
 
         $ids = array_slice(array_diff($ids, $seen), 0, $take);
-        $data = Post::whereIn('id', $ids)
-            ->orderBy('created_at', 'DESC')
-            ->select('id', 'parent_id', 'content', 'like_count', 'created_at', 'target_user_id')
-            ->get()
-            ->toArray();
-
-        $postRepository = new PostRepository();
-        $bangumiRepository = new BangumiRepository();
-
-        foreach ($data as $i => $item)
+        $data = [];
+        foreach ($ids as $id)
         {
-            $parent = $postRepository->item($item['parent_id']);
-            $data[$i]['parent'] = $parent;
-//            $data[$i]['images'] = $postRepository->images($item['id']);
-//            $data[$i]['user'] = $userRepository->item($item['target_user_id']);
-//            $data[$i]['bangumi'] = $bangumiRepository->item($parent['bangumi_id']);
+            $data[] = $userRepository->replyPostItem($userId, $id);
         }
-
-//        $postTransformer = new PostTransformer();
 
         return $this->resOK($data);
     }

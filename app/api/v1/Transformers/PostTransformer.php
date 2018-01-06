@@ -64,7 +64,7 @@ class PostTransformer extends Transformer
                 'from_user_id' => (int)$comment['from_user_id'],
                 'from_user_name' => $comment['from_user_name'],
                 'from_user_zone' => $comment['from_user_zone'],
-                'from_user_avatar' => config('website.cdn').$comment['from_user_avatar'],
+                'from_user_avatar' => config('website.cdn'). ($comment['from_user_avatar'] ? $comment['from_user_avatar'] : 'default/user-avatar'),
                 'to_user_name' => $comment['to_user_name'] ? $comment['to_user_name'] : null,
                 'to_user_zone' => $comment['to_user_zone'] ? $comment['to_user_zone'] : null,
             ];
@@ -160,9 +160,9 @@ class PostTransformer extends Transformer
         });
     }
 
-    public function userReply($list)
+    public function userReply($post)
     {
-        return $this->collection($list, function ($post)
+        return $this->transformer($post, function ($post)
         {
             return [
                 'id' => (int)$post['id'],
@@ -174,8 +174,7 @@ class PostTransformer extends Transformer
                 {
                     return [
                         'id' => (int)$bangumi['id'],
-                        'name' => $bangumi['name'],
-                        'avatar' => $bangumi['avatar']
+                        'name' => $bangumi['name']
                     ];
                 }),
                 'user' => $this->transformer($post['user'], function ($user)
@@ -190,8 +189,15 @@ class PostTransformer extends Transformer
                 {
                     return [
                         'id' => (int)$parent['id'],
-                        'title' => $parent['title'],
-                        'desc' => $parent['desc']
+                        'content' => $parent['content'],
+                        'images' => $parent['images']
+                    ];
+                }),
+                'post' => $this->transformer($post['post'], function ($main)
+                {
+                    return [
+                        'id' => (int)$main['id'],
+                        'title' => $main['title']
                     ];
                 })
             ];

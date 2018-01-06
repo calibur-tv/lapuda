@@ -9,6 +9,7 @@
 namespace App\Api\V1\Repositories;
 
 use App\Api\V1\Transformers\BangumiTransformer;
+use App\Api\V1\Transformers\PostTransformer;
 use App\Models\BangumiFollow;
 use App\Models\Post;
 use App\Models\User;
@@ -70,8 +71,11 @@ class UserRepository extends Repository
     {
         $ids = $this->RedisList('user_'.$userId.'_followBangumiIds', function () use ($userId)
         {
-           return  BangumiFollow::where('user_id', $userId)->pluck('bangumi_id');
+           return  BangumiFollow::where('user_id', $userId)
+               ->orderBy('created_at', 'DESC')
+               ->pluck('bangumi_id');
         });
+
         if (empty($ids))
         {
             return [];
@@ -104,9 +108,42 @@ class UserRepository extends Repository
     {
         return $this->RedisList('user_'.$userId.'_replyPostIds', function () use ($userId)
         {
-            return Post::whereRaw('parent_id <> ? and user_id = ? and target_user_id <> ?', [0, $userId, $userId])
+            return Post::whereRaw('parent_id <> ? and user_id = ?', [0, $userId])
+                ->whereNotIn('target_user_id', [$userId, 0])
                 ->orderBy('created_at', 'DESC')
                 ->pluck('id');
+        });
+    }
+
+    public function replyPostItem($userId, $postId)
+    {
+        return $this->Cache('user_'.$userId.'_replyPost_'.$postId, function () use ($postId)
+        {
+            $data = Post::where('id', $postId)
+                ->select('id', 'parent_id', 'content', 'like_count', 'created_at', 'target_user_id')
+                ->first()
+                ->toArray();
+
+            $postRepository = new PostRepository();
+            $postTransformer = new PostTransformer();
+            $bangumiRepository = new BangumiRepository();
+
+            $parent = $postRepository->item($data['parent_id']);
+            if ($parent['parent_id'] !== '0')
+            {
+                $post = $postRepository->item($parent['parent_id']);
+            }
+            else
+            {
+                $post = $parent;
+            }
+            $data['post'] = $post;
+            $data['parent'] = $parent;
+            $data['images'] = $postRepository->images($data['id']);
+            $data['user'] = $this->item($data['target_user_id']);
+            $data['bangumi'] = $bangumiRepository->item($post['bangumi_id']);
+
+            return $postTransformer->userReply($data);
         });
     }
 }

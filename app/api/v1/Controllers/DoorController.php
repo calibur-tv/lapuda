@@ -136,7 +136,7 @@ class DoorController extends Controller
             return $this->resOK(JWTAuth::fromUser($user));
         }
 
-        return $this->resErr(['用户名或密码错误'], 422);
+        return $this->resErr(['用户名或密码错误'], 401);
     }
 
     public function logout()

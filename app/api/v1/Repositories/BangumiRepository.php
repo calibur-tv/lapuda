@@ -107,6 +107,8 @@ class BangumiRepository extends Repository
 
             $result = true;
             $num = 1;
+
+            Redis::LPUSHX('user_'.$user_id.'_followBangumiIds', $bangumi_id);
         }
         else
         {
@@ -114,6 +116,8 @@ class BangumiRepository extends Repository
 
             $result = false;
             $num = -1;
+
+            Redis::LREM('user_'.$user_id.'_followBangumiIds', $bangumi_id, 1);
         }
 
         Bangumi::where('id', $bangumi_id)->increment('count_like', $num);
@@ -209,7 +213,7 @@ class BangumiRepository extends Repository
 
         return $this->RedisSort($cacheKey, function () use ($id)
         {
-            return Post::where('bangumi_id', $id)
+            return Post::whereRaw('bangumi_id = ? and parent_id = ?', [$id, 0])
                 ->orderBy('id', 'desc')
                 ->pluck('updated_at', 'id');
 
