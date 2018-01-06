@@ -15,6 +15,7 @@ use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
 use App\Models\User;
 use App\Api\V1\Repositories\UserRepository;
+use App\Models\UserCoin;
 use App\Models\UserSign;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
@@ -32,15 +33,24 @@ class UserController extends Controller
         }
 
         $repository = new UserRepository();
+        $userId = $user->id;
 
-        if ($repository->daySigned($user->id))
+        if ($repository->daySigned($userId))
         {
             return $this->resErr(['已签到']);
         }
 
         UserSign::create([
-            'user_id' => $user->id
+            'user_id' => $userId,
+            'from_user_id' => 0,
+            'type' => 0
         ]);
+
+        UserCoin::create([
+            'user_id' => $userId
+        ]);
+
+        User::where('id', $userId)->increment('user_coin');
 
         return $this->resOK();
     }

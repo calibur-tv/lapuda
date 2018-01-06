@@ -25,7 +25,8 @@ class UserTransformer extends Transformer
                 'sex' => $user['sex'],
                 'signature' => $user['signature'],
                 'uptoken' => $user['uptoken'],
-                'daySign' => (boolean)$user['daySign']
+                'daySign' => (boolean)$user['daySign'],
+                'coin' => (int)$user['user_coin']
             ];
         });
     }

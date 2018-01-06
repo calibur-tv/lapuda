@@ -12,6 +12,7 @@ use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Post;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\PostRepository;
+use App\Models\PostLike;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
@@ -210,12 +211,45 @@ class PostController extends Controller
         return $this->resOK($postTransformer->comments($data));
     }
 
-    public function nice($id)
+    public function toggleLike($postId)
     {
-        // toggle 操作
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr(['未登录的用户'], 401);
+        }
+
+        $userId = $user->id;
+        $postRepository = new PostRepository();
+        $post = $postRepository->item($postId);
+        $postLike = PostLike::whereRaw('user_id = ? and post_id = ?'. [$userId, $post['id']])->first();
+        $liked = $postLike !== null;
+
+        if ($liked)
+        {
+            $postLike->delete();
+            Post::where('id', $post['id'])->increment('like_count', -1);
+        }
+        else
+        {
+            PostLike::create([
+                'user_id' => $userId,
+                'post_id' => $postId
+            ]);
+            Post::where('id', $post['id'])->increment('like_count', 1);
+        }
+
+        // 如果是主题帖，要删除楼主所得的金币，但金币不返还给用户
+        if ($post['parent_id'] == '0')
+        {
+            $userRepository = new UserRepository();
+            $userRepository->toggleCoin($liked, $userId, $post['user_id'], 1);
+        }
+
+        return $this->resOK();
     }
 
-    public function delete($id)
+    public function delete($postId)
     {
         $user = $this->getAuthUser();
         if (is_null($user))
@@ -224,7 +258,7 @@ class PostController extends Controller
         }
 
         $postRepository = new PostRepository();
-        $post = $postRepository->item($id);
+        $post = $postRepository->item($postId);
 
         $delete = false;
         $state = 0;
@@ -248,7 +282,7 @@ class PostController extends Controller
             return $this->resErr(['权限不足'], 401);
         }
 
-        $postRepository->deletePost($id, $post['parent_id'], $state, $post['bangumi_id']);
+        $postRepository->deletePost($postId, $post['parent_id'], $state, $post['bangumi_id']);
 
         return $this->resOK();
     }

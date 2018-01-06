@@ -104,7 +104,7 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/commit', 'App\Api\V1\Controllers\PostController@commit')->middleware('throttle:20,1');
 
-            $api->post('/nice', 'App\Api\V1\Controllers\PostController@nice');
+            $api->post('/toggleLike', 'App\Api\V1\Controllers\PostController@toggleLike');
 
             $api->post('/delete', 'App\Api\V1\Controllers\PostController@delete');
         });

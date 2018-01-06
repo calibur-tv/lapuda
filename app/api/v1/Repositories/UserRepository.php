@@ -13,6 +13,7 @@ use App\Api\V1\Transformers\PostTransformer;
 use App\Models\BangumiFollow;
 use App\Models\Post;
 use App\Models\User;
+use App\Models\UserCoin;
 use App\Models\UserSign;
 use Carbon\Carbon;
 
@@ -152,5 +153,23 @@ class UserRepository extends Repository
 
             return $postTransformer->userReply($data);
         });
+    }
+
+    public function toggleCoin($isDelete, $fromUserId, $toUserId, $type)
+    {
+        if ($isDelete)
+        {
+            UserCoin::whereRaw('from_user_id = ? and user_id = ? and type = ?', [$fromUserId, $toUserId, $type])->delete();
+            User::where('id', $toUserId)->increment('coin_count', -1);
+        }
+        else
+        {
+            UserCoin::create([
+                'user_id' => $toUserId,
+                'from_user_id' => $fromUserId,
+                'type' => $type
+            ]);
+            User::where('id', $toUserId)->increment('coin_count', 1);
+        }
     }
 }
