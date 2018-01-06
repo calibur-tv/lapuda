@@ -40,17 +40,17 @@ class UserController extends Controller
             return $this->resErr(['已签到']);
         }
 
-        UserSign::create([
+        UserCoin::create([
             'user_id' => $userId,
             'from_user_id' => 0,
             'type' => 0
         ]);
 
-        UserCoin::create([
+        UserSign::create([
             'user_id' => $userId
         ]);
 
-        User::where('id', $userId)->increment('user_coin');
+        User::where('id', $userId)->increment('coin_count');
 
         return $this->resOK();
     }

@@ -30,6 +30,7 @@ class UserTransformer extends Transformer
             ];
         });
     }
+
     public function item($user)
     {
         return $this->transformer($user, function ($user)
