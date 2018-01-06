@@ -18,7 +18,7 @@ class TrendingController extends Controller
 
         if (empty($ids))
         {
-            return $this->resOK();
+            return $this->resOK([]);
         }
 
         $list = $repository->list(array_slice(array_diff($ids, $seen), 0, $take));
@@ -37,7 +37,7 @@ class TrendingController extends Controller
 
         if (empty($ids))
         {
-            return $this->resOK();
+            return $this->resOK([]);
         }
 
         $list = $repository->list(array_slice(array_diff($ids, $seen), 0, $take));

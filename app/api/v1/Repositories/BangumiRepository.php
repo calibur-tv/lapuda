@@ -10,6 +10,7 @@ use App\Models\BangumiTag;
 use App\Models\Post;
 use App\Models\Tag;
 use App\Models\Video;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Redis;
 
 class BangumiRepository extends Repository
@@ -107,8 +108,6 @@ class BangumiRepository extends Repository
 
             $result = true;
             $num = 1;
-
-            Redis::LPUSHX('user_'.$user_id.'_followBangumiIds', $bangumi_id);
         }
         else
         {
@@ -116,15 +115,34 @@ class BangumiRepository extends Repository
 
             $result = false;
             $num = -1;
-
-            Redis::LREM('user_'.$user_id.'_followBangumiIds', $bangumi_id, 1);
         }
 
         Bangumi::where('id', $bangumi_id)->increment('count_like', $num);
-        if (Redis::EXISTS('bangumi_'.$bangumi_id))
+        Redis::pipeline(function ($pipe) use ($result, $num, $bangumi_id, $user_id)
         {
-            Redis::HINCRBYFLOAT('bangumi_'.$bangumi_id, 'count_like', $num);
-        }
+            $bangumiFollowsCacheKey = 'bangumi_'.$bangumi_id.'_followersIds';
+            $userFollowsCacheKey = 'user_'.$user_id.'_followBangumiIds';
+            if ($pipe->EXISTS('bangumi_'.$bangumi_id))
+            {
+                $pipe->HINCRBYFLOAT('bangumi_'.$bangumi_id, 'count_like', $num);
+            }
+            if ($result)
+            {
+                $pipe->LPUSHX($userFollowsCacheKey, $bangumi_id);
+                if ($pipe->EXISTS($bangumiFollowsCacheKey))
+                {
+                    $pipe->ZADD($bangumiFollowsCacheKey, Carbon::now()->timestamp, $user_id);
+                }
+            }
+            else
+            {
+                $pipe->LREM($userFollowsCacheKey, $bangumi_id, 1);
+                if ($pipe->EXISTS($bangumiFollowsCacheKey))
+                {
+                    $pipe->ZREM($bangumiFollowsCacheKey, $user_id);
+                }
+            }
+        });
 
         return $result;
     }
