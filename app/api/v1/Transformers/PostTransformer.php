@@ -23,6 +23,7 @@ class PostTransformer extends Transformer
                 'view_count' => (int)$post['view_count'],
                 'title' => $post['title'],
                 'desc' => $post['desc'],
+                'content' => $post['content'],
                 'images' => $post['images'],
                 'created_at' => $post['created_at'],
                 'updated_at' => $post['updated_at'],
