@@ -130,48 +130,31 @@ class PostRepository extends Repository
         return $result;
     }
 
-    public function getPostIds($id, $page, $take, $onlySeeMaster)
+    public function getPostIds($id, $onlySeeMaster)
     {
-        /**
-         * page = 1 的时候，不用获取 1 楼
-         */
-        $start = ($page - 1) * $take;
-        $count = $page === 1 ? $take - 1 : $take;
-
         if ($onlySeeMaster)
         {
-            $key = 'post_'.$id.'_ids_only';
-            $ids = $this->RedisList($key, function () use ($id, $onlySeeMaster)
+            return $this->RedisList('post_'.$id.'_ids_only', function () use ($id, $onlySeeMaster)
             {
                 return Post::whereRaw('parent_id = ? and user_id = ?', [$id, $onlySeeMaster])
                     ->orderBy('id', 'asc')
                     ->pluck('id');
-
-            }, $start, $count);
+            });
         }
-        else
+
+        return $this->RedisList('post_'.$id.'_ids', function () use ($id)
         {
-            $key = 'post_'.$id.'_ids';
-            $ids = $this->RedisList($key, function () use ($id)
-            {
-                return Post::where('parent_id', $id)
-                    ->orderBy('id', 'asc')
-                    ->pluck('id');
-
-            }, $start, $count);
-        }
-
-        return [
-            'ids' => $ids,
-            'total' => Redis::LLEN($key)
-        ];
+            return Post::where('parent_id', $id)
+                ->orderBy('id', 'asc')
+                ->pluck('id');
+        });
     }
 
     public function previewImages($id, $onlySeeMaster)
     {
         return $this->RedisList('post_'.$id.'_previewImages', function () use ($id, $onlySeeMaster)
         {
-            $ids = $this->getPostIds($id, 1, 0, $onlySeeMaster)['ids'];
+            $ids = $this->getPostIds($id, $onlySeeMaster);
 
             $ids[] = $id;
 

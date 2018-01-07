@@ -76,19 +76,12 @@ class PostController extends Controller
             return $this->resErr(['不是主题帖']);
         }
         // $user = $this->getAuthUser();
-        $page = intval($request->get('page')) ?: 1;
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
         $take = intval($request->get('take')) ?: 10;
         $only = intval($request->get('only')) ?: 0;
-        $data = $postRepository->getPostIds($id, $page, $take, $only ? $post['user_id'] : false);
+        $ids = $postRepository->getPostIds($id, $only ? $post['user_id'] : false);
 
-        $bangumiRepository = new BangumiRepository();
-        $userRepository = new UserRepository();
-
-        $list = $postRepository->list($data['ids']);
-        if ($page === 1)
-        {
-            array_unshift($list, $post);
-        }
+        $list = $postRepository->list(array_slice(array_diff($ids, $seen), 0, $take));
 
         Post::where('id', $post['id'])->increment('view_count');
         if (Redis::EXISTS('post_'.$id))
@@ -97,6 +90,17 @@ class PostController extends Controller
         }
 
         $postTransformer = new PostTransformer();
+
+        if (!empty($seen))
+        {
+            return $this->resOK([
+                'list' => $postTransformer->reply($list),
+                'total' => count($ids)
+            ]);
+        }
+
+        $bangumiRepository = new BangumiRepository();
+        $userRepository = new UserRepository();
         $bangumiTransformer = new BangumiTransformer();
         $userTransformer = new UserTransformer();
 
@@ -105,7 +109,7 @@ class PostController extends Controller
             'list' => $postTransformer->reply($list),
             'bangumi' => $bangumiTransformer->item($bangumiRepository->item($post['bangumi_id'])),
             'user' => $userTransformer->item($userRepository->item($post['user_id'])),
-            'total' => $data['total']
+            'total' => count($ids)
         ]);
     }
 
