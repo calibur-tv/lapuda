@@ -106,7 +106,9 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/toggleLike', 'App\Api\V1\Controllers\PostController@toggleLike');
 
-            $api->post('/delete', 'App\Api\V1\Controllers\PostController@delete');
+            $api->post('/deletePost', 'App\Api\V1\Controllers\PostController@deletePost');
+
+            $api->post('/deleteComment', 'App\Api\V1\Controllers\PostController@deleteComment');
         });
     });
 

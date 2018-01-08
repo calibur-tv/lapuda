@@ -91,11 +91,18 @@ class PostController extends Controller
         }
 
         $postTransformer = new PostTransformer();
+        $list = $postTransformer->reply($list);
+
+        $result = [];
+        foreach ($list as $item)
+        {
+            $result[$item['id']] = $item;
+        }
 
         if (!empty($seen))
         {
             return $this->resOK([
-                'list' => $postTransformer->reply($list),
+                'list' => $result,
                 'total' => count($ids)
             ]);
         }
@@ -108,7 +115,7 @@ class PostController extends Controller
 
         return $this->resOK([
             'post' => $postTransformer->show($post),
-            'list' => $postTransformer->reply($list),
+            'list' => $result,
             'bangumi' => $bangumiTransformer->item($bangumiRepository->item($post['bangumi_id'])),
             'user' => $userTransformer->item($userRepository->item($post['user_id'])),
             'total' => count($ids)
@@ -264,7 +271,7 @@ class PostController extends Controller
         return $this->resOK();
     }
 
-    public function delete($postId)
+    public function deletePost($postId)
     {
         $user = $this->getAuthUser();
         if (is_null($user))
@@ -298,6 +305,39 @@ class PostController extends Controller
         }
 
         $postRepository->deletePost($postId, $post['parent_id'], $state, $post['bangumi_id']);
+
+        return $this->resOK();
+    }
+
+    public function deleteComment(Request $request, $postId)
+    {
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr(['未登录的用户'], 401);
+        }
+
+        $userId = $user->id;
+        $commentId = $request->get('id');
+        $postRepository = new PostRepository();
+        $comment = $postRepository->comment($postId, $commentId);
+
+        if ($comment['from_user_id'] != $userId)
+        {
+            return $this->resErr(['权限不足'], 401);
+        }
+
+        Post::where('id', $commentId)->delete();
+        Post::where('id', $postId)->increment('comment_count', -1);
+        Redis::pipeline(function ($pipe) use ($postId, $commentId, $userId)
+        {
+            if ($pipe->EXISTS('post_'.$postId))
+            {
+                $pipe->HINCRBYFLOAT('post_'.$postId, 'comment_count', -1);
+            }
+            $pipe->LREM('post_'.$postId.'_commentIds', $commentId, 1);
+            $pipe->LREM('user_'.$userId.'_replyPostIds', $commentId, 1);
+        });
 
         return $this->resOK();
     }

@@ -146,7 +146,7 @@ class UserController extends Controller
 
         if (empty($ids))
         {
-            return $this->resOK();
+            return $this->resOK([]);
         }
 
         $postRepository = new PostRepository();
@@ -172,7 +172,7 @@ class UserController extends Controller
 
         if (empty($ids))
         {
-            return $this->resOK();
+            return $this->resOK([]);
         }
 
         $ids = array_slice(array_diff($ids, $seen), 0, $take);
