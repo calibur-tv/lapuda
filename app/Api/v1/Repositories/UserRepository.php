@@ -128,7 +128,7 @@ class UserRepository extends Repository
         return $this->Cache('user_'.$userId.'_replyPost_'.$postId, function () use ($postId)
         {
             $data = Post::where('id', $postId)
-                ->select('id', 'parent_id', 'content', 'like_count', 'created_at', 'target_user_id')
+                ->select('id', 'parent_id', 'content', 'like_count', 'created_at', 'target_user_id', 'floor_count')
                 ->first()
                 ->toArray();
 
