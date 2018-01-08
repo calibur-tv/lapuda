@@ -169,7 +169,9 @@ class PostController extends Controller
             }
         });
 
-        return $this->resOK();
+        $post = $repository->item($newId);
+
+        return $this->resOK($post);
     }
 
     public function commit(CommitRequest $request, $id)
