@@ -47,6 +47,7 @@ class PostController extends Controller
             'bangumi_id' => $bangumiId,
             'user_id' => $userId,
             'target_user_id' => 0,
+            'floor_count' => 1,
             'created_at' => $now,
             'updated_at' => $now
         ], $request->get('images'));
@@ -125,6 +126,7 @@ class PostController extends Controller
         $now = Carbon::now();
         $repository = new PostRepository();
         $userId = $user->id;
+        $count = Post::where('parent_id', $id)->count();
 
         $images = $request->get('images');
         $newId = $repository->create([
@@ -132,6 +134,7 @@ class PostController extends Controller
             'parent_id' => $id,
             'user_id' => $userId,
             'target_user_id' => $request->get('targetUserId'),
+            'floor_count' => $count + 2,
             'created_at' => $now,
             'updated_at' => $now
         ], $images);
