@@ -23,6 +23,7 @@ class PostTransformer extends Transformer
                 'view_count' => (int)$post['view_count'],
                 'title' => $post['title'],
                 'desc' => $post['desc'],
+                'liked' => $post['liked'],
                 'content' => $post['content'],
                 'images' => $post['images'],
                 'created_at' => $post['created_at'],
@@ -44,6 +45,7 @@ class PostTransformer extends Transformer
                 'content' => $post['content'],
                 'images' => $post['images'],
                 'floor_count' => (int)$post['floor_count'],
+                'liked' => $post['liked'],
                 'user' => [
                     'id' => (int)$post['user']['id'],
                     'zone' => $post['user']['zone'],
@@ -69,7 +71,7 @@ class PostTransformer extends Transformer
                 'from_user_zone' => $comment['from_user_zone'],
                 'from_user_avatar' => config('website.cdn'). ($comment['from_user_avatar'] ? $comment['from_user_avatar'] : 'default/user-avatar'),
                 'to_user_name' => $comment['to_user_name'] ? $comment['to_user_name'] : null,
-                'to_user_zone' => $comment['to_user_zone'] ? $comment['to_user_zone'] : null,
+                'to_user_zone' => $comment['to_user_zone'] ? $comment['to_user_zone'] : null
             ];
         });
     }

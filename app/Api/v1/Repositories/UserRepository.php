@@ -109,7 +109,7 @@ class UserRepository extends Repository
 
     public function daySigned($userId)
     {
-        return UserSign::whereRaw('user_id = ? and created_at > ?', [$userId, Carbon::now()->startOfDay()])->first() !== null;
+        return UserSign::whereRaw('user_id = ? and created_at > ?', [$userId, Carbon::now()->startOfDay()])->count() !== 0;
     }
 
     public function replyPostIds($userId)
@@ -170,6 +170,7 @@ class UserRepository extends Repository
                 'type' => $type
             ]);
             User::where('id', $toUserId)->increment('coin_count', 1);
+            User::where('id', $fromUserId)->increment('coin_count', -1);
         }
     }
 }

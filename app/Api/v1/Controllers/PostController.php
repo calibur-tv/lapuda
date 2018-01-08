@@ -76,7 +76,8 @@ class PostController extends Controller
         {
             return $this->resErr(['不是主题帖']);
         }
-        // $user = $this->getAuthUser();
+        $user = $this->getAuthUser();
+        $userId = is_null($user) ? 0 : $user->id;
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
         $take = intval($request->get('take')) ?: 10;
         $only = intval($request->get('only')) ?: 0;
@@ -91,6 +92,11 @@ class PostController extends Controller
         }
 
         $postTransformer = new PostTransformer();
+        foreach ($list as $i => $item)
+        {
+            $list[$i]['liked'] = $userId ? $postRepository->checkPostLiked($item['id'], $userId) : false;
+        }
+
         $list = $postTransformer->reply($list);
 
         $result = [];
@@ -106,6 +112,8 @@ class PostController extends Controller
                 'total' => count($ids)
             ]);
         }
+
+        $post['liked'] = $userId ? $postRepository->checkPostLiked($id, $userId) : false;
 
         $bangumiRepository = new BangumiRepository();
         $userRepository = new UserRepository();
@@ -177,6 +185,7 @@ class PostController extends Controller
         });
 
         $post = $repository->item($newId);
+        $post['liked'] = false;
 
         return $this->resOK($post);
     }
@@ -244,13 +253,12 @@ class PostController extends Controller
         $userId = $user->id;
         $postRepository = new PostRepository();
         $post = $postRepository->item($postId);
-        $postLike = PostLike::whereRaw('user_id = ? and post_id = ?'. [$userId, $post['id']])->first();
-        $liked = $postLike !== null;
+        $liked = $postRepository->checkPostLiked($postId, $userId);
 
         if ($liked)
         {
-            $postLike->delete();
-            Post::where('id', $post['id'])->increment('like_count', -1);
+            PostLike::whereRaw('user_id = ? and post_id = ?'. [$userId, $postId])->delete();
+            $num = -1;
         }
         else
         {
@@ -258,7 +266,13 @@ class PostController extends Controller
                 'user_id' => $userId,
                 'post_id' => $postId
             ]);
-            Post::where('id', $post['id'])->increment('like_count', 1);
+            $num = 1;
+        }
+
+        Post::where('id', $post['id'])->increment('like_count', $num);
+        if (Redis::EXISTS('post_'.$postId))
+        {
+            Redis::HINCRBYFLOAT('post_'.$postId, 'like_count', $num);
         }
 
         // 如果是主题帖，要删除楼主所得的金币，但金币不返还给用户

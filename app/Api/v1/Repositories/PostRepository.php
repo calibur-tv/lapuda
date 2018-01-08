@@ -11,6 +11,7 @@ namespace App\Api\V1\Repositories;
 
 use App\Models\Post;
 use App\Models\PostImages;
+use App\Models\PostLike;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -121,7 +122,7 @@ class PostRepository extends Repository
             return [];
         }
 
-        $ids = array_slice(array_reverse(array_diff($cache, $seenIds)), 0, 10);
+        $ids = array_slice(array_diff($cache, $seenIds), 0, 10);
         $result = [];
         foreach ($ids as $id)
         {
@@ -264,5 +265,10 @@ class PostRepository extends Repository
 
             return $result;
         });
+    }
+
+    public function checkPostLiked($postId, $userId)
+    {
+        return PostLike::whereRaw('user_id = ? and post_id = ?', [$userId, $postId])->count() !== 0;
     }
 }
