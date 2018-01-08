@@ -103,6 +103,7 @@ class PostController extends Controller
         $userRepository = new UserRepository();
         $bangumiTransformer = new BangumiTransformer();
         $userTransformer = new UserTransformer();
+        $post['previewImages'] = $postRepository->previewImages($id, $only ? $post['user_id'] : false);
 
         return $this->resOK([
             'post' => $postTransformer->show($post),
@@ -139,12 +140,15 @@ class PostController extends Controller
         $cacheKey = $repository->bangumiListCacheKey($request->get('bangumiId'));
         Redis::pipeline(function ($pipe) use ($id, $cacheKey, $now, $newId, $images, $userId)
         {
+            // 更新帖子的缓存
             if ($pipe->EXISTS('post_'.$id))
             {
                 $pipe->HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
                 $pipe->HSET('post_'.$id, 'updated_at', $now->toDateTimeString());
             }
+            // 更新帖子楼层的
             $pipe->RPUSHX('post_'.$id.'_ids', $newId);
+            // 更新帖子图片预览的缓存
             if ($pipe->EXISTS('post_'.$id.'_previewImages') && !empty($images))
             {
                 foreach ($images as $i => $val)
@@ -153,7 +157,9 @@ class PostController extends Controller
                 }
                 $pipe->RPUSH('post_'.$id.'_previewImages', $images);
             }
+            // 更新用户回复帖子列表的缓存
             $pipe->LPUSHX('user_'.$userId.'_replyPostIds', $newId);
+            // 更新番剧帖子列表的缓存
             if ($pipe->EXISTS($cacheKey))
             {
                 $pipe->ZADD($cacheKey, $now->timestamp, $id);
@@ -185,13 +191,13 @@ class PostController extends Controller
         ], []);
 
         Post::where('id', $id)->increment('comment_count');
-        Redis::pipeline(function ($pipe) use ($id, $now, $newId, $userId)
+        Redis::pipeline(function ($pipe) use ($id, $newId, $userId)
         {
             if ($pipe->EXISTS('post_'.$id))
             {
                 $pipe->HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
             }
-            $pipe->ZADD('post_'.$id.'_commentIds', $now->timestamp, $newId);
+            $pipe->RPUSHX('post_'.$id.'_commentIds', $newId);
             $pipe->LPUSHX('user_'.$userId.'_replyPostIds', $newId);
         });
 

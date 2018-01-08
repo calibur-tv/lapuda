@@ -109,12 +109,12 @@ class PostRepository extends Repository
 
     public function comments($postId, $seenIds = [])
     {
-        $cache = $this->RedisSort('post_'.$postId.'_commentIds', function () use ($postId)
+        $cache = $this->RedisList('post_'.$postId.'_commentIds', function () use ($postId)
         {
             return Post::where('parent_id', $postId)
-                ->pluck('created_at', 'id');
-
-        }, true);;
+                ->orderBy('id', 'ASC')
+                ->pluck('id');
+        });
 
         if (empty($cache))
         {
