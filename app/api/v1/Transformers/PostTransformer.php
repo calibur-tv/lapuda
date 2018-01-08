@@ -27,7 +27,8 @@ class PostTransformer extends Transformer
                 'images' => $post['images'],
                 'created_at' => $post['created_at'],
                 'updated_at' => $post['updated_at'],
-                'previewImages' => $post['previewImages']
+                'previewImages' => $post['previewImages'],
+                'floor_count' => (int)$post['floor_count']
             ];
         });
     }
@@ -42,6 +43,7 @@ class PostTransformer extends Transformer
                 'like_count' => (int)$post['like_count'],
                 'content' => $post['content'],
                 'images' => $post['images'],
+                'floor_count' => (int)$post['floor_count'],
                 'user' => [
                     'id' => (int)$post['user']['id'],
                     'zone' => $post['user']['zone'],
@@ -171,6 +173,7 @@ class PostTransformer extends Transformer
                 'images' => $post['images'],
                 'created_at' => $post['created_at'],
                 'like_count' => (int)$post['like_count'],
+                'floor_count' => (int)$post['floor_count'],
                 'bangumi' => $this->transformer($post['bangumi'], function ($bangumi)
                 {
                     return [
@@ -191,7 +194,8 @@ class PostTransformer extends Transformer
                     return [
                         'id' => (int)$parent['id'],
                         'content' => $parent['content'],
-                        'images' => $parent['images']
+                        'images' => $parent['images'],
+                        'floor_count' => (int)$parent['floor_count']
                     ];
                 }),
                 'post' => $this->transformer($post['post'], function ($main)
