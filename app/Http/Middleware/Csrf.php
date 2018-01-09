@@ -9,7 +9,7 @@ class Csrf
     protected $domains = [
         'https://www.calibur.tv',
         'https://m.calibur.tv',
-        '127.0.0.1',
+        ''
     ];
 
     protected $methods = [
