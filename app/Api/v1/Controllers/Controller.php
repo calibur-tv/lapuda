@@ -40,6 +40,12 @@ class Controller extends BaseController
         return JWTAuth::parseToken()->authenticate();
     }
 
+    protected function getAuthUserId()
+    {
+        $user = $this->getAuthUser();
+        return is_null($user) ? 0 : $user->id;
+    }
+
     protected function resOK($data = '', $message = [], $code = 0)
     {
         return response([

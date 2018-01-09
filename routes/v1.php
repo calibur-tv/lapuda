@@ -11,8 +11,6 @@ $api->version(['v1', 'latest'], function ($api)
 {
     $api->group(['prefix' => '/door'], function ($api)
     {
-        $api->post('/captcha', 'App\Api\V1\Controllers\DoorController@captcha');
-
         $api->post('/send', 'App\Api\V1\Controllers\DoorController@sendEmailOrMessage');
 
         $api->post('/register', 'App\Api\V1\Controllers\DoorController@register');
@@ -43,6 +41,8 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/posts', 'App\Api\V1\Controllers\BangumiController@posts');
 
             $api->post('/follow', 'App\Api\V1\Controllers\BangumiController@follow');
+
+            $api->post('/followers', 'App\Api\V1\Controllers\BangumiController@followers');
         });
     });
 
@@ -55,12 +55,6 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/playing', 'App\Api\V1\Controllers\VideoController@playing');
         });
     });
-
-    $api->group(['prefix' => '/cartoon'], function ($api)
-    {
-        $api->get('/banner', 'App\Api\V1\Controllers\DoorController@banner');
-    });
-
 
     $api->group(['prefix' => '/user'], function ($api)
     {
@@ -106,6 +100,8 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/toggleLike', 'App\Api\V1\Controllers\PostController@toggleLike');
 
+            $api->post('/likeUsers', 'App\Api\V1\Controllers\PostController@likeUsers');
+
             $api->post('/deletePost', 'App\Api\V1\Controllers\PostController@deletePost');
 
             $api->post('/deleteComment', 'App\Api\V1\Controllers\PostController@deleteComment');
@@ -114,6 +110,10 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/image'], function ($api)
     {
+        $api->post('/captcha', 'App\Api\V1\Controllers\DoorController@captcha');
+
+        $api->get('/banner', 'App\Api\V1\Controllers\ImageController@banner');
+
         $api->post('/token', 'App\Api\V1\Controllers\ImageController@token');
     });
 

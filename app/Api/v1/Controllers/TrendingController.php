@@ -21,7 +21,14 @@ class TrendingController extends Controller
             return $this->resOK([]);
         }
 
+        $userId = $this->getAuthUserId();
         $list = $repository->list(array_slice(array_diff($ids, $seen), 0, $take));
+
+        foreach ($list as $i => $item)
+        {
+            $list[$i]['liked'] = $userId ? $repository->checkPostLiked($item['id'], $userId) : false;
+        }
+
         $transformer = new PostTransformer();
 
         return $this->resOK($transformer->trending($list));
@@ -40,7 +47,14 @@ class TrendingController extends Controller
             return $this->resOK([]);
         }
 
+        $userId = $this->getAuthUserId();
         $list = $repository->list(array_slice(array_diff($ids, $seen), 0, $take));
+
+        foreach ($list as $i => $item)
+        {
+            $list[$i]['liked'] = $userId ? $repository->checkPostLiked($item['id'], $userId) : false;
+        }
+
         $transformer = new PostTransformer();
 
         return $this->resOK($transformer->trending($list));

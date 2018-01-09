@@ -237,6 +237,24 @@ class PostController extends Controller
         return $this->resOK($postTransformer->comments($data));
     }
 
+    public function likeUsers(Request $request, $id)
+    {
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = intval($request->get('take')) ?: 10;
+
+        $repository = new PostRepository();
+        $data = $repository->likeUsers($id, $seen, $take);
+
+        if (empty($data))
+        {
+            return $this->resOK([]);
+        }
+
+        $userTransformer = new UserTransformer();
+
+        return $this->resOK($userTransformer->list($data));
+    }
+
     public function toggleLike($postId)
     {
         $user = $this->getAuthUser();
@@ -287,7 +305,7 @@ class PostController extends Controller
             Redis::HINCRBYFLOAT('post_'.$postId, 'like_count', $num);
         }
 
-        return $this->resOK();
+        return $this->resOK(!$liked);
     }
 
     public function deletePost($postId)

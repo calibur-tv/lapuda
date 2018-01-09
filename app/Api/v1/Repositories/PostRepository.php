@@ -77,6 +77,7 @@ class PostRepository extends Repository
             }
 
             $post['bangumi'] = $this->bangumiRepository->item($post['bangumi_id']);
+            $post['likeUsers'] = $this->likeUsers($id);
         }
 
         if ($post['parent_id'] === '0')
@@ -85,6 +86,33 @@ class PostRepository extends Repository
         }
 
         return $post;
+    }
+
+    public function likeUsers($postId, $seenIds = [], $take = 10)
+    {
+        $cache = $this->RedisSort('post_'.$postId.'_likeUserIds', function () use ($postId)
+        {
+            return PostLike::where('post_id', $postId)
+                ->pluck('created_at', 'user_id');
+        }, true);
+
+        if (empty($cache))
+        {
+            return [];
+        }
+
+        if (is_null($this->userRepository))
+        {
+            $this->userRepository = new UserRepository();
+        }
+
+        $ids = array_slice(array_diff($cache, $seenIds), 0, $take);
+        $result = [];
+        foreach ($ids as $id)
+        {
+            $result[] = $this->userRepository->item($id);
+        }
+        return $result;
     }
 
     public function images($postId)
@@ -110,12 +138,11 @@ class PostRepository extends Repository
 
     public function comments($postId, $seenIds = [])
     {
-        $cache = $this->RedisList('post_'.$postId.'_commentIds', function () use ($postId)
+        $cache = $this->RedisSort('post_'.$postId.'_commentIds', function () use ($postId)
         {
             return Post::where('parent_id', $postId)
-                ->orderBy('id', 'ASC')
-                ->pluck('id');
-        });
+                ->pluck('created_at', 'id');
+        }, true);
 
         if (empty($cache))
         {

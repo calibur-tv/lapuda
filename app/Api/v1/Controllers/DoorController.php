@@ -6,7 +6,6 @@ use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Requests\User\RegisterRequest;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Mail\Welcome;
-use App\Models\Banner;
 use App\Models\Confirm;
 use App\Models\User;
 use App\Models\UserZone;
@@ -14,7 +13,6 @@ use App\Api\V1\Repositories\ImageRepository;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Overtrue\LaravelPinyin\Facades\Pinyin as Overtrue;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -31,17 +29,6 @@ class DoorController extends Controller
     public function index()
     {
         return view('welcome');
-    }
-
-    public function banner()
-    {
-        $data = Cache::remember('index_banner', config('cache.ttl'), function () {
-            return Banner::select('id', 'url', 'user_id', 'bangumi_id', 'gray')->get()->toArray();
-        });
-
-        shuffle($data);
-
-        return $this->resOK($data);
     }
 
     public function sendEmailOrMessage(Request $request)
@@ -106,17 +93,6 @@ class DoorController extends Controller
         $user = User::create($data);
 
         return $this->resOK(JWTAuth::fromUser($user));
-    }
-
-    public function captcha()
-    {
-        $token = rand(0, 100) . microtime() . rand(0, 100);
-
-        return $this->resOK([
-            'id' => config('geetest.id'),
-            'secret' => md5(config('app.key', config('geetest.key') . $token)),
-            'access' => $token
-        ]);
     }
 
     public function login(Request $request)

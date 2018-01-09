@@ -209,14 +209,14 @@ class BangumiRepository extends Repository
         });
     }
 
-    public function getFollowers($bangumiId, $seenIds)
+    public function getFollowers($bangumiId, $seenIds, $take = 10)
     {
         $cache = $this->RedisSort('bangumi_'.$bangumiId.'_followersIds', function () use ($bangumiId)
         {
             return BangumiFollow::where('bangumi_id', $bangumiId)->pluck('created_at', 'user_id');
         }, true);
 
-        $ids = array_slice(array_reverse(array_diff($cache, $seenIds)), 0, 10);
+        $ids = array_slice(array_diff($cache, $seenIds), 0, $take);
 
         $repository = new UserRepository();
         $transformer = new UserTransformer();

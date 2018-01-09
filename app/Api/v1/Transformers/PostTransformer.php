@@ -16,6 +16,8 @@ class PostTransformer extends Transformer
     {
         return $this->transformer($post, function ($post)
         {
+            $userTransformer = new UserTransformer();
+
             return [
                 'id' => (int)$post['id'],
                 'comment_count' => (int)$post['comment_count'],
@@ -29,7 +31,8 @@ class PostTransformer extends Transformer
                 'created_at' => $post['created_at'],
                 'updated_at' => $post['updated_at'],
                 'previewImages' => $post['previewImages'],
-                'floor_count' => (int)$post['floor_count']
+                'floor_count' => (int)$post['floor_count'],
+                'likeUsers' => $userTransformer->list($post['likeUsers']),
             ];
         });
     }
@@ -99,7 +102,8 @@ class PostTransformer extends Transformer
                        'nickname' => $user['nickname']
                    ];
                }),
-               'previewImages' => $post['previewImages']
+               'previewImages' => $post['previewImages'],
+               'liked' => $post['liked']
            ];
         });
     }
@@ -134,7 +138,8 @@ class PostTransformer extends Transformer
                        'avatar' => $bangumi['avatar']
                    ];
                 }),
-                'previewImages' => $post['previewImages']
+                'previewImages' => $post['previewImages'],
+                'liked' => $post['liked']
             ];
         });
     }

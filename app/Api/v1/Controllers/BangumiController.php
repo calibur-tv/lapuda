@@ -4,6 +4,7 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\PostTransformer;
+use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Bangumi;
 use App\Models\BangumiTag;
 use App\Api\V1\Repositories\BangumiRepository;
@@ -71,14 +72,11 @@ class BangumiController extends Controller
     {
         $repository = new BangumiRepository();
         $bangumi = $repository->item($id);
+        $userId = $this->getAuthUserId();
 
         $bangumi['followers'] = $repository->getFollowers($id, []);
 
-        $user = $this->getAuthUser();
-
-        $bangumi['followed'] = is_null($user)
-            ? false
-            : $repository->checkUserFollowed($user->id, $id);
+        $bangumi['followed'] = $userId ? $repository->checkUserFollowed($userId, $id) : false;
 
         $transformer = new BangumiTransformer();
 
@@ -140,9 +138,26 @@ class BangumiController extends Controller
         return $this->resOK($followed);
     }
 
+    public function followers(Request $request, $bangumiId)
+    {
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = intval($request->get('take')) ?: 10;
+
+        $repository = new BangumiRepository();
+        $users = $repository->getFollowers($bangumiId, $seen, $take);
+
+        if (empty($users))
+        {
+            return $this->resOK([]);
+        }
+
+        $transformer = new UserTransformer();
+
+        return $this->resOK($transformer->list($users));
+    }
+
     public function posts(Request $request, $id)
     {
-        $user = $this->getAuthUser();
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
         $take = intval($request->get('take')) ?: 10;
         $type = $request->get('type') ?: 'new';
@@ -158,8 +173,14 @@ class BangumiController extends Controller
             ]);
         }
 
+        $userId = $this->getAuthUserId();
         $postRepository = new PostRepository();
         $list = $postRepository->list(array_slice(array_diff($ids, $seen), 0, $take));
+
+        foreach ($list as $i => $item)
+        {
+            $list[$i]['liked'] = $userId ? $postRepository->checkPostLiked($item['id'], $userId) : false;
+        }
 
         $transformer = new PostTransformer();
 
