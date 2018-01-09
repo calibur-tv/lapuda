@@ -234,7 +234,6 @@ class BangumiRepository extends Repository
             return Post::whereRaw('bangumi_id = ? and parent_id = ?', [$id, 0])
                 ->orderBy('id', 'desc')
                 ->pluck('updated_at', 'id');
-
         }, true);
     }
 

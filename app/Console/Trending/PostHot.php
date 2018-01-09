@@ -9,7 +9,7 @@
 
 namespace App\Console\Trending;
 
-use App\Repositories\PostRepository;
+use App\Api\V1\Repositories\PostRepository;
 use Illuminate\Console\Command;
 
 class PostHot extends Command

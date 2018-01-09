@@ -152,13 +152,14 @@ class BangumiController extends Controller
 
         if (empty($ids))
         {
-            $list = [];
+            return $this->resOK([
+                'data' => [],
+                'total' => 0
+            ]);
         }
-        else
-        {
-            $postRepository = new PostRepository();
-            $list = $postRepository->list(array_slice(array_diff($ids, $seen), 0, $take));
-        }
+
+        $postRepository = new PostRepository();
+        $list = $postRepository->list(array_slice(array_diff($ids, $seen), 0, $take));
 
         $transformer = new PostTransformer();
 

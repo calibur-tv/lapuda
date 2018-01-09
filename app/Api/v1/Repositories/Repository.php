@@ -9,6 +9,7 @@
 namespace App\Api\V1\Repositories;
 
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Cache;
 
@@ -79,7 +80,8 @@ class Repository
         {
             $cache = $func();
             $cache = gettype($cache) === 'array' ? $cache : $cache->toArray();
-
+            Log::info('key:'. $key);
+            Log::info($cache);
             if (empty($cache))
             {
                 return [];
