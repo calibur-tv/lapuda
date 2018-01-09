@@ -167,7 +167,7 @@ if (!defined('QINIU_FUNCTIONS_VERSION')) {
 
         static $imageUrlBuilder = null;
         if (is_null($imageUrlBuilder)) {
-            $imageUrlBuilder = new \Qiniu\Processing\ImageUrlBuilder;
+            $imageUrlBuilder = new \App\Services\Qiniu\Processing\ImageUrlBuilder;
         }
 
         return call_user_func_array(array($imageUrlBuilder, 'thumbnail'), func_get_args());
@@ -200,7 +200,7 @@ if (!defined('QINIU_FUNCTIONS_VERSION')) {
 
         static $imageUrlBuilder = null;
         if (is_null($imageUrlBuilder)) {
-            $imageUrlBuilder = new \Qiniu\Processing\ImageUrlBuilder;
+            $imageUrlBuilder = new \App\Services\Qiniu\Processing\ImageUrlBuilder;
         }
 
         return call_user_func_array(array($imageUrlBuilder, 'waterImg'), func_get_args());
@@ -237,7 +237,7 @@ if (!defined('QINIU_FUNCTIONS_VERSION')) {
 
         static $imageUrlBuilder = null;
         if (is_null($imageUrlBuilder)) {
-            $imageUrlBuilder = new \Qiniu\Processing\ImageUrlBuilder;
+            $imageUrlBuilder = new \App\Services\Qiniu\Processing\ImageUrlBuilder;
         }
 
         return call_user_func_array(array($imageUrlBuilder, 'waterText'), func_get_args());

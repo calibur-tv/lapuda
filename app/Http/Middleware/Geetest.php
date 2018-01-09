@@ -17,7 +17,7 @@ class Geetest
 
         return response([
             'code' => 403,
-            'message' => '验证码过期，请刷新网页重试',
+            'message' => ['验证码过期，请刷新网页重试'],
             'data' => ''
         ], 403);
     }

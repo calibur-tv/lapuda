@@ -10,5 +10,9 @@ use Illuminate\Database\Eloquent\Model;
  */
 class UserSign extends Model
 {
-    protected $table='user_signs';
+    protected $table = 'user_signs';
+
+    protected $fillable = [
+        'user_id'
+    ];
 }

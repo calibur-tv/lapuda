@@ -55,8 +55,8 @@ final class PersistentFop
             $fops = implode(';', $fops);
         }
         $params = array('bucket' => $bucket, 'key' => $key, 'fops' => $fops);
-        \Qiniu\setWithoutEmpty($params, 'pipeline', $pipeline);
-        \Qiniu\setWithoutEmpty($params, 'notifyURL', $notify_url);
+        \App\Services\Qiniu\setWithoutEmpty($params, 'pipeline', $pipeline);
+        \App\Services\Qiniu\setWithoutEmpty($params, 'notifyURL', $notify_url);
         if ($force) {
             $params['force'] = 1;
         }
