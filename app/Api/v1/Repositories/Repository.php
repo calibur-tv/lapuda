@@ -80,8 +80,7 @@ class Repository
         {
             $cache = $func();
             $cache = gettype($cache) === 'array' ? $cache : $cache->toArray();
-            Log::info('key:'. $key);
-            Log::info($cache);
+
             if (empty($cache))
             {
                 return [];
