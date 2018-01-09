@@ -255,9 +255,26 @@ class PostController extends Controller
         $post = $postRepository->item($postId);
         $liked = $postRepository->checkPostLiked($postId, $userId);
 
+        if ($userId == $post['user_id'])
+        {
+            return $this->resErr(['不能给自己点赞']);
+        }
+
+        // 如果是主题帖，要删除楼主所得的金币，但金币不返还给用户
+        if ($post['parent_id'] == '0')
+        {
+            $userRepository = new UserRepository();
+            $result = $userRepository->toggleCoin($liked, $userId, $post['user_id'], 1);
+
+            if (!$result)
+            {
+                return $this->resErr([$liked ? '未打赏过' : '金币不足']);
+            }
+        }
+
         if ($liked)
         {
-            PostLike::whereRaw('user_id = ? and post_id = ?'. [$userId, $postId])->delete();
+            PostLike::whereRaw('user_id = ? and post_id = ?', [$userId, $postId])->delete();
             $num = -1;
         }
         else
@@ -273,13 +290,6 @@ class PostController extends Controller
         if (Redis::EXISTS('post_'.$postId))
         {
             Redis::HINCRBYFLOAT('post_'.$postId, 'like_count', $num);
-        }
-
-        // 如果是主题帖，要删除楼主所得的金币，但金币不返还给用户
-        if ($post['parent_id'] == '0')
-        {
-            $userRepository = new UserRepository();
-            $userRepository->toggleCoin($liked, $userId, $post['user_id'], 1);
         }
 
         return $this->resOK();
