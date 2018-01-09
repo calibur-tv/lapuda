@@ -99,16 +99,10 @@ class PostController extends Controller
 
         $list = $postTransformer->reply($list);
 
-        $result = [];
-        foreach ($list as $item)
-        {
-            $result[$item['id']] = $item;
-        }
-
         if (!empty($seen))
         {
             return $this->resOK([
-                'list' => $result,
+                'list' => $list,
                 'total' => count($ids)
             ]);
         }
@@ -123,7 +117,7 @@ class PostController extends Controller
 
         return $this->resOK([
             'post' => $postTransformer->show($post),
-            'list' => $result,
+            'list' => $list,
             'bangumi' => $bangumiTransformer->item($bangumiRepository->item($post['bangumi_id'])),
             'user' => $userTransformer->item($userRepository->item($post['user_id'])),
             'total' => count($ids)
@@ -186,8 +180,9 @@ class PostController extends Controller
 
         $post = $repository->item($newId);
         $post['liked'] = false;
+        $transformer = new PostTransformer();
 
-        return $this->resOK($post);
+        return $this->resOK($transformer->reply([$post])[0]);
     }
 
     public function commit(CommitRequest $request, $id)
