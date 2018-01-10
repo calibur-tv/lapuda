@@ -101,8 +101,8 @@ class DoorController extends Controller
      *      @Request({"method": "phone|email", "nickname": "用户昵称", "access": "账号", "secret": "密码", "authCode": "短信或邮箱验证码", "inviteCode": "邀请码"}),
      *      @Response(200, body={"code": 0, "data": "JWT-Token"}),
      *      @Response(400, body={"code": 400, "data": "请求参数错误"}),
-     *      @Response(403, body={"code": 403, "data": "该手机或邮箱已绑定另外一个账号"}),
-     *      @Response(401, body={"code": 401, "data": "验证码过期，请重新获取"})
+     *      @Response(401, body={"code": 401, "data": "验证码过期，请重新获取"}),
+     *      @Response(403, body={"code": 403, "data": "该手机或邮箱已绑定另外一个账号"})
      * })
      */
     public function register(Request $request)
@@ -231,7 +231,7 @@ class DoorController extends Controller
      * @Transaction({
      *      @Request({"method": "phone|email", "nickname": "用户昵称", "access": "账号", "secret": "密码", "authCode": "短信或邮箱验证码", "inviteCode": "邀请码"}),
      *      @Response(200, body={"code": 0, "data": "用户对象"}),
-     *      @Response(401, body={"code": 401, "data": "未登录的用户"}),
+     *      @Response(401, body={"code": 401, "data": "未登录的用户"})
      * })
      */
     public function refresh()

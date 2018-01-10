@@ -25,9 +25,9 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/bangumi'], function ($api)
     {
-        $api->get('/released', 'App\Api\V1\Controllers\BangumiController@released');
-
         $api->get('/timeline', 'App\Api\V1\Controllers\BangumiController@timeline');
+
+        $api->get('/released', 'App\Api\V1\Controllers\BangumiController@released');
 
         $api->get('/tags', 'App\Api\V1\Controllers\BangumiController@tags');
 

@@ -19,7 +19,19 @@ use Illuminate\Support\Facades\Cache;
 class BangumiController extends Controller
 {
     /**
-     * 按照年份获取番剧列表
+     * 获取番剧时间轴
+     *
+     * @Get("/bangumi/timeline")
+     *
+     * @Parameters({
+     *      @Parameter("year", description="从哪一年开始获取", required=true),
+     *      @Parameter("take", description="一次获取几年的内容", default=3)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": {"list": "番剧列表", "min": "可获取到数据的最小年份"}}),
+     *      @Response(400, body={"code": 400, "data": "请求参数错误"})
+     * })
      */
     public function timeline(Request $request)
     {
@@ -27,22 +39,31 @@ class BangumiController extends Controller
         $take = intval($request->get('take')) ?: 3;
         if (!$year)
         {
-            return $this->resErr(['请求参数错误']);
+            return $this->res('请求参数错误', 400);
         }
 
         $repository = new BangumiRepository();
-        $data = [];
+        $list = [];
 
         for ($i = 0; $i < $take; $i++) {
-            $data = array_merge($data, $repository->timeline($year - $i));
+            $list = array_merge($list, $repository->timeline($year - $i));
         }
 
-        return $this->resOK([
-            'data' => $data,
+        return $this->res([
+            'list' => $list,
             'min' => $repository->timelineMinYear()
         ]);
     }
 
+    /**
+     * 获取新番列表
+     *
+     * @Get("/bangumi/released")
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "番剧列表"})
+     * })
+     */
     public function released()
     {
         $data = Cache::remember('bangumi_release_list', 60, function ()
@@ -71,39 +92,40 @@ class BangumiController extends Controller
             return $result;
         });
 
-        return $this->resOK($data);
+        return $this->res($data);
     }
 
-    public function show($id)
-    {
-        $repository = new BangumiRepository();
-        $bangumi = $repository->item($id);
-        $userId = $this->getAuthUserId();
-
-        $bangumi['followers'] = $repository->getFollowers($id, []);
-
-        $bangumi['followed'] = $userId ? $repository->checkUserFollowed($userId, $id) : false;
-
-        $transformer = new BangumiTransformer();
-
-        return $this->resOK($transformer->show($bangumi));
-    }
-
-    public function videos($id)
-    {
-        $repository = new BangumiRepository();
-        $bangumi = $repository->item($id);
-
-        return $this->resOK($repository->videos($id, json_decode($bangumi['season'])));
-    }
-
+    /**
+     * 获取所有的番剧标签
+     *
+     * @Get("/bangumi/tags")
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "标签列表"})
+     * })
+     */
     public function tags()
     {
         $tagRepository = new TagRepository();
 
-        return $this->resOK($tagRepository->all(0));
+        return $this->res($tagRepository->all(0));
     }
 
+    /**
+     * 根据参数获取番剧列表
+     *
+     * @Get("/bangumi/category")
+     *
+     * @Parameters({
+     *      @Parameter("id", description="选中的标签id，用 - 链接的字符串", required=true),
+     *      @Parameter("page", description="页码", required=true, default=1)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "番剧列表"}),
+     *      @Response(400, body={"code": 400, "data": "请求参数错误"})
+     * })
+     */
     public function category(Request $request)
     {
         $tags = $request->get('id');
@@ -111,7 +133,7 @@ class BangumiController extends Controller
 
         if (is_null($tags))
         {
-            return $this->resErr(['请求参数不能为空'], 422);
+            return $this->resErr('请求参数不能为空', 400);
         }
 
         // 格式化为数组 -> 只保留数字 -> 去重 -> 保留value
@@ -121,21 +143,85 @@ class BangumiController extends Controller
 
         if (empty($tags))
         {
-            return $this->resErr(['请求参数格式错误'], 422);
+            return $this->resErr(['请求参数格式错误'], 400);
         }
 
         sort($tags);
         $repository = new BangumiRepository();
 
-        return $this->resOK($repository->category($tags, $page));
+        return $this->res($repository->category($tags, $page));
     }
 
+    /**
+     * 获取番剧详情
+     *
+     * @Get("/bangumi/${bangumiId}/show")
+     *
+     * @Request(headers={"Authorization": "Bearer JWT-Token"})
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "番剧对象"}),
+     *      @Response(404, body={"code": 404, "data": "不存在的番剧"})
+     * })
+     */
+    public function show($id)
+    {
+        $repository = new BangumiRepository();
+        $bangumi = $repository->item($id);
+        if (is_null($bangumi))
+        {
+            return $this->res('不存在的番剧', 404);
+        }
+
+        $userId = $this->getAuthUserId();
+
+        $bangumi['followers'] = $repository->getFollowers($id, []);
+        $bangumi['followed'] = $userId ? $repository->checkUserFollowed($userId, $id) : false;
+
+        $transformer = new BangumiTransformer();
+
+        return $this->resOK($transformer->show($bangumi));
+    }
+
+    /**
+     * 获取番剧视频
+     *
+     * @Get("/bangumi/${bangumiId}/videos")
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": {"videos": "视频列表", "repeat": "视频集数是否连续", "total": "视频总数"}}),
+     *      @Response(404, body={"code": 404, "data": "不存在的番剧"})
+     * })
+     */
+    public function videos($id)
+    {
+        $repository = new BangumiRepository();
+        $bangumi = $repository->item($id);
+
+        if (is_null($bangumi))
+        {
+            return $this->res('不存在的番剧', 404);
+        }
+
+        return $this->res($repository->videos($id, json_decode($bangumi['season'])));
+    }
+
+    /**
+     * 关注或取消关注番剧
+     *
+     * @Post("/bangumi/${bangumiId}/follow")
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "是否已关注"}),
+     *      @Response(401, body={"code": 401, "data": "用户认证失败"})
+     * })
+     */
     public function follow($id)
     {
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->resErr(['用户认证失败'], 404);
+            return $this->res('用户认证失败', 401);
         }
 
         $bangumiRepository = new BangumiRepository();
@@ -144,6 +230,16 @@ class BangumiController extends Controller
         return $this->resOK($followed);
     }
 
+    /**
+     * 获取关注番剧的用户列表
+     *
+     * @Post("/bangumi/${bangumiId}/followers")
+     *
+     * @Transaction({
+     *      @Request({"seenIds": "看过的userIds，用','隔开的字符串", "take": "获取数量"}),
+     *      @Response(200, body={"code": 0, "data": "用户列表"})
+     * })
+     */
     public function followers(Request $request, $bangumiId)
     {
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
@@ -162,6 +258,16 @@ class BangumiController extends Controller
         return $this->resOK($transformer->list($users));
     }
 
+    /**
+     * 番剧的帖子列表
+     *
+     * @Post("/bangumi/${bangumiId}/posts")
+     *
+     * @Transaction({
+     *      @Request({"seenIds": "看过的userIds，用','隔开的字符串", "take": "获取数量"}, headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body={"code": 0, "data": {"list": "番剧列表", "total": "总数"}})
+     * })
+     */
     public function posts(Request $request, $id)
     {
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
@@ -174,7 +280,7 @@ class BangumiController extends Controller
         if (empty($ids))
         {
             return $this->resOK([
-                'data' => [],
+                'list' => [],
                 'total' => 0
             ]);
         }
@@ -191,7 +297,7 @@ class BangumiController extends Controller
         $transformer = new PostTransformer();
 
         return $this->resOK([
-            'data' => $transformer->bangumi($list),
+            'list' => $transformer->bangumi($list),
             'total' => count($ids)
         ]);
     }
