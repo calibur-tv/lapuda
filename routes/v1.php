@@ -110,7 +110,7 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/image'], function ($api)
     {
-        $api->post('/captcha', 'App\Api\V1\Controllers\DoorController@captcha');
+        $api->post('/captcha', 'App\Api\V1\Controllers\ImageController@captcha');
 
         $api->get('/banner', 'App\Api\V1\Controllers\ImageController@banner');
 
