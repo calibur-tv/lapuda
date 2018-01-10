@@ -14,6 +14,7 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/send', 'App\Api\V1\Controllers\DoorController@sendEmailOrMessage');
 
         $api->post('/register', 'App\Api\V1\Controllers\DoorController@register');
+        $api->get('/register', 'App\Api\V1\Controllers\DoorController@register');
 
         $api->post('/login', 'App\Api\V1\Controllers\DoorController@login');
 

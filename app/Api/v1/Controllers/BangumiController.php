@@ -13,12 +13,18 @@ use App\Api\V1\Repositories\TagRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
+/**
+ * @Resource("番剧相关接口")
+ */
 class BangumiController extends Controller
 {
+    /**
+     * 按照年份获取番剧列表
+     */
     public function timeline(Request $request)
     {
         $year = intval($request->get('year'));
-        $take = $request->get('take') ?: 3;
+        $take = intval($request->get('take')) ?: 3;
         if (!$year)
         {
             return $this->resErr(['请求参数错误']);
