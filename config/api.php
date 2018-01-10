@@ -83,7 +83,7 @@ return [
     |
     */
 
-    'name' => env('API_NAME', null),
+    'name' => env('API_NAME', 'calibur.tv API docs'),
 
     /*
     |--------------------------------------------------------------------------

@@ -30,7 +30,7 @@ class Csrf
     public function handle($request, Closure $next)
     {
         if (
-            config('app.env') !== 'production' ||
+            config('app.env') !== 'local' ||
             in_array($request->method(), $this->methods) ||
             in_array($request->headers->get('Origin'), $this->domains) ||
             in_array($request->url(), $this->except) ||

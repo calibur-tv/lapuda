@@ -17,6 +17,9 @@ use Illuminate\Support\Facades\Mail;
 use Overtrue\LaravelPinyin\Facades\Pinyin as Overtrue;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
+/**
+ * @Resource("用户认证相关接口")
+ */
 class DoorController extends Controller
 {
     public function __construct()
@@ -24,11 +27,6 @@ class DoorController extends Controller
         $this->middleware('geetest')->only([
             'login', 'register'
         ]);
-    }
-
-    public function index()
-    {
-        return view('welcome');
     }
 
     public function sendEmailOrMessage(Request $request)
@@ -95,6 +93,19 @@ class DoorController extends Controller
         return $this->resOK(JWTAuth::fromUser($user));
     }
 
+    /**
+     * 用户登录
+     *
+     * 通过邮箱或手机号登录.
+     *
+     * @Post("/door/login")
+     *
+     * @Transaction({
+     *      @Request({"method": "phone|email", "access": "账号", "secret": "密码"}),
+     *      @Response(200, body={"id": 10, "username": "foo"}),
+     *      @Response(401, body={"error": "用户名或密码错误"})
+     * })
+     */
     public function login(Request $request)
     {
         $data = $request->get('method') === 'phone'
