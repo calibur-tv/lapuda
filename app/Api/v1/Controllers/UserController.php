@@ -122,10 +122,8 @@ class UserController extends Controller
      *      @Response(404, body={"code": 404, "data": "该用户不存在"})
      * })
      */
-    public function show(Request $request)
+    public function show($zone)
     {
-        $zone = $request->get('zone');
-
         $userId = User::where('zone', $zone)->pluck('id')->first();
         if (is_null($userId))
         {

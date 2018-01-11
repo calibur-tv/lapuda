@@ -294,7 +294,7 @@ class PostRepository extends Repository
         return $this->RedisSort('post_hot_ids', function ()
         {
             $ids = Post::whereRaw('created_at > ? and parent_id = ?', [
-                Carbon::now()->addDays(-7), 0
+                Carbon::now()->addDays(-30), 0
             ])->pluck('id');
 
             $list = $this->list($ids);
@@ -306,7 +306,7 @@ class PostRepository extends Repository
                     $item['like_count'] +
                     (intval($item['view_count']) && log($item['view_count'], 10) * 4) +
                     (intval($item['comment_count']) && log($item['comment_count'], M_E))
-                ) / pow((((time() * 2 - strtotime($item['created_at']) - strtotime($item['updated_at'])) / 2) + 1), 0.5);
+                ) / pow((((time() * 2 - strtotime($item['created_at']) - strtotime($item['updated_at'])) / 2) + 1), 0.3);
             }
 
             return $result;
