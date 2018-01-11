@@ -55,8 +55,20 @@ class PostRepository extends Repository
     {
         $post = $this->RedisHash('post_'.$id, function () use ($id)
         {
-            return Post::findOrFail($id)->toArray();
+            $post = Post::find($id);
+
+            if (is_null($post))
+            {
+                return null;
+            }
+
+            return $post->toArray();
         });
+
+        if (is_null($post))
+        {
+            return null;
+        }
 
         $post['images'] = $this->images($id);
 
@@ -197,7 +209,7 @@ class PostRepository extends Repository
     {
         return $this->RedisHash('post_'.$postId.'_comment_'.$commentId, function () use ($commentId)
         {
-            return Post::where('posts.id', $commentId)
+            $comment = Post::where('posts.id', $commentId)
                 ->leftJoin('users AS from', 'from.id', '=', 'posts.user_id')
                 ->leftJoin('users AS to', 'to.id', '=', 'posts.target_user_id')
                 ->select(
@@ -210,7 +222,14 @@ class PostRepository extends Repository
                     'from.avatar AS from_user_avatar',
                     'to.nickname AS to_user_name',
                     'to.zone AS to_user_zone'
-                )->first()->toArray();
+                )->first();
+
+            if (is_null($comment))
+            {
+                return null;
+            }
+
+            return $comment->toArray();
         });
     }
 

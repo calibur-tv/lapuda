@@ -19,7 +19,7 @@ use Overtrue\LaravelPinyin\Facades\Pinyin as Overtrue;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 /**
- * @Resource("用户认证相关接口")
+ * @Resource("认证相关接口")
  */
 class DoorController extends Controller
 {
@@ -221,7 +221,7 @@ class DoorController extends Controller
     }
 
     /**
-     * 获取用户数据
+     * 获取用户信息
      *
      * 每次启动应用或登录/注册成功后调用
      *

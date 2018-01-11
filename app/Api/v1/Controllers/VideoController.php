@@ -6,8 +6,21 @@ use App\Models\Video;
 use App\Api\V1\Repositories\BangumiRepository;
 use Illuminate\Support\Facades\Cache;
 
+/**
+ * @Resource("视频相关接口")
+ */
 class VideoController extends Controller
 {
+    /**
+     * 获取视频资源
+     *
+     * @Get("/video/${videoId}/show")
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "..."}),
+     *      @Response(404, body={"code": 404, "data": "不存在的视频资源"})
+     * })
+     */
     public function show($id)
     {
         $data = Cache::remember('video_'.$id.'_show', config('cache.ttl'), function () use ($id)
@@ -28,15 +41,22 @@ class VideoController extends Controller
 
         if (is_null($data))
         {
-            return $this->resErr(['视频不存在']);
+            return $this->res('视频不存在', 404);
         }
 
         $bangumiRepository = new BangumiRepository();
         $data['bangumi'] = $bangumiRepository->item($data['info']['bangumi_id']);
 
-        return $this->resOK($data);
+        return $this->res($data);
     }
 
+    /**
+     * 记录视频播放信息
+     *
+     * @Get("/video/${videoId}/playing")
+     *
+     * @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     */
     public function playing($id)
     {
         $key = 'video_played_counter_' . $id;
@@ -59,6 +79,6 @@ class VideoController extends Controller
 
         Cache::forever($key, $value);
 
-        return $this->resOK();
+        return $this->res();
     }
 }

@@ -211,6 +211,8 @@ class BangumiController extends Controller
      *
      * @Post("/bangumi/${bangumiId}/follow")
      *
+     * @Request(headers={"Authorization": "Bearer JWT-Token"})
+     *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": "是否已关注"}),
      *      @Response(401, body={"code": 401, "data": "用户认证失败"})

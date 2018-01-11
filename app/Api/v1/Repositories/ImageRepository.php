@@ -18,8 +18,8 @@ class ImageRepository
         $uptoken = $auth->uploadToken(null, $timeout);
 
         return [
-            'data' => $uptoken,
-            'time' => time() + $timeout
+            'upToken' => $uptoken,
+            'expiredAt' => time() + $timeout
         ];
     }
 }

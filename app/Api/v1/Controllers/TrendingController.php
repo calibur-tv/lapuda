@@ -6,8 +6,21 @@ use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Transformers\PostTransformer;
 use Illuminate\Http\Request;
 
+/**
+ * @Resource("排行相关接口")
+ */
 class TrendingController extends Controller
 {
+    /**
+     * 最新帖子列表
+     *
+     * @Post("/trending/post/new")
+     *
+     * @Transaction({
+     *      @Request({"take": "获取数量", "seenIds": "看过的postIds, 用','号分割的字符串"}, headers={"Authorization": "Bearer JWT-Token"}, identifier="A"),
+     *      @Response(200, body={"code": 0, {"data": "帖子列表"}}),
+     * })
+     */
     public function postNew(Request $request)
     {
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
@@ -18,7 +31,7 @@ class TrendingController extends Controller
 
         if (empty($ids))
         {
-            return $this->resOK([]);
+            return $this->res([]);
         }
 
         $userId = $this->getAuthUserId();
@@ -31,9 +44,19 @@ class TrendingController extends Controller
 
         $transformer = new PostTransformer();
 
-        return $this->resOK($transformer->trending($list));
+        return $this->res($transformer->trending($list));
     }
 
+    /**
+     * 热门帖子列表
+     *
+     * @Post("/trending/post/hot")
+     *
+     * @Transaction({
+     *      @Request({"take": "获取数量", "seenIds": "看过的postIds, 用','号分割的字符串"}, headers={"Authorization": "Bearer JWT-Token"}, identifier="A"),
+     *      @Response(200, body={"code": 0, {"data": "帖子列表"}}),
+     * })
+     */
     public function postHot(Request $request)
     {
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
@@ -44,7 +67,7 @@ class TrendingController extends Controller
 
         if (empty($ids))
         {
-            return $this->resOK([]);
+            return $this->res([]);
         }
 
         $userId = $this->getAuthUserId();
@@ -57,6 +80,6 @@ class TrendingController extends Controller
 
         $transformer = new PostTransformer();
 
-        return $this->resOK($transformer->trending($list));
+        return $this->res($transformer->trending($list));
     }
 }
