@@ -2,6 +2,9 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\VideoRepository;
+use App\Api\V1\Transformers\BangumiTransformer;
+use App\Api\V1\Transformers\VideoTransformer;
 use App\Models\Video;
 use App\Api\V1\Repositories\BangumiRepository;
 use Illuminate\Support\Facades\Cache;
@@ -17,37 +20,34 @@ class VideoController extends Controller
      * @Get("/video/${videoId}/show")
      *
      * @Transaction({
-     *      @Response(200, body={"code": 0, "data": "..."}),
+     *      @Response(200, body={"code": 0, "data": {"info": "视频对象", "bangumi": "番剧信息", "list": {"total": "视频总数", "repeat": "是否重排", "videos": "视频列表"}}}),
      *      @Response(404, body={"code": 404, "data": "不存在的视频资源"})
      * })
      */
     public function show($id)
     {
-        $data = Cache::remember('video_'.$id.'_show', config('cache.ttl'), function () use ($id)
+        $videoRepository = new VideoRepository();
+        $info = $videoRepository->item($id);
+
+        if (is_null($info))
         {
-            $info = Video::where('id', $id)->first();
-            if (is_null($info))
-            {
-                return null;
-            }
-
-            $info['resource'] = $info['resource'] === 'null' ? '' : json_decode($info['resource']);
-
-            return [
-                'info' => $info,
-                'videos' => Video::where('bangumi_id', $info['bangumi_id'])->get()
-            ];
-        });
-
-        if (is_null($data))
-        {
-            return $this->res('视频不存在', 404);
+            return $this->res('不存在的视频资源', 404);
         }
 
         $bangumiRepository = new BangumiRepository();
-        $data['bangumi'] = $bangumiRepository->item($data['info']['bangumi_id']);
+        $bangumi = $bangumiRepository->item($info['bangumi_id']);
+        $season = json_decode($bangumi['season']);
+        $list = $bangumiRepository->videos($bangumi['id'], $season);
 
-        return $this->res($data);
+        $bangumiTransformer = new BangumiTransformer();
+        $videoTransformer = new VideoTransformer();
+
+        return $this->res([
+            'info' => $videoTransformer->show($info),
+            'bangumi' => $bangumiTransformer->item($bangumi),
+            'season' => $season,
+            'list' => $list
+        ]);
     }
 
     /**

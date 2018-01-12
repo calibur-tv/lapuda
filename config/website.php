@@ -2,5 +2,6 @@
 
 return [
     'cdn' => 'https://image.calibur.tv/',
-    'list_count' => 15
+    'video' => 'https://video.calibur.tv/',
+    'list_count' => 15,
 ];
