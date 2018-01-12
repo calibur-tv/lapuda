@@ -240,7 +240,7 @@ class PostController extends Controller
             {
                 foreach ($images as $i => $val)
                 {
-                    $images[$i] = config('website.cdn') . $val;
+                    $images[$i] = config('website.cdn') . $val['key'];
                 }
                 $pipe->RPUSH('post_'.$id.'_previewImages', $images);
             }

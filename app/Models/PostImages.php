@@ -13,7 +13,11 @@ class PostImages extends Model
 
     protected $fillable = [
         'post_id',
-        'src'
+        'src',
+        'type',
+        'size',
+        'width',
+        'height'
     ];
 
     public function getSrcAttribute($url)

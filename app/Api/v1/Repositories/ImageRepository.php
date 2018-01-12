@@ -17,9 +17,14 @@ class ImageRepository
         $timeout = 3600;
         $uptoken = $auth->uploadToken(null, $timeout, [
             'returnBody' => '{
-                "w": "$(imageInfo.width)",
-                "h": "$(imageInfo.height)",
-                "key": "$(key)"
+                "code": 0,
+                "data": {
+                    "height": $(imageInfo.height),
+                    "width": $(imageInfo.width),
+                    "type": "$(mimeType)",
+                    "size": $(fsize),
+                    "key": "$(key)"
+                }
             }'
         ]);
 

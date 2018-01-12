@@ -39,7 +39,11 @@ class PostRepository extends Repository
             {
                 $arr[] = [
                     'post_id' => $newId,
-                    'src' => $item,
+                    'src' => $item['key'],
+                    'size' => intval($item['size']),
+                    'width' => intval($item['width']),
+                    'height' => intval($item['height']),
+                    'type' => $item['type'],
                     'created_at' => $now,
                     'updated_at' => $now
                 ];
