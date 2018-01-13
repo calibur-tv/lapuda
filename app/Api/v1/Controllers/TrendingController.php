@@ -31,7 +31,7 @@ class TrendingController extends Controller
 
         if (empty($ids))
         {
-            return $this->res([]);
+            return $this->resOK([]);
         }
 
         $userId = $this->getAuthUserId();
@@ -44,7 +44,7 @@ class TrendingController extends Controller
 
         $transformer = new PostTransformer();
 
-        return $this->res($transformer->trending($list));
+        return $this->resOK($transformer->trending($list));
     }
 
     /**
@@ -67,7 +67,7 @@ class TrendingController extends Controller
 
         if (empty($ids))
         {
-            return $this->res([]);
+            return $this->resOK([]);
         }
 
         $userId = $this->getAuthUserId();
@@ -80,6 +80,6 @@ class TrendingController extends Controller
 
         $transformer = new PostTransformer();
 
-        return $this->res($transformer->trending($list));
+        return $this->resOK($transformer->trending($list));
     }
 }

@@ -29,7 +29,7 @@ class ImageController extends Controller
 
         shuffle($list);
 
-        return $this->res($list);
+        return $this->resOK($list);
     }
 
     /**
@@ -45,7 +45,7 @@ class ImageController extends Controller
     {
         $token = rand(0, 100) . microtime() . rand(0, 100);
 
-        return $this->res([
+        return $this->resOK([
             'id' => config('geetest.id'),
             'secret' => md5(config('app.key', config('geetest.key') . $token)),
             'access' => $token
@@ -69,11 +69,11 @@ class ImageController extends Controller
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->res('未登录的用户', 401);
+            return $this->resErr('未登录的用户', 401);
         }
 
         $repository = new ImageRepository();
 
-        return $this->res($repository->uptoken());
+        return $this->resOK($repository->uptoken());
     }
 }

@@ -43,7 +43,7 @@ class UserController extends Controller
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->res('未登录的用户', 401);
+            return $this->resErr('未登录的用户', 401);
         }
 
         $repository = new UserRepository();
@@ -51,22 +51,12 @@ class UserController extends Controller
 
         if ($repository->daySigned($userId))
         {
-            return $this->res('已签到', 403);
+            return $this->resErr('已签到', 403);
         }
 
-        UserCoin::create([
-            'user_id' => $userId,
-            'from_user_id' => 0,
-            'type' => 0
-        ]);
+        $repository->toggleCoin(false, $userId, $userId, 0);
 
-        UserSign::create([
-            'user_id' => $userId
-        ]);
-
-        User::where('id', $userId)->increment('coin_count');
-
-        return $this->res();
+        return $this->resOK();
     }
 
     /**
@@ -86,14 +76,14 @@ class UserController extends Controller
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->res('未登录的用户', 401);
+            return $this->resErr('未登录的用户', 401);
         }
 
         $key = $request->get('type');
 
         if (!in_array($key, ['avatar', 'banner']))
         {
-            return $this->res('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400);
         }
 
         $val = $request->get('url');
@@ -108,7 +98,7 @@ class UserController extends Controller
             Redis::HSET($cache, $key, $val);
         }
 
-        return $this->res();
+        return $this->resOK();
     }
 
     /**
@@ -127,14 +117,14 @@ class UserController extends Controller
         $userId = User::where('zone', $zone)->pluck('id')->first();
         if (is_null($userId))
         {
-            return $this->res('该用户不存在', 404);
+            return $this->resErr('该用户不存在', 404);
         }
 
         $repository = new UserRepository();
         $transformer = new UserTransformer();
         $user = $repository->item($userId);
 
-        return $this->res($transformer->show($user));
+        return $this->resErr($transformer->show($user));
     }
 
     /**
@@ -159,13 +149,13 @@ class UserController extends Controller
 
         if ($validator->fails())
         {
-            return $this->res('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400);
         }
 
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->res('找不到用户', 404);
+            return $this->resErr('找不到用户', 404);
         }
 
         $user->update([
@@ -177,7 +167,7 @@ class UserController extends Controller
 
         Redis::DEL('user_'.$user->id);
 
-        return $this->res();
+        return $this->resOK();
     }
 
     /**
@@ -195,13 +185,13 @@ class UserController extends Controller
         $userId = User::where('zone', $zone)->pluck('id')->first();
         if (is_null($userId))
         {
-            return $this->res('该用户不存在', 404);
+            return $this->resErr('该用户不存在', 404);
         }
 
         $repository = new UserRepository();
         $follows = $repository->bangumis($userId);
 
-        return $this->res($follows);
+        return $this->resOK($follows);
     }
 
     /**
@@ -220,7 +210,7 @@ class UserController extends Controller
         $userId = User::where('zone', $zone)->pluck('id')->first();
         if (is_null($userId))
         {
-            return $this->res(['找不到用户'], 404);
+            return $this->resErr(['找不到用户'], 404);
         }
 
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
@@ -231,14 +221,14 @@ class UserController extends Controller
 
         if (empty($ids))
         {
-            return $this->res([]);
+            return $this->resOK([]);
         }
 
         $postRepository = new PostRepository();
         $postTransformer = new PostTransformer();
         $list = $postRepository->list(array_slice(array_diff($ids, $seen), 0, $take));
 
-        return $this->res($postTransformer->usersMine($list));
+        return $this->resOK($postTransformer->usersMine($list));
     }
 
     /**
@@ -257,7 +247,7 @@ class UserController extends Controller
         $userId = User::where('zone', $zone)->pluck('id')->first();
         if (is_null($userId))
         {
-            return $this->res('找不到用户', 404);
+            return $this->resErr('找不到用户', 404);
         }
 
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
@@ -268,7 +258,7 @@ class UserController extends Controller
 
         if (empty($ids))
         {
-            return $this->res([]);
+            return $this->resOK([]);
         }
 
         $ids = array_slice(array_diff($ids, $seen), 0, $take);
@@ -278,7 +268,7 @@ class UserController extends Controller
             $data[] = $userRepository->replyPostItem($userId, $id);
         }
 
-        return $this->res($data);
+        return $this->resOK($data);
     }
 
     /**
@@ -301,7 +291,7 @@ class UserController extends Controller
 
         if ($validator->fails())
         {
-            return $this->res('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400);
         }
 
         Feedback::create([
@@ -310,6 +300,6 @@ class UserController extends Controller
             'user_id' => $this->getAuthUserId()
         ]);
 
-        return $this->res();
+        return $this->resOK();
     }
 }

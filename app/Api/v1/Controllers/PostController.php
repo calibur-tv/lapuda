@@ -52,13 +52,13 @@ class PostController extends Controller
 
         if ($validator->fails())
         {
-            return $this->res('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400);
         }
 
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->res('未登录的用户', 401);
+            return $this->resErr('未登录的用户', 401);
         }
 
         $now = Carbon::now();
@@ -91,7 +91,7 @@ class PostController extends Controller
         $job = (new \App\Jobs\Trial\Post($id))->onQueue('post-create');
         dispatch($job);
 
-        return $this->res($id);
+        return $this->resOK($id);
     }
 
     /**
@@ -114,12 +114,12 @@ class PostController extends Controller
         $post = $postRepository->item($id);
         if (is_null($post))
         {
-            return $this->res('不存在的帖子', 404);
+            return $this->resErr('不存在的帖子', 404);
         }
 
         if ($post['parent_id'] !== '0')
         {
-            return $this->res('不是主题帖', 400);
+            return $this->resErr('不是主题帖', 400);
         }
 
         $user = $this->getAuthUser();
@@ -147,7 +147,7 @@ class PostController extends Controller
 
         if (!empty($seen))
         {
-            return $this->res([
+            return $this->resOK([
                 'list' => $list,
                 'total' => count($ids)
             ]);
@@ -161,7 +161,7 @@ class PostController extends Controller
         $userTransformer = new UserTransformer();
         $post['previewImages'] = $postRepository->previewImages($id, $only ? $post['user_id'] : false);
 
-        return $this->res([
+        return $this->resOK([
             'post' => $postTransformer->show($post),
             'list' => $list,
             'bangumi' => $bangumiTransformer->item($bangumiRepository->item($post['bangumi_id'])),
@@ -192,20 +192,20 @@ class PostController extends Controller
 
         if ($validator->fails())
         {
-            return $this->res('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400);
         }
 
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->res('未登录的用户', 401);
+            return $this->resErr('未登录的用户', 401);
         }
 
         $repository = new PostRepository();
         $post = $repository->item($id);
         if(is_null($post))
         {
-            return $this->res('不存在的帖子', 404);
+            return $this->resErr('不存在的帖子', 404);
         }
 
         $now = Carbon::now();
@@ -257,7 +257,7 @@ class PostController extends Controller
         $post['liked'] = false;
         $transformer = new PostTransformer();
 
-        return $this->res($transformer->reply([$post])[0]);
+        return $this->resOK($transformer->reply([$post])[0]);
     }
 
     /**
@@ -281,20 +281,20 @@ class PostController extends Controller
 
         if ($validator->fails())
         {
-            return $this->res('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400);
         }
 
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->res('未登录的用户', 401);
+            return $this->resErr('未登录的用户', 401);
         }
 
         $repository = new PostRepository();
         $post = $repository->item($id);
         if (is_null($post))
         {
-            return $this->res('内容已删除', 404);
+            return $this->resErr('内容已删除', 404);
         }
 
         $now = Carbon::now();
@@ -322,7 +322,7 @@ class PostController extends Controller
 
         $postTransformer = new PostTransformer();
 
-        return $this->res($postTransformer->comments([$repository->comment($id, $newId)])[0]);
+        return $this->resOK($postTransformer->comments([$repository->comment($id, $newId)])[0]);
     }
 
     /**
@@ -343,7 +343,7 @@ class PostController extends Controller
 
         if (is_null($post))
         {
-            return $this->res('不存在的帖子', 404);
+            return $this->resErr('不存在的帖子', 404);
         }
 
         $data = $repository->comments(
@@ -355,7 +355,7 @@ class PostController extends Controller
 
         $postTransformer = new PostTransformer();
 
-        return $this->res($postTransformer->comments($data));
+        return $this->resOK($postTransformer->comments($data));
     }
 
     /**
@@ -376,7 +376,7 @@ class PostController extends Controller
 
         if (is_null($post))
         {
-            return $this->res('不存在的帖子', 404);
+            return $this->resErr('不存在的帖子', 404);
         }
 
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
@@ -386,12 +386,12 @@ class PostController extends Controller
 
         if (empty($data))
         {
-            return $this->res([]);
+            return $this->resOK([]);
         }
 
         $userTransformer = new UserTransformer();
 
-        return $this->res($userTransformer->list($data));
+        return $this->resOK($userTransformer->list($data));
     }
 
     /**
@@ -412,20 +412,20 @@ class PostController extends Controller
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->res('未登录的用户', 401);
+            return $this->resErr('未登录的用户', 401);
         }
         $postRepository = new PostRepository();
         $post = $postRepository->item($postId);
 
         if (is_null($post))
         {
-            return $this->res('不存在的帖子', 404);
+            return $this->resErr('不存在的帖子', 404);
         }
 
         $userId = $user->id;
         if ($userId == $post['user_id'])
         {
-            return $this->res('不能给自己点赞', 403);
+            return $this->resErr('不能给自己点赞', 403);
         }
 
         $liked = $postRepository->checkPostLiked($postId, $userId);
@@ -438,7 +438,7 @@ class PostController extends Controller
 
             if (!$result)
             {
-                return $this->res($liked ? '未打赏过' : '金币不足', 403);
+                return $this->resErr($liked ? '未打赏过' : '金币不足', 403);
             }
         }
 
@@ -462,7 +462,7 @@ class PostController extends Controller
             Redis::HINCRBYFLOAT('post_'.$postId, 'like_count', $num);
         }
 
-        return $this->res(!$liked);
+        return $this->resOK(!$liked);
     }
 
     /**
@@ -483,7 +483,7 @@ class PostController extends Controller
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->res('未登录的用户', 401);
+            return $this->resErr('未登录的用户', 401);
         }
 
         $postRepository = new PostRepository();
@@ -491,7 +491,7 @@ class PostController extends Controller
 
         if (is_null($post))
         {
-            return $this->res('不存在的帖子', 404);
+            return $this->resErr('不存在的帖子', 404);
         }
 
         $delete = false;
@@ -513,12 +513,12 @@ class PostController extends Controller
 
         if (!$delete)
         {
-            return $this->res('权限不足', 403);
+            return $this->resErr('权限不足', 403);
         }
 
         $postRepository->deletePost($postId, $post['parent_id'], $state, $post['bangumi_id']);
 
-        return $this->res();
+        return $this->resOK();
     }
 
     /**
@@ -539,7 +539,7 @@ class PostController extends Controller
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->res('未登录的用户', 401);
+            return $this->resErr('未登录的用户', 401);
         }
 
         $commentId = $request->get('id');
@@ -548,13 +548,13 @@ class PostController extends Controller
 
         if (is_null($comment))
         {
-            return $this->res('不存在的评论', 404);
+            return $this->resErr('不存在的评论', 404);
         }
 
         $userId = $user->id;
         if ($comment['from_user_id'] != $userId)
         {
-            return $this->res('权限不足', 403);
+            return $this->resErr('权限不足', 403);
         }
 
         Post::where('id', $commentId)->delete();
@@ -569,6 +569,6 @@ class PostController extends Controller
             $pipe->LREM('user_'.$userId.'_replyPostIds', $commentId, 1);
         });
 
-        return $this->res();
+        return $this->resOK();
     }
 }

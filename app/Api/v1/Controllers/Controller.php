@@ -46,7 +46,7 @@ class Controller extends BaseController
         return is_null($user) ? 0 : $user->id;
     }
 
-    protected function res($data = '', $code = 0)
+    protected function resOK($data = '', $code = 0)
     {
         return response([
             'code' => $code,
@@ -54,21 +54,11 @@ class Controller extends BaseController
         ], $code ? $code : 200);
     }
 
-    protected function resOK($data = '', $message = [], $code = 0)
+    protected function resErr($data = '', $code)
     {
         return response([
             'code' => $code,
-            'message' => $message,
             'data' => $data
-        ], $code ? $code : 200);
-    }
-
-    protected function resErr($message = [], $code = 400)
-    {
-        return response([
-            'code' => $code,
-            'message' => $message,
-            'data' => ''
         ], $code);
     }
 }

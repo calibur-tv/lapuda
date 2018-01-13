@@ -38,7 +38,7 @@ class BangumiController extends Controller
         $take = intval($request->get('take')) ?: 3;
         if (!$year)
         {
-            return $this->res('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400);
         }
 
         $repository = new BangumiRepository();
@@ -48,7 +48,7 @@ class BangumiController extends Controller
             $list = array_merge($list, $repository->timeline($year - $i));
         }
 
-        return $this->res([
+        return $this->resOK([
             'list' => $list,
             'min' => $repository->timelineMinYear()
         ]);
@@ -91,7 +91,7 @@ class BangumiController extends Controller
             return $result;
         });
 
-        return $this->res($data);
+        return $this->resOK($data);
     }
 
     /**
@@ -107,7 +107,7 @@ class BangumiController extends Controller
     {
         $tagRepository = new TagRepository();
 
-        return $this->res($tagRepository->all(0));
+        return $this->resOK($tagRepository->all(0));
     }
 
     /**
@@ -142,13 +142,13 @@ class BangumiController extends Controller
 
         if (empty($tags))
         {
-            return $this->resErr(['请求参数格式错误'], 400);
+            return $this->resErr('请求参数格式错误', 400);
         }
 
         sort($tags);
         $repository = new BangumiRepository();
 
-        return $this->res($repository->category($tags, $page));
+        return $this->resOK($repository->category($tags, $page));
     }
 
     /**
@@ -169,7 +169,7 @@ class BangumiController extends Controller
         $bangumi = $repository->item($id);
         if (is_null($bangumi))
         {
-            return $this->res('不存在的番剧', 404);
+            return $this->resErr('不存在的番剧', 404);
         }
 
         $userId = $this->getAuthUserId();
@@ -199,10 +199,10 @@ class BangumiController extends Controller
 
         if (is_null($bangumi))
         {
-            return $this->res('不存在的番剧', 404);
+            return $this->resErr('不存在的番剧', 404);
         }
 
-        return $this->res($repository->videos($id, json_decode($bangumi['season'])));
+        return $this->resOK($repository->videos($id, json_decode($bangumi['season'])));
     }
 
     /**
@@ -222,7 +222,7 @@ class BangumiController extends Controller
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->res('用户认证失败', 401);
+            return $this->resErr('用户认证失败', 401);
         }
 
         $bangumiRepository = new BangumiRepository();

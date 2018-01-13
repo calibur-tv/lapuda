@@ -31,7 +31,7 @@ class VideoController extends Controller
 
         if (is_null($info))
         {
-            return $this->res('不存在的视频资源', 404);
+            return $this->resErr('不存在的视频资源', 404);
         }
 
         $bangumiRepository = new BangumiRepository();
@@ -42,7 +42,7 @@ class VideoController extends Controller
         $bangumiTransformer = new BangumiTransformer();
         $videoTransformer = new VideoTransformer();
 
-        return $this->res([
+        return $this->resOK([
             'info' => $videoTransformer->show($info),
             'bangumi' => $bangumiTransformer->item($bangumi),
             'season' => $season,
@@ -79,6 +79,6 @@ class VideoController extends Controller
 
         Cache::forever($key, $value);
 
-        return $this->res();
+        return $this->resOK();
     }
 }

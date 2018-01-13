@@ -57,7 +57,7 @@ class DoorController extends Controller
 
         if ($validator->fails())
         {
-            return $this->res('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400);
         }
 
         $method = $request->get('method');
@@ -70,12 +70,12 @@ class DoorController extends Controller
 
         if ($museNew && !$this->accessIsNew($method, $access))
         {
-            return $this->res($isEmail ? '邮箱已注册' : '手机号已注册', 403);
+            return $this->resErr($isEmail ? '邮箱已注册' : '手机号已注册', 403);
         }
 
         if ($mustOld && $this->accessIsNew($method, $access))
         {
-            return $this->res($isEmail ? '未注册的邮箱' : '未注册的手机号', 403);
+            return $this->resErr($isEmail ? '未注册的邮箱' : '未注册的手机号', 403);
         }
 
         $token = $this->makeConfirm($access);
@@ -89,7 +89,7 @@ class DoorController extends Controller
             // TODO: send phone message
         }
 
-        return $this->res($isEmail ? '邮件已发送' : '短信已发送');
+        return $this->resOK($isEmail ? '邮件已发送' : '短信已发送');
     }
 
     /**
@@ -120,7 +120,7 @@ class DoorController extends Controller
 
         if ($validator->fails())
         {
-            return $this->res('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400);
         }
 
         $method = $request->get('method');
@@ -128,13 +128,13 @@ class DoorController extends Controller
 
         if (!$this->accessIsNew($method, $access))
         {
-            return $this->res('该手机或邮箱已绑定另外一个账号', 403);
+            return $this->resErr('该手机或邮箱已绑定另外一个账号', 403);
         }
 
         $isEmail = $method === 'email';
         if (!$this->authCodeCanUse($request->get('authCode'), $access))
         {
-            return $this->res($isEmail ? '邮箱验证码过期，请重新获取' : '短信认证码过期，请重新获取', 401);
+            return $this->resErr($isEmail ? '邮箱验证码过期，请重新获取' : '短信认证码过期，请重新获取', 401);
         }
 
         $nickname = $request->get('nickname');
@@ -151,7 +151,7 @@ class DoorController extends Controller
 
         $user = User::create($data);
 
-        return $this->res(JWTAuth::fromUser($user));
+        return $this->resOK(JWTAuth::fromUser($user));
     }
 
     /**
@@ -179,7 +179,7 @@ class DoorController extends Controller
 
         if ($validator->fails())
         {
-            return $this->res('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400);
         }
 
         $method = $request->get('method');
@@ -200,10 +200,10 @@ class DoorController extends Controller
         {
             $user = Auth::user();
 
-            return $this->res(JWTAuth::fromUser($user));
+            return $this->resOK(JWTAuth::fromUser($user));
         }
 
-        return $this->res('用户名或密码错误', 403);
+        return $this->resErr('用户名或密码错误', 403);
     }
 
     /**
@@ -217,7 +217,7 @@ class DoorController extends Controller
     {
         Auth::logout();
 
-        return $this->res();
+        return $this->resOK();
     }
 
     /**
@@ -243,7 +243,7 @@ class DoorController extends Controller
         $user['daySign'] = $userRepository->daySigned($user['id']);
         $transformer = new UserTransformer();
 
-        return $this->res($transformer->self($user));
+        return $this->resOK($transformer->self($user));
     }
 
     private function accessIsNew($method, $access)

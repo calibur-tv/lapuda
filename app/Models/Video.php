@@ -29,7 +29,7 @@ class Video extends Model
     }
 
     public function getUrlAttribute($url) {
-        return $url ? config('website.cdn') . $url : '';
+        return $url ? config('website.video') . $url : '';
     }
 
     public function getPosterAttribute($poster) {
