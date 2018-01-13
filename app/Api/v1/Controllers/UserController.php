@@ -124,7 +124,7 @@ class UserController extends Controller
         $transformer = new UserTransformer();
         $user = $repository->item($userId);
 
-        return $this->resErr($transformer->show($user));
+        return $this->resOK($transformer->show($user));
     }
 
     /**
