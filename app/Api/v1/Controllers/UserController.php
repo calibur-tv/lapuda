@@ -14,8 +14,6 @@ use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
 use App\Models\User;
 use App\Api\V1\Repositories\UserRepository;
-use App\Models\UserCoin;
-use App\Models\UserSign;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
