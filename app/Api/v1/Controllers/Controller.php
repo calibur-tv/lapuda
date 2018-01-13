@@ -46,21 +46,19 @@ class Controller extends BaseController
         return is_null($user) ? 0 : $user->id;
     }
 
-    protected function resOK($data = '', $message = [], $code = 0)
+    protected function resOK($data = '', $code = 0)
     {
         return response([
             'code' => $code,
-            'message' => $message,
             'data' => $data
         ], $code ? $code : 200);
     }
 
-    protected function resErr($message = [], $code = 400)
+    protected function resErr($data = '', $code)
     {
         return response([
             'code' => $code,
-            'message' => $message,
-            'data' => ''
+            'data' => $data
         ], $code);
     }
 }

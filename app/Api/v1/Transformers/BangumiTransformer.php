@@ -16,9 +16,9 @@ class BangumiTransformer extends Transformer
         return $this->transformer($bangumi, function ($bangumi)
         {
            return [
-                'id' => (int)$bangumi['id'],
-                'name' => $bangumi['name'],
-                'avatar' => $bangumi['avatar']
+               'id' => (int)$bangumi['id'],
+               'name' => $bangumi['name'],
+               'avatar' => $bangumi['avatar']
             ];
         });
     }

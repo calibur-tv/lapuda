@@ -14,6 +14,7 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/send', 'App\Api\V1\Controllers\DoorController@sendEmailOrMessage');
 
         $api->post('/register', 'App\Api\V1\Controllers\DoorController@register');
+        $api->get('/register', 'App\Api\V1\Controllers\DoorController@register');
 
         $api->post('/login', 'App\Api\V1\Controllers\DoorController@login');
 
@@ -24,9 +25,9 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/bangumi'], function ($api)
     {
-        $api->get('/released', 'App\Api\V1\Controllers\BangumiController@released');
-
         $api->get('/timeline', 'App\Api\V1\Controllers\BangumiController@timeline');
+
+        $api->get('/released', 'App\Api\V1\Controllers\BangumiController@released');
 
         $api->get('/tags', 'App\Api\V1\Controllers\BangumiController@tags');
 
@@ -58,8 +59,6 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/user'], function ($api)
     {
-        $api->get('/show', 'App\Api\V1\Controllers\UserController@show');
-
         $api->group(['prefix' => '/setting'], function ($api)
         {
             $api->post('/profile', 'App\Api\V1\Controllers\UserController@profile')->middleware('throttle:5,10');
@@ -67,8 +66,14 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/image', 'App\Api\V1\Controllers\UserController@image');
         });
 
+        $api->post('/daySign', 'App\Api\V1\Controllers\UserController@daySign');
+
+        $api->post('/feedback', 'App\Api\V1\Controllers\UserController@feedback');
+
         $api->group(['prefix' => '/{zone}'], function ($api)
         {
+            $api->get('/show', 'App\Api\V1\Controllers\UserController@show');
+
             $api->group(['prefix' => '/followed'], function ($api)
             {
                 $api->get('/bangumi', 'App\Api\V1\Controllers\UserController@followedBangumis');
@@ -78,10 +83,6 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/posts/reply', 'App\Api\V1\Controllers\UserController@postsOfReply');
         });
-
-        $api->post('/daySign', 'App\Api\V1\Controllers\UserController@daySign');
-
-        $api->post('/feedback', 'App\Api\V1\Controllers\UserController@feedback');
     });
 
     $api->group(['prefix' => '/post'], function ($api)
@@ -96,7 +97,7 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/reply', 'App\Api\V1\Controllers\PostController@reply')->middleware('throttle');
 
-            $api->post('/commit', 'App\Api\V1\Controllers\PostController@commit')->middleware('throttle:20,1');
+            $api->post('/comment', 'App\Api\V1\Controllers\PostController@comment')->middleware('throttle:20,1');
 
             $api->post('/toggleLike', 'App\Api\V1\Controllers\PostController@toggleLike');
 
@@ -110,11 +111,11 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/image'], function ($api)
     {
-        $api->post('/captcha', 'App\Api\V1\Controllers\ImageController@captcha');
-
         $api->get('/banner', 'App\Api\V1\Controllers\ImageController@banner');
 
-        $api->post('/token', 'App\Api\V1\Controllers\ImageController@token');
+        $api->post('/captcha', 'App\Api\V1\Controllers\ImageController@captcha');
+
+        $api->post('/uptoken', 'App\Api\V1\Controllers\ImageController@uptoken');
     });
 
     $api->group(['prefix' => '/trending'], function ($api)

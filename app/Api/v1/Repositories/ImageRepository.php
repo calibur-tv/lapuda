@@ -15,11 +15,22 @@ class ImageRepository
     {
         $auth = new \App\Services\Qiniu\Auth();
         $timeout = 3600;
-        $uptoken = $auth->uploadToken(null, $timeout);
+        $uptoken = $auth->uploadToken(null, $timeout, [
+            'returnBody' => '{
+                "code": 0,
+                "data": {
+                    "height": $(imageInfo.height),
+                    "width": $(imageInfo.width),
+                    "type": "$(mimeType)",
+                    "size": $(fsize),
+                    "key": "$(key)"
+                }
+            }'
+        ]);
 
         return [
-            'data' => $uptoken,
-            'time' => time() + $timeout
+            'upToken' => $uptoken,
+            'expiredAt' => time() + $timeout
         ];
     }
 }

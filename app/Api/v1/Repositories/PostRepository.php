@@ -39,7 +39,11 @@ class PostRepository extends Repository
             {
                 $arr[] = [
                     'post_id' => $newId,
-                    'src' => $item,
+                    'src' => $item['key'],
+                    'size' => intval($item['size']),
+                    'width' => intval($item['width']),
+                    'height' => intval($item['height']),
+                    'type' => $item['type'],
                     'created_at' => $now,
                     'updated_at' => $now
                 ];
@@ -55,8 +59,20 @@ class PostRepository extends Repository
     {
         $post = $this->RedisHash('post_'.$id, function () use ($id)
         {
-            return Post::findOrFail($id)->toArray();
+            $post = Post::find($id);
+
+            if (is_null($post))
+            {
+                return null;
+            }
+
+            return $post->toArray();
         });
+
+        if (is_null($post))
+        {
+            return null;
+        }
 
         $post['images'] = $this->images($id);
 
@@ -197,7 +213,7 @@ class PostRepository extends Repository
     {
         return $this->RedisHash('post_'.$postId.'_comment_'.$commentId, function () use ($commentId)
         {
-            return Post::where('posts.id', $commentId)
+            $comment = Post::where('posts.id', $commentId)
                 ->leftJoin('users AS from', 'from.id', '=', 'posts.user_id')
                 ->leftJoin('users AS to', 'to.id', '=', 'posts.target_user_id')
                 ->select(
@@ -210,7 +226,14 @@ class PostRepository extends Repository
                     'from.avatar AS from_user_avatar',
                     'to.nickname AS to_user_name',
                     'to.zone AS to_user_zone'
-                )->first()->toArray();
+                )->first();
+
+            if (is_null($comment))
+            {
+                return null;
+            }
+
+            return $comment->toArray();
         });
     }
 
@@ -275,7 +298,7 @@ class PostRepository extends Repository
         return $this->RedisSort('post_hot_ids', function ()
         {
             $ids = Post::whereRaw('created_at > ? and parent_id = ?', [
-                Carbon::now()->addDays(-7), 0
+                Carbon::now()->addDays(-30), 0
             ])->pluck('id');
 
             $list = $this->list($ids);
@@ -287,7 +310,7 @@ class PostRepository extends Repository
                     $item['like_count'] +
                     (intval($item['view_count']) && log($item['view_count'], 10) * 4) +
                     (intval($item['comment_count']) && log($item['comment_count'], M_E))
-                ) / pow((((time() * 2 - strtotime($item['created_at']) - strtotime($item['updated_at'])) / 2) + 1), 0.5);
+                ) / pow((((time() * 2 - strtotime($item['created_at']) - strtotime($item['updated_at'])) / 2) + 1), 0.3);
             }
 
             return $result;

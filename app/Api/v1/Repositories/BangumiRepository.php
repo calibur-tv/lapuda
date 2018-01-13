@@ -19,13 +19,23 @@ class BangumiRepository extends Repository
     {
         $bangumi = $this->RedisHash('bangumi_'.$id, function () use ($id)
         {
-            $bangumi = Bangumi::findOrFail($id)->toArray();
+            $bangumi = Bangumi::find($id);
+            if (is_null($bangumi))
+            {
+                return null;
+            }
+            $bangumi = $bangumi->toArray();
             // 这里可以使用 LEFT-JOIN 语句优化
             $bangumi['released_part'] = $bangumi['released_video_id']
                 ? Video::where('id', $bangumi['released_video_id'])->pluck('part')->first()
                 : 0;
             return $bangumi;
         });
+
+        if (is_null($bangumi))
+        {
+            return null;
+        }
 
         $bangumi['tags'] = $this->tags($bangumi['id']);
 
