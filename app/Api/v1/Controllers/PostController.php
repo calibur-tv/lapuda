@@ -126,6 +126,7 @@ class PostController extends Controller
         $userId = is_null($user) ? 0 : $user->id;
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
         $take = intval($request->get('take')) ?: 10;
+        $take = empty($seen) ? $take - 1 : $take;
         $only = intval($request->get('only')) ?: 0;
         $ids = $postRepository->getPostIds($id, $only ? $post['user_id'] : false);
 
@@ -149,7 +150,7 @@ class PostController extends Controller
         {
             return $this->resOK([
                 'list' => $list,
-                'total' => count($ids)
+                'total' => count($ids) + 1
             ]);
         }
 
@@ -166,7 +167,7 @@ class PostController extends Controller
             'list' => $list,
             'bangumi' => $bangumiTransformer->item($bangumiRepository->item($post['bangumi_id'])),
             'user' => $userTransformer->item($userRepository->item($post['user_id'])),
-            'total' => count($ids)
+            'total' => count($ids) + 1
         ]);
     }
 
