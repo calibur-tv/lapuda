@@ -241,6 +241,7 @@ class DoorController extends Controller
         $userRepository = new UserRepository();
         $user['uptoken'] = $imageRepository->uptoken();
         $user['daySign'] = $userRepository->daySigned($user['id']);
+        $user['notification'] = $userRepository->getNotificationCount($user['id']);
         $transformer = new UserTransformer();
 
         return $this->resOK($transformer->self($user));

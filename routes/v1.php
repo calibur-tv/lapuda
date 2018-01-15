@@ -66,6 +66,13 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/image', 'App\Api\V1\Controllers\UserController@image');
         });
 
+        $api->group(['prefix' => '/notification'], function ($api)
+        {
+            $api->get('/list', 'App\Api\V1\Controllers\UserController@notifications');
+
+            $api->get('/count', 'App\Api\V1\Controllers\UserController@waitingReadNotifications');
+        });
+
         $api->post('/daySign', 'App\Api\V1\Controllers\UserController@daySign');
 
         $api->post('/feedback', 'App\Api\V1\Controllers\UserController@feedback');

@@ -254,11 +254,17 @@ class PostController extends Controller
             }
         });
 
-        $post = $repository->item($newId);
-        $post['liked'] = false;
+        $reply = $repository->item($newId);
+        $reply['liked'] = false;
         $transformer = new PostTransformer();
 
-        return $this->resOK($transformer->reply([$post])[0]);
+        if ($post['user_id'] != $userId)
+        {
+            $job = (new \App\Jobs\Notification\Post\Reply($newId))->onQueue('notification-post-reply');
+            dispatch($job);
+        }
+
+        return $this->resOK($transformer->reply([$reply])[0]);
     }
 
     /**
@@ -300,12 +306,13 @@ class PostController extends Controller
 
         $now = Carbon::now();
         $userId = $user->id;
+        $targetUserId = $request->get('targetUserId');
 
         $newId = $repository->create([
             'content' => Purifier::clean($request->get('content')),
             'parent_id' => $id,
             'user_id' => $userId,
-            'target_user_id' => $request->get('targetUserId'),
+            'target_user_id' => $targetUserId,
             'created_at' => $now,
             'updated_at' => $now
         ], []);
@@ -322,6 +329,12 @@ class PostController extends Controller
         });
 
         $postTransformer = new PostTransformer();
+
+        if ($targetUserId != 0)
+        {
+            $job = (new \App\Jobs\Notification\Post\Comment($newId))->onQueue('notification-post-comment');
+            dispatch($job);
+        }
 
         return $this->resOK($postTransformer->comments([$repository->comment($id, $newId)])[0]);
     }

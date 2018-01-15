@@ -9,7 +9,6 @@
 namespace App\Api\V1\Repositories;
 
 
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Cache;
 
@@ -109,9 +108,9 @@ class Repository
         }
     }
 
-    public function Cache($key, $func)
+    public function Cache($key, $func, $exp = null)
     {
-        return Cache::remember($key, $this->expire(), function () use ($func)
+        return Cache::remember($key, is_null($exp) ? $this->expire() : $exp, function () use ($func)
         {
             return $func();
         });

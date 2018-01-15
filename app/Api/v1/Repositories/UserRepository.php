@@ -10,7 +10,9 @@ namespace App\Api\V1\Repositories;
 
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\PostTransformer;
+use App\Api\V1\Transformers\UserTransformer;
 use App\Models\BangumiFollow;
+use App\Models\Notifications;
 use App\Models\Post;
 use App\Models\User;
 use App\Models\UserCoin;
@@ -190,5 +192,65 @@ class UserRepository extends Repository
         }
 
         return true;
+    }
+
+    public function getNotificationCount($userId)
+    {
+        return Notifications::whereRaw('to_user_id = ? and checked = ?', [$userId, false])->count();
+    }
+
+    public function getNotificationIds($userId)
+    {
+        return Notifications::where('to_user_id', $userId)
+            ->orderBy('id', 'DESC')
+            ->pluck('id')
+            ->toArray();
+    }
+
+    public function getNotification($id)
+    {
+        return $this->Cache('notification_'.$id, function () use ($id)
+        {
+            $data = Notifications::where('id', $id)->first();
+
+            $userRepository = new UserRepository();
+            $user = $userRepository->item($data['from_user_id']);
+            $type = $data['type'];
+            $parent = null;
+
+            if ($type === 1)
+            {
+                $postRepository = new PostRepository();
+                $post = $postRepository->item($data['about_id']);
+                $about = [
+                    'title' => $post['title'],
+                    'id' => $post['id']
+                ];
+                $model = 'post';
+            }
+            else if ($type === 2)
+            {
+                $postRepository = new PostRepository();
+                $post = $postRepository->item($data['parent_id']);
+                $about = [
+                    'id' => $data['about_id'],
+                    'title' => $post['title'],
+                ];
+                $parent = [
+                    'id' => $post['id']
+                ];
+                $model = 'post';
+            }
+
+            $transformer = new UserTransformer();
+
+            return $transformer->notification([
+                'model' => $model,
+                'type' => $type,
+                'user' => $user,
+                'about' => $about,
+                'parent' => $parent
+            ]);
+        });
     }
 }

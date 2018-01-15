@@ -12,6 +12,7 @@ use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
+use App\Models\Notifications;
 use App\Models\User;
 use App\Api\V1\Repositories\UserRepository;
 use Illuminate\Http\Request;
@@ -299,5 +300,47 @@ class UserController extends Controller
         ]);
 
         return $this->resOK();
+    }
+
+    public function notifications(Request $request)
+    {
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr('未登录的用户', 404);
+        }
+
+        $maxId = $request->get('maxId') ?: 0;
+        $take = $request->get('take') ?: 10;
+
+        $repository = new UserRepository();
+        $data = $repository->getNotificationIds($user->id);
+
+        $ids = array_slice($maxId ? array_search($maxId, $data) : 0, $take);
+
+        if (empty($ids))
+        {
+            return $this->resOK([]);
+        }
+
+        $list = [];
+        foreach ($ids as $id)
+        {
+            $list[] = $repository->getNotification($id);
+        }
+    }
+
+    public function waitingReadNotifications()
+    {
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr('未登录的用户', 404);
+        }
+
+        $repository = new UserRepository();
+        $count = $repository->getNotificationCount($user->id);
+
+        return $this->resOK($count);
     }
 }
