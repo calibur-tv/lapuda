@@ -307,16 +307,14 @@ class UserController extends Controller
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->resErr('未登录的用户', 404);
+            return $this->resErr('未登录的用户', 401);
         }
 
-        $maxId = $request->get('maxId') ?: 0;
+        $minId = $request->get('minId') ?: 0;
         $take = $request->get('take') ?: 10;
 
         $repository = new UserRepository();
-        $data = $repository->getNotificationIds($user->id);
-
-        $ids = array_slice($maxId ? array_search($maxId, $data) : 0, $take);
+        $ids = $repository->getNotificationIds($user->id, $minId, $take);
 
         if (empty($ids))
         {
@@ -328,6 +326,8 @@ class UserController extends Controller
         {
             $list[] = $repository->getNotification($id);
         }
+
+        return $this->resOK($list);
     }
 
     public function waitingReadNotifications()
@@ -335,12 +335,40 @@ class UserController extends Controller
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->resErr('未登录的用户', 404);
+            return $this->resErr('未登录的用户', 401);
         }
 
         $repository = new UserRepository();
         $count = $repository->getNotificationCount($user->id);
 
         return $this->resOK($count);
+    }
+
+    public function readNotification(Request $request)
+    {
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr('未登录的用户', 401);
+        }
+
+        $id = $request->get('id');
+        $notification = Notifications::find($id);
+
+        if (is_null($notification))
+        {
+            return $this->resErr('不存在的消息', 404);
+        }
+
+        if ($notification['to_user_id'] != $user->id)
+        {
+            return $this->resErr('没有权限进行操作', 403);
+        }
+
+        Notifications::where('id', $id)->update([
+            'checked' => true
+        ]);
+
+        return $this->resOK();
     }
 }

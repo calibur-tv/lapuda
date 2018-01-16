@@ -78,6 +78,7 @@ class UserTransformer extends Transformer
         return $this->transformer($data, function ($data)
         {
             return [
+                'id' => (int)$data['id'],
                 'user' => $this->transformer($data['user'], function ($user)
                 {
                     return [
@@ -88,14 +89,15 @@ class UserTransformer extends Transformer
                 }),
                 'type' => (int)$data['type'],
                 'model' => $data['model'],
-                'about' => $this->transformer($data['about'], function ($model)
+                'data' => $this->transformer($data['data'], function ($model)
                 {
                     return [
-                        'id' => (int)$model['id'],
+                        'resource' => $model['resource'],
+                        'link' => $model['link'],
                         'title' => $model['title']
                     ];
                 }),
-                'parent' => $data['parent']
+                'checked' => (boolean)$data['checked']
             ];
         });
     }

@@ -35,7 +35,9 @@ class Comment implements ShouldQueue
         $repository = new PostRepository();
         $comment = $repository->item($this->commentId);
         $reply = $repository->item($comment['parent_id']);
-        if(is_null($comment) || is_null($reply))
+        $post = $repository->item($reply['parent_id']);
+
+        if(is_null($comment) || is_null($reply) || is_null($post))
         {
             return;
         }
@@ -43,8 +45,7 @@ class Comment implements ShouldQueue
         Notifications::create([
             'from_user_id' => $comment['user_id'],
             'to_user_id' => $comment['target_user_id'],
-            'parent_id' => $comment['parent_id'],
-            'about_id' => $reply['parent_id'],
+            'about_id' => $comment['id'] . ',' . $reply['id'] . ',' . $post['id'],
             'type' => 2
         ]);
     }

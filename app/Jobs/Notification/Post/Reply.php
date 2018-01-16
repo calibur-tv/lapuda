@@ -34,7 +34,8 @@ class Reply implements ShouldQueue
     {
         $repository = new PostRepository();
         $reply = $repository->item($this->replyId);
-        if (is_null($reply))
+        $post = $repository->item($reply['parent_id']);
+        if (is_null($reply) || is_null($post))
         {
             return;
         }
@@ -42,7 +43,7 @@ class Reply implements ShouldQueue
         Notifications::create([
             'from_user_id' => $reply['user_id'],
             'to_user_id' => $reply['target_user_id'],
-            'about_id' => $reply['parent_id'],
+            'about_id' => $reply['id'] . ',' . $post['id'],
             'type' => 1
         ]);
     }

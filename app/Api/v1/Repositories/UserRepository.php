@@ -199,10 +199,14 @@ class UserRepository extends Repository
         return Notifications::whereRaw('to_user_id = ? and checked = ?', [$userId, false])->count();
     }
 
-    public function getNotificationIds($userId)
+    public function getNotificationIds($userId, $minId, $take)
     {
         return Notifications::where('to_user_id', $userId)
+            ->when($minId, function ($query) use ($minId) {
+                return $query->where('id', '<', $minId);
+            })
             ->orderBy('id', 'DESC')
+            ->take($take)
             ->pluck('id')
             ->toArray();
     }
@@ -216,28 +220,31 @@ class UserRepository extends Repository
             $userRepository = new UserRepository();
             $user = $userRepository->item($data['from_user_id']);
             $type = $data['type'];
-            $parent = null;
+            $ids = explode(',', $data['about_id']);
 
-            if ($type === 1)
+            if ($type == 1)
             {
                 $postRepository = new PostRepository();
-                $post = $postRepository->item($data['about_id']);
+                $postId = $ids[1];
+                $post = $postRepository->item($postId);
                 $about = [
+                    'resource' => $data['about_id'],
                     'title' => $post['title'],
-                    'id' => $post['id']
+                    'link' => '/post/'.$postId . '#reply=' . $ids[0],
                 ];
                 $model = 'post';
             }
-            else if ($type === 2)
+            else if ($type == 2)
             {
                 $postRepository = new PostRepository();
-                $post = $postRepository->item($data['parent_id']);
+                $commentId = $ids[0];
+                $replyId = $ids[1];
+                $postId = $ids[2];
+                $post = $postRepository->item($postId);
                 $about = [
-                    'id' => $data['about_id'],
+                    'resource' => $data['about_id'],
                     'title' => $post['title'],
-                ];
-                $parent = [
-                    'id' => $post['id']
+                    'link' => '/post/'.$postId.'#reply='.$replyId.'comment='.$commentId,
                 ];
                 $model = 'post';
             }
@@ -245,11 +252,12 @@ class UserRepository extends Repository
             $transformer = new UserTransformer();
 
             return $transformer->notification([
+                'id' => $data['id'],
                 'model' => $model,
                 'type' => $type,
                 'user' => $user,
-                'about' => $about,
-                'parent' => $parent
+                'data' => $about,
+                'checked' => $data['checked']
             ]);
         });
     }

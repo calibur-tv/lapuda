@@ -18,8 +18,7 @@ class AddNotificationsTable extends Migration
             $table->unsignedInteger('type');
             $table->unsignedInteger('from_user_id');
             $table->unsignedInteger('to_user_id');
-            $table->unsignedInteger('parent_id')->default(0);
-            $table->unsignedInteger('about_id');
+            $table->string('about_id');
             $table->boolean('checked')->default(false);
             $table->timestamps();
         });
