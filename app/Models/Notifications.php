@@ -12,6 +12,8 @@ class Notifications extends Model
      * type
      * 1：回复主题帖
      * 2：回复楼层贴
+     * 3：喜欢了主题帖
+     * 4：赞同了楼层贴
      */
     protected $fillable = [
         'type',             // 通知的类型，枚举

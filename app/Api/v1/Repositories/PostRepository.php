@@ -12,6 +12,7 @@ namespace App\Api\V1\Repositories;
 use App\Models\Post;
 use App\Models\PostImages;
 use App\Models\PostLike;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -106,11 +107,12 @@ class PostRepository extends Repository
 
     public function likeUsers($postId, $seenIds = [], $take = 10)
     {
-        $cache = $this->RedisSort('post_'.$postId.'_likeUserIds', function () use ($postId)
+        $cache = $this->RedisList('post_'.$postId.'_likeUserIds', function () use ($postId)
         {
             return PostLike::where('post_id', $postId)
-                ->pluck('created_at', 'user_id');
-        }, true);
+                ->orderBy('id', 'DESC')
+                ->pluck('user_id');
+        });
 
         if (empty($cache))
         {
@@ -136,7 +138,7 @@ class PostRepository extends Repository
         return $this->RedisList('post_'.$postId.'_images', function () use ($postId)
         {
             return PostImages::where('post_id', $postId)
-                ->orderBy('created_at', 'asc')
+                ->orderBy('created_at', 'ASC')
                 ->pluck('src')
                 ->toArray();
         });
@@ -154,11 +156,13 @@ class PostRepository extends Repository
 
     public function comments($postId, $seenIds = [])
     {
-        $cache = $this->RedisSort('post_'.$postId.'_commentIds', function () use ($postId)
+        $cache = $this->RedisList('post_'.$postId.'_commentIds', function () use ($postId)
         {
             return Post::where('parent_id', $postId)
-                ->pluck('created_at', 'id');
-        }, true);
+                ->orderBy('created_at', 'ASC')
+                ->pluck('id')
+                ->toArray();
+        });
 
         if (empty($cache))
         {
@@ -237,8 +241,11 @@ class PostRepository extends Repository
         });
     }
 
-    public function deletePost($postId, $parentId, $state, $bangumiId)
+    public function deletePost($post, $state, $userId)
     {
+        $postId = $post['id'];
+        $parentId = $post['parent_id'];
+        $bangumiId = $post['bangumi_id'];
         DB::table('posts')
             ->where('id', $postId)
             ->update([
@@ -269,14 +276,19 @@ class PostRepository extends Repository
             /*
              * 删除主题帖
              * 删除 bangumi-cache-ids-list 中的这个帖子 id
+             * 删除最新和热门帖子下该帖子的缓存
              * 删掉主题帖的缓存
-             * 其它缓存自然过期
+             * 扣掉这个帖子获得的金币
              */
             Redis::pipeline(function ($pipe) use ($bangumiId, $postId)
             {
                 $pipe->ZREM($this->bangumiListCacheKey($bangumiId), $postId);
+                $pipe->ZREM('post_new_ids', $postId);
+                $pipe->ZREM('post_hot_ids', $postId);
                 $pipe->DEL('post_'.$postId);
             });
+
+            User::where('id', $userId)->increment('coin_count', 0 - $post['like_count']);
         }
     }
 

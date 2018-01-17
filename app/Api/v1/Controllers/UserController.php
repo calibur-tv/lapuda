@@ -15,6 +15,8 @@ use App\Models\Feedback;
 use App\Models\Notifications;
 use App\Models\User;
 use App\Api\V1\Repositories\UserRepository;
+use App\Models\UserCoin;
+use App\Models\UserSign;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
@@ -53,7 +55,17 @@ class UserController extends Controller
             return $this->resErr('已签到', 403);
         }
 
-        $repository->toggleCoin(false, $userId, $userId, 0);
+        UserCoin::create([
+            'from_user_id' => $userId,
+            'user_id' => $userId,
+            'type' => 0
+        ]);
+
+        UserSign::create([
+            'user_id' => $userId
+        ]);
+
+        User::where('id', $userId)->increment('coin_count', 1);
 
         return $this->resOK();
     }

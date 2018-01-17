@@ -445,7 +445,8 @@ class PostController extends Controller
         $liked = $postRepository->checkPostLiked($postId, $userId);
 
         // 如果是主题帖，要删除楼主所得的金币，但金币不返还给用户
-        if ($post['parent_id'] == '0')
+        $isMainPost = $post['parent_id'] == '0';
+        if ($isMainPost)
         {
             $userRepository = new UserRepository();
             $result = $userRepository->toggleCoin($liked, $userId, $post['user_id'], 1);
@@ -463,11 +464,21 @@ class PostController extends Controller
         }
         else
         {
-            PostLike::create([
+            $likeId = PostLike::insertGetId([
                 'user_id' => $userId,
                 'post_id' => $postId
             ]);
             $num = 1;
+
+            if ($isMainPost)
+            {
+                $job = (new \App\Jobs\Notification\Post\Like($likeId))->onQueue('notification-post-like');
+            }
+            else
+            {
+                $job = (new \App\Jobs\Notification\Post\Agree($likeId))->onQueue('notification-post-agree');
+            }
+            dispatch($job);
         }
 
         Post::where('id', $post['id'])->increment('like_count', $num);
@@ -530,7 +541,7 @@ class PostController extends Controller
             return $this->resErr('权限不足', 403);
         }
 
-        $postRepository->deletePost($postId, $post['parent_id'], $state, $post['bangumi_id']);
+        $postRepository->deletePost($post, $state, $user->id);
 
         return $this->resOK();
     }

@@ -250,6 +250,24 @@ class UserRepository extends Repository
                     'link' => '/post/'.$postId.'#reply='.$replyId.'comment='.$commentId,
                 ];
                 $model = 'post';
+            } else if ($type == 3)
+            {
+                $post = $postRepository->item($item['about_id']);
+                $about = [
+                    'resource' => $item['about_id'],
+                    'title' => $post['title'],
+                    'link' => '/post/'.$ids[0]
+                ];
+                $model = 'post';
+            } else if ($type == 4)
+            {
+                $post = $postRepository->item($ids[1]);
+                $about = [
+                    'resource' => $item['about_id'],
+                    'title' => $post['title'],
+                    'link' => '/post/'.$ids[1].'#reply='.$ids[0]
+                ];
+                $model = 'post';
             }
 
             $result[] = [
