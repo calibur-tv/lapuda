@@ -314,20 +314,9 @@ class UserController extends Controller
         $take = $request->get('take') ?: 10;
 
         $repository = new UserRepository();
-        $ids = $repository->getNotificationIds($user->id, $minId, $take);
+        $data = $repository->getNotifications($user->id, $minId, $take);
 
-        if (empty($ids))
-        {
-            return $this->resOK([]);
-        }
-
-        $list = [];
-        foreach ($ids as $id)
-        {
-            $list[] = $repository->getNotification($id);
-        }
-
-        return $this->resOK($list);
+        return $this->resOK($data);
     }
 
     public function waitingReadNotifications()

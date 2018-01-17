@@ -73,9 +73,9 @@ class UserTransformer extends Transformer
         });
     }
 
-    public function notification($data)
+    public function notification($list)
     {
-        return $this->transformer($data, function ($data)
+        return $this->collection($list, function ($data)
         {
             return [
                 'id' => (int)$data['id'],

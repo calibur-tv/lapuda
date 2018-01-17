@@ -199,36 +199,40 @@ class UserRepository extends Repository
         return Notifications::whereRaw('to_user_id = ? and checked = ?', [$userId, false])->count();
     }
 
-    public function getNotificationIds($userId, $minId, $take)
+    public function getNotifications($userId, $minId, $take)
     {
-        return Notifications::where('to_user_id', $userId)
+        $list = Notifications::where('to_user_id', $userId)
             ->when($minId, function ($query) use ($minId) {
                 return $query->where('id', '<', $minId);
             })
             ->orderBy('id', 'DESC')
             ->take($take)
-            ->pluck('id')
+            ->get()
             ->toArray();
-    }
 
-    public function getNotification($id)
-    {
-        return $this->Cache('notification_'.$id, function () use ($id)
+        if (empty($list))
         {
-            $data = Notifications::where('id', $id)->first();
+            return [];
+        }
 
-            $userRepository = new UserRepository();
-            $user = $userRepository->item($data['from_user_id']);
-            $type = $data['type'];
-            $ids = explode(',', $data['about_id']);
+        $userRepository = new UserRepository();
+        $postRepository = new PostRepository();
+        $transformer = new UserTransformer();
+
+        $result = [];
+
+        foreach ($list as $item)
+        {
+            $type = $item['type'];
+            $user = $userRepository->item($item['from_user_id']);
+            $ids = explode(',', $item['about_id']);
 
             if ($type == 1)
             {
-                $postRepository = new PostRepository();
                 $postId = $ids[1];
                 $post = $postRepository->item($postId);
                 $about = [
-                    'resource' => $data['about_id'],
+                    'resource' => $item['about_id'],
                     'title' => $post['title'],
                     'link' => '/post/'.$postId . '#reply=' . $ids[0],
                 ];
@@ -236,29 +240,28 @@ class UserRepository extends Repository
             }
             else if ($type == 2)
             {
-                $postRepository = new PostRepository();
                 $commentId = $ids[0];
                 $replyId = $ids[1];
                 $postId = $ids[2];
                 $post = $postRepository->item($postId);
                 $about = [
-                    'resource' => $data['about_id'],
+                    'resource' => $item['about_id'],
                     'title' => $post['title'],
                     'link' => '/post/'.$postId.'#reply='.$replyId.'comment='.$commentId,
                 ];
                 $model = 'post';
             }
 
-            $transformer = new UserTransformer();
-
-            return $transformer->notification([
-                'id' => $data['id'],
+            $result[] = [
+                'id' => $item['id'],
                 'model' => $model,
                 'type' => $type,
                 'user' => $user,
                 'data' => $about,
-                'checked' => $data['checked']
-            ]);
-        });
+                'checked' => $item['checked']
+            ];
+        }
+
+        return $transformer->notification($result);
     }
 }
