@@ -541,7 +541,7 @@ class PostController extends Controller
             return $this->resErr('权限不足', 403);
         }
 
-        $postRepository->deletePost($post, $state, $user->id);
+        $postRepository->deletePost($post, $state);
 
         return $this->resOK();
     }

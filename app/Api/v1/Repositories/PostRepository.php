@@ -241,9 +241,10 @@ class PostRepository extends Repository
         });
     }
 
-    public function deletePost($post, $state, $userId)
+    public function deletePost($post, $state)
     {
         $postId = $post['id'];
+        $userId = $post['user_id'];
         $parentId = $post['parent_id'];
         $bangumiId = $post['bangumi_id'];
         DB::table('posts')
@@ -261,8 +262,9 @@ class PostRepository extends Repository
              * 删除主题帖的 ids （所有列表和仅楼主列表）
              */
             Post::where('id', $parentId)->increment('comment_count', -1);
-            Redis::pipeline(function ($pipe) use ($parentId)
+            Redis::pipeline(function ($pipe) use ($parentId, $userId, $postId)
             {
+                $pipe->LREM('user_'.$userId.'_replyPostIds', $postId);
                 if ($pipe->EXISTS('post_'.$parentId))
                 {
                     $pipe->HINCRBYFLOAT('post_'.$parentId, 'comment_count', -1);
@@ -276,12 +278,14 @@ class PostRepository extends Repository
             /*
              * 删除主题帖
              * 删除 bangumi-cache-ids-list 中的这个帖子 id
+             * 删除用户帖子列表的id
              * 删除最新和热门帖子下该帖子的缓存
              * 删掉主题帖的缓存
              * 扣掉这个帖子获得的金币
              */
-            Redis::pipeline(function ($pipe) use ($bangumiId, $postId)
+            Redis::pipeline(function ($pipe) use ($bangumiId, $postId, $userId)
             {
+                $pipe->LREM('user_'.$userId.'_minePostIds', $postId);
                 $pipe->ZREM($this->bangumiListCacheKey($bangumiId), $postId);
                 $pipe->ZREM('post_new_ids', $postId);
                 $pipe->ZREM('post_hot_ids', $postId);
