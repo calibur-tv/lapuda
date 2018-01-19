@@ -10,7 +10,9 @@ namespace App\Api\V1\Repositories;
 
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\PostTransformer;
+use App\Api\V1\Transformers\UserTransformer;
 use App\Models\BangumiFollow;
+use App\Models\Notifications;
 use App\Models\Post;
 use App\Models\User;
 use App\Models\UserCoin;
@@ -190,5 +192,94 @@ class UserRepository extends Repository
         }
 
         return true;
+    }
+
+    public function getNotificationCount($userId)
+    {
+        return Notifications::whereRaw('to_user_id = ? and checked = ?', [$userId, false])->count();
+    }
+
+    public function getNotifications($userId, $minId, $take)
+    {
+        $list = Notifications::where('to_user_id', $userId)
+            ->when($minId, function ($query) use ($minId) {
+                return $query->where('id', '<', $minId);
+            })
+            ->orderBy('id', 'DESC')
+            ->take($take)
+            ->get()
+            ->toArray();
+
+        if (empty($list))
+        {
+            return [];
+        }
+
+        $userRepository = new UserRepository();
+        $postRepository = new PostRepository();
+        $transformer = new UserTransformer();
+
+        $result = [];
+
+        foreach ($list as $item)
+        {
+            $type = $item['type'];
+            $user = $userRepository->item($item['from_user_id']);
+            $ids = explode(',', $item['about_id']);
+
+            if ($type == 1)
+            {
+                $postId = $ids[1];
+                $post = $postRepository->item($postId);
+                $about = [
+                    'resource' => $item['about_id'],
+                    'title' => $post['title'],
+                    'link' => '/post/'.$postId . '#reply=' . $ids[0],
+                ];
+                $model = 'post';
+            }
+            else if ($type == 2)
+            {
+                $commentId = $ids[0];
+                $replyId = $ids[1];
+                $postId = $ids[2];
+                $post = $postRepository->item($postId);
+                $about = [
+                    'resource' => $item['about_id'],
+                    'title' => $post['title'],
+                    'link' => '/post/'.$postId.'#reply='.$replyId.'comment='.$commentId,
+                ];
+                $model = 'post';
+            } else if ($type == 3)
+            {
+                $post = $postRepository->item($item['about_id']);
+                $about = [
+                    'resource' => $item['about_id'],
+                    'title' => $post['title'],
+                    'link' => '/post/'.$ids[0]
+                ];
+                $model = 'post';
+            } else if ($type == 4)
+            {
+                $post = $postRepository->item($ids[1]);
+                $about = [
+                    'resource' => $item['about_id'],
+                    'title' => $post['title'],
+                    'link' => '/post/'.$ids[1].'#reply='.$ids[0]
+                ];
+                $model = 'post';
+            }
+
+            $result[] = [
+                'id' => $item['id'],
+                'model' => $model,
+                'type' => $type,
+                'user' => $user,
+                'data' => $about,
+                'checked' => $item['checked']
+            ];
+        }
+
+        return $transformer->notification($result);
     }
 }

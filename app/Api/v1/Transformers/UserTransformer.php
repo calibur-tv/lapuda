@@ -26,7 +26,8 @@ class UserTransformer extends Transformer
                 'signature' => $user['signature'],
                 'uptoken' => $user['uptoken'],
                 'daySign' => (boolean)$user['daySign'],
-                'coin' => (int)$user['coin_count']
+                'coin' => (int)$user['coin_count'],
+                'notification' => $user['notification']
             ];
         });
     }
@@ -68,6 +69,35 @@ class UserTransformer extends Transformer
                 'zone' => $user['zone'],
                 'avatar' => $user['avatar'],
                 'nickname' => $user['nickname']
+            ];
+        });
+    }
+
+    public function notification($list)
+    {
+        return $this->collection($list, function ($data)
+        {
+            return [
+                'id' => (int)$data['id'],
+                'user' => $this->transformer($data['user'], function ($user)
+                {
+                    return [
+                        'id' => (int)$user['id'],
+                        'nickname' => $user['nickname'],
+                        'zone' => $user['zone']
+                    ];
+                }),
+                'type' => (int)$data['type'],
+                'model' => $data['model'],
+                'data' => $this->transformer($data['data'], function ($model)
+                {
+                    return [
+                        'resource' => $model['resource'],
+                        'link' => $model['link'],
+                        'title' => $model['title']
+                    ];
+                }),
+                'checked' => (boolean)$data['checked']
             ];
         });
     }

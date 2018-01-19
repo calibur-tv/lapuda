@@ -126,6 +126,7 @@ class PostController extends Controller
         $userId = is_null($user) ? 0 : $user->id;
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
         $take = intval($request->get('take')) ?: 10;
+        $take = empty($seen) ? $take - 1 : $take;
         $only = intval($request->get('only')) ?: 0;
         $ids = $postRepository->getPostIds($id, $only ? $post['user_id'] : false);
 
@@ -149,7 +150,7 @@ class PostController extends Controller
         {
             return $this->resOK([
                 'list' => $list,
-                'total' => count($ids)
+                'total' => count($ids) + 1
             ]);
         }
 
@@ -166,7 +167,7 @@ class PostController extends Controller
             'list' => $list,
             'bangumi' => $bangumiTransformer->item($bangumiRepository->item($post['bangumi_id'])),
             'user' => $userTransformer->item($userRepository->item($post['user_id'])),
-            'total' => count($ids)
+            'total' => count($ids) + 1
         ]);
     }
 
@@ -253,11 +254,17 @@ class PostController extends Controller
             }
         });
 
-        $post = $repository->item($newId);
-        $post['liked'] = false;
+        $reply = $repository->item($newId);
+        $reply['liked'] = false;
         $transformer = new PostTransformer();
 
-        return $this->resOK($transformer->reply([$post])[0]);
+        if ($post['user_id'] != $userId)
+        {
+            $job = (new \App\Jobs\Notification\Post\Reply($newId))->onQueue('notification-post-reply');
+            dispatch($job);
+        }
+
+        return $this->resOK($transformer->reply([$reply])[0]);
     }
 
     /**
@@ -299,12 +306,13 @@ class PostController extends Controller
 
         $now = Carbon::now();
         $userId = $user->id;
+        $targetUserId = $request->get('targetUserId');
 
         $newId = $repository->create([
             'content' => Purifier::clean($request->get('content')),
             'parent_id' => $id,
             'user_id' => $userId,
-            'target_user_id' => $request->get('targetUserId'),
+            'target_user_id' => $targetUserId,
             'created_at' => $now,
             'updated_at' => $now
         ], []);
@@ -321,6 +329,12 @@ class PostController extends Controller
         });
 
         $postTransformer = new PostTransformer();
+
+        if ($targetUserId != 0)
+        {
+            $job = (new \App\Jobs\Notification\Post\Comment($newId))->onQueue('notification-post-comment');
+            dispatch($job);
+        }
 
         return $this->resOK($postTransformer->comments([$repository->comment($id, $newId)])[0]);
     }
@@ -431,7 +445,8 @@ class PostController extends Controller
         $liked = $postRepository->checkPostLiked($postId, $userId);
 
         // 如果是主题帖，要删除楼主所得的金币，但金币不返还给用户
-        if ($post['parent_id'] == '0')
+        $isMainPost = $post['parent_id'] == '0';
+        if ($isMainPost)
         {
             $userRepository = new UserRepository();
             $result = $userRepository->toggleCoin($liked, $userId, $post['user_id'], 1);
@@ -449,11 +464,21 @@ class PostController extends Controller
         }
         else
         {
-            PostLike::create([
+            $likeId = PostLike::insertGetId([
                 'user_id' => $userId,
                 'post_id' => $postId
             ]);
             $num = 1;
+
+            if ($isMainPost)
+            {
+                $job = (new \App\Jobs\Notification\Post\Like($likeId))->onQueue('notification-post-like');
+            }
+            else
+            {
+                $job = (new \App\Jobs\Notification\Post\Agree($likeId))->onQueue('notification-post-agree');
+            }
+            dispatch($job);
         }
 
         Post::where('id', $post['id'])->increment('like_count', $num);
@@ -516,7 +541,7 @@ class PostController extends Controller
             return $this->resErr('权限不足', 403);
         }
 
-        $postRepository->deletePost($postId, $post['parent_id'], $state, $post['bangumi_id']);
+        $postRepository->deletePost($post, $state);
 
         return $this->resOK();
     }

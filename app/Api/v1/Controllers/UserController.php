@@ -12,6 +12,7 @@ use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
+use App\Models\Notifications;
 use App\Models\User;
 use App\Api\V1\Repositories\UserRepository;
 use App\Models\UserCoin;
@@ -54,7 +55,17 @@ class UserController extends Controller
             return $this->resErr('已签到', 403);
         }
 
-        $repository->toggleCoin(false, $userId, $userId, 0);
+        UserCoin::create([
+            'from_user_id' => $userId,
+            'user_id' => $userId,
+            'type' => 0
+        ]);
+
+        UserSign::create([
+            'user_id' => $userId
+        ]);
+
+        User::where('id', $userId)->increment('coin_count', 1);
 
         return $this->resOK();
     }
@@ -298,6 +309,65 @@ class UserController extends Controller
             'type' => $request->get('type'),
             'desc' => $request->get('desc'),
             'user_id' => $this->getAuthUserId()
+        ]);
+
+        return $this->resOK();
+    }
+
+    public function notifications(Request $request)
+    {
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr('未登录的用户', 401);
+        }
+
+        $minId = $request->get('minId') ?: 0;
+        $take = $request->get('take') ?: 10;
+
+        $repository = new UserRepository();
+        $data = $repository->getNotifications($user->id, $minId, $take);
+
+        return $this->resOK($data);
+    }
+
+    public function waitingReadNotifications()
+    {
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr('未登录的用户', 401);
+        }
+
+        $repository = new UserRepository();
+        $count = $repository->getNotificationCount($user->id);
+
+        return $this->resOK($count);
+    }
+
+    public function readNotification(Request $request)
+    {
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr('未登录的用户', 401);
+        }
+
+        $id = $request->get('id');
+        $notification = Notifications::find($id);
+
+        if (is_null($notification))
+        {
+            return $this->resErr('不存在的消息', 404);
+        }
+
+        if ($notification['to_user_id'] != $user->id)
+        {
+            return $this->resErr('没有权限进行操作', 403);
+        }
+
+        Notifications::where('id', $id)->update([
+            'checked' => true
         ]);
 
         return $this->resOK();

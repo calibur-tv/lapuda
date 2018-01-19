@@ -139,18 +139,12 @@ class BangumiRepository extends Repository
             if ($result)
             {
                 $pipe->LPUSHX($userFollowsCacheKey, $bangumi_id);
-                if ($pipe->EXISTS($bangumiFollowsCacheKey))
-                {
-                    $pipe->ZADD($bangumiFollowsCacheKey, Carbon::now()->timestamp, $user_id);
-                }
+                $pipe->LPUSHX($bangumiFollowsCacheKey, $user_id);
             }
             else
             {
                 $pipe->LREM($userFollowsCacheKey, $bangumi_id, 1);
-                if ($pipe->EXISTS($bangumiFollowsCacheKey))
-                {
-                    $pipe->ZREM($bangumiFollowsCacheKey, $user_id);
-                }
+                $pipe->LREM($bangumiFollowsCacheKey, $user_id, 1);
             }
         });
 
@@ -221,10 +215,12 @@ class BangumiRepository extends Repository
 
     public function getFollowers($bangumiId, $seenIds, $take = 10)
     {
-        $cache = $this->RedisSort('bangumi_'.$bangumiId.'_followersIds', function () use ($bangumiId)
+        $cache = $this->RedisList('bangumi_'.$bangumiId.'_followersIds', function () use ($bangumiId)
         {
-            return BangumiFollow::where('bangumi_id', $bangumiId)->pluck('created_at', 'user_id');
-        }, true);
+            return BangumiFollow::where('bangumi_id', $bangumiId)
+                ->orderBy('id', 'DESC')
+                ->pluck('user_id');
+        });
 
         $ids = array_slice(array_diff($cache, $seenIds), 0, $take);
 
