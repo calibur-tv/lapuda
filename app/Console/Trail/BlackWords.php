@@ -10,7 +10,6 @@
 namespace App\Console\Trail;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
 class BlackWords extends Command
@@ -38,7 +37,6 @@ class BlackWords extends Command
         $tempKeyFile = 'tempKey.txt';
 
         $data = Redis::LRANGE('blackwords', 0, -1);
-        $data = ['test_1', 'test2'];
 
         $fp = fopen($tempKeyFile, 'w');
         if ( ! $fp)
@@ -66,8 +64,7 @@ class BlackWords extends Command
             }
         }
 
-        trie_filter_save($resTrie, '/var/www/api/app/Services/Trial' . 'blackword.tree');
-        Log::info('make blackwords tree');
+        trie_filter_save($resTrie, '/var/www/api/app/Services/Trial/' . 'blackword.tree');
         return;
     }
 }
