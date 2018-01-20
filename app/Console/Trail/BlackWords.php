@@ -10,6 +10,7 @@
 namespace App\Console\Trail;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
 class BlackWords extends Command
@@ -66,6 +67,7 @@ class BlackWords extends Command
         }
 
         trie_filter_save($resTrie, '../../Services/Trial' . 'blackword.tree');
+        Log::info('make blackwords tree');
         return;
     }
 }
