@@ -72,7 +72,7 @@ class PostTransformer extends Transformer
                 'from_user_id' => (int)$comment['from_user_id'],
                 'from_user_name' => $comment['from_user_name'],
                 'from_user_zone' => $comment['from_user_zone'],
-                'from_user_avatar' => config('website.cdn'). ($comment['from_user_avatar'] ? $comment['from_user_avatar'] : 'default/user-avatar'),
+                'from_user_avatar' => config('website.image'). ($comment['from_user_avatar'] ? $comment['from_user_avatar'] : 'default/user-avatar'),
                 'to_user_name' => $comment['to_user_name'] ? $comment['to_user_name'] : null,
                 'to_user_zone' => $comment['to_user_zone'] ? $comment['to_user_zone'] : null
             ];

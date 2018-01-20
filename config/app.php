@@ -184,6 +184,7 @@ return [
         ScoutEngines\Elasticsearch\ElasticsearchProvider::class,
         Barryvdh\Cors\ServiceProvider::class,
         Mews\Purifier\PurifierServiceProvider::class,
+        Kozz\Laravel\Providers\Guzzle::class,
     ],
 
     /*
@@ -235,6 +236,7 @@ return [
         'JWTAuth' => Tymon\JWTAuth\Facades\JWTAuth::class,
         'Pinyin' => Overtrue\LaravelPinyin\Facades\Pinyin::class,
         'Purifier' => Mews\Purifier\Facades\Purifier::class,
+        'Guzzle' => Kozz\Laravel\Facades\Guzzle::class,
     ],
 
 ];

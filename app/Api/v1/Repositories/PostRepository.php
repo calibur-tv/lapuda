@@ -281,7 +281,6 @@ class PostRepository extends Repository
              * 删除用户帖子列表的id
              * 删除最新和热门帖子下该帖子的缓存
              * 删掉主题帖的缓存
-             * 扣掉这个帖子获得的金币
              */
             Redis::pipeline(function ($pipe) use ($bangumiId, $postId, $userId)
             {
@@ -291,8 +290,6 @@ class PostRepository extends Repository
                 $pipe->ZREM('post_hot_ids', $postId);
                 $pipe->DEL('post_'.$postId);
             });
-
-            User::where('id', $userId)->increment('coin_count', 0 - $post['like_count']);
         }
     }
 

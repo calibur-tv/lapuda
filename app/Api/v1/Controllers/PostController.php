@@ -88,7 +88,7 @@ class PostController extends Controller
             $pipe->LPUSHX('user_'.$userId.'_minePostIds', $id);
         });
 
-        $job = (new \App\Jobs\Trial\Post($id))->onQueue('post-create');
+        $job = (new \App\Jobs\Trial\Post\Create($id))->onQueue('post-create');
         dispatch($job);
 
         return $this->resOK($id);
@@ -241,7 +241,7 @@ class PostController extends Controller
             {
                 foreach ($images as $i => $val)
                 {
-                    $images[$i] = config('website.cdn') . $val['key'];
+                    $images[$i] = config('website.image') . $val['key'];
                 }
                 $pipe->RPUSH('post_'.$id.'_previewImages', $images);
             }
@@ -263,6 +263,8 @@ class PostController extends Controller
             $job = (new \App\Jobs\Notification\Post\Reply($newId))->onQueue('notification-post-reply');
             dispatch($job);
         }
+        $job = (new \App\Jobs\Trial\Post\Reply($id))->onQueue('post-reply');
+        dispatch($job);
 
         return $this->resOK($transformer->reply([$reply])[0]);
     }

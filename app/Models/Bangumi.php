@@ -45,11 +45,11 @@ class Bangumi extends Model
 
     public function getAvatarAttribute($avatar)
     {
-        return config('website.cdn').($avatar ? $avatar : 'avatar');
+        return config('website.image').($avatar ? $avatar : 'avatar');
     }
 
     public function getBannerAttribute($banner)
     {
-        return config('website.cdn').($banner ? $banner : 'B-banner');
+        return config('website.image').($banner ? $banner : 'B-banner');
     }
 }
