@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Overtrue\LaravelPinyin\Facades\Pinyin as Overtrue;
@@ -292,5 +293,13 @@ class DoorController extends Controller
 
             return $pinyin;
         }
+    }
+
+    public function test()
+    {
+        Storage::disk('local')->put('file.txt', 'newline1');
+        Storage::disk('local')->append('file.txt', 'newline2');
+        $fp = fopen('file.txt', 'r');
+        dd($fp);
     }
 }
