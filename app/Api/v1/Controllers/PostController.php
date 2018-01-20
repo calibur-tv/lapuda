@@ -337,6 +337,8 @@ class PostController extends Controller
             $job = (new \App\Jobs\Notification\Post\Comment($newId))->onQueue('notification-post-comment');
             dispatch($job);
         }
+        $job = (new \App\Jobs\Trial\Post\Comment($id))->onQueue('post-comment');
+        dispatch($job);
 
         return $this->resOK($postTransformer->comments([$repository->comment($id, $newId)])[0]);
     }

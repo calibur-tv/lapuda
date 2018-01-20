@@ -264,7 +264,7 @@ class PostRepository extends Repository
             Post::where('id', $parentId)->increment('comment_count', -1);
             Redis::pipeline(function ($pipe) use ($parentId, $userId, $postId)
             {
-                $pipe->LREM('user_'.$userId.'_replyPostIds', $postId);
+                $pipe->LREM('user_'.$userId.'_replyPostIds', $postId, 1);
                 if ($pipe->EXISTS('post_'.$parentId))
                 {
                     $pipe->HINCRBYFLOAT('post_'.$parentId, 'comment_count', -1);
@@ -284,7 +284,7 @@ class PostRepository extends Repository
              */
             Redis::pipeline(function ($pipe) use ($bangumiId, $postId, $userId)
             {
-                $pipe->LREM('user_'.$userId.'_minePostIds', $postId);
+                $pipe->LREM('user_'.$userId.'_minePostIds', $postId, 1);
                 $pipe->ZREM($this->bangumiListCacheKey($bangumiId), $postId);
                 $pipe->ZREM('post_new_ids', $postId);
                 $pipe->ZREM('post_hot_ids', $postId);

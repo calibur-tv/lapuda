@@ -9,7 +9,6 @@ $api = app('Dingo\Api\Routing\Router');
 
 $api->version(['v1', 'latest'], function ($api)
 {
-    $api->get('/test', 'App\Api\V1\Controllers\DoorController@test');
     $api->group(['prefix' => '/door'], function ($api)
     {
         $api->post('/send', 'App\Api\V1\Controllers\DoorController@sendEmailOrMessage');

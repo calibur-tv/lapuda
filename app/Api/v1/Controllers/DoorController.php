@@ -294,12 +294,4 @@ class DoorController extends Controller
             return $pinyin;
         }
     }
-
-    public function test()
-    {
-        Storage::disk('local')->put('file.txt', 'newline1');
-        Storage::disk('local')->append('file.txt', 'newline2');
-        $fp = fopen('file.txt', 'r');
-        dd($fp);
-    }
 }

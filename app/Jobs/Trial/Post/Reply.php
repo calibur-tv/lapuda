@@ -3,6 +3,7 @@
 namespace App\Jobs\Trial\Post;
 
 use App\Api\V1\Repositories\PostRepository;
+use App\Services\Trial\WordsFilter\WordsFilter;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
@@ -41,10 +42,9 @@ class Reply implements ShouldQueue
             return;
         }
 
-        $badWordsCount = 0;
         $badImageCount = 0;
         $needDelete = false;
-        $state = 3;
+        $state = 0;
         $deletedAt = null;
 
         // 图片审核流程
@@ -104,6 +104,15 @@ class Reply implements ShouldQueue
             }
         }
 
+        // 文字审核流程
+        $filter = new WordsFilter();
+        $badWordsCount = $filter->count($post['content']);
+
+        if ($badWordsCount > 1)
+        {
+            $needDelete = true;
+        }
+
         if ($needDelete)
         {
             $state = 5;
@@ -114,12 +123,15 @@ class Reply implements ShouldQueue
             $state = 4;
         }
 
-        DB::table('posts')
-            ->where('id', $this->postId)
-            ->update([
-                'state' => $state,
-                'deleted_at' => $deletedAt
-            ]);
+        if ($state || $needDelete)
+        {
+            DB::table('posts')
+                ->where('id', $this->postId)
+                ->update([
+                    'state' => $state,
+                    'deleted_at' => $deletedAt
+                ]);
+        }
 
         if ($needDelete)
         {

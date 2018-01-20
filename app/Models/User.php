@@ -19,7 +19,8 @@ class User extends Authenticatable
         'signature',
         'sex',
         'birthday',
-        'coin_count'
+        'coin_count',
+        'state',
     ];
 
     protected $hidden = [
