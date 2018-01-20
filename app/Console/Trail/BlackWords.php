@@ -66,7 +66,7 @@ class BlackWords extends Command
             }
         }
 
-        trie_filter_save($resTrie, '../../Services/Trial' . 'blackword.tree');
+        trie_filter_save($resTrie, '/var/www/api/app/Services/Trial' . 'blackword.tree');
         Log::info('make blackwords tree');
         return;
     }
