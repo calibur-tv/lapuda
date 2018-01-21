@@ -143,8 +143,8 @@ class BangumiRepository extends Repository
             }
             else
             {
-                $pipe->LREM($userFollowsCacheKey, $bangumi_id, 1);
-                $pipe->LREM($bangumiFollowsCacheKey, $user_id, 1);
+                $pipe->LREM($userFollowsCacheKey, 1, $bangumi_id);
+                $pipe->LREM($bangumiFollowsCacheKey, 1, $user_id);
             }
         });
 

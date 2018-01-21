@@ -594,8 +594,8 @@ class PostController extends Controller
             {
                 $pipe->HINCRBYFLOAT('post_'.$postId, 'comment_count', -1);
             }
-            $pipe->LREM('post_'.$postId.'_commentIds', $commentId, 1);
-            $pipe->LREM('user_'.$userId.'_replyPostIds', $commentId, 1);
+            $pipe->LREM('post_'.$postId.'_commentIds', 1, $commentId);
+            $pipe->LREM('user_'.$userId.'_replyPostIds', 1, $commentId);
         });
 
         return $this->resOK();
