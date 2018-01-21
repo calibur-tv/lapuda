@@ -13,7 +13,8 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        Trending\PostHot::class
+        Trending\PostHot::class,
+        Trail\BlackWords::class,
     ];
 
     /**
@@ -27,6 +28,9 @@ class Kernel extends ConsoleKernel
          $schedule->command('PostHot')
              ->everyMinute()
              ->withoutOverlapping();
+        $schedule->command('BlackWords')
+            ->everyMinute()
+            ->withoutOverlapping();
     }
 
     /**

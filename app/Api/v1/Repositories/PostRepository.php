@@ -264,7 +264,7 @@ class PostRepository extends Repository
             Post::where('id', $parentId)->increment('comment_count', -1);
             Redis::pipeline(function ($pipe) use ($parentId, $userId, $postId)
             {
-                $pipe->LREM('user_'.$userId.'_replyPostIds', $postId);
+                $pipe->LREM('user_'.$userId.'_replyPostIds', 1, $postId);
                 if ($pipe->EXISTS('post_'.$parentId))
                 {
                     $pipe->HINCRBYFLOAT('post_'.$parentId, 'comment_count', -1);
@@ -281,18 +281,15 @@ class PostRepository extends Repository
              * 删除用户帖子列表的id
              * 删除最新和热门帖子下该帖子的缓存
              * 删掉主题帖的缓存
-             * 扣掉这个帖子获得的金币
              */
             Redis::pipeline(function ($pipe) use ($bangumiId, $postId, $userId)
             {
-                $pipe->LREM('user_'.$userId.'_minePostIds', $postId);
+                $pipe->LREM('user_'.$userId.'_minePostIds', 1, $postId);
                 $pipe->ZREM($this->bangumiListCacheKey($bangumiId), $postId);
                 $pipe->ZREM('post_new_ids', $postId);
                 $pipe->ZREM('post_hot_ids', $postId);
                 $pipe->DEL('post_'.$postId);
             });
-
-            User::where('id', $userId)->increment('coin_count', 0 - $post['like_count']);
         }
     }
 

@@ -33,6 +33,6 @@ class Video extends Model
     }
 
     public function getPosterAttribute($poster) {
-        return config('website.cdn') . $poster;
+        return config('website.image') . $poster;
     }
 }

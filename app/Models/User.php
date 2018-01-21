@@ -19,7 +19,8 @@ class User extends Authenticatable
         'signature',
         'sex',
         'birthday',
-        'coin_count'
+        'coin_count',
+        'state',
     ];
 
     protected $hidden = [
@@ -38,11 +39,11 @@ class User extends Authenticatable
 
     public function getAvatarAttribute($avatar)
     {
-        return config('website.cdn').($avatar ? $avatar : 'default/user-avatar');
+        return config('website.image').($avatar ? $avatar : 'default/user-avatar');
     }
 
     public function getBannerAttribute($banner)
     {
-        return config('website.cdn').($banner ? $banner : 'default/user-banner');
+        return config('website.image').($banner ? $banner : 'default/user-banner');
     }
 }

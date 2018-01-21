@@ -29,6 +29,6 @@ class Banner extends Model
 
     public function getUrlAttribute($url)
     {
-        return config('website.cdn') . $url;
+        return config('website.image') . $url;
     }
 }

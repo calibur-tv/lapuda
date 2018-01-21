@@ -22,6 +22,6 @@ class PostImages extends Model
 
     public function getSrcAttribute($url)
     {
-        return config('website.cdn') . $url;
+        return config('website.image') . $url;
     }
 }
