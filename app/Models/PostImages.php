@@ -3,12 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PostImages extends Model
 {
-    use SoftDeletes;
-
     protected $table = 'post_images';
 
     protected $fillable = [
@@ -17,11 +14,12 @@ class PostImages extends Model
         'type',
         'size',
         'width',
-        'height'
+        'height',
+        'origin_url',
     ];
 
     public function getSrcAttribute($url)
     {
-        return config('website.image') . $url;
+        return config('website.image').($url ? $url : 'default/user-avatar');
     }
 }
