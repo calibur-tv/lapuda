@@ -19,6 +19,10 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/user', 'App\Api\V1\Controllers\DoorController@refresh')->middleware('jwt.refresh');
 
+        $api->post('/forgot', 'App\Api\V1\Controllers\DoorController@forgotPassword');
+
+        $api->post('/reset', 'App\Api\V1\Controllers\DoorController@resetPassword');
+
         $api->post('/logout', 'App\Api\V1\Controllers\DoorController@logout');
     });
 
