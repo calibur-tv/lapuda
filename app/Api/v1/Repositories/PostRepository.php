@@ -44,6 +44,7 @@ class PostRepository extends Repository
                     'size' => intval($item['size']),
                     'width' => intval($item['width']),
                     'height' => intval($item['height']),
+                    'origin_url' => '',
                     'type' => $item['type'],
                     'created_at' => $now,
                     'updated_at' => $now

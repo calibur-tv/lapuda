@@ -19,7 +19,7 @@ class Geetest
             ], 403);
         }
 
-        if (md5(config('app.key', config('geetest.key') . $geetest['access'])) === $geetest['secret'])
+        if (md5($time. config('app.key', config('geetest.key') . $geetest['access'])) === $geetest['secret'])
         {
             return $next($request);
         }
