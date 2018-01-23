@@ -41,6 +41,9 @@ class Csrf
         ) {
             return $next($request);
         }
-        return response('token mismatch exception', 503);
+        return response([
+            'code' => 503,
+            'data' => 'token mismatch exception'
+        ], 503);
     }
 }

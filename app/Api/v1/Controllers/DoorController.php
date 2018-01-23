@@ -27,7 +27,7 @@ class DoorController extends Controller
     public function __construct()
     {
         $this->middleware('geetest')->only([
-            'login', 'register'
+            'login', 'register', 'forgotPassword'
         ]);
     }
 
@@ -237,7 +237,13 @@ class DoorController extends Controller
      */
     public function refresh()
     {
-        $user = $this->getAuthUser()->toArray();
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return null;
+        }
+
+        $user = $user->toArray();
         $imageRepository = new ImageRepository();
         $userRepository = new UserRepository();
         $user['uptoken'] = $imageRepository->uptoken();
@@ -246,6 +252,22 @@ class DoorController extends Controller
         $transformer = new UserTransformer();
 
         return $this->resOK($transformer->self($user));
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'method' => [
+                'required',
+                Rule::in(['email', 'phone']),
+            ],
+            'access' => 'required'
+        ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+
     }
 
     private function accessIsNew($method, $access)

@@ -17,7 +17,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/login', 'App\Api\V1\Controllers\DoorController@login');
 
-        $api->post('/user', 'App\Api\V1\Controllers\DoorController@refresh');
+        $api->post('/user', 'App\Api\V1\Controllers\DoorController@refresh')->middleware('jwt.refresh');
 
         $api->post('/logout', 'App\Api\V1\Controllers\DoorController@logout');
     });
