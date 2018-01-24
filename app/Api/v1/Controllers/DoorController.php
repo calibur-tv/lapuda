@@ -143,7 +143,7 @@ class DoorController extends Controller
         $zone = $this->createUserZone($nickname);
         $arr = [
             'nickname' => $nickname,
-            'password' => $request->get('secret'),
+            'password' => bcrypt($request->get('secret')),
             'zone' => $zone
         ];
 
@@ -345,7 +345,7 @@ class DoorController extends Controller
 
         User::where($method, $access)
             ->update([
-                'password' => $request->get('secret')
+                'password' => bcrypt($request->get('secret'))
             ]);
 
         return $this->resOK('密码重置成功');

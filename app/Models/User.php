@@ -34,11 +34,6 @@ class User extends Authenticatable
         'sex' => 'integer'
     ];
 
-    public function setPasswordAttribute($password)
-    {
-        $this->attributes['password'] = bcrypt($password);
-    }
-
     public function getAvatarAttribute($avatar)
     {
         return config('website.image').($avatar ? $avatar : 'default/user-avatar');
