@@ -155,13 +155,13 @@ class DoorController extends Controller
         $userId = $user->id;
 
         User::where('id', $userId)->update([
-           'inviteCode' => $this->createInviteCode($userId)
+           'inviteCode' => $this->convertInviteCode($userId)
         ]);
 
         $inviteCode = $request->get('inviteCode');
         if (!is_null($inviteCode))
         {
-            $inviteUserId = User::where('inviteCode', $inviteCode)->pluck('id');
+            $inviteUserId = User::where('id', $this->convertInviteCode($inviteCode, false))->pluck('id');
             if ($inviteUserId)
             {
                 $userRepository = new UserRepository();
@@ -415,11 +415,10 @@ class DoorController extends Controller
         }
     }
 
-    private function createInviteCode($id)
+    private function convertInviteCode($id, $convert = true)
     {
-        $id = $id * 1000 + rand(0, 999);
-        $key = base_convert($id, 10, 36);
-
-        return $key;
+        return $convert
+            ? base_convert($id * 1000 + rand(0, 999), 10, 36)
+            : base_convert($id, 36, 10) / 1000;
     }
 }
