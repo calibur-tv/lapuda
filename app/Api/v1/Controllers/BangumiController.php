@@ -50,7 +50,7 @@ class BangumiController extends Controller
 
         return $this->resOK([
             'list' => $list,
-            'min' => $repository->timelineMinYear()
+            'min' => intval($repository->timelineMinYear())
         ]);
     }
 

@@ -94,7 +94,7 @@ class BangumiRepository extends Repository
     {
         return $this->Cache('bangumi_news_year_min', function ()
         {
-            return intval(date('Y', Bangumi::where('published_at', '<>', '0')->min('published_at')));
+            return date('Y', Bangumi::where('published_at', '<>', '0')->min('published_at'));
         });
     }
 
