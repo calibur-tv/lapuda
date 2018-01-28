@@ -157,7 +157,7 @@ class UserRepository extends Repository
         });
     }
 
-    public function toggleCoin($isDelete, $fromUserId, $toUserId, $type)
+    public function toggleCoin($isDelete, $fromUserId, $toUserId, $type, $type_id)
     {
         if ($fromUserId == $toUserId)
         {
@@ -166,14 +166,13 @@ class UserRepository extends Repository
 
         if ($isDelete)
         {
-            $log = UserCoin::whereRaw('from_user_id = ? and user_id = ? and type = ?', [$fromUserId, $toUserId, $type])->first();
+            $log = UserCoin::whereRaw('from_user_id = ? and user_id = ? and type = ? and type_id = ?', [$fromUserId, $toUserId, $type, $type_id])->first();
             if (is_null($log))
             {
                 return false;
             }
 
             $log->delete();
-            User::where('id', $toUserId)->increment('coin_count', -1);
         }
         else
         {
@@ -185,7 +184,8 @@ class UserRepository extends Repository
             UserCoin::create([
                 'user_id' => $toUserId,
                 'from_user_id' => $fromUserId,
-                'type' => $type
+                'type' => $type,
+                'type_id' => $type_id
             ]);
             User::where('id', $toUserId)->increment('coin_count', 1);
             User::where('id', $fromUserId)->increment('coin_count', -1);

@@ -453,7 +453,7 @@ class PostController extends Controller
         if ($isMainPost)
         {
             $userRepository = new UserRepository();
-            $result = $userRepository->toggleCoin($liked, $userId, $post['user_id'], 1);
+            $result = $userRepository->toggleCoin($liked, $userId, $post['user_id'], 1, $post['id']);
 
             if (!$result)
             {

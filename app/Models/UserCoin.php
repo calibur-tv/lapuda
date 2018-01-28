@@ -14,12 +14,14 @@ class UserCoin extends Model
     protected $fillable = [
         'user_id',
         'from_user_id',
-        'type'
+        'type',
+        'type_id'
     ];
 
     /**
      * type
      * 0：每日签到
      * 1：帖子
+     * 2：邀请用户注册
      */
 }

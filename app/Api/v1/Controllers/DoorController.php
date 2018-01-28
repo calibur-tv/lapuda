@@ -152,6 +152,23 @@ class DoorController extends Controller
             : array_merge($arr, ['phone' => $request->get('access')]);
 
         $user = User::create($data);
+        $userId = $user->id;
+
+        User::where('id', $userId)->update([
+           'inviteCode' => $this->createInviteCode($userId)
+        ]);
+
+        $inviteCode = $request->get('inviteCode');
+        if (!is_null($inviteCode))
+        {
+            $inviteUserId = User::where('inviteCode', $inviteCode)->pluck('id');
+            if ($inviteUserId)
+            {
+                $userRepository = new UserRepository();
+                $userRepository->toggleCoin(false, $userId, $inviteUserId, 2, 0);
+            }
+            // TODO：send some message
+        }
 
         return $this->resOK(JWTAuth::fromUser($user));
     }
@@ -396,5 +413,13 @@ class DoorController extends Controller
 
             return $pinyin;
         }
+    }
+
+    private function createInviteCode($id)
+    {
+        $id = $id * 1000 + rand(0, 999);
+        $key = base_convert($id, 10, 36);
+
+        return $key;
     }
 }

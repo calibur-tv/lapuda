@@ -23,6 +23,7 @@ class User extends Authenticatable
         'birthday',
         'coin_count',
         'state',    // 0 正常，1 待审
+        'inviteCode',
     ];
 
     protected $hidden = [
