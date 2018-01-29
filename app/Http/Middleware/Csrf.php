@@ -45,7 +45,8 @@ class Csrf
         }
         return response([
             'code' => 503,
-            'data' => 'token mismatch exception'
+            'data' => 'token mismatch exception',
+            'message' => ''
         ], 503);
     }
 }

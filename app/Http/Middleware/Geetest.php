@@ -11,11 +11,12 @@ class Geetest
         $geetest = $request->get('geetest');
         $time = $geetest['expire'];
 
-        if (time() - $time > 10)
+        if (time() - $time > 60)
         {
             return response([
                 'code' => 403,
-                'data' => '验证码过期，请刷新网页重试'
+                'data' => '验证码过期，请刷新网页重试',
+                'message' => ''
             ], 403);
         }
 
@@ -26,7 +27,8 @@ class Geetest
 
         return response([
             'code' => 403,
-            'data' => '验证码过期，请刷新网页重试'
+            'data' => '错误的验证码',
+            'message' => ''
         ], 403);
     }
 }
