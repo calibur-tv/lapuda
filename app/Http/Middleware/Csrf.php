@@ -35,7 +35,6 @@ class Csrf
             in_array($request->headers->get('Origin'), $this->domains) ||
             in_array($request->url(), $this->except) ||
             (
-                in_array($request->headers->get('X-Auth-Timestamp'), $this->apps) &&
                 md5(config('app.md5_salt') . $request->headers->get('X-Auth-Timestamp')) === $request->headers->get('X-Auth-Token')
             )
         ) {

@@ -52,7 +52,7 @@ class PostController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400, $validator->errors());
         }
 
         $user = $this->getAuthUser();
@@ -193,7 +193,7 @@ class PostController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400, $validator->errors());
         }
 
         $user = $this->getAuthUser();
@@ -290,7 +290,7 @@ class PostController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400, $validator->errors());
         }
 
         $user = $this->getAuthUser();

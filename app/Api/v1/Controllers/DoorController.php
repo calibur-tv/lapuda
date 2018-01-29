@@ -28,7 +28,11 @@ class DoorController extends Controller
     public function __construct()
     {
         $this->middleware('geetest')->only([
-            'login', 'register', 'forgotPassword', 'resetPassword'
+            'login',
+            'register',
+            'sendEmailOrMessage',
+            'forgotPassword',
+            'resetPassword'
         ]);
     }
 
@@ -59,7 +63,7 @@ class DoorController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400, $validator->errors());
         }
 
         $method = $request->get('method');
@@ -122,7 +126,7 @@ class DoorController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400, $validator->errors());
         }
 
         $method = $request->get('method');
@@ -198,7 +202,7 @@ class DoorController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400, $validator->errors());
         }
 
         $method = $request->get('method');
@@ -296,7 +300,7 @@ class DoorController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400, $validator->errors());
         }
 
         $method = $request->get('method');
@@ -348,7 +352,7 @@ class DoorController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400, $validator->errors());
         }
 
         $method = $request->get('method');
