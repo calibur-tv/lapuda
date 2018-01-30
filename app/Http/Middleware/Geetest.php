@@ -9,9 +9,11 @@ class Geetest
     public function handle($request, Closure $next)
     {
         $geetest = $request->get('geetest');
-        $time = $geetest['expire'];
+        $time = $geetest['access'];
 
-        if (time() - $time > 60)
+        \Log::info('geetest time:' .$time);
+
+        if (microtime() - $time > 30000)
         {
             return response([
                 'code' => 403,
@@ -20,7 +22,7 @@ class Geetest
             ], 403);
         }
 
-        if (md5($time. config('app.key', config('geetest.key') . $geetest['access'])) === $geetest['secret'])
+        if (md5(config('geetest.key') . $geetest['access']) === $geetest['secret'])
         {
             return $next($request);
         }

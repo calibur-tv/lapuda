@@ -38,19 +38,17 @@ class ImageController extends Controller
      * @Post("/image/captcha")
      *
      * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"id": "Geetest.gt", "secret": "Geetest.challenge", "access": "认证密匙", "expire": "时间戳"}})
+     *      @Response(200, body={"code": 0, "data": {"id": "Geetest.gt", "secret": "Geetest.challenge", "access": "认证密匙"}})
      * })
      */
     public function captcha()
     {
-        $token = rand(0, 100) . microtime() . rand(0, 100);
-        $time = time();
+        $time = microtime();
 
         return $this->resOK([
             'id' => config('geetest.id'),
-            'secret' => md5($time. config('app.key', config('geetest.key') . $token)),
-            'access' => $token,
-            'expire' => $time
+            'secret' => md5(config('geetest.key') . $time),
+            'access' => $time
         ]);
     }
 
