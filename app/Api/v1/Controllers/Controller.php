@@ -48,20 +48,18 @@ class Controller extends BaseController
 
     protected function resOK($data = '', $code = 0)
     {
-        return response()
-            ->json([
-                'code' => $code,
-                'data' => $data
-            ], $code ? $code : 200, ['Content-type' => 'application/json; charset=utf-8'], JSON_UNESCAPED_UNICODE);
+        return response([
+            'code' => $code,
+            'data' => $data
+        ], $code ? $code : 200);
     }
 
     protected function resErr($data = '', $code, $message = '')
     {
-        return response()
-            ->json([
-                'code' => $code,
-                'data' => $data,
-                'message' => $message
-            ], $code, ['Content-type' => 'application/json; charset=utf-8'], JSON_UNESCAPED_UNICODE);
+        return response([
+            'code' => $code,
+            'data' => $data,
+            'message' => $message
+        ], $code);
     }
 }
