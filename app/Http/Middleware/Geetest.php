@@ -11,9 +11,7 @@ class Geetest
         $geetest = $request->get('geetest');
         $time = $geetest['access'];
 
-        \Log::info('geetest time:' .$time);
-
-        if (microtime() - $time > 30000)
+        if ((time() - $time) > 30000)
         {
             return response([
                 'code' => 403,

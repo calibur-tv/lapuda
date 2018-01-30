@@ -43,7 +43,7 @@ class ImageController extends Controller
      */
     public function captcha()
     {
-        $time = microtime();
+        $time = time();
 
         return $this->resOK([
             'id' => config('geetest.id'),
