@@ -164,7 +164,7 @@ class DoorController extends Controller
         ]);
 
         $inviteCode = $request->get('inviteCode');
-        if (!is_null($inviteCode))
+        if ($inviteCode)
         {
             $inviteUserId = User::where('id', $this->convertInviteCode($inviteCode, false))->pluck('id');
             if ($inviteUserId)

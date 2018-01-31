@@ -256,7 +256,7 @@ class PostRepository extends Repository
                 'deleted_at' => Carbon::now()
             ]);
 
-        if ($parentId != 0)
+        if (intval($parentId) !== 0)
         {
             /*
              * 如果是回帖，那么主题帖不会被删

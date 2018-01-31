@@ -260,7 +260,7 @@ class PostController extends Controller
         $reply['liked'] = false;
         $transformer = new PostTransformer();
 
-        if ($post['user_id'] != $userId)
+        if (intval($post['user_id']) !== $userId)
         {
             $job = (new \App\Jobs\Notification\Post\Reply($newId))->onQueue('notification-post-reply');
             dispatch($job);
@@ -334,7 +334,7 @@ class PostController extends Controller
 
         $postTransformer = new PostTransformer();
 
-        if ($targetUserId != 0)
+        if (intval($targetUserId) !== 0)
         {
             $job = (new \App\Jobs\Notification\Post\Comment($newId))->onQueue('notification-post-comment');
             dispatch($job);
@@ -443,7 +443,7 @@ class PostController extends Controller
         }
 
         $userId = $user->id;
-        if ($userId == $post['user_id'])
+        if ($userId === intval($post['user_id']))
         {
             return $this->resErr('不能给自己点赞', 403);
         }
@@ -451,7 +451,7 @@ class PostController extends Controller
         $liked = $postRepository->checkPostLiked($postId, $userId);
 
         // 如果是主题帖，要删除楼主所得的金币，但金币不返还给用户
-        $isMainPost = $post['parent_id'] == '0';
+        $isMainPost = intval($post['parent_id']) === 0;
         if ($isMainPost)
         {
             $userRepository = new UserRepository();
@@ -524,13 +524,13 @@ class PostController extends Controller
             return $this->resErr('不存在的帖子', 404);
         }
 
-        if ($post['parent_id'] != 0)
+        if (intval($post['parent_id']) !== 0)
         {
             return $this->resErr('不是主题帖', 403);
         }
 
         $userId = $user->id;
-        if ($userId == $post['user_id'])
+        if ($userId === intval($post['user_id']))
         {
             return $this->resErr('不能收藏自己的帖子', 403);
         }
@@ -590,15 +590,15 @@ class PostController extends Controller
 
         $delete = false;
         $state = 0;
-        if ($post['user_id'] == $user->id)
+        if (intval($post['user_id']) === $user->id)
         {
             $delete = true;
             $state = 1;
         }
-        else if ($post['parent_id'] != 0)
+        else if (intval($post['parent_id']) !== 0)
         {
             $post = $postRepository->item($post['parent_id']);
-            if ($post['user_id'] == $user->id)
+            if (intval($post['user_id']) === $user->id)
             {
                 $delete = true;
                 $state = 2;
@@ -646,7 +646,7 @@ class PostController extends Controller
         }
 
         $userId = $user->id;
-        if ($comment['from_user_id'] != $userId)
+        if (intval($comment['from_user_id']) !== $userId)
         {
             return $this->resErr('权限不足', 403);
         }

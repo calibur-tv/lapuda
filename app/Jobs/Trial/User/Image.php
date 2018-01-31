@@ -46,52 +46,52 @@ class Image implements ShouldQueue
 
         // 色情
         $respSex = json_decode(file_get_contents(env('website.image') . $url . '?qpulp'), true);
-        if ($respSex['code'] != 0)
+        if (intval($respSex['code']) !== 0)
         {
             $badImageCount++;
         }
         else
         {
-            if ($respSex['result']['label'] == 1)
+            if (intval($respSex['result']['label']) === 1)
             {
                 $badImageCount++;
             }
-            else if ($respSex['result']['label'] == 0)
+            else if (intval($respSex['result']['label']) === 0)
             {
                 $badImageCount++;
                 $needDelete = true;
             }
-            if ($respSex['result']['review'] == true)
+            if ((boolean)$respSex['result']['review'] === true)
             {
                 $needDelete = true;
             }
         }
         // 暴恐
         $respWarn = json_decode(file_get_contents(env('website.image') . $url . '?qterror'), true);
-        if ($respWarn['code'] != 0)
+        if (intval($respWarn['code']) !== 0)
         {
             $badImageCount++;
         }
         else
         {
-            if ($respWarn['result']['label'] == 1)
+            if (intval($respWarn['result']['label']) === 1)
             {
                 $badImageCount++;
             }
-            if ($respWarn['result']['review'] == true)
+            if ((boolean)$respWarn['result']['review'] === true)
             {
                 $needDelete = true;
             }
         }
         // 政治敏感
         $respDaddy = json_decode(file_get_contents(env('website.image') . $url . '?qpolitician'), true);
-        if ($respDaddy['code'] != 0)
+        if (intval($respDaddy['code']) !== 0)
         {
             $badImageCount++;
         }
         else
         {
-            if ($respDaddy['result']['review'] == true)
+            if ((boolean)$respDaddy['result']['review'] === true)
             {
                 $needDelete = true;
             }

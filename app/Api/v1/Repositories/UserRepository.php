@@ -181,7 +181,7 @@ class UserRepository extends Repository
 
     public function toggleCoin($isDelete, $fromUserId, $toUserId, $type, $type_id)
     {
-        if ($fromUserId == $toUserId)
+        if (intval($fromUserId) === intval($toUserId))
         {
             return false;
         }
@@ -245,11 +245,11 @@ class UserRepository extends Repository
 
         foreach ($list as $item)
         {
-            $type = $item['type'];
+            $type = intval($item['type']);
             $user = $userRepository->item($item['from_user_id']);
             $ids = explode(',', $item['about_id']);
 
-            if ($type == 1)
+            if ($type === 1)
             {
                 $postId = $ids[1];
                 $post = $postRepository->item($postId);
@@ -260,7 +260,7 @@ class UserRepository extends Repository
                 ];
                 $model = 'post';
             }
-            else if ($type == 2)
+            else if ($type === 2)
             {
                 $commentId = $ids[0];
                 $replyId = $ids[1];
@@ -272,7 +272,7 @@ class UserRepository extends Repository
                     'link' => '/post/'.$postId.'#reply='.$replyId.'comment='.$commentId,
                 ];
                 $model = 'post';
-            } else if ($type == 3)
+            } else if ($type === 3)
             {
                 $post = $postRepository->item($item['about_id']);
                 $about = [
@@ -281,7 +281,7 @@ class UserRepository extends Repository
                     'link' => '/post/'.$ids[0]
                 ];
                 $model = 'post';
-            } else if ($type == 4)
+            } else if ($type === 4)
             {
                 $post = $postRepository->item($ids[1]);
                 $about = [

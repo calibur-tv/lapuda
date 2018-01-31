@@ -439,7 +439,7 @@ class UserController extends Controller
             return $this->resErr('不存在的消息', 404);
         }
 
-        if ($notification['to_user_id'] != $user->id)
+        if (intval($notification['to_user_id']) !== $user->id)
         {
             return $this->resErr('没有权限进行操作', 403);
         }
