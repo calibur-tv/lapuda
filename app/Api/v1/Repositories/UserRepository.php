@@ -14,6 +14,8 @@ use App\Api\V1\Transformers\UserTransformer;
 use App\Models\BangumiFollow;
 use App\Models\Notifications;
 use App\Models\Post;
+use App\Models\PostLike;
+use App\Models\PostMark;
 use App\Models\User;
 use App\Models\UserCoin;
 use App\Models\UserSign;
@@ -99,6 +101,11 @@ class UserRepository extends Repository
         return $bangumiTransformer->list($data);
     }
 
+    public function daySigned($userId)
+    {
+        return UserSign::whereRaw('user_id = ? and created_at > ?', [$userId, Carbon::now()->startOfDay()])->count() !== 0;
+    }
+
     public function minePostIds($userId)
     {
         return $this->RedisList('user_'.$userId.'_minePostIds', function () use ($userId)
@@ -109,17 +116,32 @@ class UserRepository extends Repository
         });
     }
 
-    public function daySigned($userId)
-    {
-        return UserSign::whereRaw('user_id = ? and created_at > ?', [$userId, Carbon::now()->startOfDay()])->count() !== 0;
-    }
-
     public function replyPostIds($userId)
     {
         return $this->RedisList('user_'.$userId.'_replyPostIds', function () use ($userId)
         {
             return Post::whereRaw('parent_id <> ? and user_id = ?', [0, $userId])
                 ->whereNotIn('target_user_id', [$userId, 0])
+                ->orderBy('created_at', 'DESC')
+                ->pluck('id');
+        });
+    }
+
+    public function likedPostIds($userId)
+    {
+        return $this->RedisList('user_'.$userId.'_likedPostIds', function () use ($userId)
+        {
+            return PostLike::where('user_id', $userId)
+                ->orderBy('created_at', 'DESC')
+                ->pluck('id');
+        });
+    }
+
+    public function markedPostIds($userId)
+    {
+        return $this->RedisList('user_'.$userId.'_markedPostIds', function () use ($userId)
+        {
+            return PostMark::where('user_id', $userId)
                 ->orderBy('created_at', 'DESC')
                 ->pluck('id');
         });

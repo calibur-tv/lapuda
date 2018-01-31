@@ -219,7 +219,7 @@ class DoorController extends Controller
                 'email' => $access
             ];
 
-        if (Auth::attempt($data, $request->get('remember')))
+        if (Auth::attempt($data))
         {
             $user = Auth::user();
 

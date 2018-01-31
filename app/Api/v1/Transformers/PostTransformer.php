@@ -23,9 +23,11 @@ class PostTransformer extends Transformer
                 'comment_count' => (int)$post['comment_count'],
                 'like_count' => (int)$post['like_count'],
                 'view_count' => (int)$post['view_count'],
+                'mark_count' => (int)$post['mark_count'],
                 'title' => $post['title'],
                 'desc' => $post['desc'],
                 'liked' => $post['liked'],
+                'marked' => $post['marked'],
                 'content' => $post['content'],
                 'images' => $post['images'],
                 'created_at' => $post['created_at'],
@@ -103,7 +105,8 @@ class PostTransformer extends Transformer
                    ];
                }),
                'previewImages' => $post['previewImages'],
-               'liked' => $post['liked']
+               'liked' => $post['liked'],
+               'marked' => $post['marked']
            ];
         });
     }
@@ -139,7 +142,8 @@ class PostTransformer extends Transformer
                    ];
                 }),
                 'previewImages' => $post['previewImages'],
-                'liked' => $post['liked']
+                'liked' => $post['liked'],
+                'marked' => $post['marked']
             ];
         });
     }
@@ -212,6 +216,28 @@ class PostTransformer extends Transformer
                         'title' => $main['title']
                     ];
                 })
+            ];
+        });
+    }
+
+    public function userMark($list)
+    {
+        return $this->collection($list, function ($post)
+        {
+            return [
+                'id' => (int)$post['id'],
+                'title' => $post['title']
+            ];
+        });
+    }
+
+    public function userLike($list)
+    {
+        return $this->collection($list, function ($post)
+        {
+            return [
+                'id' => (int)$post['id'],
+                'title' => $post['title']
             ];
         });
     }

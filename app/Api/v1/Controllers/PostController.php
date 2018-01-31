@@ -10,6 +10,7 @@ use App\Models\Post;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Models\PostLike;
+use App\Models\PostMark;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
@@ -155,6 +156,7 @@ class PostController extends Controller
         }
 
         $post['liked'] = $userId ? $postRepository->checkPostLiked($id, $userId) : false;
+        $post['marked'] = $userId ? $postRepository->checkPostMarked($id, $userId) : false;
 
         $bangumiRepository = new BangumiRepository();
         $userRepository = new UserRepository();
@@ -492,6 +494,69 @@ class PostController extends Controller
         }
 
         return $this->resOK(!$liked);
+    }
+
+    /**
+     * 收藏主题帖或取消收藏
+     *
+     * @Post("/post/${postId}/toggleMark")
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body={"code": 0, "data": "是否已收藏"}),
+     *      @Response(401, body={"code": 401, "data": "未登录的用户"}),
+     *      @Response(403, body={"code": 403, "data": "不能收藏自己的帖子/不是主题帖"}),
+     *      @Response(404, body={"code": 404, "data": "不存在的帖子"})
+     * })
+     */
+    public function toggleMark($postId)
+    {
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr('未登录的用户', 401);
+        }
+        $postRepository = new PostRepository();
+        $post = $postRepository->item($postId);
+
+        if (is_null($post))
+        {
+            return $this->resErr('不存在的帖子', 404);
+        }
+
+        if ($post['parent_id'] != 0)
+        {
+            return $this->resErr('不是主题帖', 403);
+        }
+
+        $userId = $user->id;
+        if ($userId == $post['user_id'])
+        {
+            return $this->resErr('不能收藏自己的帖子', 403);
+        }
+
+        $marked = $postRepository->checkPostMarked($postId, $userId);
+        if ($marked)
+        {
+            PostMark::whereRaw('user_id = ? and post_id = ?', [$userId, $postId])->delete();
+            $num = -1;
+        }
+        else
+        {
+            PostMark::create([
+                'user_id' => $userId,
+                'post_id' => $postId
+            ]);
+            $num = 1;
+        }
+
+        Post::where('id', $post['id'])->increment('mark_count', $num);
+        if (Redis::EXISTS('post_'.$postId))
+        {
+            Redis::HINCRBYFLOAT('post_'.$postId, 'mark_count', $num);
+        }
+
+        return $this->resOK(!$marked);
     }
 
     /**
