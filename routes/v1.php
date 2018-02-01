@@ -97,9 +97,9 @@ $api->version(['v1', 'latest'], function ($api)
 
                 $api->post('/reply', 'App\Api\V1\Controllers\UserController@postsOfReply');
 
-                $api->post('/liked', 'App\Api\V1\Controllers\UserController@postsOfLiked');
+                $api->post('/like', 'App\Api\V1\Controllers\UserController@postsOfLiked');
 
-                $api->post('/marked', 'App\Api\V1\Controllers\UserController@postsOfMarked');
+                $api->post('/mark', 'App\Api\V1\Controllers\UserController@postsOfMarked');
             });
         });
     });

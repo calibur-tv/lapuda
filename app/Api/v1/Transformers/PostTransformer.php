@@ -95,6 +95,7 @@ class PostTransformer extends Transformer
                'view_count' => (int)$post['view_count'],
                'like_count' => (int)$post['like_count'],
                'comment_count' => (int)$post['comment_count'],
+               'mark_count' => (int)$post['mark_count'],
                'user' => $this->transformer($post['user'], function ($user)
                {
                    return [
@@ -125,6 +126,7 @@ class PostTransformer extends Transformer
                 'view_count' => (int)$post['view_count'],
                 'like_count' => (int)$post['like_count'],
                 'comment_count' => (int)$post['comment_count'],
+                'mark_count' => (int)$post['mark_count'],
                 'user' => $this->transformer($post['user'], function ($user)
                 {
                     return [
@@ -183,7 +185,6 @@ class PostTransformer extends Transformer
                 'content' => $post['content'],
                 'images' => $post['images'],
                 'created_at' => $post['created_at'],
-                'like_count' => (int)$post['like_count'],
                 'floor_count' => (int)$post['floor_count'],
                 'bangumi' => $this->transformer($post['bangumi'], function ($bangumi)
                 {
@@ -233,6 +234,14 @@ class PostTransformer extends Transformer
 
     public function userLike($list)
     {
+        $posts = [];
+        foreach ($list as $item)
+        {
+            if ($item['title'])
+            {
+                $posts[] = $item;
+            }
+        }
         return $this->collection($list, function ($post)
         {
             return [
