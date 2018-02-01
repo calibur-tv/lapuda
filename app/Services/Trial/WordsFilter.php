@@ -44,7 +44,7 @@ class WordsFilter
             $this->BAD_WORDS = trie_filter_load(__DIR__ . "/blackword.tree");
         }
 
-        if (gettype($text) != 'string')
+        if (gettype($text) !== 'string')
         {
             $text = $text['text'];
         }

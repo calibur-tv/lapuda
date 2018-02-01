@@ -17,7 +17,11 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/login', 'App\Api\V1\Controllers\DoorController@login');
 
-        $api->post('/user', 'App\Api\V1\Controllers\DoorController@refresh');
+        $api->post('/user', 'App\Api\V1\Controllers\DoorController@refresh')->middleware('jwt.refresh');
+
+        $api->post('/forgot', 'App\Api\V1\Controllers\DoorController@forgotPassword');
+
+        $api->post('/reset', 'App\Api\V1\Controllers\DoorController@resetPassword');
 
         $api->post('/logout', 'App\Api\V1\Controllers\DoorController@logout');
     });
@@ -87,9 +91,16 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->get('/bangumi', 'App\Api\V1\Controllers\UserController@followedBangumis');
             });
 
-            $api->post('/posts/mine', 'App\Api\V1\Controllers\UserController@postsOfMine');
+            $api->group(['prefix' => '/posts'], function ($api)
+            {
+                $api->post('/mine', 'App\Api\V1\Controllers\UserController@postsOfMine');
 
-            $api->post('/posts/reply', 'App\Api\V1\Controllers\UserController@postsOfReply');
+                $api->post('/reply', 'App\Api\V1\Controllers\UserController@postsOfReply');
+
+                $api->post('/like', 'App\Api\V1\Controllers\UserController@postsOfLiked');
+
+                $api->post('/mark', 'App\Api\V1\Controllers\UserController@postsOfMarked');
+            });
         });
     });
 
@@ -108,6 +119,8 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/comment', 'App\Api\V1\Controllers\PostController@comment')->middleware('throttle:20,1');
 
             $api->post('/toggleLike', 'App\Api\V1\Controllers\PostController@toggleLike');
+
+            $api->post('/toggleMark', 'App\Api\V1\Controllers\PostController@toggleMark');
 
             $api->post('/likeUsers', 'App\Api\V1\Controllers\PostController@likeUsers');
 

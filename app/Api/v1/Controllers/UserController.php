@@ -162,7 +162,7 @@ class UserController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400, $validator->errors());
         }
 
         $user = $this->getAuthUser();
@@ -287,6 +287,80 @@ class UserController extends Controller
     }
 
     /**
+     * 用户喜欢的帖子列表
+     *
+     * @Post("/user/${userZone}/posts/mine")
+     *
+     * @Transaction({
+     *      @Request({"seenIds": "看过的postIds, 用','分割的字符串", "take": "获取的数量"}),
+     *      @Response(200, body={"code": 0, "data": "帖子列表"}),
+     *      @Response(404, body={"code": 404, "data": "找不到用户"})
+     * })
+     */
+    public function postsOfLiked(Request $request, $zone)
+    {
+        $userId = User::where('zone', $zone)->pluck('id')->first();
+        if (is_null($userId))
+        {
+            return $this->resErr(['找不到用户'], 404);
+        }
+
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = intval($request->get('take')) ?: 10;
+
+        $userRepository = new UserRepository();
+        $ids = $userRepository->likedPostIds($userId);
+
+        if (empty($ids))
+        {
+            return $this->resOK([]);
+        }
+
+        $postRepository = new PostRepository();
+        $postTransformer = new PostTransformer();
+        $list = $postRepository->list(array_slice(array_diff($ids, $seen), 0, $take));
+
+        return $this->resOK($postTransformer->userLike($list));
+    }
+
+    /**
+     * 用户收藏的帖子列表
+     *
+     * @Post("/user/${userZone}/posts/mine")
+     *
+     * @Transaction({
+     *      @Request({"seenIds": "看过的postIds, 用','分割的字符串", "take": "获取的数量"}),
+     *      @Response(200, body={"code": 0, "data": "帖子列表"}),
+     *      @Response(404, body={"code": 404, "data": "找不到用户"})
+     * })
+     */
+    public function postsOfMarked(Request $request, $zone)
+    {
+        $userId = User::where('zone', $zone)->pluck('id')->first();
+        if (is_null($userId))
+        {
+            return $this->resErr(['找不到用户'], 404);
+        }
+
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = intval($request->get('take')) ?: 10;
+
+        $userRepository = new UserRepository();
+        $ids = $userRepository->markedPostIds($userId);
+
+        if (empty($ids))
+        {
+            return $this->resOK([]);
+        }
+
+        $postRepository = new PostRepository();
+        $postTransformer = new PostTransformer();
+        $list = $postRepository->list(array_slice(array_diff($ids, $seen), 0, $take));
+
+        return $this->resOK($postTransformer->userMark($list));
+    }
+
+    /**
      * 用户反馈
      *
      * @Post("/user/feedback")
@@ -306,7 +380,7 @@ class UserController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400, $validator->errors());
         }
 
         Feedback::create([
@@ -365,7 +439,7 @@ class UserController extends Controller
             return $this->resErr('不存在的消息', 404);
         }
 
-        if ($notification['to_user_id'] != $user->id)
+        if (intval($notification['to_user_id']) !== $user->id)
         {
             return $this->resErr('没有权限进行操作', 403);
         }

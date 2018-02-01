@@ -10,6 +10,7 @@ use App\Models\Post;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Models\PostLike;
+use App\Models\PostMark;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
@@ -52,7 +53,7 @@ class PostController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400, $validator->errors());
         }
 
         $user = $this->getAuthUser();
@@ -155,6 +156,7 @@ class PostController extends Controller
         }
 
         $post['liked'] = $userId ? $postRepository->checkPostLiked($id, $userId) : false;
+        $post['marked'] = $userId ? $postRepository->checkPostMarked($id, $userId) : false;
 
         $bangumiRepository = new BangumiRepository();
         $userRepository = new UserRepository();
@@ -193,7 +195,7 @@ class PostController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400, $validator->errors());
         }
 
         $user = $this->getAuthUser();
@@ -258,7 +260,7 @@ class PostController extends Controller
         $reply['liked'] = false;
         $transformer = new PostTransformer();
 
-        if ($post['user_id'] != $userId)
+        if (intval($post['user_id']) !== $userId)
         {
             $job = (new \App\Jobs\Notification\Post\Reply($newId))->onQueue('notification-post-reply');
             dispatch($job);
@@ -290,7 +292,7 @@ class PostController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400);
+            return $this->resErr('请求参数错误', 400, $validator->errors());
         }
 
         $user = $this->getAuthUser();
@@ -332,7 +334,7 @@ class PostController extends Controller
 
         $postTransformer = new PostTransformer();
 
-        if ($targetUserId != 0)
+        if (intval($targetUserId) !== 0)
         {
             $job = (new \App\Jobs\Notification\Post\Comment($newId))->onQueue('notification-post-comment');
             dispatch($job);
@@ -441,7 +443,7 @@ class PostController extends Controller
         }
 
         $userId = $user->id;
-        if ($userId == $post['user_id'])
+        if ($userId === intval($post['user_id']))
         {
             return $this->resErr('不能给自己点赞', 403);
         }
@@ -449,11 +451,11 @@ class PostController extends Controller
         $liked = $postRepository->checkPostLiked($postId, $userId);
 
         // 如果是主题帖，要删除楼主所得的金币，但金币不返还给用户
-        $isMainPost = $post['parent_id'] == '0';
+        $isMainPost = intval($post['parent_id']) === 0;
         if ($isMainPost)
         {
             $userRepository = new UserRepository();
-            $result = $userRepository->toggleCoin($liked, $userId, $post['user_id'], 1);
+            $result = $userRepository->toggleCoin($liked, $userId, $post['user_id'], 1, $post['id']);
 
             if (!$result)
             {
@@ -495,6 +497,69 @@ class PostController extends Controller
     }
 
     /**
+     * 收藏主题帖或取消收藏
+     *
+     * @Post("/post/${postId}/toggleMark")
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body={"code": 0, "data": "是否已收藏"}),
+     *      @Response(401, body={"code": 401, "data": "未登录的用户"}),
+     *      @Response(403, body={"code": 403, "data": "不能收藏自己的帖子/不是主题帖"}),
+     *      @Response(404, body={"code": 404, "data": "不存在的帖子"})
+     * })
+     */
+    public function toggleMark($postId)
+    {
+        $user = $this->getAuthUser();
+        if (is_null($user))
+        {
+            return $this->resErr('未登录的用户', 401);
+        }
+        $postRepository = new PostRepository();
+        $post = $postRepository->item($postId);
+
+        if (is_null($post))
+        {
+            return $this->resErr('不存在的帖子', 404);
+        }
+
+        if (intval($post['parent_id']) !== 0)
+        {
+            return $this->resErr('不是主题帖', 403);
+        }
+
+        $userId = $user->id;
+        if ($userId === intval($post['user_id']))
+        {
+            return $this->resErr('不能收藏自己的帖子', 403);
+        }
+
+        $marked = $postRepository->checkPostMarked($postId, $userId);
+        if ($marked)
+        {
+            PostMark::whereRaw('user_id = ? and post_id = ?', [$userId, $postId])->delete();
+            $num = -1;
+        }
+        else
+        {
+            PostMark::create([
+                'user_id' => $userId,
+                'post_id' => $postId
+            ]);
+            $num = 1;
+        }
+
+        Post::where('id', $post['id'])->increment('mark_count', $num);
+        if (Redis::EXISTS('post_'.$postId))
+        {
+            Redis::HINCRBYFLOAT('post_'.$postId, 'mark_count', $num);
+        }
+
+        return $this->resOK(!$marked);
+    }
+
+    /**
      * 删除帖子
      *
      * @Post("/post/${postId}/deletePost")
@@ -525,15 +590,15 @@ class PostController extends Controller
 
         $delete = false;
         $state = 0;
-        if ($post['user_id'] == $user->id)
+        if (intval($post['user_id']) === $user->id)
         {
             $delete = true;
             $state = 1;
         }
-        else if ($post['parent_id'] != 0)
+        else if (intval($post['parent_id']) !== 0)
         {
             $post = $postRepository->item($post['parent_id']);
-            if ($post['user_id'] == $user->id)
+            if (intval($post['user_id']) === $user->id)
             {
                 $delete = true;
                 $state = 2;
@@ -581,7 +646,7 @@ class PostController extends Controller
         }
 
         $userId = $user->id;
-        if ($comment['from_user_id'] != $userId)
+        if (intval($comment['from_user_id']) !== $userId)
         {
             return $this->resErr('权限不足', 403);
         }

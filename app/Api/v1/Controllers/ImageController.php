@@ -43,12 +43,12 @@ class ImageController extends Controller
      */
     public function captcha()
     {
-        $token = rand(0, 100) . microtime() . rand(0, 100);
+        $time = time();
 
         return $this->resOK([
             'id' => config('geetest.id'),
-            'secret' => md5(config('app.key', config('geetest.key') . $token)),
-            'access' => $token
+            'secret' => md5(config('geetest.key') . $time),
+            'access' => $time
         ]);
     }
 

@@ -54,11 +54,12 @@ class Controller extends BaseController
         ], $code ? $code : 200);
     }
 
-    protected function resErr($data = '', $code)
+    protected function resErr($data = '', $code, $message = '')
     {
         return response([
             'code' => $code,
-            'data' => $data
+            'data' => $data,
+            'message' => $message
         ], $code);
     }
 }

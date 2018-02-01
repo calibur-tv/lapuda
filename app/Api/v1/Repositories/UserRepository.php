@@ -14,6 +14,8 @@ use App\Api\V1\Transformers\UserTransformer;
 use App\Models\BangumiFollow;
 use App\Models\Notifications;
 use App\Models\Post;
+use App\Models\PostLike;
+use App\Models\PostMark;
 use App\Models\User;
 use App\Models\UserCoin;
 use App\Models\UserSign;
@@ -99,6 +101,11 @@ class UserRepository extends Repository
         return $bangumiTransformer->list($data);
     }
 
+    public function daySigned($userId)
+    {
+        return UserSign::whereRaw('user_id = ? and created_at > ?', [$userId, Carbon::now()->startOfDay()])->count() !== 0;
+    }
+
     public function minePostIds($userId)
     {
         return $this->RedisList('user_'.$userId.'_minePostIds', function () use ($userId)
@@ -107,11 +114,6 @@ class UserRepository extends Repository
                ->orderBy('created_at', 'DESC')
                ->pluck('id');
         });
-    }
-
-    public function daySigned($userId)
-    {
-        return UserSign::whereRaw('user_id = ? and created_at > ?', [$userId, Carbon::now()->startOfDay()])->count() !== 0;
     }
 
     public function replyPostIds($userId)
@@ -125,12 +127,32 @@ class UserRepository extends Repository
         });
     }
 
+    public function likedPostIds($userId)
+    {
+        return $this->RedisList('user_'.$userId.'_likedPostIds', function () use ($userId)
+        {
+            return PostLike::where('user_id', $userId)
+                ->orderBy('created_at', 'DESC')
+                ->pluck('post_id AS id');
+        });
+    }
+
+    public function markedPostIds($userId)
+    {
+        return $this->RedisList('user_'.$userId.'_markedPostIds', function () use ($userId)
+        {
+            return PostMark::where('user_id', $userId)
+                ->orderBy('created_at', 'DESC')
+                ->pluck('post_id AS id');
+        });
+    }
+
     public function replyPostItem($userId, $postId)
     {
         return $this->Cache('user_'.$userId.'_replyPost_'.$postId, function () use ($postId)
         {
             $data = Post::where('id', $postId)
-                ->select('id', 'parent_id', 'content', 'like_count', 'created_at', 'target_user_id', 'floor_count')
+                ->select('id', 'parent_id', 'content', 'created_at', 'target_user_id', 'floor_count')
                 ->first()
                 ->toArray();
 
@@ -157,23 +179,22 @@ class UserRepository extends Repository
         });
     }
 
-    public function toggleCoin($isDelete, $fromUserId, $toUserId, $type)
+    public function toggleCoin($isDelete, $fromUserId, $toUserId, $type, $type_id)
     {
-        if ($fromUserId == $toUserId)
+        if (intval($fromUserId) === intval($toUserId))
         {
             return false;
         }
 
         if ($isDelete)
         {
-            $log = UserCoin::whereRaw('from_user_id = ? and user_id = ? and type = ?', [$fromUserId, $toUserId, $type])->first();
+            $log = UserCoin::whereRaw('from_user_id = ? and user_id = ? and type = ? and type_id = ?', [$fromUserId, $toUserId, $type, $type_id])->first();
             if (is_null($log))
             {
                 return false;
             }
 
             $log->delete();
-            User::where('id', $toUserId)->increment('coin_count', -1);
         }
         else
         {
@@ -185,7 +206,8 @@ class UserRepository extends Repository
             UserCoin::create([
                 'user_id' => $toUserId,
                 'from_user_id' => $fromUserId,
-                'type' => $type
+                'type' => $type,
+                'type_id' => $type_id
             ]);
             User::where('id', $toUserId)->increment('coin_count', 1);
             User::where('id', $fromUserId)->increment('coin_count', -1);
@@ -223,11 +245,11 @@ class UserRepository extends Repository
 
         foreach ($list as $item)
         {
-            $type = $item['type'];
+            $type = intval($item['type']);
             $user = $userRepository->item($item['from_user_id']);
             $ids = explode(',', $item['about_id']);
 
-            if ($type == 1)
+            if ($type === 1)
             {
                 $postId = $ids[1];
                 $post = $postRepository->item($postId);
@@ -238,7 +260,7 @@ class UserRepository extends Repository
                 ];
                 $model = 'post';
             }
-            else if ($type == 2)
+            else if ($type === 2)
             {
                 $commentId = $ids[0];
                 $replyId = $ids[1];
@@ -250,7 +272,7 @@ class UserRepository extends Repository
                     'link' => '/post/'.$postId.'#reply='.$replyId.'comment='.$commentId,
                 ];
                 $model = 'post';
-            } else if ($type == 3)
+            } else if ($type === 3)
             {
                 $post = $postRepository->item($item['about_id']);
                 $about = [
@@ -259,7 +281,7 @@ class UserRepository extends Repository
                     'link' => '/post/'.$ids[0]
                 ];
                 $model = 'post';
-            } else if ($type == 4)
+            } else if ($type === 4)
             {
                 $post = $postRepository->item($ids[1]);
                 $about = [

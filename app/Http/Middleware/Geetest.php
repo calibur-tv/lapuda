@@ -9,16 +9,26 @@ class Geetest
     public function handle($request, Closure $next)
     {
         $geetest = $request->get('geetest');
+        $time = $geetest['access'];
 
-        if (md5(config('app.key', config('geetest.key') . $geetest['access'])) === $geetest['secret'])
+        if ((time() - $time) > 30000)
+        {
+            return response([
+                'code' => 403,
+                'data' => '验证码过期，请刷新网页重试',
+                'message' => ''
+            ], 403);
+        }
+
+        if (md5(config('geetest.key') . $geetest['access']) === $geetest['secret'])
         {
             return $next($request);
         }
 
         return response([
             'code' => 403,
-            'message' => ['验证码过期，请刷新网页重试'],
-            'data' => ''
+            'data' => '错误的验证码',
+            'message' => ''
         ], 403);
     }
 }

@@ -15,17 +15,16 @@
     <h1 style="margin: 32px auto;
         max-width: 95%;
         color: #0e2026;">
-        欢迎加入
+        找回密码
     </h1>
-    <p style="margin: 35px auto">-&nbsp;&nbsp;{{ $name }}&nbsp;&nbsp;-</p>
     <p style="width: 750px;
         max-width: 90%;
         margin: 0 auto 55px;
         padding: 10px 0;
         color: #a6aeb3;">
-        在开始之前，请确认你的邮箱账号
+        你可以在 24 小时之内通过该验证码重置你的密码
         <br/>
-        你可以在 24 小时内将验证码复制到注册页面输入框中来激活账户。
+        验证码使用后将失效，使用前请妥善保管
     </p>
     <div>
         <span style="display: inline-block;

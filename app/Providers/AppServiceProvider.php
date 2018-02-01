@@ -17,11 +17,9 @@ class AppServiceProvider extends ServiceProvider
     {
         if ($this->app->environment() !== 'production') {
             DB::listen(function ($query) {
-                Log::info('--------- query log begin ---------');
                 Log::info($query->sql);
                 Log::info($query->bindings);
                 Log::info($query->time);
-                Log::info('---------- query log end ----------');
             });
         }
     }

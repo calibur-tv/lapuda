@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
     use Notifiable;
+    use SoftDeletes;
 
     protected $fillable = [
         'email',
@@ -20,7 +22,8 @@ class User extends Authenticatable
         'sex',
         'birthday',
         'coin_count',
-        'state',
+        'state',    // 0 正常，1 待审
+        'inviteCode',
     ];
 
     protected $hidden = [
@@ -31,11 +34,6 @@ class User extends Authenticatable
         'birthday' => 'integer',
         'sex' => 'integer'
     ];
-
-    public function setPasswordAttribute($password)
-    {
-        $this->attributes['password'] = bcrypt($password);
-    }
 
     public function getAvatarAttribute($avatar)
     {

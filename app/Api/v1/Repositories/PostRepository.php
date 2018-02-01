@@ -12,6 +12,7 @@ namespace App\Api\V1\Repositories;
 use App\Models\Post;
 use App\Models\PostImages;
 use App\Models\PostLike;
+use App\Models\PostMark;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -44,6 +45,7 @@ class PostRepository extends Repository
                     'size' => intval($item['size']),
                     'width' => intval($item['width']),
                     'height' => intval($item['height']),
+                    'origin_url' => '',
                     'type' => $item['type'],
                     'created_at' => $now,
                     'updated_at' => $now
@@ -254,7 +256,7 @@ class PostRepository extends Repository
                 'deleted_at' => Carbon::now()
             ]);
 
-        if ($parentId != 0)
+        if (intval($parentId) !== 0)
         {
             /*
              * 如果是回帖，那么主题帖不会被删
@@ -290,6 +292,9 @@ class PostRepository extends Repository
                 $pipe->ZREM('post_hot_ids', $postId);
                 $pipe->DEL('post_'.$postId);
             });
+
+            $job = (new \App\Jobs\Trial\Post\Delete($postId))->onQueue('post-delete');
+            dispatch($job);
         }
     }
 
@@ -333,5 +338,10 @@ class PostRepository extends Repository
     public function checkPostLiked($postId, $userId)
     {
         return PostLike::whereRaw('user_id = ? and post_id = ?', [$userId, $postId])->count() !== 0;
+    }
+
+    public function checkPostMarked($postId, $userId)
+    {
+        return PostMark::whereRaw('user_id = ? and post_id = ?', [$userId, $postId])->count() !== 0;
     }
 }

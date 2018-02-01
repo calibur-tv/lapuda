@@ -9,6 +9,8 @@ class Csrf
     protected $domains = [
         'https://www.calibur.tv',
         'https://m.calibur.tv',
+        'https://t-www.calibur.tv',
+        'https://t-m.calibur.tv',
         ''
     ];
 
@@ -35,12 +37,16 @@ class Csrf
             in_array($request->headers->get('Origin'), $this->domains) ||
             in_array($request->url(), $this->except) ||
             (
-                in_array($request->headers->get('X-Auth-Timestamp'), $this->apps) &&
+                time() - intval($request->headers->get('X-Auth-Timestamp')) < 60 &&
                 md5(config('app.md5_salt') . $request->headers->get('X-Auth-Timestamp')) === $request->headers->get('X-Auth-Token')
             )
         ) {
             return $next($request);
         }
-        return response('token mismatch exception', 503);
+        return response([
+            'code' => 503,
+            'data' => 'token mismatch exception',
+            'message' => ''
+        ], 503);
     }
 }

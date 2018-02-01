@@ -40,6 +40,7 @@ class TrendingController extends Controller
         foreach ($list as $i => $item)
         {
             $list[$i]['liked'] = $userId ? $repository->checkPostLiked($item['id'], $userId) : false;
+            $list[$i]['marked'] = $userId ? $repository->checkPostMarked($item['id'], $userId) : false;
         }
 
         $transformer = new PostTransformer();
@@ -76,6 +77,7 @@ class TrendingController extends Controller
         foreach ($list as $i => $item)
         {
             $list[$i]['liked'] = $userId ? $repository->checkPostLiked($item['id'], $userId) : false;
+            $list[$i]['marked'] = $userId ? $repository->checkPostMarked($item['id'], $userId) : false;
         }
 
         $transformer = new PostTransformer();
