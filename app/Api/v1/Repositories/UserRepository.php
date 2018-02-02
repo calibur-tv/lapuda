@@ -198,19 +198,28 @@ class UserRepository extends Repository
         }
         else
         {
-            $count = User::where('id', $fromUserId)->pluck('coin_count')->first();
-            if ($count <= 0)
+            if ($type !== 2)
             {
-                return false;
+                $count = User::where('id', $fromUserId)->pluck('coin_count')->first();
+
+                if ($count <= 0) {
+                    return false;
+                }
             }
+
             UserCoin::create([
                 'user_id' => $toUserId,
                 'from_user_id' => $fromUserId,
                 'type' => $type,
                 'type_id' => $type_id
             ]);
+
             User::where('id', $toUserId)->increment('coin_count', 1);
-            User::where('id', $fromUserId)->increment('coin_count', -1);
+
+            if ($type !== 2)
+            {
+                User::where('id', $fromUserId)->increment('coin_count', -1);
+            }
         }
 
         return true;

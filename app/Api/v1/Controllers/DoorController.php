@@ -170,7 +170,7 @@ class DoorController extends Controller
         $inviteCode = $request->get('inviteCode');
         if ($inviteCode)
         {
-            $inviteUserId = User::where('id', $this->convertInviteCode($inviteCode, false))->pluck('id');
+            $inviteUserId = User::where('id', $this->convertInviteCode($inviteCode, false))->pluck('id')->first();
             if ($inviteUserId)
             {
                 $userRepository = new UserRepository();
@@ -428,17 +428,6 @@ class DoorController extends Controller
     {
         return $convert
             ? base_convert($id * 1000 + rand(0, 999), 10, 36)
-            : base_convert($id, 36, 10) / 1000;
-    }
-
-    public function test()
-    {
-        $pat = '/^([a-zA-Z]+|[0-9]+|[\x{4e00}-\x{9fa5}]+)$/u';
-
-        $s = "123Dauphiné";
-
-//        return strtolower(Overtrue::permalink($s));
-
-         return preg_match( $pat, $s );
+            : intval(base_convert($id, 36, 10) / 1000);
     }
 }
