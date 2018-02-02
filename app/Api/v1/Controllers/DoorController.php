@@ -148,8 +148,7 @@ class DoorController extends Controller
         $arr = [
             'nickname' => $nickname,
             'password' => bcrypt($request->get('secret')),
-            'zone' => $zone,
-            'inviteCode' => ''
+            'zone' => $zone
         ];
 
         $data = $isEmail
