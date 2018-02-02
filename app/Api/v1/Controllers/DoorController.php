@@ -129,6 +129,11 @@ class DoorController extends Controller
             return $this->resErr('请求参数错误', 400, $validator->errors());
         }
 
+        if (!preg_match('/^([a-zA-Z]+|[0-9]+|[\x{4e00}-\x{9fa5}]+)$/u', $request->get('nickname')))
+        {
+            return $this->resErr('请求参数错误', 400, '昵称只能包含汉字、数字和字母');
+        }
+
         $method = $request->get('method');
         $access = $request->get('access');
         $isEmail = $method === 'email';
@@ -403,7 +408,7 @@ class DoorController extends Controller
 
     private function createUserZone($name)
     {
-        $pinyin = Overtrue::permalink($name);
+        $pinyin = strtolower(Overtrue::permalink($name));
 
         $tail = UserZone::where('name', $pinyin)->count();
 
@@ -424,5 +429,16 @@ class DoorController extends Controller
         return $convert
             ? base_convert($id * 1000 + rand(0, 999), 10, 36)
             : base_convert($id, 36, 10) / 1000;
+    }
+
+    public function test()
+    {
+        $pat = '/^([a-zA-Z]+|[0-9]+|[\x{4e00}-\x{9fa5}]+)$/u';
+
+        $s = "123Dauphiné";
+
+//        return strtolower(Overtrue::permalink($s));
+
+         return preg_match( $pat, $s );
     }
 }
