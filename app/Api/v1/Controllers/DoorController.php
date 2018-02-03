@@ -265,7 +265,11 @@ class DoorController extends Controller
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return null;
+            return response([
+                'code' => 40103,
+                'message' => config('error.40103'),
+                'data' => ''
+            ], 401);
         }
 
         $user = $user->toArray();
