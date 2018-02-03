@@ -29,7 +29,7 @@ class BangumiController extends Controller
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": {"list": "番剧列表", "min": "可获取到数据的最小年份"}}),
-     *      @Response(400, body={"code": 400, "data": "请求参数错误"})
+     *      @Response(400, body={"code": 40003, "data": "请求参数错误"})
      * })
      */
     public function timeline(Request $request)
@@ -38,7 +38,7 @@ class BangumiController extends Controller
         $take = intval($request->get('take')) ?: 3;
         if (!$year)
         {
-            return $this->resErr('请求参数错误', 400);
+            return $this->resErrParams();
         }
 
         $repository = new BangumiRepository();
@@ -122,7 +122,7 @@ class BangumiController extends Controller
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": "番剧列表"}),
-     *      @Response(400, body={"code": 400, "data": "请求参数错误"})
+     *      @Response(400, body={"code": 40003, "data": "请求参数错误"})
      * })
      */
     public function category(Request $request)
@@ -132,7 +132,7 @@ class BangumiController extends Controller
 
         if (is_null($tags))
         {
-            return $this->resErr('请求参数不能为空', 400);
+            return $this->resErrParams();
         }
 
         // 格式化为数组 -> 只保留数字 -> 去重 -> 保留value
@@ -142,7 +142,7 @@ class BangumiController extends Controller
 
         if (empty($tags))
         {
-            return $this->resErr('请求参数格式错误', 400);
+            return $this->resErrParams();
         }
 
         sort($tags);
@@ -160,7 +160,7 @@ class BangumiController extends Controller
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": "番剧对象"}),
-     *      @Response(404, body={"code": 404, "data": "不存在的番剧"})
+     *      @Response(404, body={"code": 40401, "data": "不存在的番剧"})
      * })
      */
     public function show($id)
@@ -169,7 +169,7 @@ class BangumiController extends Controller
         $bangumi = $repository->item($id);
         if (is_null($bangumi))
         {
-            return $this->resErr('不存在的番剧', 404);
+            return $this->resErrNotFound('没有找到番剧');
         }
 
         $userId = $this->getAuthUserId();
@@ -189,7 +189,7 @@ class BangumiController extends Controller
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": {"videos": "视频列表", "repeat": "视频集数是否连续", "total": "视频总数"}}),
-     *      @Response(404, body={"code": 404, "data": "不存在的番剧"})
+     *      @Response(404, body={"code": 40401, "data": "不存在的番剧"})
      * })
      */
     public function videos($id)
@@ -199,7 +199,7 @@ class BangumiController extends Controller
 
         if (is_null($bangumi))
         {
-            return $this->resErr('不存在的番剧', 404);
+            return $this->resErrNotFound('没有找到番剧');
         }
 
         return $this->resOK($repository->videos($id, json_decode($bangumi['season'])));
@@ -213,8 +213,8 @@ class BangumiController extends Controller
      * @Request(headers={"Authorization": "Bearer JWT-Token"})
      *
      * @Transaction({
-     *      @Response(200, body={"code": 0, "data": "是否已关注"}),
-     *      @Response(401, body={"code": 401, "data": "用户认证失败"})
+     *      @Response(201, body={"code": 0, "data": "是否已关注"}),
+     *      @Response(401, body={"code": 40104, "data": "用户认证失败"})
      * })
      */
     public function follow($id)
@@ -222,13 +222,13 @@ class BangumiController extends Controller
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->resErr('用户认证失败', 401);
+            return $this->resErrAuth();
         }
 
         $bangumiRepository = new BangumiRepository();
         $followed = $bangumiRepository->toggleFollow($user->id, $id);
 
-        return $this->resOK($followed);
+        return $this->resCreated($followed);
     }
 
     /**

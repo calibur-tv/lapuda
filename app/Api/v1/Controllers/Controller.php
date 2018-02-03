@@ -17,11 +17,14 @@ class Controller extends BaseController
     {
         try {
 
-            if (! $user = JWTAuth::parseToken()->authenticate()) {
+            $user = JWTAuth::parseToken()->authenticate();
 
+            if (! $user)
+            {
                 return null;
-
             }
+
+            return $user;
 
         } catch (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
 
@@ -36,8 +39,6 @@ class Controller extends BaseController
             return null;
 
         }
-
-        return JWTAuth::parseToken()->authenticate();
     }
 
     protected function getAuthUserId()
@@ -46,20 +47,69 @@ class Controller extends BaseController
         return is_null($user) ? 0 : $user->id;
     }
 
-    protected function resOK($data = '', $code = 0)
+    protected function resOK($data = '')
     {
         return response([
-            'code' => $code,
+            'code' => 0,
             'data' => $data
-        ], $code ? $code : 200);
+        ], 200);
     }
 
-    protected function resErr($data = '', $code, $message = '')
+    protected function resNoContent()
+    {
+        return response('', 204);
+    }
+
+    protected function resCreated($data)
     {
         return response([
-            'code' => $code,
-            'data' => $data,
-            'message' => $message
-        ], $code);
+            'code' => 0,
+            'data' => $data
+        ], 201);
+    }
+
+    protected function resErrAuth()
+    {
+        return response([
+            'code' => 40104,
+            'message' => config('error.40104'),
+            'data' => ''
+        ], 401);
+    }
+
+    protected function resErrBad($message = null, $data = '')
+    {
+        return response([
+            'code' => 40004,
+            'message' => $message ?: config('error.40004'),
+            'data' => $data
+        ], 400);
+    }
+
+    protected function resErrRole($message = null)
+    {
+        return response([
+            'code' => 40301,
+            'message' => $message ?: config('error.40301'),
+            'data' => ''
+        ], 403);
+    }
+
+    protected function resErrParams($data = '')
+    {
+        return response([
+            'code' => 40003,
+            'message' => config('error.40003'),
+            'data' => $data
+        ], 400);
+    }
+
+    protected function resErrNotFound($message = null)
+    {
+        return response([
+            'code' => 40401,
+            'message' => $message ?: config('error.40401'),
+            'data' => ''
+        ], 404);
     }
 }

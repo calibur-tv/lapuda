@@ -21,7 +21,7 @@ class VideoController extends Controller
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": {"info": "视频对象", "bangumi": "番剧信息", "list": {"total": "视频总数", "repeat": "是否重排", "videos": "视频列表"}}}),
-     *      @Response(404, body={"code": 404, "data": "不存在的视频资源"})
+     *      @Response(404, body={"code": 40401, "data": "不存在的视频资源"})
      * })
      */
     public function show($id)
@@ -31,7 +31,7 @@ class VideoController extends Controller
 
         if (is_null($info))
         {
-            return $this->resErr('不存在的视频资源', 404);
+            return $this->resErrNotFound('不存在的视频资源');
         }
 
         $bangumiRepository = new BangumiRepository();
@@ -79,6 +79,6 @@ class VideoController extends Controller
 
         Cache::forever($key, $value);
 
-        return $this->resOK();
+        return $this->resNoContent();
     }
 }

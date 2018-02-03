@@ -12,6 +12,9 @@
  * 如果 token 过期，则会返回 [401 Unauthorized] token_expired，在 response header 中返回新的 token
  * 如果 token 的 refresh_ttl 超时，则会返回 [400 400 Bad Request]， token_expired
  *
+ * 如果设置了 blacklist_enabled，那么 web 从 A 页面打开新页面 B 后，A 页面的 token 将失效，所以不能设置它
+ * 如果不设置 blacklist_enabled，旧的 token 只要不超过 ttl && refresh_ttl，就可以一直用，并且是多端用
+ * 所以只要不用 https，就是不安全的，用了 https，只能自己盗取自己的 token，OK 就这样
  */
 
 return [
@@ -115,7 +118,7 @@ return [
     |
     */
 
-    'blacklist_enabled' => env('JWT_BLACKLIST_ENABLED', true),
+    'blacklist_enabled' => env('JWT_BLACKLIST_ENABLED', false),
 
     /*
     |--------------------------------------------------------------------------

@@ -14,10 +14,10 @@ class Geetest
         if ((time() - $time) > 30000)
         {
             return response([
-                'code' => 403,
-                'data' => '验证码过期，请刷新网页重试',
-                'message' => ''
-            ], 403);
+                'code' => 40001,
+                'message' => config('error.40001'),
+                'data' => '',
+            ], 400);
         }
 
         if (md5(config('geetest.key') . $geetest['access']) === $geetest['secret'])
@@ -26,9 +26,9 @@ class Geetest
         }
 
         return response([
-            'code' => 403,
-            'data' => '错误的验证码',
-            'message' => ''
-        ], 403);
+            'code' => 40002,
+            'message' => config('error.40002'),
+            'data' => ''
+        ], 400);
     }
 }
