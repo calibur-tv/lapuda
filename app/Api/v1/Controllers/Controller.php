@@ -6,6 +6,7 @@ use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Log;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Dingo\Api\Routing\Helpers;
 
@@ -17,7 +18,9 @@ class Controller extends BaseController
     {
         try {
 
-            $user = JWTAuth::parseToken()->authenticate();
+            $auth = JWTAuth::parseToken();
+            $user = JWTAuth::authenticate();
+            Log::info('token:'. $auth->token);
 
             if (! $user)
             {
