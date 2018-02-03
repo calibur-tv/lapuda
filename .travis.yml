@@ -27,6 +27,6 @@ deploy:
     script:
       ssh -p $PORT $USER@$PRODUCTION_SERVER 'cd /var/www/api && git pull' &&
       ssh -p $PORT $USER@$PRODUCTION_SERVER 'cd /var/www/api && composer install' &&
-      ssh -p $PORT $USER@$PRODUCTION_SERVER 'cd /var/www/api && php artisan queue:restart' &&
+      ssh -p $PORT $USER@$PRODUCTION_SERVER 'cd /var/www/api && php artisan queue:restart'
     on:
       branch: deploy
