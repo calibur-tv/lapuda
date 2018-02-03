@@ -35,8 +35,8 @@ class UserController extends Controller
      * @Transaction({
      *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(204),
-     *      @Response(401, body={"code": 40104, "data": "未登录的用户"}),
-     *      @Response(403, body={"code": 40301, "data": "今日已签到"})
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户", "data": ""}),
+     *      @Response(403, body={"code": 40301, "message": "今日已签到", "data": ""})
      * })
      */
     public function daySign()
@@ -78,8 +78,8 @@ class UserController extends Controller
      * @Transaction({
      *      @Request({"type": "avatar或banner", "url": "图片地址"}, headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(204),
-     *      @Response(400, body={"code": 40003, "data": "请求参数错误"}),
-     *      @Response(401, body={"code": 40104, "data": "未登录的用户"})
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误", "data": ""}),
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户", "data": ""})
      * })
      */
     public function image(Request $request)
@@ -122,7 +122,7 @@ class UserController extends Controller
      * @Transaction({
      *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(200, body={"code": 0, "data": "用户信息对象"}),
-     *      @Response(404, body={"code": 40401, "data": "该用户不存在"})
+     *      @Response(404, body={"code": 40401, "message": "该用户不存在", "data": ""})
      * })
      */
     public function show($zone)
@@ -148,7 +148,7 @@ class UserController extends Controller
      * @Transaction({
      *      @Request({"sex": "性别: 0, 1, 2, 3, 4", "signature": "用户签名，最多20字", "nickname": "用户昵称，最多14个字符", "birthday": "以秒为单位的时间戳"}, headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(204),
-     *      @Response(404, body={"code": 40104, "data": "该用户不存在"})
+     *      @Response(404, body={"code": 40104, "message": "该用户不存在", "data": ""})
      * })
      */
     public function profile(Request $request)
@@ -192,7 +192,7 @@ class UserController extends Controller
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": "番剧列表"}),
-     *      @Response(404, body={"code": 40104, "data": "该用户不存在"})
+     *      @Response(404, body={"code": 40104, "message": "该用户不存在", "data": ""})
      * })
      */
     public function followedBangumis($zone)
@@ -217,7 +217,7 @@ class UserController extends Controller
      * @Transaction({
      *      @Request({"seenIds": "看过的postIds, 用','分割的字符串", "take": "获取的数量"}),
      *      @Response(200, body={"code": 0, "data": "帖子列表"}),
-     *      @Response(404, body={"code": 40104, "data": "找不到用户"})
+     *      @Response(404, body={"code": 40104, "message": "找不到用户", "data": ""})
      * })
      */
     public function postsOfMine(Request $request, $zone)
@@ -254,7 +254,7 @@ class UserController extends Controller
      * @Transaction({
      *      @Request({"seenIds": "看过的postIds, 用','分割的字符串", "take": "获取的数量"}),
      *      @Response(200, body={"code": 0, "data": "帖子列表"}),
-     *      @Response(404, body={"code": 40104, "data": "找不到用户"})
+     *      @Response(404, body={"code": 40104, "message": "找不到用户", "data": ""})
      * })
      */
     public function postsOfReply(Request $request, $zone)
@@ -294,7 +294,7 @@ class UserController extends Controller
      * @Transaction({
      *      @Request({"seenIds": "看过的postIds, 用','分割的字符串", "take": "获取的数量"}),
      *      @Response(200, body={"code": 0, "data": "帖子列表"}),
-     *      @Response(404, body={"code": 40104, "data": "找不到用户"})
+     *      @Response(404, body={"code": 40104, "message": "找不到用户", "data": ""})
      * })
      */
     public function postsOfLiked(Request $request, $zone)
@@ -331,7 +331,7 @@ class UserController extends Controller
      * @Transaction({
      *      @Request({"seenIds": "看过的postIds, 用','分割的字符串", "take": "获取的数量"}),
      *      @Response(200, body={"code": 0, "data": "帖子列表"}),
-     *      @Response(404, body={"code": 40104, "data": "找不到用户"})
+     *      @Response(404, body={"code": 40104, "message": "找不到用户", "data": ""})
      * })
      */
     public function postsOfMarked(Request $request, $zone)
@@ -368,7 +368,7 @@ class UserController extends Controller
      * @Transaction({
      *      @Request({"type": "反馈的类型", "desc": "反馈内容，最多120字"}),
      *      @Response(204),
-     *      @Response(400, body={"code": 40003, "data": "请求参数错误"})
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误", "data": ""})
      * })
      */
     public function feedback(Request $request)
@@ -400,7 +400,7 @@ class UserController extends Controller
      * @Transaction({
      *      @Request({"take": "获取个数", "minId": "看过的最小id"}),
      *      @Response(200, body={"code": 0, "data": "消息列表"}),
-     *      @Response(401, body={"code": 40104, "data": "未登录的用户"})
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户", "data": ""})
      * })
      */
     public function notifications(Request $request)
@@ -427,7 +427,7 @@ class UserController extends Controller
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": "未读个数"}),
-     *      @Response(401, body={"code": 40104, "data": "未登录的用户"})
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户", "data": ""})
      * })
      */
     public function waitingReadNotifications()
@@ -452,9 +452,9 @@ class UserController extends Controller
      * @Transaction({
      *      @Request({"id": "消息id"}),
      *      @Response(204),
-     *      @Response(401, body={"code": 40104, "data": "未登录的用户"}),
-     *      @Response(404, body={"code": 40401, "data": "不存在的消息"}),
-     *      @Response(403, body={"code": 40301, "data": "没有权限进行操作"})
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户", "data": ""}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的消息", "data": ""}),
+     *      @Response(403, body={"code": 40301, "message": "没有权限进行操作", "data": ""})
      * })
      */
     public function readNotification(Request $request)

@@ -24,10 +24,12 @@ class User extends Authenticatable
         'coin_count',
         'state',    // 0 正常，1 待审
         'inviteCode',
+        'password_change_at', // 密码最后修改时间
+        'remember_token',
     ];
 
     protected $hidden = [
-        'password', 'remember_token'
+        'password'
     ];
 
     protected $casts = [

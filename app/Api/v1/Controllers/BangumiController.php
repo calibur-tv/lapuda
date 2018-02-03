@@ -29,7 +29,7 @@ class BangumiController extends Controller
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": {"list": "番剧列表", "min": "可获取到数据的最小年份"}}),
-     *      @Response(400, body={"code": 40003, "data": "请求参数错误"})
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误", "data": ""})
      * })
      */
     public function timeline(Request $request)
@@ -122,7 +122,7 @@ class BangumiController extends Controller
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": "番剧列表"}),
-     *      @Response(400, body={"code": 40003, "data": "请求参数错误"})
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误", "data": ""})
      * })
      */
     public function category(Request $request)
@@ -160,7 +160,7 @@ class BangumiController extends Controller
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": "番剧对象"}),
-     *      @Response(404, body={"code": 40401, "data": "不存在的番剧"})
+     *      @Response(404, body={"code": 40401, "message": "不存在的番剧", "data": ""})
      * })
      */
     public function show($id)
@@ -189,7 +189,7 @@ class BangumiController extends Controller
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": {"videos": "视频列表", "repeat": "视频集数是否连续", "total": "视频总数"}}),
-     *      @Response(404, body={"code": 40401, "data": "不存在的番剧"})
+     *      @Response(404, body={"code": 40401, "message": "不存在的番剧", "data": ""})
      * })
      */
     public function videos($id)
@@ -214,7 +214,7 @@ class BangumiController extends Controller
      *
      * @Transaction({
      *      @Response(201, body={"code": 0, "data": "是否已关注"}),
-     *      @Response(401, body={"code": 40104, "data": "用户认证失败"})
+     *      @Response(401, body={"code": 40104, "message": "用户认证失败", "data": ""})
      * })
      */
     public function follow($id)

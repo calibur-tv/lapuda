@@ -43,8 +43,8 @@ class DoorController extends Controller
      * @Transaction({
      *      @Request({"method": "phone|email", "access": "账号", "nickname": "用户昵称", "mustNew": "必须是未注册的用户", "mustOld": "必须是已注册的用户", "geetest": "Geetest验证码对象"}),
      *      @Response(201, body={"code": 0, "data": "邮件或短信发送成功"}),
-     *      @Response(400, body={"code": 40003, "data": "请求参数错误"}),
-     *      @Response(400, body={"code": 40004, "data": "已注册或未注册的账号"})
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误", "data": "错误详情"}),
+     *      @Response(400, body={"code": 40004, "message": "已注册或未注册的账号", "data": ""})
      * })
      */
     public function sendEmailOrMessage(Request $request)
@@ -105,9 +105,9 @@ class DoorController extends Controller
      * @Transaction({
      *      @Request({"method": "phone|email", "nickname": "用户昵称", "access": "账号", "secret": "密码", "authCode": "短信或邮箱验证码", "inviteCode": "邀请码", "geetest": "Geetest验证码对象"}),
      *      @Response(200, body={"code": 0, "data": "JWT-Token"}),
-     *      @Response(400, body={"code": 400, "data": "请求参数错误"}),
-     *      @Response(401, body={"code": 401, "data": "验证码过期，请重新获取"}),
-     *      @Response(403, body={"code": 403, "data": "该手机或邮箱已绑定另外一个账号"})
+     *      @Response(400, body={"code": 400, "message": "请求参数错误", "data": "错误详情"}),
+     *      @Response(401, body={"code": 401, "message": "验证码过期，请重新获取", "data": ""}),
+     *      @Response(403, body={"code": 403, "message": "该手机或邮箱已绑定另外一个账号", "data": ""})
      * })
      */
     public function register(Request $request)
@@ -178,7 +178,7 @@ class DoorController extends Controller
             // TODO：send some message
         }
 
-        return $this->resCreated(JWTAuth::fromUser($user));
+        return $this->resCreated($this->responseUser($user));
     }
 
     /**
@@ -188,8 +188,8 @@ class DoorController extends Controller
      * @Transaction({
      *      @Request({"method": "phone|email", "access": "账号", "secret": "密码", "geetest": "Geetest验证码对象"}),
      *      @Response(200, body={"code": 0, "data": "JWT-Token"}),
-     *      @Response(400, body={"code": 400, "data": "请求参数错误"}),
-     *      @Response(403, body={"code": 403, "data": "用户名或密码错误"})
+     *      @Response(400, body={"code": 400, "message": "请求参数错误", "data": "错误详情"}),
+     *      @Response(403, body={"code": 403, "message": "用户名或密码错误", "data": ""})
      * })
      */
     public function login(Request $request)
@@ -200,8 +200,7 @@ class DoorController extends Controller
                 Rule::in(['email', 'phone']),
             ],
             'access' => 'required',
-            'secret' => 'required|min:6|max:16',
-            'remember' => 'required|boolean'
+            'secret' => 'required|min:6|max:16'
         ]);
 
         if ($validator->fails())
@@ -227,7 +226,7 @@ class DoorController extends Controller
         {
             $user = Auth::user();
 
-            return $this->resOK(JWTAuth::fromUser($user));
+            return $this->resOK($this->responseUser($user));
         }
 
         return $this->resErrBad('用户名或密码错误');
@@ -256,9 +255,9 @@ class DoorController extends Controller
      *
      * @Request(headers={"Authorization": "Bearer JWT-Token"})
      * @Transaction({
-     *      @Request({"method": "phone|email", "nickname": "用户昵称", "access": "账号", "secret": "密码", "authCode": "短信或邮箱验证码", "inviteCode": "邀请码"}),
      *      @Response(200, body={"code": 0, "data": "用户对象"}),
-     *      @Response(401, body={"code": 401, "data": "未登录的用户"})
+     *      @Response(401, body={"code": 40102, "message": "登录超时，请重新登录", "data": ""}),
+     *      @Response(401, body={"code": 40103, "message": "登录凭证错误，请重新登录", "data": ""})
      * })
      */
     public function refresh()
@@ -266,7 +265,11 @@ class DoorController extends Controller
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return null;
+            return response([
+                'code' => 40103,
+                'message' => config('error.40103'),
+                'data' => ''
+            ], 401);
         }
 
         $user = $user->toArray();
@@ -288,8 +291,8 @@ class DoorController extends Controller
      * @Transaction({
      *      @Request({"method": "phone|email", "access": "账号", "geetest": "Geetest验证码对象"}),
      *      @Response(200, body={"code": 0, "data": "短信或邮件已发送"}),
-     *      @Response(400, body={"code": 400, "data": "请求参数错误"}),
-     *      @Response(403, body={"code": 403, "data": "未注册的邮箱或手机号"})
+     *      @Response(400, body={"code": 400, "message": "请求参数错误", "data": "错误详情"}),
+     *      @Response(403, body={"code": 403, "message": "未注册的邮箱或手机号", "data": ""})
      * })
      */
     public function forgotPassword(Request $request)
@@ -338,8 +341,8 @@ class DoorController extends Controller
      * @Transaction({
      *      @Request({"method": "phone|email", "access": "账号", "secret": "密码", "authCode": "短信或邮箱验证码", "geetest": "Geetest验证码对象"}),
      *      @Response(200, body={"code": 0, "data": "短信或邮件已发送"}),
-     *      @Response(400, body={"code": 400, "data": "请求参数错误"}),
-     *      @Response(403, body={"code": 403, "data": "密码重置成功"})
+     *      @Response(400, body={"code": 400, "message": "请求参数错误", "data": "错误详情"}),
+     *      @Response(403, body={"code": 403, "message": "密码重置成功", "data": ""})
      * })
      */
     public function resetPassword(Request $request)
@@ -368,9 +371,14 @@ class DoorController extends Controller
             return $this->resErrBad($isEmail ? '邮箱验证码过期，请重新获取' : '短信认证码过期，请重新获取');
         }
 
+        $time = time();
+        $remember_token = md5($time);
+
         User::where($method, $access)
             ->update([
-                'password' => bcrypt($request->get('secret'))
+                'password' => bcrypt($request->get('secret')),
+                'password_change_at' => $time,
+                'remember_token' => $remember_token
             ]);
 
         return $this->resOK('密码重置成功');
@@ -428,5 +436,12 @@ class DoorController extends Controller
         return $convert
             ? base_convert($id * 1000 + rand(0, 999), 10, 36)
             : intval(base_convert($id, 36, 10) / 1000);
+    }
+
+    private function responseUser($user)
+    {
+        return JWTAuth::fromUser($user, [
+            'remember' => $user->remember_token
+        ]);
     }
 }

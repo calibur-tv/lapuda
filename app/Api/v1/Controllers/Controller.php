@@ -18,8 +18,14 @@ class Controller extends BaseController
         try {
 
             $user = JWTAuth::parseToken()->authenticate();
+            $token = JWTAuth::getPayload();
 
             if (! $user)
+            {
+                return null;
+            }
+
+            if ($token['remember'] !== $user->remember_token)
             {
                 return null;
             }
