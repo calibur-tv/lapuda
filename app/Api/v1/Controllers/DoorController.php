@@ -14,7 +14,6 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Overtrue\LaravelPinyin\Facades\Pinyin as Overtrue;
@@ -43,9 +42,9 @@ class DoorController extends Controller
      *
      * @Transaction({
      *      @Request({"method": "phone|email", "access": "账号", "nickname": "用户昵称", "mustNew": "必须是未注册的用户", "mustOld": "必须是已注册的用户", "geetest": "Geetest验证码对象"}),
-     *      @Response(200, body={"code": 0, "data": "邮件或短信发送成功"}),
-     *      @Response(400, body={"code": 400, "data": "请求参数错误"}),
-     *      @Response(403, body={"code": 403, "data": "已注册或未注册的账号"})
+     *      @Response(201, body={"code": 0, "data": "邮件或短信发送成功"}),
+     *      @Response(400, body={"code": 40003, "data": "请求参数错误"}),
+     *      @Response(400, body={"code": 40004, "data": "已注册或未注册的账号"})
      * })
      */
     public function sendEmailOrMessage(Request $request)
@@ -63,7 +62,7 @@ class DoorController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400, $validator->errors());
+            return $this->resErrParams($validator->errors());
         }
 
         $method = $request->get('method');
@@ -76,12 +75,12 @@ class DoorController extends Controller
 
         if ($museNew && !$this->accessIsNew($method, $access))
         {
-            return $this->resErr($isEmail ? '邮箱已注册' : '手机号已注册', 403);
+            return $this->resErrBad($isEmail ? '邮箱已注册' : '手机号已注册');
         }
 
         if ($mustOld && $this->accessIsNew($method, $access))
         {
-            return $this->resErr($isEmail ? '未注册的邮箱' : '未注册的手机号', 403);
+            return $this->resErrBad($isEmail ? '未注册的邮箱' : '未注册的手机号');
         }
 
         $token = $this->makeConfirm($access);
@@ -95,7 +94,7 @@ class DoorController extends Controller
             // TODO: send phone message
         }
 
-        return $this->resOK($isEmail ? '邮件已发送' : '短信已发送');
+        return $this->resCreated($isEmail ? '邮件已发送' : '短信已发送');
     }
 
     /**
@@ -126,12 +125,12 @@ class DoorController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400, $validator->errors());
+            return $this->resErrParams($validator->errors());
         }
 
         if (!preg_match('/^([a-zA-Z]+|[0-9]+|[\x{4e00}-\x{9fa5}]+)$/u', $request->get('nickname')))
         {
-            return $this->resErr('请求参数错误', 400, '昵称只能包含汉字、数字和字母');
+            return $this->resErrParams('昵称只能包含汉字、数字和字母');
         }
 
         $method = $request->get('method');
@@ -140,12 +139,12 @@ class DoorController extends Controller
 
         if (!$this->accessIsNew($method, $access))
         {
-            return $this->resErr($isEmail ? '该邮箱已注册' : '该手机号已绑定另外一个账号', 403);
+            return $this->resErrBad($isEmail ? '该邮箱已注册' : '该手机号已绑定另外一个账号');
         }
 
         if (!$this->authCodeCanUse($request->get('authCode'), $access))
         {
-            return $this->resErr($isEmail ? '邮箱验证码过期，请重新获取' : '短信认证码过期，请重新获取', 401);
+            return $this->resErrBad($isEmail ? '邮箱验证码过期，请重新获取' : '短信认证码过期，请重新获取');
         }
 
         $nickname = $request->get('nickname');
@@ -179,7 +178,7 @@ class DoorController extends Controller
             // TODO：send some message
         }
 
-        return $this->resOK(JWTAuth::fromUser($user));
+        return $this->resCreated(JWTAuth::fromUser($user));
     }
 
     /**
@@ -207,7 +206,7 @@ class DoorController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400, $validator->errors());
+            return $this->resErrParams($validator->errors());
         }
 
         $method = $request->get('method');
@@ -231,7 +230,7 @@ class DoorController extends Controller
             return $this->resOK(JWTAuth::fromUser($user));
         }
 
-        return $this->resErr('用户名或密码错误', 403);
+        return $this->resErrBad('用户名或密码错误');
     }
 
     /**
@@ -245,7 +244,7 @@ class DoorController extends Controller
     {
         Auth::logout();
 
-        return $this->resOK();
+        return $this->resNoContent();
     }
 
     /**
@@ -305,7 +304,7 @@ class DoorController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400, $validator->errors());
+            return $this->resErrParams($validator->errors());
         }
 
         $method = $request->get('method');
@@ -314,7 +313,7 @@ class DoorController extends Controller
 
         if ($this->accessIsNew($method, $access))
         {
-            return $this->resErr($isEmail ? '未注册的邮箱' : '未注册的手机号', 403);
+            return $this->resErrBad($isEmail ? '未注册的邮箱' : '未注册的手机号');
         }
 
         $token = $this->makeConfirm($access);
@@ -328,7 +327,7 @@ class DoorController extends Controller
             // TODO: send phone message
         }
 
-        return $this->resOK($isEmail ? '邮件已发送' : '短信已发送');
+        return $this->resCreated($isEmail ? '邮件已发送' : '短信已发送');
     }
 
     /**
@@ -357,7 +356,7 @@ class DoorController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400, $validator->errors());
+            return $this->resErrParams($validator->errors());
         }
 
         $method = $request->get('method');
@@ -366,7 +365,7 @@ class DoorController extends Controller
 
         if (!$this->authCodeCanUse($request->get('authCode'), $access))
         {
-            return $this->resErr($isEmail ? '邮箱验证码过期，请重新获取' : '短信认证码过期，请重新获取', 403);
+            return $this->resErrBad($isEmail ? '邮箱验证码过期，请重新获取' : '短信认证码过期，请重新获取');
         }
 
         User::where($method, $access)

@@ -161,7 +161,7 @@ class UserRepository extends Repository
             $bangumiRepository = new BangumiRepository();
 
             $parent = $postRepository->item($data['parent_id']);
-            if ($parent['parent_id'] !== '0')
+            if (intval($parent['parent_id']) !== 0)
             {
                 $post = $postRepository->item($parent['parent_id']);
             }

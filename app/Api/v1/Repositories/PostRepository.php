@@ -86,9 +86,9 @@ class PostRepository extends Repository
 
         $post['user'] = $this->userRepository->item($post['user_id']);
 
-        $post['comments'] = $post['parent_id'] === '0' ? [] : $this->comments($id);
+        $post['comments'] = intval($post['parent_id']) === 0 ? [] : $this->comments($id);
 
-        if ($post['bangumi_id'] !== '0')
+        if (intval($post['bangumi_id']) !== 0)
         {
             if (is_null($this->bangumiRepository))
             {

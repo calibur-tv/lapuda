@@ -34,9 +34,9 @@ class UserController extends Controller
      *
      * @Transaction({
      *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(200, body={"code": 0, "data": ""}),
-     *      @Response(401, body={"code": 401, "data": "未登录的用户"}),
-     *      @Response(403, body={"code": 403, "data": "今日已签到"})
+     *      @Response(204),
+     *      @Response(401, body={"code": 40104, "data": "未登录的用户"}),
+     *      @Response(403, body={"code": 40301, "data": "今日已签到"})
      * })
      */
     public function daySign()
@@ -44,7 +44,7 @@ class UserController extends Controller
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->resErr('未登录的用户', 401);
+            return $this->resErrAuth();
         }
 
         $repository = new UserRepository();
@@ -52,7 +52,7 @@ class UserController extends Controller
 
         if ($repository->daySigned($userId))
         {
-            return $this->resErr('已签到', 403);
+            return $this->resErrRole('已签到');
         }
 
         UserCoin::create([
@@ -67,7 +67,7 @@ class UserController extends Controller
 
         User::where('id', $userId)->increment('coin_count', 1);
 
-        return $this->resOK();
+        return $this->resNoContent();
     }
 
     /**
@@ -77,9 +77,9 @@ class UserController extends Controller
      *
      * @Transaction({
      *      @Request({"type": "avatar或banner", "url": "图片地址"}, headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(200, body={"code": 0, "data": ""}),
-     *      @Response(400, body={"code": 400, "data": "请求参数错误"}),
-     *      @Response(401, body={"code": 401, "data": "未登录的用户"})
+     *      @Response(204),
+     *      @Response(400, body={"code": 40003, "data": "请求参数错误"}),
+     *      @Response(401, body={"code": 40104, "data": "未登录的用户"})
      * })
      */
     public function image(Request $request)
@@ -87,14 +87,14 @@ class UserController extends Controller
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->resErr('未登录的用户', 401);
+            return $this->resErrAuth();
         }
 
         $key = $request->get('type');
 
         if (!in_array($key, ['avatar', 'banner']))
         {
-            return $this->resErr('请求参数错误', 400);
+            return $this->resErrParams();
         }
 
         $val = $request->get('url');
@@ -111,7 +111,7 @@ class UserController extends Controller
         $job = (new \App\Jobs\Trial\User\Image($user->id, $key))->onQueue('user-image-trail');
         dispatch($job);
 
-        return $this->resOK();
+        return $this->resNoContent();
     }
 
     /**
@@ -122,7 +122,7 @@ class UserController extends Controller
      * @Transaction({
      *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(200, body={"code": 0, "data": "用户信息对象"}),
-     *      @Response(404, body={"code": 404, "data": "该用户不存在"})
+     *      @Response(404, body={"code": 40401, "data": "该用户不存在"})
      * })
      */
     public function show($zone)
@@ -130,7 +130,7 @@ class UserController extends Controller
         $userId = User::where('zone', $zone)->pluck('id')->first();
         if (is_null($userId))
         {
-            return $this->resErr('该用户不存在', 404);
+            return $this->resErrNotFound('该用户不存在');
         }
 
         $repository = new UserRepository();
@@ -147,12 +147,18 @@ class UserController extends Controller
      *
      * @Transaction({
      *      @Request({"sex": "性别: 0, 1, 2, 3, 4", "signature": "用户签名，最多20字", "nickname": "用户昵称，最多14个字符", "birthday": "以秒为单位的时间戳"}, headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(200, body={"code": 0, "data": "用户信息对象"}),
-     *      @Response(404, body={"code": 404, "data": "该用户不存在"})
+     *      @Response(204),
+     *      @Response(404, body={"code": 40104, "data": "该用户不存在"})
      * })
      */
     public function profile(Request $request)
     {
+        $userId = $this->getAuthUserId();
+        if (!$userId)
+        {
+            return $this->resErrAuth();
+        }
+
         $validator = Validator::make($request->all(), [
             'sex' => 'required',
             'signature' => 'string|min:0|max:20',
@@ -162,27 +168,21 @@ class UserController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400, $validator->errors());
+            return $this->resErrParams($validator->errors());
         }
 
-        $user = $this->getAuthUser();
-        if (is_null($user))
-        {
-            return $this->resErr('找不到用户', 404);
-        }
-
-        $user->update([
+        User::where('id', $userId)->update([
             'nickname' => Purifier::clean($request->get('nickname')),
             'signature' => Purifier::clean($request->get('signature')),
             'sex' => $request->get('sex'),
             'birthday' => $request->get('birthday')
         ]);
 
-        Redis::DEL('user_'.$user->id);
-        $job = (new \App\Jobs\Trial\User\Text($user->id))->onQueue('user-image-trail');
+        Redis::DEL('user_'.$userId);
+        $job = (new \App\Jobs\Trial\User\Text($userId))->onQueue('user-image-trail');
         dispatch($job);
 
-        return $this->resOK();
+        return $this->resNoContent();
     }
 
     /**
@@ -192,7 +192,7 @@ class UserController extends Controller
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": "番剧列表"}),
-     *      @Response(404, body={"code": 404, "data": "该用户不存在"})
+     *      @Response(404, body={"code": 40104, "data": "该用户不存在"})
      * })
      */
     public function followedBangumis($zone)
@@ -200,7 +200,7 @@ class UserController extends Controller
         $userId = User::where('zone', $zone)->pluck('id')->first();
         if (is_null($userId))
         {
-            return $this->resErr('该用户不存在', 404);
+            return $this->resErrNotFound('该用户不存在');
         }
 
         $repository = new UserRepository();
@@ -217,7 +217,7 @@ class UserController extends Controller
      * @Transaction({
      *      @Request({"seenIds": "看过的postIds, 用','分割的字符串", "take": "获取的数量"}),
      *      @Response(200, body={"code": 0, "data": "帖子列表"}),
-     *      @Response(404, body={"code": 404, "data": "找不到用户"})
+     *      @Response(404, body={"code": 40104, "data": "找不到用户"})
      * })
      */
     public function postsOfMine(Request $request, $zone)
@@ -225,7 +225,7 @@ class UserController extends Controller
         $userId = User::where('zone', $zone)->pluck('id')->first();
         if (is_null($userId))
         {
-            return $this->resErr(['找不到用户'], 404);
+            return $this->resErrNotFound('找不到用户');
         }
 
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
@@ -254,7 +254,7 @@ class UserController extends Controller
      * @Transaction({
      *      @Request({"seenIds": "看过的postIds, 用','分割的字符串", "take": "获取的数量"}),
      *      @Response(200, body={"code": 0, "data": "帖子列表"}),
-     *      @Response(404, body={"code": 404, "data": "找不到用户"})
+     *      @Response(404, body={"code": 40104, "data": "找不到用户"})
      * })
      */
     public function postsOfReply(Request $request, $zone)
@@ -262,7 +262,7 @@ class UserController extends Controller
         $userId = User::where('zone', $zone)->pluck('id')->first();
         if (is_null($userId))
         {
-            return $this->resErr('找不到用户', 404);
+            return $this->resErrNotFound('找不到用户');
         }
 
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
@@ -294,7 +294,7 @@ class UserController extends Controller
      * @Transaction({
      *      @Request({"seenIds": "看过的postIds, 用','分割的字符串", "take": "获取的数量"}),
      *      @Response(200, body={"code": 0, "data": "帖子列表"}),
-     *      @Response(404, body={"code": 404, "data": "找不到用户"})
+     *      @Response(404, body={"code": 40104, "data": "找不到用户"})
      * })
      */
     public function postsOfLiked(Request $request, $zone)
@@ -302,7 +302,7 @@ class UserController extends Controller
         $userId = User::where('zone', $zone)->pluck('id')->first();
         if (is_null($userId))
         {
-            return $this->resErr(['找不到用户'], 404);
+            return $this->resErrNotFound('找不到用户');
         }
 
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
@@ -331,7 +331,7 @@ class UserController extends Controller
      * @Transaction({
      *      @Request({"seenIds": "看过的postIds, 用','分割的字符串", "take": "获取的数量"}),
      *      @Response(200, body={"code": 0, "data": "帖子列表"}),
-     *      @Response(404, body={"code": 404, "data": "找不到用户"})
+     *      @Response(404, body={"code": 40104, "data": "找不到用户"})
      * })
      */
     public function postsOfMarked(Request $request, $zone)
@@ -339,7 +339,7 @@ class UserController extends Controller
         $userId = User::where('zone', $zone)->pluck('id')->first();
         if (is_null($userId))
         {
-            return $this->resErr(['找不到用户'], 404);
+            return $this->resErrNotFound('找不到用户');
         }
 
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
@@ -367,8 +367,8 @@ class UserController extends Controller
      *
      * @Transaction({
      *      @Request({"type": "反馈的类型", "desc": "反馈内容，最多120字"}),
-     *      @Response(200, body={"code": 0, "data": ""}),
-     *      @Response(400, body={"code": 400, "data": "请求参数错误"})
+     *      @Response(204),
+     *      @Response(400, body={"code": 40003, "data": "请求参数错误"})
      * })
      */
     public function feedback(Request $request)
@@ -380,7 +380,7 @@ class UserController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErr('请求参数错误', 400, $validator->errors());
+            return $this->resErrParams($validator->errors());
         }
 
         Feedback::create([
@@ -389,15 +389,26 @@ class UserController extends Controller
             'user_id' => $this->getAuthUserId()
         ]);
 
-        return $this->resOK();
+        return $this->resNoContent();
     }
 
+    /**
+     * 用户消息列表
+     *
+     * @Post("/user/notifications/list")
+     *
+     * @Transaction({
+     *      @Request({"take": "获取个数", "minId": "看过的最小id"}),
+     *      @Response(200, body={"code": 0, "data": "消息列表"}),
+     *      @Response(401, body={"code": 40104, "data": "未登录的用户"})
+     * })
+     */
     public function notifications(Request $request)
     {
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->resErr('未登录的用户', 401);
+            return $this->resErrAuth();
         }
 
         $minId = $request->get('minId') ?: 0;
@@ -409,12 +420,22 @@ class UserController extends Controller
         return $this->resOK($data);
     }
 
+    /**
+     * 用户未读消息个数
+     *
+     * @Post("/user/notifications/count")
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "未读个数"}),
+     *      @Response(401, body={"code": 40104, "data": "未登录的用户"})
+     * })
+     */
     public function waitingReadNotifications()
     {
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->resErr('未登录的用户', 401);
+            return $this->resErrAuth();
         }
 
         $repository = new UserRepository();
@@ -423,12 +444,25 @@ class UserController extends Controller
         return $this->resOK($count);
     }
 
+    /**
+     * 读取某条消息
+     *
+     * @Post("/user/notifications/read")
+     *
+     * @Transaction({
+     *      @Request({"id": "消息id"}),
+     *      @Response(204),
+     *      @Response(401, body={"code": 40104, "data": "未登录的用户"}),
+     *      @Response(404, body={"code": 40401, "data": "不存在的消息"}),
+     *      @Response(403, body={"code": 40301, "data": "没有权限进行操作"})
+     * })
+     */
     public function readNotification(Request $request)
     {
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return $this->resErr('未登录的用户', 401);
+            return $this->resErrAuth();
         }
 
         $id = $request->get('id');
@@ -436,18 +470,18 @@ class UserController extends Controller
 
         if (is_null($notification))
         {
-            return $this->resErr('不存在的消息', 404);
+            return $this->resErrNotFound('不存在的消息');
         }
 
         if (intval($notification['to_user_id']) !== $user->id)
         {
-            return $this->resErr('没有权限进行操作', 403);
+            return $this->resErrRole('没有权限进行操作');
         }
 
         Notifications::where('id', $id)->update([
             'checked' => true
         ]);
 
-        return $this->resOK();
+        return $this->resNoContent();
     }
 }
