@@ -11,7 +11,7 @@ class Geetest
         $geetest = $request->get('geetest');
         $time = $geetest['access'];
 
-        if ((time() - $time) > 30000)
+        if ((time() - $time) > 15)
         {
             return response([
                 'code' => 40001,
