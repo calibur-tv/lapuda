@@ -200,8 +200,7 @@ class DoorController extends Controller
                 Rule::in(['email', 'phone']),
             ],
             'access' => 'required',
-            'secret' => 'required|min:6|max:16',
-            'remember' => 'required|boolean'
+            'secret' => 'required|min:6|max:16'
         ]);
 
         if ($validator->fails())
