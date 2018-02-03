@@ -17,11 +17,14 @@ class Controller extends BaseController
     {
         try {
 
-            if (! $user = JWTAuth::parseToken()->authenticate()) {
+            $user = JWTAuth::parseToken()->authenticate();
 
+            if (! $user)
+            {
                 return null;
-
             }
+
+            return $user;
 
         } catch (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
 
@@ -36,8 +39,6 @@ class Controller extends BaseController
             return null;
 
         }
-
-        return $user;
     }
 
     protected function getAuthUserId()
