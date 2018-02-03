@@ -31,6 +31,11 @@ class Csrf
 
     public function handle($request, Closure $next)
     {
+        if (config('app.env') === 'local')
+        {
+            \Log::info('request url: ' . $request->url());
+        }
+
         if (
             config('app.env') === 'local' ||
             in_array($request->method(), $this->methods) ||

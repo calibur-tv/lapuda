@@ -61,7 +61,7 @@ class ImageController extends Controller
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": {"upToken": "上传图片的token", "expiredAt": "token过期时间戳，单位为s"}}),
-     *      @Response(401, body={"code": 40104, "data": "未登录的用户"})
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户", "data": ""})
      * })
      */
     public function uptoken()
