@@ -36,7 +36,11 @@ class Controller extends BaseController
 
     protected function getAuthUserId()
     {
-        return (int) JWTAuth::getPayload()['sub'];
+        try {
+            return (int)JWTAuth::getPayload()['sub'];
+        } catch (\Tymon\JWTAuth\Exceptions\JWTException $e) {
+            return 0;
+        }
     }
 
     protected function resOK($data = '')
