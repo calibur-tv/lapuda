@@ -17,20 +17,7 @@ class Controller extends BaseController
     {
         try {
 
-            $user = JWTAuth::parseToken()->authenticate();
-            $token = JWTAuth::getPayload();
-
-            if (! $user)
-            {
-                return null;
-            }
-
-            if ($token['remember'] !== $user->remember_token)
-            {
-                return null;
-            }
-
-            return $user;
+            return JWTAuth::parseToken()->authenticate();
 
         } catch (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
 
@@ -49,8 +36,7 @@ class Controller extends BaseController
 
     protected function getAuthUserId()
     {
-        $user = $this->getAuthUser();
-        return is_null($user) ? 0 : $user->id;
+        return (int) JWTAuth::getPayload()['sub'];
     }
 
     protected function resOK($data = '')
@@ -72,15 +58,6 @@ class Controller extends BaseController
             'code' => 0,
             'data' => $data
         ], 201);
-    }
-
-    protected function resErrAuth()
-    {
-        return response([
-            'code' => 40104,
-            'message' => config('error.40104'),
-            'data' => ''
-        ], 401);
     }
 
     protected function resErrBad($message = null, $data = '')

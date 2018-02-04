@@ -24,17 +24,6 @@ use Tymon\JWTAuth\Facades\JWTAuth;
  */
 class DoorController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('geetest')->only([
-            'login',
-            'register',
-            'sendEmailOrMessage',
-            'forgotPassword',
-            'resetPassword'
-        ]);
-    }
-
     /**
      * 发送验证码
      *
@@ -241,8 +230,6 @@ class DoorController extends Controller
      */
     public function logout()
     {
-        Auth::logout();
-
         return $this->resNoContent();
     }
 
