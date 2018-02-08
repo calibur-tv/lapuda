@@ -11,7 +11,7 @@ $api->version(['v1', 'latest'], function ($api)
 {
     $api->group(['prefix' => '/door'], function ($api)
     {
-        $api->post('/send', 'App\Api\V1\Controllers\DoorController@sendEmailOrMessage')->middleware(['geetest', 'throttle']);
+        $api->post('/send', 'App\Api\V1\Controllers\DoorController@sendEmailOrMessage')->middleware(['geetest', 'throttle:60,1']);
 
         $api->post('/register', 'App\Api\V1\Controllers\DoorController@register')->middleware(['geetest', 'throttle']);
 
