@@ -14,7 +14,6 @@ class Kernel extends HttpKernel
      * @var array
      */
     protected $middleware = [
-        \Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode::class,
     ];
 
     /**
@@ -26,18 +25,10 @@ class Kernel extends HttpKernel
         'web' => [
             \Barryvdh\Cors\HandleCors::class,
             \App\Http\Middleware\Csrf::class,
-            //\Illuminate\Session\Middleware\StartSession::class,
-            //\App\Http\Middleware\EncryptCookies::class,
-            //\Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
-            //\Illuminate\Session\Middleware\AuthenticateSession::class,
-            //\Illuminate\View\Middleware\ShareErrorsFromSession::class,
-            //\Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
         'api' => [
             \Barryvdh\Cors\HandleCors::class,
             \App\Http\Middleware\Csrf::class,
-            //'throttle:60,1',
-            //'bindings',
         ],
     ];
 
@@ -51,9 +42,9 @@ class Kernel extends HttpKernel
     protected $routeMiddleware = [
         'bindings' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
         'can' => \Illuminate\Auth\Middleware\Authorize::class,
-        'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
-        'jwt.auth' => \Tymon\JWTAuth\Middleware\GetUserFromToken::class,
-        'jwt.refresh' => \App\Services\JWT\Refresh::class,
+        'throttle' => \App\Http\Middleware\Throttle::class,
+        'jwt.auth' => \App\Http\Middleware\Auth::class,
+        'jwt.refresh' => \App\Http\Middleware\Refresh::class,
         'geetest' => \App\Http\Middleware\Geetest::class
     ];
 }

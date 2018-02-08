@@ -31,9 +31,11 @@ class Csrf
 
     public function handle($request, Closure $next)
     {
-        if (config('app.env') === 'local')
+        if (config('app.env') !== 'production')
         {
             \Log::info('request url: ' . $request->url());
+            \Log::info('request ip: ' . $request->ip());
+            \Log::info('request ua: ' . $request->header('User-Agent'));
         }
 
         if (

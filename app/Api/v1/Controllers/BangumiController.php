@@ -219,14 +219,8 @@ class BangumiController extends Controller
      */
     public function follow($id)
     {
-        $user = $this->getAuthUser();
-        if (is_null($user))
-        {
-            return $this->resErrAuth();
-        }
-
         $bangumiRepository = new BangumiRepository();
-        $followed = $bangumiRepository->toggleFollow($user->id, $id);
+        $followed = $bangumiRepository->toggleFollow($this->getAuthUserId(), $id);
 
         return $this->resCreated($followed);
     }

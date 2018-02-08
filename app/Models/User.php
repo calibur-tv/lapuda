@@ -26,6 +26,7 @@ class User extends Authenticatable
         'inviteCode',
         'password_change_at', // 密码最后修改时间
         'remember_token',
+        'phone'
     ];
 
     protected $hidden = [

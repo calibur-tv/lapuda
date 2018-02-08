@@ -22,13 +22,6 @@ use Mews\Purifier\Facades\Purifier;
  */
 class PostController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('geetest')->only([
-            'create', 'reply'
-        ]);
-    }
-
     /**
      * 新建帖子
      *
@@ -56,15 +49,9 @@ class PostController extends Controller
             return $this->resErrParams($validator->errors());
         }
 
-        $user = $this->getAuthUser();
-        if (is_null($user))
-        {
-            return $this->resErrAuth();
-        }
-
         $now = Carbon::now();
         $bangumiId = $request->get('bangumiId');
-        $userId = $user->id;
+        $userId = $this->getAuthUserId();
         $repository = new PostRepository();
 
         $id = $repository->create([
@@ -197,12 +184,6 @@ class PostController extends Controller
             return $this->resErrParams($validator->errors());
         }
 
-        $user = $this->getAuthUser();
-        if (is_null($user))
-        {
-            return $this->resErrAuth();
-        }
-
         $repository = new PostRepository();
         $post = $repository->item($id);
         if(is_null($post))
@@ -211,7 +192,7 @@ class PostController extends Controller
         }
 
         $now = Carbon::now();
-        $userId = $user->id;
+        $userId = $this->getAuthUserId();
         $count = Post::where('parent_id', $id)->count();
 
         $images = $request->get('images');
@@ -294,12 +275,6 @@ class PostController extends Controller
             return $this->resErrParams($validator->errors());
         }
 
-        $user = $this->getAuthUser();
-        if (is_null($user))
-        {
-            return $this->resErrAuth();
-        }
-
         $repository = new PostRepository();
         $post = $repository->item($id);
         if (is_null($post))
@@ -308,7 +283,7 @@ class PostController extends Controller
         }
 
         $now = Carbon::now();
-        $userId = $user->id;
+        $userId = $this->getAuthUserId();
         $targetUserId = $request->get('targetUserId');
 
         $newId = $repository->create([
@@ -428,11 +403,6 @@ class PostController extends Controller
      */
     public function toggleLike($postId)
     {
-        $user = $this->getAuthUser();
-        if (is_null($user))
-        {
-            return $this->resErrAuth();
-        }
         $postRepository = new PostRepository();
         $post = $postRepository->item($postId);
 
@@ -441,7 +411,7 @@ class PostController extends Controller
             return $this->resErrNotFound('不存在的帖子');
         }
 
-        $userId = $user->id;
+        $userId = $this->getAuthUserId();
         if ($userId === intval($post['user_id']))
         {
             return $this->resErrRole('不能给自己点赞');
@@ -510,11 +480,6 @@ class PostController extends Controller
      */
     public function toggleMark($postId)
     {
-        $user = $this->getAuthUser();
-        if (is_null($user))
-        {
-            return $this->resErrAuth();
-        }
         $postRepository = new PostRepository();
         $post = $postRepository->item($postId);
 
@@ -528,7 +493,7 @@ class PostController extends Controller
             return $this->resErrBad('不是主题帖');
         }
 
-        $userId = $user->id;
+        $userId = $this->getAuthUserId();
         if ($userId === intval($post['user_id']))
         {
             return $this->resErrRole('不能收藏自己的帖子');
@@ -573,14 +538,9 @@ class PostController extends Controller
      */
     public function deletePost($postId)
     {
-        $user = $this->getAuthUser();
-        if (is_null($user))
-        {
-            return $this->resErrAuth();
-        }
-
         $postRepository = new PostRepository();
         $post = $postRepository->item($postId);
+        $userId = $this->getAuthUserId();
 
         if (is_null($post))
         {
@@ -589,7 +549,7 @@ class PostController extends Controller
 
         $delete = false;
         $state = 0;
-        if (intval($post['user_id']) === $user->id)
+        if (intval($post['user_id']) === $userId)
         {
             $delete = true;
             $state = 1;
@@ -597,7 +557,7 @@ class PostController extends Controller
         else if (intval($post['parent_id']) !== 0)
         {
             $post = $postRepository->item($post['parent_id']);
-            if (intval($post['user_id']) === $user->id)
+            if (intval($post['user_id']) === $userId)
             {
                 $delete = true;
                 $state = 2;
@@ -629,12 +589,6 @@ class PostController extends Controller
      */
     public function deleteComment(Request $request, $postId)
     {
-        $user = $this->getAuthUser();
-        if (is_null($user))
-        {
-            return $this->resErrAuth();
-        }
-
         $commentId = $request->get('id');
         $postRepository = new PostRepository();
         $comment = $postRepository->comment($postId, $commentId);
@@ -644,7 +598,7 @@ class PostController extends Controller
             return $this->resErrNotFound('不存在的评论');
         }
 
-        $userId = $user->id;
+        $userId = $this->getAuthUserId();
         if (intval($comment['from_user_id']) !== $userId)
         {
             return $this->resErrRole('权限不足');

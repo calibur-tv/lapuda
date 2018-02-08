@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\JWT;
+namespace App\Http\Middleware;
 
 /**
  * Created by PhpStorm.

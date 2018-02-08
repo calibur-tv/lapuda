@@ -41,14 +41,8 @@ class UserController extends Controller
      */
     public function daySign()
     {
-        $user = $this->getAuthUser();
-        if (is_null($user))
-        {
-            return $this->resErrAuth();
-        }
-
         $repository = new UserRepository();
-        $userId = $user->id;
+        $userId = $this->getAuthUserId();
 
         if ($repository->daySigned($userId))
         {
@@ -84,12 +78,7 @@ class UserController extends Controller
      */
     public function image(Request $request)
     {
-        $user = $this->getAuthUser();
-        if (is_null($user))
-        {
-            return $this->resErrAuth();
-        }
-
+        $userId = $this->getAuthUserId();
         $key = $request->get('type');
 
         if (!in_array($key, ['avatar', 'banner']))
@@ -99,16 +88,16 @@ class UserController extends Controller
 
         $val = $request->get('url');
 
-        $user->update([
+        User::where('id', $userId)->update([
             $key => $val
         ]);
 
-        $cache = 'user_'.$user->id;
+        $cache = 'user_'.$userId;
         if (Redis::EXISTS($cache))
         {
             Redis::HSET($cache, $key, $val);
         }
-        $job = (new \App\Jobs\Trial\User\Image($user->id, $key))->onQueue('user-image-trail');
+        $job = (new \App\Jobs\Trial\User\Image($userId, $key))->onQueue('user-image-trail');
         dispatch($job);
 
         return $this->resNoContent();
@@ -153,12 +142,6 @@ class UserController extends Controller
      */
     public function profile(Request $request)
     {
-        $userId = $this->getAuthUserId();
-        if (!$userId)
-        {
-            return $this->resErrAuth();
-        }
-
         $validator = Validator::make($request->all(), [
             'sex' => 'required',
             'signature' => 'string|min:0|max:20',
@@ -170,6 +153,8 @@ class UserController extends Controller
         {
             return $this->resErrParams($validator->errors());
         }
+
+        $userId = $this->getAuthUserId();
 
         User::where('id', $userId)->update([
             'nickname' => Purifier::clean($request->get('nickname')),
@@ -405,17 +390,15 @@ class UserController extends Controller
      */
     public function notifications(Request $request)
     {
-        $user = $this->getAuthUser();
-        if (is_null($user))
-        {
-            return $this->resErrAuth();
-        }
+        $userId = $this->getAuthUserId();
+
+        \Log::info('notification user id:' . $userId);
 
         $minId = $request->get('minId') ?: 0;
         $take = $request->get('take') ?: 10;
 
         $repository = new UserRepository();
-        $data = $repository->getNotifications($user->id, $minId, $take);
+        $data = $repository->getNotifications($userId, $minId, $take);
 
         return $this->resOK($data);
     }
@@ -432,14 +415,8 @@ class UserController extends Controller
      */
     public function waitingReadNotifications()
     {
-        $user = $this->getAuthUser();
-        if (is_null($user))
-        {
-            return $this->resErrAuth();
-        }
-
         $repository = new UserRepository();
-        $count = $repository->getNotificationCount($user->id);
+        $count = $repository->getNotificationCount($this->getAuthUserId());
 
         return $this->resOK($count);
     }
@@ -459,12 +436,6 @@ class UserController extends Controller
      */
     public function readNotification(Request $request)
     {
-        $user = $this->getAuthUser();
-        if (is_null($user))
-        {
-            return $this->resErrAuth();
-        }
-
         $id = $request->get('id');
         $notification = Notifications::find($id);
 
@@ -473,7 +444,7 @@ class UserController extends Controller
             return $this->resErrNotFound('不存在的消息');
         }
 
-        if (intval($notification['to_user_id']) !== $user->id)
+        if (intval($notification['to_user_id']) !== $this->getAuthUserId())
         {
             return $this->resErrRole('没有权限进行操作');
         }
