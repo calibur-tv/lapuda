@@ -28,17 +28,17 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/bangumi'], function ($api)
     {
-        $api->get('/timeline', 'App\Api\V1\Controllers\BangumiController@timeline')->middleware('throttle:30,1');
+        $api->get('/timeline', 'App\Api\V1\Controllers\BangumiController@timeline');
 
-        $api->get('/released', 'App\Api\V1\Controllers\BangumiController@released')->middleware('throttle:30,1');
+        $api->get('/released', 'App\Api\V1\Controllers\BangumiController@released');
 
-        $api->get('/tags', 'App\Api\V1\Controllers\BangumiController@tags')->middleware('throttle:30,1');
+        $api->get('/tags', 'App\Api\V1\Controllers\BangumiController@tags');
 
-        $api->get('/category', 'App\Api\V1\Controllers\BangumiController@category')->middleware('throttle:30,1');
+        $api->get('/category', 'App\Api\V1\Controllers\BangumiController@category');
 
         $api->group(['prefix' => '/{id}'], function ($api)
         {
-            $api->get('/show', 'App\Api\V1\Controllers\BangumiController@show')->middleware('throttle:30,1');
+            $api->get('/show', 'App\Api\V1\Controllers\BangumiController@show');
 
             $api->get('/videos', 'App\Api\V1\Controllers\BangumiController@videos');
 
@@ -54,7 +54,7 @@ $api->version(['v1', 'latest'], function ($api)
     {
         $api->group(['prefix' => '/{id}'], function ($api)
         {
-            $api->get('/show', 'App\Api\V1\Controllers\VideoController@show')->middleware('throttle:30,1');
+            $api->get('/show', 'App\Api\V1\Controllers\VideoController@show');
 
             $api->post('/playing', 'App\Api\V1\Controllers\VideoController@playing');
         });
@@ -84,11 +84,11 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/{zone}'], function ($api)
         {
-            $api->get('/show', 'App\Api\V1\Controllers\UserController@show')->middleware('throttle:30,1');
+            $api->get('/show', 'App\Api\V1\Controllers\UserController@show');
 
             $api->group(['prefix' => '/followed'], function ($api)
             {
-                $api->get('/bangumi', 'App\Api\V1\Controllers\UserController@followedBangumis')->middleware('throttle:30,1');
+                $api->get('/bangumi', 'App\Api\V1\Controllers\UserController@followedBangumis');
             });
 
             $api->group(['prefix' => '/posts'], function ($api)
@@ -110,7 +110,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/{id}'], function ($api)
         {
-            $api->post('/show', 'App\Api\V1\Controllers\PostController@show')->middleware('throttle:60,1');
+            $api->post('/show', 'App\Api\V1\Controllers\PostController@show');
 
             $api->post('/comments', 'App\Api\V1\Controllers\PostController@comments')->middleware('throttle:30,1');
 
@@ -132,7 +132,7 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/image'], function ($api)
     {
-        $api->get('/banner', 'App\Api\V1\Controllers\ImageController@banner')->middleware('throttle:30,1');
+        $api->get('/banner', 'App\Api\V1\Controllers\ImageController@banner');
 
         $api->post('/captcha', 'App\Api\V1\Controllers\ImageController@captcha')->middleware('throttle:10,1');
 
@@ -143,9 +143,9 @@ $api->version(['v1', 'latest'], function ($api)
     {
         $api->group(['prefix' => '/post'], function ($api)
         {
-            $api->post('/new', 'App\Api\V1\Controllers\TrendingController@postNew')->middleware('throttle:30,1');
+            $api->post('/new', 'App\Api\V1\Controllers\TrendingController@postNew');
 
-            $api->post('/hot', 'App\Api\V1\Controllers\TrendingController@postHot')->middleware('throttle:30,1');
+            $api->post('/hot', 'App\Api\V1\Controllers\TrendingController@postHot');
         });
     });
 });
