@@ -8,6 +8,7 @@
  */
 namespace App\Services\Sms;
 
+use Illuminate\Support\Facades\Log;
 use Overtrue\EasySms\EasySms;
 
 class Message
@@ -19,14 +20,18 @@ class Message
         $this->sms = new EasySms($this->config());
     }
 
-    public function register($phone, $data)
+    public function register($phone, $code)
     {
-        return $this->send($phone, 'SMS_125015815', $data);
+        return $this->send($phone, 'SMS_125015815', [
+            'code' => $code
+        ]);
     }
 
-    public function forgotPassword($phone, $data)
+    public function forgotPassword($phone, $code)
     {
-        return $this->send($phone, 'SMS_125020981', $data);
+        return $this->send($phone, 'SMS_125020981', [
+            'code' => $code
+        ]);
     }
 
     protected function send($phone, $template, $data)
