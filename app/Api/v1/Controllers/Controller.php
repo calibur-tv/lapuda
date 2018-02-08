@@ -99,4 +99,13 @@ class Controller extends BaseController
             'data' => ''
         ], 404);
     }
+
+    protected function resErrServiceUnavailable($data = '')
+    {
+        return response([
+            'code' => 50301,
+            'message' => config('error.50301'),
+            'data' => $data
+        ], 400);
+    }
 }

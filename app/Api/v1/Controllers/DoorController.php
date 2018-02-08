@@ -10,6 +10,7 @@ use App\Models\Confirm;
 use App\Models\User;
 use App\Models\UserZone;
 use App\Api\V1\Repositories\ImageRepository;
+use App\Services\Sms\Message;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -80,7 +81,13 @@ class DoorController extends Controller
         }
         else
         {
-            // TODO: send phone message
+            $sms = new Message();
+            $result = $sms->register($access, $token);
+
+            if (!$result)
+            {
+                return $this->resErrServiceUnavailable();
+            }
         }
 
         return $this->resCreated($isEmail ? '邮件已发送' : '短信已发送');
@@ -125,6 +132,24 @@ class DoorController extends Controller
         $method = $request->get('method');
         $access = $request->get('access');
         $isEmail = $method === 'email';
+
+        if ($isEmail)
+        {
+            $validator = Validator::make($request->all(), [
+                'access' => 'email'
+            ]);
+        }
+        else
+        {
+            $validator = Validator::make($request->all(), [
+                'access' => 'digits:11'
+            ]);
+        }
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator->errors());
+        }
 
         if (!$this->accessIsNew($method, $access))
         {
@@ -301,6 +326,24 @@ class DoorController extends Controller
         $access = $request->get('access');
         $isEmail = $method === 'email';
 
+        if ($isEmail)
+        {
+            $validator = Validator::make($request->all(), [
+                'access' => 'email'
+            ]);
+        }
+        else
+        {
+            $validator = Validator::make($request->all(), [
+                'access' => 'digits:11'
+            ]);
+        }
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator->errors());
+        }
+
         if ($this->accessIsNew($method, $access))
         {
             return $this->resErrBad($isEmail ? '未注册的邮箱' : '未注册的手机号');
@@ -314,7 +357,13 @@ class DoorController extends Controller
         }
         else
         {
-            // TODO: send phone message
+            $sms = new Message();
+            $result = $sms->forgotPassword($access, $token);
+
+            if (!$result)
+            {
+                return $this->resErrServiceUnavailable();
+            }
         }
 
         return $this->resCreated($isEmail ? '邮件已发送' : '短信已发送');
@@ -353,6 +402,24 @@ class DoorController extends Controller
         $access = $request->get('access');
         $isEmail = $method === 'email';
 
+        if ($isEmail)
+        {
+            $validator = Validator::make($request->all(), [
+                'access' => 'email'
+            ]);
+        }
+        else
+        {
+            $validator = Validator::make($request->all(), [
+                'access' => 'digits:11'
+            ]);
+        }
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator->errors());
+        }
+
         if (!$this->authCodeCanUse($request->get('authCode'), $access))
         {
             return $this->resErrBad($isEmail ? '邮箱验证码过期，请重新获取' : '短信认证码过期，请重新获取');
@@ -389,7 +456,7 @@ class DoorController extends Controller
 
     private function makeConfirm($access)
     {
-        $token = Confirm::whereRaw('access = ? and created_at > ?', [$access, Carbon::now()->addDay(-1)])->first();
+        $token = Confirm::whereRaw('access = ? and created_at > ?', [$access, Carbon::now()->addMinutes(-5)])->first();
         if ( ! is_null($token)) {
             return $token->code;
         }

@@ -27,7 +27,8 @@ class UserTransformer extends Transformer
                 'uptoken' => $user['uptoken'],
                 'daySign' => (boolean)$user['daySign'],
                 'coin' => (int)$user['coin_count'],
-                'notification' => $user['notification']
+                'notification' => $user['notification'],
+                'inviteCode' => $user['inviteCode']
             ];
         });
     }
