@@ -177,7 +177,7 @@ class DoorController extends Controller
         $userId = $user->id;
 
         User::where('id', $userId)->update([
-           'inviteCode' => $this->convertInviteCode($userId)
+           'invite_code' => $this->convertInviteCode($userId)
         ]);
 
         $inviteCode = $request->get('inviteCode');
