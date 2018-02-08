@@ -8,7 +8,6 @@
  */
 namespace App\Services\Sms;
 
-use Illuminate\Support\Facades\Log;
 use Overtrue\EasySms\EasySms;
 
 class Message
