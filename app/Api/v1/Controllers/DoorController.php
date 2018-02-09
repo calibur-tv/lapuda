@@ -500,19 +500,6 @@ class DoorController extends Controller
         ]);
     }
 
-    public function test1(Request $request)
-    {
-        $key = $request->get('key') ?: '';
-
-        $filter = new WordsFilter();
-
-        return response()->json([
-            'key' => $key,
-            'data' => $filter->filter($key),
-            'count' => $filter->count($key)
-        ], 200);
-    }
-
     public function test2()
     {
         \Log::info('test job begin');

@@ -9,8 +9,6 @@ $api = app('Dingo\Api\Routing\Router');
 
 $api->version(['v1', 'latest'], function ($api)
 {
-    $api->get('/test1', 'App\Api\V1\Controllers\DoorController@test1');
-
     $api->get('/test2', 'App\Api\V1\Controllers\DoorController@test2');
 
     $api->group(['prefix' => '/door'], function ($api)
