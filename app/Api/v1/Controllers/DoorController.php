@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\UserZone;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Services\Sms\Message;
+use App\Services\Trial\WordsFilter\WordsFilter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -497,5 +498,26 @@ class DoorController extends Controller
         return JWTAuth::fromUser($user, [
             'remember' => $user->remember_token
         ]);
+    }
+
+    public function test1(Request $request)
+    {
+        $key = $request->get('key') ?: '';
+
+        $filter = new WordsFilter();
+
+        return response()->json([
+            'key' => $key,
+            'data' => $filter->filter($key),
+            'count' => $filter->count($key)
+        ], 200);
+    }
+
+    public function test2()
+    {
+        \Log::info('test job begin');
+        $job = (new \App\Jobs\Trial\Post\Create(1))->onQueue('post-create');
+        dispatch($job);
+        \Log::info('test job end');
     }
 }

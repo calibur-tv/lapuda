@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\Redis;
 
 class BlackWords extends Command
 {
+    protected $filename = 'words.txt';
+
+    protected $cacheKey = 'blackwords';
     /**
      * The name and signature of the console command.
      *
@@ -33,23 +36,21 @@ class BlackWords extends Command
      */
     public function handle()
     {
+        $path = base_path() . '/storage/app/' . $this->filename;
+        $data = Redis::LRANGE($this->cacheKey, 0, -1);
+
+        if (empty($data))
+        {
+            $keys = $this->readKeysFromFile($path);
+            Redis::RPUSH($keys);
+        }
+        else
+        {
+            $this->syncWordsFromCache($data, $path);
+        }
+
         $resTrie = trie_filter_new();
-        $tempKeyFile = 'tempKey.txt';
-
-        $data = Redis::LRANGE('blackwords', 0, -1);
-
-        $fp = fopen($tempKeyFile, 'w');
-        if ( ! $fp)
-        {
-            return;
-        }
-        foreach ($data as $v)
-        {
-            fwrite($fp, "$v\r\n");
-        }
-        fclose($fp);
-
-        $fp = fopen($tempKeyFile, 'r');
+        $fp = fopen($path, 'r');
         if ( ! $fp)
         {
             return;
@@ -64,7 +65,43 @@ class BlackWords extends Command
             }
         }
 
-        trie_filter_save($resTrie, '/var/www/api/app/Services/Trial/' . 'blackword.tree');
+        trie_filter_save($resTrie,  base_path() . '/app/Services/Trial/' . 'blackword.tree');
         return;
+    }
+
+    protected function readKeysFromFile($path)
+    {
+        if (!file_exists($path))
+        {
+            return [];
+        }
+
+        $fp = fopen($path, 'r');
+        $words = [];
+        while( ! feof($fp))
+        {
+            if ($line = rtrim(fgets($fp))) {
+                $user[]= $line;
+            }
+        }
+        fclose($fp);
+
+        return $words;
+    }
+
+    protected function syncWordsFromCache($keys, $path)
+    {
+        $fp = fopen($path, 'w');
+
+        if ( ! $fp)
+        {
+            return;
+        }
+
+        foreach ($keys as $v)
+        {
+            fwrite($fp, "$v\r\n");
+        }
+        fclose($fp);
     }
 }
