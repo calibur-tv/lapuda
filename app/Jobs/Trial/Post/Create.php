@@ -137,6 +137,7 @@ class Create implements ShouldQueue
                 'title' => $post['title'],
                 'content' => $post['content'],
                 'type_id' => 2,
+                'modal_id' => $post['id'],
                 'url' => '/post/' . $post['id']
             ]);
 

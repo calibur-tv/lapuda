@@ -61,6 +61,9 @@ class UserController extends Controller
 
         User::where('id', $userId)->increment('coin_count', 1);
 
+        $job = (new \App\Jobs\Search\User\Update($userId));
+        dispatch($job);
+
         return $this->resNoContent();
     }
 
@@ -368,11 +371,19 @@ class UserController extends Controller
             return $this->resErrParams($validator->errors());
         }
 
+        $userId = $this->getAuthUserId();
+
         Feedback::create([
             'type' => $request->get('type'),
             'desc' => $request->get('desc'),
-            'user_id' => $this->getAuthUserId()
+            'user_id' => $userId
         ]);
+
+        if ($userId)
+        {
+            $job = (new \App\Jobs\Search\User\Update($userId));
+            dispatch($job);
+        }
 
         return $this->resNoContent();
     }

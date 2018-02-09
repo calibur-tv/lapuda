@@ -3,6 +3,7 @@
 namespace App\Jobs\Trial\Post;
 
 use App\Api\V1\Repositories\PostRepository;
+use App\Models\MixinSearch;
 use App\Services\Trial\WordsFilter\WordsFilter;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
@@ -121,6 +122,20 @@ class Reply implements ShouldQueue
         else if ($badImageCount || $badWordsCount)
         {
             $state = 4;
+        }
+        else
+        {
+            $searchId = MixinSearch::whereRaw('type_id = ? and modal_id = ?', [2, $this->postId])
+                ->pluck('id')
+                ->first();
+
+            if (!is_null($searchId))
+            {
+                MixinSearch::where('id', $searchId)->increment('score', 5);
+                MixinSearch::where('id', $searchId)->update([
+                    'updated_at' => time()
+                ]);
+            }
         }
 
         if ($state || $needDelete)

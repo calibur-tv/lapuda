@@ -3,6 +3,7 @@
 namespace App\Jobs\Trial\User;
 
 use App\Api\V1\Repositories\UserRepository;
+use App\Models\MixinSearch;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -118,6 +119,20 @@ class Image implements ShouldQueue
                 ->update([
                     'state' => $state
                 ]);
+        }
+        else
+        {
+            $searchId = MixinSearch::whereRaw('type_id = ? and modal_id = ?', [1, $this->userId])
+                ->pluck('id')
+                ->first();
+
+            if (!is_null($searchId))
+            {
+                MixinSearch::where('id', $searchId)->increment('score');
+                MixinSearch::where('id', $searchId)->update([
+                    'updated_at' => time()
+                ]);
+            }
         }
 
         if ($needDelete)
