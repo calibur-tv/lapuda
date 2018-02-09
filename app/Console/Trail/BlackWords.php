@@ -42,7 +42,7 @@ class BlackWords extends Command
         if (empty($data))
         {
             $keys = $this->readKeysFromFile($path);
-            Redis::RPUSH($keys);
+            Redis::RPUSH($this->cacheKey, $keys);
         }
         else
         {
