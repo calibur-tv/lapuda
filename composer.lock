@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "0435aa9f0ac4e5d6099a2b85f22edc25",
-    "content-hash": "f324d02329f6e1ed5e7d8df5d6c5c0ce",
+    "hash": "fd2132b3157682f230ed1724c1d22bf3",
+    "content-hash": "7679ab2090bebba109ae679dbc9f87ab",
     "packages": [
         {
             "name": "barryvdh/laravel-cors",
@@ -69,6 +69,48 @@
                 "laravel"
             ],
             "time": "2017-08-28 11:42:05"
+        },
+        {
+            "name": "caouecs/laravel-lang",
+            "version": "3.0.43",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/caouecs/Laravel-lang.git",
+                "reference": "73087e07f164e2746bec1c9c116668d100e0af3b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://files.phpcomposer.com/files/caouecs/Laravel-lang/73087e07f164e2746bec1c9c116668d100e0af3b.zip",
+                "reference": "73087e07f164e2746bec1c9c116668d100e0af3b",
+                "shasum": ""
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^2.10"
+            },
+            "suggest": {
+                "ablunier/laravel-lang-installer": "Command for easily add languages to a Laravel project",
+                "arcanedev/laravel-lang": "Translations manager and checker for Laravel 5",
+                "overtrue/laravel-lang": "Command to add languages in your project"
+            },
+            "type": "library",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "caouecs",
+                    "email": "caouecs@caouecs.net"
+                }
+            ],
+            "description": "Languages for Laravel",
+            "keywords": [
+                "lang",
+                "languages",
+                "laravel",
+                "lpm"
+            ],
+            "time": "2018-01-28 10:19:47"
         },
         {
             "name": "dingo/api",

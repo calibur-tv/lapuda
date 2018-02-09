@@ -499,12 +499,4 @@ class DoorController extends Controller
             'remember' => $user->remember_token
         ]);
     }
-
-    public function test2()
-    {
-        \Log::info('test job begin');
-        $job = (new \App\Jobs\Trial\Post\Create(1));
-        dispatch($job);
-        \Log::info('test job end');
-    }
 }
