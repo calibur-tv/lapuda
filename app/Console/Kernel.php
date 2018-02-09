@@ -29,8 +29,8 @@ class Kernel extends ConsoleKernel
              ->everyMinute()
              ->withoutOverlapping();
         $schedule->command('BlackWords')
-            ->everyFiveMinutes()
-            ->withoutOverlapping();
+//            ->everyFiveMinutes()
+            ->everyMinute();
     }
 
     /**

@@ -81,7 +81,7 @@ class BlackWords extends Command
         while( ! feof($fp))
         {
             if ($line = rtrim(fgets($fp))) {
-                $user[]= $line;
+                $words[] = $line;
             }
         }
         fclose($fp);
