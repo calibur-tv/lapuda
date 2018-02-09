@@ -33,6 +33,14 @@ class Message
         ]);
     }
 
+    public function inviteUser($phone, $inviteUser, $newUser)
+    {
+        return $this->send($phone, 'SMS_125017290', [
+            'name' => $inviteUser,
+            'time' => $newUser
+        ]);
+    }
+
     protected function send($phone, $template, $data)
     {
         try {
