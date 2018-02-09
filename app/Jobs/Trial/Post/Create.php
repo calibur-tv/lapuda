@@ -3,6 +3,7 @@
 namespace App\Jobs\Trial\Post;
 
 use App\Api\V1\Repositories\PostRepository;
+use App\Models\MixinSearch;
 use App\Services\Trial\WordsFilter\WordsFilter;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
@@ -132,6 +133,13 @@ class Create implements ShouldQueue
 
         if (!$badWordsCount && !$badImageCount && !$needDelete)
         {
+            MixinSearch::create([
+                'title' => $post['title'],
+                'content' => $post['content'],
+                'type_id' => 2,
+                'url' => '/post/' . $post['id']
+            ]);
+
             Redis::pipeline(function ($pipe) use ($post)
             {
                 $cache = 'post_'.$post['id'];

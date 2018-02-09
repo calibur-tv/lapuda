@@ -11,7 +11,6 @@ use App\Models\User;
 use App\Models\UserZone;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Services\Sms\Message;
-use App\Services\Trial\WordsFilter\WordsFilter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -184,14 +183,12 @@ class DoorController extends Controller
         $inviteCode = $request->get('inviteCode');
         if ($inviteCode)
         {
-            $inviteUserId = User::where('id', $this->convertInviteCode($inviteCode, false))->pluck('id')->first();
-            if ($inviteUserId)
-            {
-                $userRepository = new UserRepository();
-                $userRepository->toggleCoin(false, $userId, $inviteUserId, 2, 0);
-            }
-            // TODO：send some message
+            $job = (new \App\Jobs\User\Invite($userId, $inviteCode));
+            dispatch($job);
         }
+
+        $job = (new \App\Jobs\Search\User\Register($userId));
+        dispatch($job);
 
         return $this->resCreated($this->responseUser($user));
     }
