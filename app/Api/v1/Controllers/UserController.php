@@ -392,8 +392,6 @@ class UserController extends Controller
     {
         $userId = $this->getAuthUserId();
 
-        \Log::info('notification user id:' . $userId);
-
         $minId = $request->get('minId') ?: 0;
         $take = $request->get('take') ?: 10;
 
