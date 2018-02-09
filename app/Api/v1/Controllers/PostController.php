@@ -76,7 +76,7 @@ class PostController extends Controller
             $pipe->LPUSHX('user_'.$userId.'_minePostIds', $id);
         });
 
-        $job = (new \App\Jobs\Trial\Post\Create($id))->onQueue('post-create');
+        $job = (new \App\Jobs\Trial\Post\Create($id));
         dispatch($job);
 
         return $this->resCreated($id);
@@ -242,10 +242,10 @@ class PostController extends Controller
 
         if (intval($post['user_id']) !== $userId)
         {
-            $job = (new \App\Jobs\Notification\Post\Reply($newId))->onQueue('notification-post-reply');
+            $job = (new \App\Jobs\Notification\Post\Reply($newId));
             dispatch($job);
         }
-        $job = (new \App\Jobs\Trial\Post\Reply($id))->onQueue('post-reply');
+        $job = (new \App\Jobs\Trial\Post\Reply($id));
         dispatch($job);
 
         return $this->resCreated($transformer->reply([$reply])[0]);
@@ -310,10 +310,10 @@ class PostController extends Controller
 
         if (intval($targetUserId) !== 0)
         {
-            $job = (new \App\Jobs\Notification\Post\Comment($newId))->onQueue('notification-post-comment');
+            $job = (new \App\Jobs\Notification\Post\Comment($newId));
             dispatch($job);
         }
-        $job = (new \App\Jobs\Trial\Post\Comment($id))->onQueue('post-comment');
+        $job = (new \App\Jobs\Trial\Post\Comment($id));
         dispatch($job);
 
         return $this->resCreated($postTransformer->comments([$repository->comment($id, $newId)])[0]);
@@ -447,11 +447,11 @@ class PostController extends Controller
 
             if ($isMainPost)
             {
-                $job = (new \App\Jobs\Notification\Post\Like($likeId))->onQueue('notification-post-like');
+                $job = (new \App\Jobs\Notification\Post\Like($likeId));
             }
             else
             {
-                $job = (new \App\Jobs\Notification\Post\Agree($likeId))->onQueue('notification-post-agree');
+                $job = (new \App\Jobs\Notification\Post\Agree($likeId));
             }
             dispatch($job);
         }

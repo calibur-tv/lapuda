@@ -293,7 +293,7 @@ class PostRepository extends Repository
                 $pipe->DEL('post_'.$postId);
             });
 
-            $job = (new \App\Jobs\Trial\Post\Delete($postId))->onQueue('post-delete');
+            $job = (new \App\Jobs\Trial\Post\Delete($postId));
             dispatch($job);
         }
     }

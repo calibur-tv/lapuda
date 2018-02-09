@@ -97,7 +97,7 @@ class UserController extends Controller
         {
             Redis::HSET($cache, $key, $val);
         }
-        $job = (new \App\Jobs\Trial\User\Image($userId, $key))->onQueue('user-image-trail');
+        $job = (new \App\Jobs\Trial\User\Image($userId, $key));
         dispatch($job);
 
         return $this->resNoContent();
@@ -164,7 +164,7 @@ class UserController extends Controller
         ]);
 
         Redis::DEL('user_'.$userId);
-        $job = (new \App\Jobs\Trial\User\Text($userId))->onQueue('user-image-trail');
+        $job = (new \App\Jobs\Trial\User\Text($userId));
         dispatch($job);
 
         return $this->resNoContent();
