@@ -35,7 +35,6 @@ class Create implements ShouldQueue
      */
     public function handle()
     {
-        \Log::info('dispatch job begin');
         $repository = new PostRepository();
         $post = $repository->item($this->postId);
         if (is_null($post))
@@ -48,7 +47,6 @@ class Create implements ShouldQueue
         $state = 3;
         $deletedAt = null;
 
-        \Log::info('dispatch job image filter');
         // 图片审核流程
         foreach ($post['images'] as $url)
         {
@@ -106,7 +104,6 @@ class Create implements ShouldQueue
             }
         }
 
-        \Log::info('dispatch job words filter');
         // 文字审核流程
         $filter = new WordsFilter();
         $badWordsCount = $filter->count($post['content']);
@@ -125,8 +122,6 @@ class Create implements ShouldQueue
         {
             $state = 4;
         }
-
-        \Log::info('dispatch job state: ' . $state);
 
         DB::table('posts')
             ->where('id', $this->postId)
@@ -153,7 +148,5 @@ class Create implements ShouldQueue
         {
             Redis::DEL('post_'.$post['id']);
         }
-
-        \Log::info('dispatch job end');
     }
 }

@@ -503,7 +503,7 @@ class DoorController extends Controller
     public function test2()
     {
         \Log::info('test job begin');
-        $job = (new \App\Jobs\Trial\Post\Create(1))->onQueue('post-create');
+        $job = (new \App\Jobs\Trial\Post\Create(1));
         dispatch($job);
         \Log::info('test job end');
     }
