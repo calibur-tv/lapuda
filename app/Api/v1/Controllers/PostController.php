@@ -462,6 +462,17 @@ class PostController extends Controller
             Redis::HINCRBYFLOAT('post_'.$postId, 'like_count', $num);
         }
 
+        if ($isMainPost)
+        {
+            $job = (new \App\Jobs\Search\Post\Update($postId, $liked ? -10 : 10));
+            dispatch($job);
+        }
+        else
+        {
+            $job = (new \App\Jobs\Search\Post\Update($postId, $num));
+            dispatch($job);
+        }
+
         return $this->resCreated(!$liked);
     }
 
@@ -519,6 +530,9 @@ class PostController extends Controller
         {
             Redis::HINCRBYFLOAT('post_'.$postId, 'mark_count', $num);
         }
+
+        $job = (new \App\Jobs\Search\Post\Update($postId, $marked ? -10 : 10));
+        dispatch($job);
 
         return $this->resCreated(!$marked);
     }
@@ -604,6 +618,11 @@ class PostController extends Controller
             return $this->resErrRole('权限不足');
         }
 
+        if ($commentId !== intval($comment['parent_id']))
+        {
+            return $this->resErrBad('非法的请求');
+        }
+
         Post::where('id', $commentId)->delete();
         Post::where('id', $postId)->increment('comment_count', -1);
         Redis::pipeline(function ($pipe) use ($postId, $commentId, $userId)
@@ -615,6 +634,10 @@ class PostController extends Controller
             $pipe->LREM('post_'.$postId.'_commentIds', 1, $commentId);
             $pipe->LREM('user_'.$userId.'_replyPostIds', 1, $commentId);
         });
+
+        $post = $postRepository->item(($comment['parent_id']));
+        $job = (new \App\Jobs\Search\Post\Update($post['parent_id'], -2));
+        dispatch($job);
 
         return $this->resNoContent();
     }

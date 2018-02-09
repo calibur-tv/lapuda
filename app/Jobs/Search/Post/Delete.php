@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Jobs\Trial\Post;
+namespace App\Jobs\Search\Post;
 
+use App\Models\MixinSearch;
 use App\Models\PostLike;
 use App\Models\PostMark;
 use Illuminate\Bus\Queueable;
@@ -34,5 +35,6 @@ class Delete implements ShouldQueue
     {
         PostLike::where('post_id', $this->postId)->delete();
         PostMark::where('post_id', $this->postId)->delete();
+        MixinSearch::whereRaw('modal_id = ? and type = ?', [$this->postId, 2])->delete();
     }
 }

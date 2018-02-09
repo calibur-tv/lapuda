@@ -3,6 +3,7 @@
 namespace App\Jobs\Trial\User;
 
 use App\Api\V1\Repositories\UserRepository;
+use App\Models\MixinSearch;
 use App\Models\User;
 use App\Services\Trial\WordsFilter\WordsFilter;
 use Illuminate\Bus\Queueable;
@@ -52,14 +53,25 @@ class Text implements ShouldQueue
 
             Redis::DEL('user'.$this->userId);
         }
+        else if ($nameCount || $wordCount)
+        {
+            User::where('id', $this->userId)
+                ->update([
+                    'state' => 1
+                ]);
+        }
         else
         {
-            if ($nameCount || $wordCount)
+            $searchId = MixinSearch::whereRaw('type_id = ? and modal_id = ?', [1, $this->userId])
+                ->pluck('id')
+                ->first();
+
+            if (!is_null($searchId))
             {
-                User::where('id', $this->userId)
-                    ->update([
-                        'state' => 1
-                    ]);
+                MixinSearch::where('id', $searchId)->increment('score');
+                MixinSearch::where('id', $searchId)->update([
+                    'updated_at' => time()
+                ]);
             }
         }
     }
