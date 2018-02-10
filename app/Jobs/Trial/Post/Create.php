@@ -135,7 +135,7 @@ class Create implements ShouldQueue
         {
             MixinSearch::create([
                 'title' => $post['title'],
-                'content' => $post['content'],
+                'content' => $post['desc'],
                 'type_id' => 2,
                 'modal_id' => $post['id'],
                 'url' => '/post/' . $post['id']

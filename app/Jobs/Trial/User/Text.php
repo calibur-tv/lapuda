@@ -70,7 +70,9 @@ class Text implements ShouldQueue
             {
                 MixinSearch::where('id', $searchId)->increment('score');
                 MixinSearch::where('id', $searchId)->update([
-                    'updated_at' => time()
+                    'updated_at' => time(),
+                    'content' => $user['signature'],
+                    'title' => $user['nickname']
                 ]);
             }
         }
