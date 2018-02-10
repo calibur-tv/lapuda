@@ -125,7 +125,7 @@ class Reply implements ShouldQueue
         }
         else
         {
-            $searchId = MixinSearch::whereRaw('type_id = ? and modal_id = ?', [2, $this->postId])
+            $searchId = MixinSearch::whereRaw('type_id = ? and modal_id = ?', [3, $this->postId])
                 ->pluck('id')
                 ->first();
 

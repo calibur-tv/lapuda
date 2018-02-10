@@ -35,6 +35,6 @@ class Delete implements ShouldQueue
     {
         PostLike::where('post_id', $this->postId)->delete();
         PostMark::where('post_id', $this->postId)->delete();
-        MixinSearch::whereRaw('modal_id = ? and type = ?', [$this->postId, 2])->delete();
+        MixinSearch::whereRaw('type_id = ? and modal_id = ?', [3, $this->postId])->delete();
     }
 }

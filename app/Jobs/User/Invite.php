@@ -48,7 +48,7 @@ class Invite implements ShouldQueue
             $sms = new Message();
             $sms->inviteUser($inviteUser->phone, $inviteUser->nickname, $newUser['nickname']);
 
-            $searchId = MixinSearch::whereRaw('modal_id = ? and type_id = ?', [$inviteUser->id, 1])
+            $searchId = MixinSearch::whereRaw('type_id = ? and modal_id = ?', [1, $inviteUser->id])
                 ->pluck('id')
                 ->first();
 
