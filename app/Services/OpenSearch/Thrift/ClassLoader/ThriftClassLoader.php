@@ -23,7 +23,7 @@
  * @package thrift.classloader
  */
 
-namespace Thrift\ClassLoader;
+namespace App\Services\OpenSearch\Thrift\ClassLoader;
 
 class ThriftClassLoader
 {

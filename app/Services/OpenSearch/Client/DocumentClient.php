@@ -18,11 +18,11 @@
  * under the License.
  */
 
-namespace OpenSearch\Client;
+namespace App\Services\OpenSearch\Client;
 
-use OpenSearch\Generated\Document\Command;
-use OpenSearch\Generated\Document\Constant;
-use OpenSearch\Generated\Document\DocumentServiceIf;
+use App\Services\OpenSearch\Generated\Document\Command;
+use App\Services\OpenSearch\Generated\Document\Constant;
+use App\Services\OpenSearch\Generated\Document\DocumentServiceIf;
 
 class DocumentClient implements DocumentServiceIf {
 

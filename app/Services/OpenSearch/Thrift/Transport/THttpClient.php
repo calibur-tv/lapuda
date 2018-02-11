@@ -20,10 +20,10 @@
  * @package thrift.transport
  */
 
-namespace Thrift\Transport;
+namespace App\Services\OpenSearch\Thrift\Transport;
 
-use Thrift\Exception\TTransportException;
-use Thrift\Factory\TStringFuncFactory;
+use App\Services\OpenSearch\Thrift\Exception\TTransportException;
+use App\Services\OpenSearch\Thrift\Factory\TStringFuncFactory;
 
 /**
  * HTTP client for Thrift

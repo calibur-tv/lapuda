@@ -2,8 +2,8 @@
 header("Content-Type:text/html;charset=utf-8");
 //引用头部文件
 require_once("Config.inc.php");
-use OpenSearch\Client\SearchClient;
-use OpenSearch\Util\SearchParamsBuilder;
+use App\Services\OpenSearch\Client\SearchClient;
+use App\Services\OpenSearch\Util\SearchParamsBuilder;
 // 实例化一个搜索类
 $searchClient = new SearchClient($client);
 // 实例化一个搜索参数类

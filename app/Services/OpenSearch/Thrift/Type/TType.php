@@ -20,7 +20,7 @@
  * @package thrift
  */
 
-namespace Thrift\Type;
+namespace App\Services\OpenSearch\Thrift\Type;
 
 /**
  * Data types that can be sent via Thrift

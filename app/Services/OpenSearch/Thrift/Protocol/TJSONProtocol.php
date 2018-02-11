@@ -21,14 +21,14 @@
  * @package thrift.protocol
  */
 
-namespace Thrift\Protocol;
+namespace App\Services\OpenSearch\Thrift\Protocol;
 
-use Thrift\Type\TType;
-use Thrift\Exception\TProtocolException;
-use Thrift\Protocol\JSON\BaseContext;
-use Thrift\Protocol\JSON\LookaheadReader;
-use Thrift\Protocol\JSON\PairContext;
-use Thrift\Protocol\JSON\ListContext;
+use App\Services\OpenSearch\Thrift\Type\TType;
+use App\Services\OpenSearch\Thrift\Exception\TProtocolException;
+use App\Services\OpenSearch\Thrift\Protocol\JSON\BaseContext;
+use App\Services\OpenSearch\Thrift\Protocol\JSON\LookaheadReader;
+use App\Services\OpenSearch\Thrift\Protocol\JSON\PairContext;
+use App\Services\OpenSearch\Thrift\Protocol\JSON\ListContext;
 
 /**
  * JSON implementation of thrift protocol, ported from Java.

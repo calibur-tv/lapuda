@@ -20,7 +20,7 @@
  * @package thrift
  */
 
-namespace Thrift\Type;
+namespace App\Services\OpenSearch\Thrift\Type;
 
 /**
  * Message types for RPC

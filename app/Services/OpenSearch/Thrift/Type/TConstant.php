@@ -20,7 +20,7 @@
  * @package thrift
  */
 
-namespace Thrift\Type;
+namespace App\Services\OpenSearch\Thrift\Type;
 
 /**
  * Base class for constant Management

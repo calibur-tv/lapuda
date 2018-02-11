@@ -20,11 +20,11 @@
  * @package thrift.transport
  */
 
-namespace Thrift\Transport;
+namespace App\Services\OpenSearch\Thrift\Transport;
 
-use Thrift\Exception\TException;
-use Thrift\Exception\TTransportException;
-use Thrift\Factory\TStringFuncFactory;
+use App\Services\OpenSearch\Thrift\Exception\TException;
+use App\Services\OpenSearch\Thrift\Exception\TTransportException;
+use App\Services\OpenSearch\Thrift\Factory\TStringFuncFactory;
 
 /**
  * Sockets implementation of the TTransport interface.

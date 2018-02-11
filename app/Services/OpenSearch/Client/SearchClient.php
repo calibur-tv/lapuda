@@ -18,13 +18,13 @@
  * under the License.
  */
 
-namespace OpenSearch\Client;
+namespace App\Services\OpenSearch\Client;
 
-use OpenSearch\Generated\Search\Config;
-use OpenSearch\Generated\Search\OpenSearchSearcherServiceIf;
-use OpenSearch\Generated\Search\SearchFormat;
-use OpenSearch\Generated\Search\SearchParams;
-use OpenSearch\Util\UrlParamsBuilder;
+use App\Services\OpenSearch\Generated\Search\Config;
+use App\Services\OpenSearch\Generated\Search\OpenSearchSearcherServiceIf;
+use App\Services\OpenSearch\Generated\Search\SearchFormat;
+use App\Services\OpenSearch\Generated\Search\SearchParams;
+use App\Services\OpenSearch\Util\UrlParamsBuilder;
 
 class SearchClient implements OpenSearchSearcherServiceIf {
 

@@ -18,10 +18,10 @@
  * under the License.
  */
 
-namespace OpenSearch\Client;
+namespace App\Services\OpenSearch\Client;
 
-use OpenSearch\Generated\App\AppServiceIf;
-use OpenSearch\Generated\Common\Pageable;
+use App\Services\OpenSearch\Generated\App\AppServiceIf;
+use App\Services\OpenSearch\Generated\Common\Pageable;
 
 class AppClient implements AppServiceIf {
     private $openSearchClient;

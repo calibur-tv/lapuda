@@ -1,8 +1,8 @@
 <?php
 
-namespace Thrift\Factory;
+namespace App\Services\OpenSearch\Thrift\Factory;
 
-use Thrift\Transport\TTransport;
+use App\Services\OpenSearch\Thrift\Transport\TTransport;
 
 class TTransportFactory
 {

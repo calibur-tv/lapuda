@@ -18,11 +18,11 @@
  * under the License.
  */
 
-namespace OpenSearch\Util;
+namespace App\Services\OpenSearch\Util;
 
-use OpenSearch\Generated\Search\Constant;
-use OpenSearch\Generated\Search\DeepPaging;
-use OpenSearch\Generated\Search\SearchType;
+use App\Services\OpenSearch\Generated\Search\Constant;
+use App\Services\OpenSearch\Generated\Search\DeepPaging;
+use App\Services\OpenSearch\Generated\Search\SearchType;
 
 class UrlParamsBuilder {
 

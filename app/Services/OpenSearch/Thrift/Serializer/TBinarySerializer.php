@@ -21,11 +21,11 @@
  * @author: rmarin (marin.radu@facebook.com)
  */
 
-namespace Thrift\Serializer;
+namespace App\Services\OpenSearch\Thrift\Serializer;
 
-use Thrift\Transport\TMemoryBuffer;
-use Thrift\Protocol\TBinaryProtocolAccelerated;
-use Thrift\Type\TMessageType;
+use App\Services\OpenSearch\Thrift\Transport\TMemoryBuffer;
+use App\Services\OpenSearch\Thrift\Protocol\TBinaryProtocolAccelerated;
+use App\Services\OpenSearch\Thrift\Type\TMessageType;
 
 /**
  * Utility class for serializing and deserializing
@@ -33,7 +33,7 @@ use Thrift\Type\TMessageType;
  */
 class TBinarySerializer
 {
-  // NOTE(rmarin): Because thrift_protocol_write_binary
+  // NOTE(rmarin): Because App\Services\OpenSearch\Thrift_protocol_write_binary
   // adds a begin message prefix, you cannot specify
   // a transport in which to serialize an object. It has to
   // be a string. Otherwise we will break the compatibility with

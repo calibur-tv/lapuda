@@ -18,20 +18,20 @@
  * under the License.
  */
 
-namespace OpenSearch\Util;
+namespace App\Services\OpenSearch\Util;
 
-use OpenSearch\Generated\Search\Aggregate;
-use OpenSearch\Generated\Search\Distinct;
-use OpenSearch\Generated\Search\Config;
-use OpenSearch\Generated\Search\Constant;
-use OpenSearch\Generated\Search\Order;
-use OpenSearch\Generated\Search\Rank;
-use OpenSearch\Generated\Search\SearchFormat;
-use OpenSearch\Generated\Search\SearchParams;
-use OpenSearch\Generated\Search\Sort;
-use OpenSearch\Generated\Search\SortField;
-use OpenSearch\Generated\Search\Summary;
-use OpenSearch\Generated\Search\DeepPaging;
+use App\Services\OpenSearch\Generated\Search\Aggregate;
+use App\Services\OpenSearch\Generated\Search\Distinct;
+use App\Services\OpenSearch\Generated\Search\Config;
+use App\Services\OpenSearch\Generated\Search\Constant;
+use App\Services\OpenSearch\Generated\Search\Order;
+use App\Services\OpenSearch\Generated\Search\Rank;
+use App\Services\OpenSearch\Generated\Search\SearchFormat;
+use App\Services\OpenSearch\Generated\Search\SearchParams;
+use App\Services\OpenSearch\Generated\Search\Sort;
+use App\Services\OpenSearch\Generated\Search\SortField;
+use App\Services\OpenSearch\Generated\Search\Summary;
+use App\Services\OpenSearch\Generated\Search\DeepPaging;
 
 /**
  * 搜索配置项。

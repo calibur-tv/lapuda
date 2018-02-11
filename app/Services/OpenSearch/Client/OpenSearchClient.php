@@ -18,12 +18,12 @@
  * under the License.
  */
 
-namespace OpenSearch\Client;
+namespace App\Services\OpenSearch\Client;
 
-use OpenSearch\Generated\OpenSearch\OpenSearch;
-use OpenSearch\Generated\OpenSearch\Constant;
-use OpenSearch\Generated\Common\OpenSearchResult;
-use OpenSearch\Generated\Common\TraceInfo;
+use App\Services\OpenSearch\Generated\OpenSearch\OpenSearch;
+use App\Services\OpenSearch\Generated\OpenSearch\Constant;
+use App\Services\OpenSearch\Generated\Common\OpenSearchResult;
+use App\Services\OpenSearch\Generated\Common\TraceInfo;
 
 class OpenSearchClient extends OpenSearch {
 

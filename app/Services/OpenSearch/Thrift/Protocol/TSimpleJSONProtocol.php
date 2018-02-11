@@ -21,15 +21,15 @@
  * @package thrift.protocol
  */
 
-namespace Thrift\Protocol;
+namespace App\Services\OpenSearch\Thrift\Protocol;
 
-use Thrift\Exception\TException;
-use Thrift\Exception\TProtocolException;
-use Thrift\Protocol\SimpleJSON\Context;
-use Thrift\Protocol\SimpleJSON\ListContext;
-use Thrift\Protocol\SimpleJSON\StructContext;
-use Thrift\Protocol\SimpleJSON\MapContext;
-use Thrift\Protocol\SimpleJSON\CollectionMapKeyException;
+use App\Services\OpenSearch\Thrift\Exception\TException;
+use App\Services\OpenSearch\Thrift\Exception\TProtocolException;
+use App\Services\OpenSearch\Thrift\Protocol\SimpleJSON\Context;
+use App\Services\OpenSearch\Thrift\Protocol\SimpleJSON\ListContext;
+use App\Services\OpenSearch\Thrift\Protocol\SimpleJSON\StructContext;
+use App\Services\OpenSearch\Thrift\Protocol\SimpleJSON\MapContext;
+use App\Services\OpenSearch\Thrift\Protocol\SimpleJSON\CollectionMapKeyException;
 
 /**
  * SimpleJSON implementation of thrift protocol, ported from Java.

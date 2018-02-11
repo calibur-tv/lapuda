@@ -1,8 +1,8 @@
 <?php
 
-namespace Thrift\Server;
+namespace App\Services\OpenSearch\Thrift\Server;
 
-use Thrift\Exception\TTransportException;
+use App\Services\OpenSearch\Thrift\Exception\TTransportException;
 
 /**
  * Generic class for Server agent.

@@ -20,9 +20,9 @@
  * @package thrift.protocol
  */
 
-namespace Thrift\Protocol;
+namespace App\Services\OpenSearch\Thrift\Protocol;
 
-use Thrift\Type\TMessageType;
+use App\Services\OpenSearch\Thrift\Type\TMessageType;
 
 /**
  * <code>TMultiplexedProtocol</code> is a protocol-independent concrete decorator

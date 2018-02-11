@@ -18,11 +18,11 @@
  * under the License.
  */
 
-namespace OpenSearch\Util;
+namespace App\Services\OpenSearch\Util;
 
-use OpenSearch\Generated\Search\Constant;
-use OpenSearch\Generated\Search\Order;
-use OpenSearch\Generated\Search\searchFormat;
+use App\Services\OpenSearch\Generated\Search\Constant;
+use App\Services\OpenSearch\Generated\Search\Order;
+use App\Services\OpenSearch\Generated\Search\searchFormat;
 
 class ClauseParamsBuilder {
     const CONFIG_KEY = 'config';
