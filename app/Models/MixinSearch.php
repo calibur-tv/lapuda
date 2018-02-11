@@ -16,14 +16,19 @@ class MixinSearch extends Model
         'modal_id',
         'score',
         'url',
-        'content'
+        'content',
+        'created_at',
+        'updated_at'
     ];
+
+    protected $dateFormat = 'U';
 
     protected $dates = ['created_at', 'updated_at'];
 
     /**
      * type
      * 1: 用户
-     * 2：帖子
+     * 2：番剧
+     * 3：帖子
      */
 }

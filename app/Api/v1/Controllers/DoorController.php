@@ -6,7 +6,9 @@ use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Mail\ForgetPassword;
 use App\Mail\Welcome;
+use App\Models\Bangumi;
 use App\Models\Confirm;
+use App\Models\MixinSearch;
 use App\Models\User;
 use App\Models\UserZone;
 use App\Api\V1\Repositories\ImageRepository;
@@ -14,6 +16,7 @@ use App\Services\Sms\Message;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -495,5 +498,29 @@ class DoorController extends Controller
         return JWTAuth::fromUser($user, [
             'remember' => $user->remember_token
         ]);
+    }
+
+    public function migrate()
+    {
+        Log::info('all migrate begin');
+        $ids = Bangumi::select('id')->get();
+        $now = time();
+        foreach ($ids as $id)
+        {
+            Log::info('migrate begin id: ' . $id);
+            $bangumi = Bangumi::find($id);
+            MixinSearch::create([
+                'title' => $bangumi->name,
+                'content' => $bangumi->alias === 'null' ? '' : json_decode($bangumi->alias)->search,
+                'type_id' => 2,
+                'modal_id' => $bangumi->id,
+                'url' => '/bangumi/' . $bangumi->id,
+                'created_at' => $now,
+                'updated_at' => $now
+            ]);
+
+            Log::info('migrate end id: ' . $id);
+        }
+        Log::info('all migrate end');
     }
 }
