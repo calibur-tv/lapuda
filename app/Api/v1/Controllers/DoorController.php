@@ -503,7 +503,7 @@ class DoorController extends Controller
     public function migrate()
     {
         Log::info('all migrate begin');
-        $ids = Bangumi::select('id')->get();
+        $ids = Bangumi::select('id')->pluck('id');
         $now = time();
         foreach ($ids as $id)
         {
