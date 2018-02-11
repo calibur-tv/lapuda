@@ -20,7 +20,7 @@ class Transformer
 
     public function collection($list, $func)
     {
-        return fractal($list, function (array $item) use ($func) {
+        return fractal(array_filter($list), function (array $item) use ($func) {
             return $func($item);
         })->toArray()['data'];
     }
