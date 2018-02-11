@@ -20,9 +20,9 @@
  * @package thrift.protocol
  */
 
-namespace Thrift\Protocol;
+namespace App\Services\OpenSearch\Thrift\Protocol;
 
-use Thrift\Transport\TBufferedTransport;
+use App\Services\OpenSearch\Thrift\Transport\TBufferedTransport;
 
 /**
  * Accelerated binary protocol: used in conjunction with the thrift_protocol

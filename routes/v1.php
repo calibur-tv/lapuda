@@ -9,6 +9,11 @@ $api = app('Dingo\Api\Routing\Router');
 
 $api->version(['v1', 'latest'], function ($api)
 {
+    $api->group(['prefix' => '/search'], function ($api)
+    {
+        $api->get('/index', 'App\Api\V1\Controllers\SearchController@index');
+    });
+
     $api->group(['prefix' => '/door'], function ($api)
     {
         $api->post('/send', 'App\Api\V1\Controllers\DoorController@sendEmailOrMessage')->middleware(['geetest', 'throttle:60,1']);

@@ -20,10 +20,10 @@
  * @package thrift
  */
 
-namespace Thrift\Exception;
+namespace App\Services\OpenSearch\Thrift\Exception;
 
-use Thrift\Type\TType;
-use Thrift\Base\TBase;
+use App\Services\OpenSearch\Thrift\Type\TType;
+use App\Services\OpenSearch\Thrift\Base\TBase;
 
 /**
  * NOTE(mcslee): This currently contains a ton of duplicated code from TBase

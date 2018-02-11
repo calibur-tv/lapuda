@@ -20,9 +20,9 @@
  * @package thrift.protocol
  */
 
-namespace Thrift\Factory;
+namespace App\Services\OpenSearch\Thrift\Factory;
 
-use Thrift\Protocol\TBinaryProtocol;
+use App\Services\OpenSearch\Thrift\Protocol\TBinaryProtocol;
 
 /**
  * Binary Protocol Factory

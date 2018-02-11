@@ -20,9 +20,9 @@
  * @package thrift.transport
  */
 
-namespace Thrift\Transport;
+namespace App\Services\OpenSearch\Thrift\Transport;
 
-use Thrift\Exception\TTransportException;
+use App\Services\OpenSearch\Thrift\Exception\TTransportException;
 
 /**
  * Transport that only accepts writes and ignores them.

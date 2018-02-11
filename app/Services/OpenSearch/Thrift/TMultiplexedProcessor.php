@@ -20,13 +20,13 @@
  * @package thrift.processor
  */
 
-namespace Thrift;
+namespace App\Services\OpenSearch\Thrift;
 
-use Thrift\Exception\TException;
-use Thrift\Protocol\TProtocol;
-use Thrift\Protocol\TMultiplexedProtocol;
-use Thrift\Protocol\TProtocolDecorator;
-use Thrift\Type\TMessageType;
+use App\Services\OpenSearch\Thrift\Exception\TException;
+use App\Services\OpenSearch\Thrift\Protocol\TProtocol;
+use App\Services\OpenSearch\Thrift\Protocol\TMultiplexedProtocol;
+use App\Services\OpenSearch\Thrift\Protocol\TProtocolDecorator;
+use App\Services\OpenSearch\Thrift\Type\TMessageType;
 
 /**
  * <code>TMultiplexedProcessor</code> is a Processor allowing

@@ -18,11 +18,11 @@
  * under the License.
  */
 
-namespace OpenSearch\Client;
+namespace App\Services\OpenSearch\Client;
 
-use OpenSearch\Generated\Search\OpenSearchSearcherServiceIf;
-use OpenSearch\Generated\Search\SearchParams;
-use OpenSearch\Util\SuggestParamsBuilder;
+use App\Services\OpenSearch\Generated\Search\OpenSearchSearcherServiceIf;
+use App\Services\OpenSearch\Generated\Search\SearchParams;
+use App\Services\OpenSearch\Util\SuggestParamsBuilder;
 
 class SuggestClient implements OpenSearchSearcherServiceIf {
 

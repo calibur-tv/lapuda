@@ -20,9 +20,9 @@
  * @package thrift.transport
  */
 
-namespace Thrift\Server;
+namespace App\Services\OpenSearch\Thrift\Server;
 
-use Thrift\Transport\TSocket;
+use App\Services\OpenSearch\Thrift\Transport\TSocket;
 
 /**
  * Socket implementation of a server agent.

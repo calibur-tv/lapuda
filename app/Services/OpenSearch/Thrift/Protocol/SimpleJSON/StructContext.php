@@ -20,9 +20,9 @@
  * @package thrift.protocol
  */
 
-namespace Thrift\Protocol\SimpleJSON;
+namespace App\Services\OpenSearch\Thrift\Protocol\SimpleJSON;
 
-use Thrift\Protocol\TSimpleJSONProtocol;
+use App\Services\OpenSearch\Thrift\Protocol\TSimpleJSONProtocol;
 
 class StructContext extends Context
 {

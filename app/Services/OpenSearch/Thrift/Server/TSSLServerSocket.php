@@ -19,9 +19,9 @@
  *
  */
 
-namespace Thrift\Server;
+namespace App\Services\OpenSearch\Thrift\Server;
 
-use Thrift\Transport\TSSLSocket;
+use App\Services\OpenSearch\Thrift\Transport\TSSLSocket;
 
 /**
  * Socket implementation of a server agent.

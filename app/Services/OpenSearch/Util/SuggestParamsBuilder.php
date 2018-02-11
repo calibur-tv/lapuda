@@ -18,11 +18,11 @@
  * under the License.
  */
 
-namespace OpenSearch\Util;
+namespace App\Services\OpenSearch\Util;
 
-use OpenSearch\Generated\Search\SearchParams;
-use OpenSearch\Generated\Search\Config;
-use OpenSearch\Generated\Search\Suggest;
+use App\Services\OpenSearch\Generated\Search\SearchParams;
+use App\Services\OpenSearch\Generated\Search\Config;
+use App\Services\OpenSearch\Generated\Search\Suggest;
 
 class SuggestParamsBuilder {
 

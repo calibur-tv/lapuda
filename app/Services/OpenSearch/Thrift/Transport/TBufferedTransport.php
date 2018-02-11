@@ -20,9 +20,9 @@
  * @package thrift.transport
  */
 
-namespace Thrift\Transport;
+namespace App\Services\OpenSearch\Thrift\Transport;
 
-use Thrift\Factory\TStringFuncFactory;
+use App\Services\OpenSearch\Thrift\Factory\TStringFuncFactory;
 
 /**
  * Buffered transport. Stores data to an internal buffer that it doesn't

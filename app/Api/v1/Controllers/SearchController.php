@@ -1,0 +1,40 @@
+<?php
+
+namespace App\Api\V1\Controllers;
+
+use Illuminate\Http\Request;
+use App\Services\OpenSearch\Search;
+use Illuminate\Support\Facades\Log;
+
+/**
+ * @Resource("搜索相关接口")
+ */
+class SearchController extends Controller
+{
+    /**
+     * 重置密码
+     *
+     * @Post("/search/index")
+     *
+     * @Parameters({
+     *      @Parameter("q", description="查询关键字", required=true),
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "番剧相对链接或空字符串"}),
+     * })
+     */
+    public function index(Request $request)
+    {
+        $key = $request->get('q');
+        if (!$key)
+        {
+            return $this->resOK();
+        }
+
+        $search = new Search();
+        $result = $search->index($request->get('q'));
+
+        return $this->resOK(empty($result) ? '' : $result[0]['fields']['url']);
+    }
+}

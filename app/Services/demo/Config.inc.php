@@ -1,7 +1,7 @@
 <?php
 //引入头文件
 require_once("../OpenSearch/Autoloader/Autoloader.php");
-use OpenSearch\Client\OpenSearchClient;
+use App\Services\OpenSearch\Client\OpenSearchClient;
 
 //替换对应的access key id
 $accessKeyId = '<Your accessKeyId>';

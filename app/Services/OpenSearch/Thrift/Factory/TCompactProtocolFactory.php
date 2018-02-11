@@ -20,9 +20,9 @@
  * @package thrift.protocol
  */
 
-namespace Thrift\Factory;
+namespace App\Services\OpenSearch\Thrift\Factory;
 
-use Thrift\Protocol\TCompactProtocol;
+use App\Services\OpenSearch\Thrift\Protocol\TCompactProtocol;
 
 /**
  * Compact Protocol Factory

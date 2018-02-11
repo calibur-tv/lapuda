@@ -20,9 +20,9 @@
  * @package thrift
  */
 
-namespace Thrift\Base;
+namespace App\Services\OpenSearch\Thrift\Base;
 
-use Thrift\Type\TType;
+use App\Services\OpenSearch\Thrift\Type\TType;
 
 /**
  * Base class from which other Thrift structs extend. This is so that we can

@@ -20,9 +20,9 @@
  * @package thrift
  */
 
-namespace Thrift\Exception;
+namespace App\Services\OpenSearch\Thrift\Exception;
 
-use Thrift\Type\TType;
+use App\Services\OpenSearch\Thrift\Type\TType;
 
 class TApplicationException extends TException
 {

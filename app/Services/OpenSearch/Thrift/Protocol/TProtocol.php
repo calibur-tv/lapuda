@@ -20,10 +20,10 @@
  * @package thrift.protocol
  */
 
-namespace Thrift\Protocol;
+namespace App\Services\OpenSearch\Thrift\Protocol;
 
-use Thrift\Type\TType;
-use Thrift\Exception\TProtocolException;
+use App\Services\OpenSearch\Thrift\Type\TType;
+use App\Services\OpenSearch\Thrift\Exception\TProtocolException;
 
 /**
  * Protocol base class module.

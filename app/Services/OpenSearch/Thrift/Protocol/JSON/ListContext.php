@@ -20,9 +20,9 @@
  * @package thrift.protocol
  */
 
-namespace Thrift\Protocol\JSON;
+namespace App\Services\OpenSearch\Thrift\Protocol\JSON;
 
-use Thrift\Protocol\TJSONProtocol;
+use App\Services\OpenSearch\Thrift\Protocol\TJSONProtocol;
 
 class ListContext extends BaseContext
 {

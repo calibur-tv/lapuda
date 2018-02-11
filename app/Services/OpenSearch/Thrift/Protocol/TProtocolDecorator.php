@@ -20,8 +20,8 @@
  * @package thrift.protocol
  */
 
-namespace Thrift\Protocol;
-use Thrift\Exception\TException;
+namespace App\Services\OpenSearch\Thrift\Protocol;
+use App\Services\OpenSearch\Thrift\Exception\TException;
 
 /**
  * <code>TProtocolDecorator</code> forwards all requests to an enclosed

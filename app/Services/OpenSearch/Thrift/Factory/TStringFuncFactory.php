@@ -19,10 +19,10 @@
  *
  */
 
-namespace Thrift\Factory;
+namespace App\Services\OpenSearch\Thrift\Factory;
 
-use Thrift\StringFunc\Mbstring;
-use Thrift\StringFunc\Core;
+use App\Services\OpenSearch\Thrift\StringFunc\Mbstring;
+use App\Services\OpenSearch\Thrift\StringFunc\Core;
 
 class TStringFuncFactory
 {

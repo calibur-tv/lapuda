@@ -19,7 +19,7 @@
  *
  */
 
-namespace Thrift\StringFunc;
+namespace App\Services\OpenSearch\Thrift\StringFunc;
 
 class Core implements TStringFunc
 {
