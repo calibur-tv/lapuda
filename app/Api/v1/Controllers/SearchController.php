@@ -4,7 +4,6 @@ namespace App\Api\V1\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
-use Illuminate\Support\Facades\Log;
 
 /**
  * @Resource("搜索相关接口")

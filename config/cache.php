@@ -92,6 +92,6 @@ return [
     |
     */
 
-    'prefix' => 'api',
+    'prefix' => '',
 
 ];
