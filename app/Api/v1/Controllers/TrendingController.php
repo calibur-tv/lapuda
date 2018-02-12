@@ -39,8 +39,19 @@ class TrendingController extends Controller
 
         foreach ($list as $i => $item)
         {
-            $list[$i]['liked'] = $userId ? $repository->checkPostLiked($item['id'], $userId) : false;
-            $list[$i]['marked'] = $userId ? $repository->checkPostMarked($item['id'], $userId) : false;
+            if ($userId)
+            {
+                $id = $item['id'];
+                $list[$i]['liked'] = $repository->checkPostLiked($id, $userId);
+                $list[$i]['marked'] = $repository->checkPostMarked($id, $userId);
+                $list[$i]['commented'] = $repository->checkPostCommented($id, $userId);
+            }
+            else
+            {
+                $list[$i]['liked'] = false;
+                $list[$i]['marked'] = false;
+                $list[$i]['commented'] = false;
+            }
         }
 
         $transformer = new PostTransformer();
@@ -76,8 +87,19 @@ class TrendingController extends Controller
 
         foreach ($list as $i => $item)
         {
-            $list[$i]['liked'] = $userId ? $repository->checkPostLiked($item['id'], $userId) : false;
-            $list[$i]['marked'] = $userId ? $repository->checkPostMarked($item['id'], $userId) : false;
+            if ($userId)
+            {
+                $id = $item['id'];
+                $list[$i]['liked'] = $repository->checkPostLiked($id, $userId);
+                $list[$i]['marked'] = $repository->checkPostMarked($id, $userId);
+                $list[$i]['commented'] = $repository->checkPostCommented($id, $userId);
+            }
+            else
+            {
+                $list[$i]['liked'] = false;
+                $list[$i]['marked'] = false;
+                $list[$i]['commented'] = false;
+            }
         }
 
         $transformer = new PostTransformer();

@@ -344,4 +344,9 @@ class PostRepository extends Repository
     {
         return PostMark::whereRaw('user_id = ? and post_id = ?', [$userId, $postId])->count() !== 0;
     }
+
+    public function checkPostCommented($postId, $userId)
+    {
+        return Post::whereRaw('parent_id = ? and user_id = ?', [$postId, $userId])->count() !== 0;
+    }
 }

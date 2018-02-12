@@ -286,8 +286,19 @@ class BangumiController extends Controller
 
         foreach ($list as $i => $item)
         {
-            $list[$i]['liked'] = $userId ? $postRepository->checkPostLiked($item['id'], $userId) : false;
-            $list[$i]['marked'] = $userId ? $postRepository->checkPostMarked($item['id'], $userId) : false;
+            if ($userId)
+            {
+                $id = $item['id'];
+                $list[$i]['liked'] = $postRepository->checkPostLiked($id, $userId);
+                $list[$i]['marked'] = $postRepository->checkPostMarked($id, $userId);
+                $list[$i]['commented'] = $postRepository->checkPostCommented($id, $userId);
+            }
+            else
+            {
+                $list[$i]['liked'] = false;
+                $list[$i]['marked'] = false;
+                $list[$i]['commented'] = false;
+            }
         }
 
         $transformer = new PostTransformer();

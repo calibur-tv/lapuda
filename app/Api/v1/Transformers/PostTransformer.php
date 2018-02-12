@@ -28,6 +28,7 @@ class PostTransformer extends Transformer
                 'desc' => $post['desc'],
                 'liked' => $post['liked'],
                 'marked' => $post['marked'],
+                'commented' => $post['commented'],
                 'content' => $post['content'],
                 'images' => $post['images'],
                 'created_at' => $post['created_at'],
@@ -107,7 +108,8 @@ class PostTransformer extends Transformer
                }),
                'previewImages' => $post['previewImages'],
                'liked' => $post['liked'],
-               'marked' => $post['marked']
+               'marked' => $post['marked'],
+               'commented' => $post['commented']
            ];
         });
     }
@@ -132,7 +134,8 @@ class PostTransformer extends Transformer
                     return [
                         'id' => (int)$user['id'],
                         'zone' => $user['zone'],
-                        'nickname' => $user['nickname']
+                        'nickname' => $user['nickname'],
+                        'avatar' => $user['avatar']
                     ];
                 }),
                 'bangumi' => $this->transformer($post['bangumi'], function ($bangumi)
@@ -145,7 +148,8 @@ class PostTransformer extends Transformer
                 }),
                 'previewImages' => $post['previewImages'],
                 'liked' => $post['liked'],
-                'marked' => $post['marked']
+                'marked' => $post['marked'],
+                'commented' => $post['commented']
             ];
         });
     }
