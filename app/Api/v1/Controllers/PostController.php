@@ -141,8 +141,18 @@ class PostController extends Controller
             ]);
         }
 
-        $post['liked'] = $userId ? $postRepository->checkPostLiked($id, $userId) : false;
-        $post['marked'] = $userId ? $postRepository->checkPostMarked($id, $userId) : false;
+        if ($userId)
+        {
+            $post['liked'] = $postRepository->checkPostLiked($id, $userId);
+            $post['marked'] = $postRepository->checkPostMarked($id, $userId);
+            $post['commented'] = $postRepository->checkPostCommented($id, $userId);
+        }
+        else
+        {
+            $post['liked'] = false;
+            $post['marked'] = false;
+            $post['commented'] = false;
+        }
 
         $bangumiRepository = new BangumiRepository();
         $userRepository = new UserRepository();
