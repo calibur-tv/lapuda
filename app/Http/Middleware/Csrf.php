@@ -37,6 +37,7 @@ class Csrf
             \Log::info('request ip: ' . $request->ip());
             \Log::info('request ua: ' . $request->header('User-Agent'));
             \Log::info('request domain: ' . $request->headers->get('Origin'));
+            \Log::info('request auth: ' . $request->headers->get('Authorization'));
         }
 
         if (
