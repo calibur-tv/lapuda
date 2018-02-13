@@ -49,10 +49,16 @@ class PostController extends Controller
             return $this->resErrParams($validator->errors());
         }
 
-        $now = Carbon::now();
         $bangumiId = $request->get('bangumiId');
         $userId = $this->getAuthUserId();
         $repository = new PostRepository();
+
+        if (!$repository->checkPostLiked($bangumiId, $userId))
+        {
+            return $this->resErrRole('关注番剧后才能发帖');
+        }
+
+        $now = Carbon::now();
 
         $id = $repository->create([
             'title' => Purifier::clean($request->get('title')),
