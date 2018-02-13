@@ -189,7 +189,6 @@ class PostTransformer extends Transformer
                 'content' => $post['content'],
                 'images' => $post['images'],
                 'created_at' => $post['created_at'],
-                'floor_count' => (int)$post['floor_count'],
                 'bangumi' => $this->transformer($post['bangumi'], function ($bangumi)
                 {
                     return [
