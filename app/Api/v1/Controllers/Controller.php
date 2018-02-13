@@ -37,7 +37,7 @@ class Controller extends BaseController
     protected function getAuthUserId()
     {
         try {
-            return (int)JWTAuth::getPayload()['sub'];
+            return (int)JWTAuth::parseToken()->getPayload()['sub'];
         } catch (\Tymon\JWTAuth\Exceptions\JWTException $e) {
             return 0;
         }
