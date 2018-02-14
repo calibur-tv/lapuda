@@ -113,7 +113,7 @@ class PostController extends Controller
 
         if (intval($post['parent_id']) !== 0)
         {
-            return $this->resErrBad('不是主题帖');
+            return $this->resErrNotFound('不是主题帖');
         }
 
         $userId = $this->getAuthUserId();

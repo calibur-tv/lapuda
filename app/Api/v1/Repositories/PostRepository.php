@@ -139,10 +139,20 @@ class PostRepository extends Repository
     {
         return $this->RedisList('post_'.$postId.'_images', function () use ($postId)
         {
-            return PostImages::where('post_id', $postId)
+            $images = PostImages::where('post_id', $postId)
                 ->orderBy('created_at', 'ASC')
-                ->pluck('src')
+                ->select('src', 'width', 'height')
+                ->get()
                 ->toArray();
+
+            $result = [];
+
+            foreach ($images as $item)
+            {
+                $result[] = $item['width'] . '-' . $item['height'] . '|' . $item['src'];
+            }
+
+            return $result;
         });
     }
 
@@ -208,10 +218,20 @@ class PostRepository extends Repository
 
             $ids[] = $id;
 
-            return PostImages::whereIn('post_id', $ids)
+            $images = PostImages::whereIn('post_id', $ids)
                 ->orderBy('created_at', 'asc')
-                ->pluck('src')
+                ->select('src', 'width', 'height')
+                ->get()
                 ->toArray();
+
+            $result = [];
+
+            foreach ($images as $item)
+            {
+                $result[] = $item['width'] . '-' . $item['height'] . '|' . $item['src'];
+            }
+
+            return $result;
         });
     }
 
