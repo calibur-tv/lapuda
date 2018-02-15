@@ -459,7 +459,7 @@ class DoorController extends Controller
             return $token->code;
         }
 
-        $token = str_random(6);
+        $token = rand(100000, 999999);
         Confirm::create(['code' => $token, 'access' => $access]);
 
         return $token;

@@ -40,7 +40,7 @@ class PostController extends Controller
             'title' => 'required|max:40',
             'bangumiId' => 'required|integer',
             'desc' => 'required|max:120',
-            'content' => 'required|max:1000',
+            'content' => 'required|max:500',
             'images' => 'array'
         ]);
 
@@ -51,16 +51,17 @@ class PostController extends Controller
 
         $bangumiId = $request->get('bangumiId');
         $userId = $this->getAuthUserId();
-        $repository = new PostRepository();
+        $postRepository = new PostRepository();
+        $bangumiRepository = new BangumiRepository();
 
-        if (!$repository->checkPostLiked($bangumiId, $userId))
+        if (!$bangumiRepository->checkUserFollowed($userId, $bangumiId))
         {
             return $this->resErrRole('关注番剧后才能发帖');
         }
 
         $now = Carbon::now();
 
-        $id = $repository->create([
+        $id = $postRepository->create([
             'title' => Purifier::clean($request->get('title')),
             'content' => Purifier::clean($request->get('content')),
             'desc' => Purifier::clean($request->get('desc')),
@@ -72,7 +73,7 @@ class PostController extends Controller
             'updated_at' => $now
         ], $request->get('images'));
 
-        $cacheKey = $repository->bangumiListCacheKey($bangumiId);
+        $cacheKey = $postRepository->bangumiListCacheKey($bangumiId);
         Redis::pipeline(function ($pipe) use ($id, $cacheKey, $now, $userId)
         {
             if ($pipe->EXISTS($cacheKey))
