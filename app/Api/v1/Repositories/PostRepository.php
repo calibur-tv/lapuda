@@ -251,7 +251,8 @@ class PostRepository extends Repository
                     'from.zone AS from_user_zone',
                     'from.avatar AS from_user_avatar',
                     'to.nickname AS to_user_name',
-                    'to.zone AS to_user_zone'
+                    'to.zone AS to_user_zone',
+                    'posts.parent_id AS parent_id'
                 )->first();
 
             if (is_null($comment))

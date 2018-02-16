@@ -33,6 +33,11 @@ class Post extends Model
         'mark_count',       // 收藏数
     ];
 
+    public function getUpdatedAtColumn()
+    {
+        return null;
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
