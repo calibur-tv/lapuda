@@ -169,6 +169,12 @@ class UserRepository extends Repository
             {
                 $post = $parent;
             }
+
+            if (is_null($post) || is_null($parent))
+            {
+                return null;
+            }
+
             $data['post'] = $post;
             $data['parent'] = $parent;
             $data['images'] = $postRepository->images($data['id']);
@@ -265,7 +271,7 @@ class UserRepository extends Repository
                 $about = [
                     'resource' => $item['about_id'],
                     'title' => $post['title'],
-                    'link' => '/post/'.$postId . '#reply=' . $ids[0],
+                    'link' => '/post/'.$postId . '?reply=' . $ids[0],
                 ];
                 $model = 'post';
             }
@@ -278,7 +284,7 @@ class UserRepository extends Repository
                 $about = [
                     'resource' => $item['about_id'],
                     'title' => $post['title'],
-                    'link' => '/post/'.$postId.'#reply='.$replyId.'comment='.$commentId,
+                    'link' => '/post/'.$postId.'?reply='.$replyId.'&comment='.$commentId,
                 ];
                 $model = 'post';
             } else if ($type === 3)
@@ -296,7 +302,7 @@ class UserRepository extends Repository
                 $about = [
                     'resource' => $item['about_id'],
                     'title' => $post['title'],
-                    'link' => '/post/'.$ids[1].'#reply='.$ids[0]
+                    'link' => '/post/'.$ids[1].'?reply='.$ids[0]
                 ];
                 $model = 'post';
             }
