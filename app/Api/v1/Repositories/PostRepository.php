@@ -13,7 +13,6 @@ use App\Models\Post;
 use App\Models\PostImages;
 use App\Models\PostLike;
 use App\Models\PostMark;
-use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;

@@ -4,6 +4,7 @@ namespace App\Api\V1\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
+use Mews\Purifier\Facades\Purifier;
 
 /**
  * @Resource("搜索相关接口")
@@ -25,14 +26,14 @@ class SearchController extends Controller
      */
     public function index(Request $request)
     {
-        $key = $request->get('q');
+        $key = Purifier::clean($request->get('q'));
         if (!$key)
         {
             return $this->resOK();
         }
 
         $search = new Search();
-        $result = $search->index($request->get('q'));
+        $result = $search->index($key);
 
         return $this->resOK(empty($result) ? '' : $result[0]['fields']['url']);
     }
