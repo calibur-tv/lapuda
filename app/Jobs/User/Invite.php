@@ -37,7 +37,7 @@ class Invite implements ShouldQueue
      */
     public function handle()
     {
-        $inviteUser = User::where('id', $this->convertInviteCode($this->inviteCode, false))->select('id', 'phone', 'nickname')->first();
+        $inviteUser = User::where('id', $this->inviteCode)->select('id', 'phone', 'nickname')->first();
         if ($inviteUser)
         {
             $userRepository = new UserRepository();
@@ -60,12 +60,5 @@ class Invite implements ShouldQueue
                 ]);
             }
         }
-    }
-
-    private function convertInviteCode($id, $convert = true)
-    {
-        return $convert
-            ? base_convert($id * 1000 + rand(0, 999), 10, 36)
-            : intval(base_convert($id, 36, 10) / 1000);
     }
 }

@@ -176,10 +176,6 @@ class DoorController extends Controller
         $user = User::create($data);
         $userId = $user->id;
 
-        User::where('id', $userId)->update([
-           'invite_code' => $this->convertInviteCode($userId)
-        ]);
-
         $inviteCode = $request->get('inviteCode');
         if ($inviteCode)
         {
@@ -483,7 +479,7 @@ class DoorController extends Controller
         }
     }
 
-    private function convertInviteCode($id, $convert = true)
+    private function convertSlug($id, $convert = true)
     {
         return $convert
             ? base_convert($id * 1000 + rand(0, 999), 10, 36)
