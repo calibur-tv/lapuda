@@ -44,7 +44,7 @@ class VideoController extends Controller
 
         return $this->resOK([
             'info' => $videoTransformer->show($info),
-            'bangumi' => $bangumiTransformer->item($bangumi),
+            'bangumi' => $bangumiTransformer->video($bangumi),
             'season' => $season,
             'list' => $list
         ]);

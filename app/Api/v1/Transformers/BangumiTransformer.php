@@ -23,6 +23,19 @@ class BangumiTransformer extends Transformer
         });
     }
 
+    public function video($bangumi)
+    {
+        return $this->transformer($bangumi, function ($bangumi)
+        {
+            return [
+                'id' => (int)$bangumi['id'],
+                'name' => $bangumi['name'],
+                'avatar' => $bangumi['avatar'],
+                'others_site_video' => (boolean)$bangumi['others_site_video']
+            ];
+        });
+    }
+
     public function show($bangumi)
     {
         return $this->transformer($bangumi, function () use ($bangumi)
