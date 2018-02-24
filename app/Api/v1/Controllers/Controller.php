@@ -82,12 +82,12 @@ class Controller extends BaseController
         ], 403);
     }
 
-    protected function resErrParams($data = '')
+    protected function resErrParams($message = null)
     {
         return response([
             'code' => 40003,
-            'message' => config('error.40003'),
-            'data' => $data
+            'message' => $message ?: config('error.40003'),
+            'data' => ''
         ], 400);
     }
 
