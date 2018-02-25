@@ -52,7 +52,7 @@ class Create implements ShouldQueue
         foreach ($post['images'] as $url)
         {
             $tmp = explode('|http' ,$url);
-            $url = 'http' . end($tmp);
+            $url = count($tmp) === 2 ? 'http' . end($tmp) : $url;
             // 色情
             $respSex = json_decode(file_get_contents(env('website.image') . $url . '?qpulp'), true);
             if (intval($respSex['code']) !== 0)
