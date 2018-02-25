@@ -318,7 +318,7 @@ class PostRepository extends Repository
         }
     }
 
-    public function getNewIds()
+    public function getNewIds($force = false)
     {
         return $this->RedisSort('post_new_ids', function ()
         {
@@ -328,10 +328,10 @@ class PostRepository extends Repository
                 ->take(1000)
                 ->pluck('created_at', 'id');
 
-        }, true);
+        }, true, $force);
     }
 
-    public function getHotIds()
+    public function getHotIds($force = false)
     {
         return $this->RedisSort('post_hot_ids', function ()
         {
@@ -352,7 +352,7 @@ class PostRepository extends Repository
             }
 
             return $result;
-        });
+        }, false, $force);
     }
 
     public function checkPostLiked($postId, $userId)

@@ -12,20 +12,20 @@ namespace App\Console\Trending;
 use App\Api\V1\Repositories\PostRepository;
 use Illuminate\Console\Command;
 
-class PostHot extends Command
+class PostNew extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'PostHot';
+    protected $signature = 'PostNew';
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'compute post hot list';
+    protected $description = 'compute post new list';
     /**
      * Execute the console command.
      *
@@ -34,6 +34,6 @@ class PostHot extends Command
     public function handle()
     {
         $repository = new PostRepository();
-        $repository->getHotIds(true);
+        $repository->getNewIds(true);
     }
 }
