@@ -72,10 +72,9 @@ class Repository
         }
     }
 
-    public function RedisSort($key, $func, $isTime = false)
+    public function RedisSort($key, $func, $isTime = false, $force = false)
     {
-        $cache = Redis::ZREVRANGE($key, 0, -1);
-        if (empty($cache))
+        if ($force || empty($cache = Redis::ZREVRANGE($key, 0, -1)))
         {
             $cache = $func();
             $cache = gettype($cache) === 'array' ? $cache : $cache->toArray();
