@@ -29,7 +29,13 @@ class Video extends Model
     }
 
     public function getUrlAttribute($url) {
-        return $url ? config('website.video') . $url : '';
+        if (!$url) {
+            return '';
+        }
+        if (preg_match('/^(http|https)/', $url)) {
+            return $url;
+        }
+        return config('website.video') . $url;
     }
 
     public function getPosterAttribute($poster) {
