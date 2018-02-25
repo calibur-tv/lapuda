@@ -225,7 +225,7 @@ class PostController extends Controller
 
         Post::where('id', $id)->increment('comment_count');
         Post::where('id', $id)->update([
-            'updated_at' => date('Y-m-d h:i:s',time())
+            'updated_at' => date('Y-m-d H:i:s',time())
         ]);
         $cacheKey = $repository->bangumiListCacheKey($post['bangumi_id']);
         Redis::pipeline(function ($pipe) use ($id, $cacheKey, $now, $newId, $images, $userId)
@@ -317,7 +317,7 @@ class PostController extends Controller
 
         Post::where('id', $id)->increment('comment_count');
         Post::where('id', $id)->update([
-            'updated_at' => date('Y-m-d h:i:s',time())
+            'updated_at' => date('Y-m-d H:i:s',time())
         ]);
         Redis::pipeline(function ($pipe) use ($id, $newId, $userId)
         {
