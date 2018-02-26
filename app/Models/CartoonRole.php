@@ -13,7 +13,7 @@ class CartoonRole extends Model
         'avatar',
         'name',
         'intro',
-        'summary',
+        'alias',
         'star_count',
         'fans_count'
     ];
