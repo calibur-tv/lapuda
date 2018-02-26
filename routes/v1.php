@@ -52,6 +52,15 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/follow', 'App\Api\V1\Controllers\BangumiController@follow')->middleware(['jwt.auth', 'throttle:30,1']);
 
             $api->post('/followers', 'App\Api\V1\Controllers\BangumiController@followers')->middleware('throttle:30,1');
+
+            $api->group(['role' => '/{id}'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\CartoonRoleController@list');
+
+                $api->get('/fans', 'App\Api\V1\Controllers\CartoonRoleController@fans');
+
+                $api->post('/star', 'App\Api\V1\Controllers\CartoonRoleController@star');
+            });
         });
     });
 
@@ -152,5 +161,7 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/hot', 'App\Api\V1\Controllers\TrendingController@postHot');
         });
+
+        $api->get('/cartoon_role', 'App\Api\V1\Controllers\CartoonRoleController@trending');
     });
 });
