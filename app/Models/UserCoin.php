@@ -23,5 +23,6 @@ class UserCoin extends Model
      * 0：每日签到
      * 1：帖子
      * 2：邀请用户注册
+     * 3：为偶像应援
      */
 }

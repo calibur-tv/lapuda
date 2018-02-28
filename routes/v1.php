@@ -53,13 +53,13 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/followers', 'App\Api\V1\Controllers\BangumiController@followers')->middleware('throttle:30,1');
 
-            $api->group(['role' => '/{id}'], function ($api)
-            {
-                $api->get('/list', 'App\Api\V1\Controllers\CartoonRoleController@list');
+            $api->get('/roles', 'App\Api\V1\Controllers\CartoonRoleController@listOrBangumi');
 
+            $api->group(['role' => '/{roleId}'], function ($api)
+            {
                 $api->get('/fans', 'App\Api\V1\Controllers\CartoonRoleController@fans');
 
-                $api->post('/star', 'App\Api\V1\Controllers\CartoonRoleController@star');
+                $api->post('/star', 'App\Api\V1\Controllers\CartoonRoleController@star')->middleware(['jwt.auth']);
             });
         });
     });
