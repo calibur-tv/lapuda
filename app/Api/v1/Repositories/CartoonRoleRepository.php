@@ -64,4 +64,44 @@ class CartoonRoleRepository extends Repository
 
         return is_null($count) ? 0 : $count;
     }
+
+    public function newFansIds($roleId, $minId)
+    {
+        $ids = $this->RedisSort('cartoon_role_' . $roleId . '_new_fans_ids', function () use ($roleId)
+        {
+            return CartoonRoleFans::where('role_id', $roleId)
+                ->orderBy('created_at', 'desc')
+                ->latest()
+                ->take(100)
+                ->pluck('created_at', 'user_id AS id');
+
+        }, true);
+
+        if (!$minId)
+        {
+            return array_slice($ids, 0, 15);
+        }
+
+        if (!$index = array_search($minId - 1, $ids))
+        {
+            return [];
+        }
+
+        return array_slice($ids, $index, 15);
+    }
+
+    public function hotFansIds($roleId, $seenIds)
+    {
+        $ids = $this->RedisSort('cartoon_role_' . $roleId . '_hot_fans_ids', function () use ($roleId)
+        {
+            return CartoonRoleFans::where('role_id', $roleId)
+                ->orderBy('star_count', 'desc')
+                ->latest()
+                ->take(100)
+                ->pluck('star_count', 'user_id AS id');
+
+        }, false, false);
+
+        return array_slice(array_diff($ids, $seenIds), 0, 15);
+    }
 }

@@ -37,6 +37,7 @@ class Repository
                 $pipe->EXPIRE('lock_'.$key, 10);
                 $pipe->HMSET($key, gettype($cache) === 'array' ? $cache : $cache->toArray());
                 $pipe->EXPIREAT($key, $this->expire());
+                $pipe->DEL('lock_'.$key);
             });
         }
 
@@ -68,15 +69,16 @@ class Repository
                 $pipe->DEL($key);
                 $pipe->RPUSH($key, $cache);
                 $pipe->EXPIREAT($key, $this->expire());
+                $pipe->DEL('lock_'.$key);
             });
         }
 
         return $count === -1 ? array_slice($cache, $start) : array_slice($cache, $start, $count);
     }
 
-    public function RedisSort($key, $func, $isTime = false, $force = false)
+    public function RedisSort($key, $func, $isTime = false, $force = false, $withScore = false)
     {
-        $cache = Redis::ZREVRANGE($key, 0, -1);
+        $cache = $withScore ? Redis::ZREVRANGE($key, 0, -1, 'WITHSCORES') : Redis::ZREVRANGE($key, 0, -1);
 
         if ($force || empty($cache))
         {
@@ -104,10 +106,11 @@ class Repository
                     $pipe->DEL($key);
                     $pipe->ZADD($key, $cache);
                     $pipe->EXPIREAT($key, $this->expire());
+                    $pipe->DEL('lock_'.$key);
                 });
             }
 
-            return array_keys($cache);
+            return $withScore ? $cache : array_keys($cache);
         }
 
         return $cache;

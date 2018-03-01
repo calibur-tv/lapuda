@@ -55,7 +55,7 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->get('/roles', 'App\Api\V1\Controllers\CartoonRoleController@listOrBangumi');
 
-            $api->group(['role' => '/{roleId}'], function ($api)
+            $api->group(['prefix' => '/role/{roleId}'], function ($api)
             {
                 $api->get('/fans', 'App\Api\V1\Controllers\CartoonRoleController@fans');
 
@@ -162,6 +162,6 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/hot', 'App\Api\V1\Controllers\TrendingController@postHot');
         });
 
-        $api->get('/cartoon_role', 'App\Api\V1\Controllers\CartoonRoleController@trending');
+        $api->get('/cartoon_role', 'App\Api\V1\Controllers\TrendingController@cartoonRole');
     });
 });
