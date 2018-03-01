@@ -171,7 +171,8 @@ class PostRepository extends Repository
         {
             return Post::where('parent_id', $postId)
                 ->orderBy('created_at', 'ASC')
-                ->pluck('id');
+                ->pluck('id')
+                ->toArray();
         });
 
         if (empty($cache))

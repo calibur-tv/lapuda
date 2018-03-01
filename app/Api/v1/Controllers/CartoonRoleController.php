@@ -5,7 +5,10 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
+use App\Models\CartoonRole;
+use App\Models\CartoonRoleFans;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redis;
 
 class CartoonRoleController extends Controller
 {
@@ -54,8 +57,33 @@ class CartoonRoleController extends Controller
             return $this->resErrRole('没有足够的金币');
         }
 
-        // check has follow
-        // change table and cache
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        if ($cartoonRoleRepository->checkHasStar($roleId, $userId))
+        {
+            CartoonRoleFans::whereRaw('role_id = ? and user_id = ?', [$roleId, $userId])->increment('star_count');
+            // todo cartoonRoleFans cache
+        }
+        else
+        {
+            CartoonRoleFans::create([
+                'role_id' => $roleId,
+                'user_id' => $userId,
+                'star_count' => 1
+            ]);
+            // todo cartoonRoleFans cache
+            CartoonRole::where('id', $roleId)->increment('fans_count');
+
+            if (Redis::EXISTS('cartoon_role_'.$roleId))
+            {
+                Redis::HINCRBYFLOAT('cartoon_role_'.$roleId, 'fans_count', 1);
+            }
+        }
+        CartoonRole::where('id', $roleId)->increment('star_count');
+        if (Redis::EXISTS('cartoon_role_'.$roleId))
+        {
+            Redis::HINCRBYFLOAT('cartoon_role_'.$roleId, 'star_count', 1);
+        }
+
         return $this->resNoContent();
     }
 
@@ -64,8 +92,10 @@ class CartoonRoleController extends Controller
 
     }
 
-    public function fans()
+    public function fans(Request $request, $roleId)
     {
-
+        $sort = $request->get('sort') ?: 'new';
+        $page = $request->get('page') ?: 1;
+        // hot 应该用 seenId, new 应该用 maxId
     }
 }

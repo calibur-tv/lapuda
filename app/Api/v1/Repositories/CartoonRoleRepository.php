@@ -27,7 +27,7 @@ class CartoonRoleRepository extends Repository
            $userId = CartoonRoleFans::where('role_id', $id)->orderBy('star_count', 'DESC')->pluck('user_id')->first();
            $role->loverId = !is_null($userId) && count($userId) <= 3 ? intval($userId[0]) : 0;
 
-           return $role;
+           return $role->toArray();
         });
     }
 
@@ -56,5 +56,12 @@ class CartoonRoleRepository extends Repository
                 ->skip(15 * ($page - 1))
                 ->pluck('id');
         });
+    }
+
+    public function checkHasStar($roleId, $userId)
+    {
+        $count = CartoonRoleFans::whereRaw('role_id = ? and user_id = ?', [$roleId, $userId])->pluck('star_count')->first();
+
+        return is_null($count) ? 0 : $count;
     }
 }
