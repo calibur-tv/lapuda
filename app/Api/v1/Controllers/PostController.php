@@ -40,7 +40,7 @@ class PostController extends Controller
             'title' => 'required|max:40',
             'bangumiId' => 'required|integer',
             'desc' => 'required|max:120',
-            'content' => 'required|max:500',
+            'content' => 'required|max:600',
             'images' => 'array'
         ]);
 
@@ -192,7 +192,7 @@ class PostController extends Controller
     public function reply(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'content' => 'required|max:1000',
+            'content' => 'required|max:600',
             'images' => 'array'
         ]);
 

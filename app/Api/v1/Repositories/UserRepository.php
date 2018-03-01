@@ -220,7 +220,10 @@ class UserRepository extends Repository
                 'type_id' => $type_id
             ]);
 
-            User::where('id', $toUserId)->increment('coin_count', 1);
+            if ($toUserId)
+            {
+                User::where('id', $toUserId)->increment('coin_count', 1);
+            }
 
             if ($type !== 2)
             {

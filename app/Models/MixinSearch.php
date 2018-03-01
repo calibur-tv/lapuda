@@ -30,5 +30,6 @@ class MixinSearch extends Model
      * 1: 用户
      * 2：番剧
      * 3：帖子
+     * 4：角色
      */
 }

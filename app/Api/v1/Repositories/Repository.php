@@ -14,67 +14,73 @@ use Illuminate\Support\Facades\Cache;
 
 class Repository
 {
-    /*
-     * 让缓存在第二天凌晨的 1 点到 3点失效，是为了弱化缓存风暴，但并没有解决
-     */
-
     public function RedisHash($key, $func)
     {
         $cache = Redis::HGETALL($key);
-        if (empty($cache))
+
+        if (!empty($cache))
         {
-            $cache = $func();
+            return $cache;
+        }
 
-            if (is_null($cache))
-            {
-                return null;
-            }
+        $cache = $func();
 
+        if (is_null($cache))
+        {
+            return null;
+        }
+
+        if (Redis::SETNX('lock_'.$key, 1))
+        {
             Redis::pipeline(function ($pipe) use ($key, $cache)
             {
+                $pipe->EXPIRE('lock_'.$key, 10);
                 $pipe->HMSET($key, gettype($cache) === 'array' ? $cache : $cache->toArray());
                 $pipe->EXPIREAT($key, $this->expire());
+                $pipe->DEL('lock_'.$key);
             });
+        }
 
-            return $cache;
-        }
-        else
-        {
-            return $cache;
-        }
+        return $cache;
     }
 
     public function RedisList($key, $func, $start = 0, $count = -1)
     {
         $cache = Redis::LRANGE($key, $start, $count === -1 ? -1 : $count + $start - 1);
-        if (empty($cache))
-        {
-            $cache = $func();
-            $cache = gettype($cache) === 'array' ? $cache : $cache->toArray();
 
-            if (empty($cache))
-            {
-                return [];
-            }
-
-            Redis::pipeline(function ($pipe) use ($key, $cache)
-            {
-                $pipe->DEL($key);
-                $pipe->RPUSH($key, $cache);
-                $pipe->EXPIREAT($key, $this->expire());
-            });
-
-            return $count === -1 ? array_slice($cache, $start) : array_slice($cache, $start, $count);
-        }
-        else
+        if (!empty($cache))
         {
             return $cache;
         }
+
+        $cache = $func();
+        $cache = gettype($cache) === 'array' ? $cache : $cache->toArray();
+
+        if (empty($cache))
+        {
+            return [];
+        }
+
+        if (Redis::SETNX('lock_'.$key, 1))
+        {
+            Redis::pipeline(function ($pipe) use ($key, $cache)
+            {
+                $pipe->EXPIRE('lock_'.$key, 10);
+                $pipe->DEL($key);
+                $pipe->RPUSH($key, $cache);
+                $pipe->EXPIREAT($key, $this->expire());
+                $pipe->DEL('lock_'.$key);
+            });
+        }
+
+        return $count === -1 ? array_slice($cache, $start) : array_slice($cache, $start, $count);
     }
 
-    public function RedisSort($key, $func, $isTime = false, $force = false)
+    public function RedisSort($key, $func, $isTime = false, $force = false, $withScore = false)
     {
-        if ($force || empty($cache = Redis::ZREVRANGE($key, 0, -1)))
+        $cache = $withScore ? Redis::ZREVRANGE($key, 0, -1, 'WITHSCORES') : Redis::ZREVRANGE($key, 0, -1);
+
+        if ($force || empty($cache))
         {
             $cache = $func();
             $cache = gettype($cache) === 'array' ? $cache : $cache->toArray();
@@ -92,19 +98,22 @@ class Repository
                 }
             }
 
-            Redis::pipeline(function ($pipe) use ($key, $cache)
+            if (Redis::SETNX('lock_'.$key, 1))
             {
-                $pipe->DEL($key);
-                $pipe->ZADD($key, $cache);
-                $pipe->EXPIREAT($key, $this->expire());
-            });
+                Redis::pipeline(function ($pipe) use ($key, $cache)
+                {
+                    $pipe->EXPIRE('lock_'.$key, 10);
+                    $pipe->DEL($key);
+                    $pipe->ZADD($key, $cache);
+                    $pipe->EXPIREAT($key, $this->expire());
+                    $pipe->DEL('lock_'.$key);
+                });
+            }
 
-            return array_keys($cache);
+            return $withScore ? $cache : array_keys($cache);
         }
-        else
-        {
-            return $cache;
-        }
+
+        return $cache;
     }
 
     public function Cache($key, $func, $exp = null)
