@@ -6,15 +6,38 @@ use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\UserTransformer;
+use App\Models\Bangumi;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 
+/**
+ * @Resource("动漫角色相关接口")
+ */
 class CartoonRoleController extends Controller
 {
+    /**
+     * 获取番剧角色列表
+     *
+     * @Get("/bangumi/${bangumiId}/roles")
+     *
+     * @Parameters({
+     *      @Parameter("page", description="页码", default=1)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "角色列表"}),
+     *      @Response(404, body={"code": 40003, "message": "不存在的番剧", "data": ""})
+     * })
+     */
     public function listOrBangumi(Request $request, $bangumiId)
     {
+        if (!Bangumi::where('id', $bangumiId)->count())
+        {
+            return $this->resErrNotFound('不存在的番剧');
+        }
+
         $page = intval($request->get('page')) ?: 1;
 
         $cartoonRoleRepository = new CartoonRoleRepository();
@@ -119,10 +142,17 @@ class CartoonRoleController extends Controller
         }
 
         $userRepository = new UserRepository();
-        $users = $userRepository->list($ids);
+        $users = [];
+        $i = 0;
+        foreach ($ids as $id => $score)
+        {
+            $users[] = $userRepository->item($id);
+            $users[$i]['score'] = $score;
+            $i++;
+        }
 
-        $transformer = new UserTransformer();
+        $transformer = new CartoonRoleTransformer();
 
-        return $this->resOK($transformer->list($users));
+        return $this->resOK($transformer->fans($users));
     }
 }
