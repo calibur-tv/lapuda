@@ -23,4 +23,9 @@ class CartoonRole extends Model
         'fans_count' => 'integer',
         'star_count' => 'integer',
     ];
+
+    public function getAvatarAttribute($avatar)
+    {
+        return config('website.image').($avatar ? $avatar : 'avatar');
+    }
 }
