@@ -36,4 +36,18 @@ class CartoonRoleTransformer extends Transformer
             ];
         });
     }
+
+    public function fans($users)
+    {
+        return $this->collection($users, function ($user)
+        {
+            return [
+                'id' => (int)$user['id'],
+                'zone' => $user['zone'],
+                'avatar' => $user['avatar'],
+                'nickname' => $user['nickname'],
+                'score' => (int)$user['score']
+            ];
+        });
+    }
 }

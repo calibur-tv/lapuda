@@ -106,4 +106,9 @@ class TrendingController extends Controller
 
         return $this->resOK($transformer->trending($list));
     }
+
+    public function cartoonRole()
+    {
+        
+    }
 }

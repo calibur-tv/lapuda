@@ -10,6 +10,7 @@ namespace App\Api\V1\Repositories;
 
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
+use Mockery\Exception;
 
 class CartoonRoleRepository extends Repository
 {
@@ -65,8 +66,10 @@ class CartoonRoleRepository extends Repository
         return is_null($count) ? 0 : $count;
     }
 
-    public function newFansIds($roleId, $minId)
+    public function newFansIds($roleId, $minId, $count = null)
     {
+        $take = $count ?: config('website.list_count');
+
         $ids = $this->RedisSort('cartoon_role_' . $roleId . '_new_fans_ids', function () use ($roleId)
         {
             return CartoonRoleFans::where('role_id', $roleId)
@@ -75,19 +78,20 @@ class CartoonRoleRepository extends Repository
                 ->take(100)
                 ->pluck('created_at', 'user_id AS id');
 
-        }, true);
+        }, true, false, true);
 
-        if (!$minId)
-        {
-            return array_slice($ids, 0, 15);
-        }
-
-        if (!$index = array_search($minId - 1, $ids))
+        if (empty($ids))
         {
             return [];
         }
 
-        return array_slice($ids, $index, 15);
+        $keys = array_keys($ids);
+        if (!$minId || !in_array($minId, $keys))
+        {
+            return array_slice($ids, 0, $take, true);
+        }
+
+        return array_slice($ids, array_search($minId, $keys) + 1, $take, true);
     }
 
     public function hotFansIds($roleId, $seenIds)
@@ -100,8 +104,21 @@ class CartoonRoleRepository extends Repository
                 ->take(100)
                 ->pluck('star_count', 'user_id AS id');
 
-        }, false, false);
+        }, false, false, true);
 
-        return array_slice(array_diff($ids, $seenIds), 0, 15);
+        if (empty($ids))
+        {
+            return [];
+        }
+
+        foreach ($ids as $key => $val)
+        {
+            if (in_array($key, $seenIds))
+            {
+                unset($ids[$key]);
+            }
+        }
+
+        return array_slice($ids, 0, config('website.list_count'), true);
     }
 }
