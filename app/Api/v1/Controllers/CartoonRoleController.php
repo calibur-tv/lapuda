@@ -87,10 +87,15 @@ class CartoonRoleController extends Controller
             CartoonRoleFans::whereRaw('role_id = ? and user_id = ?', [$roleId, $userId])->increment('star_count');
             Redis::pipeline(function ($pipe) use ($roleId, $userId)
             {
+                $trendingKey = 'cartoon_role_trending_' . $roleId;
                 $pipe->ZINCRBY('cartoon_role_' . $roleId . '_hot_fans_ids', 1, $userId);
                 if ($pipe->EXISTS('cartoon_role_'.$roleId))
                 {
                     $pipe->HINCRBYFLOAT('cartoon_role_'.$roleId, 'star_count', 1);
+                }
+                if ($pipe->EXISTS($trendingKey))
+                {
+                    $pipe->HINCRBYFLOAT($trendingKey, 'star_count', 1);
                 }
             });
         }
@@ -108,6 +113,7 @@ class CartoonRoleController extends Controller
             {
                 $newCacheKey = 'cartoon_role_' . $roleId . '_new_fans_ids';
                 $hotCacheKey = 'cartoon_role_' . $roleId . '_hot_fans_ids';
+                $trendingKey = 'cartoon_role_trending_' . $roleId;
                 if ($pipe->EXISTS($newCacheKey))
                 {
                     $pipe->ZADD($newCacheKey, strtotime('now'), $userId);
@@ -120,6 +126,11 @@ class CartoonRoleController extends Controller
                 {
                     $pipe->HINCRBYFLOAT('cartoon_role_'.$roleId, 'fans_count', 1);
                     $pipe->HINCRBYFLOAT('cartoon_role_'.$roleId, 'star_count', 1);
+                }
+                if ($pipe->EXISTS($trendingKey))
+                {
+                    $pipe->HINCRBYFLOAT($trendingKey, 'fans_count', 1);
+                    $pipe->HINCRBYFLOAT($trendingKey, 'star_count', 1);
                 }
             });
         }

@@ -31,7 +31,7 @@ class CartoonRoleRepository extends Repository
            $role->loverId = !is_null($userId) && count($userId) <= 3 ? intval($userId[0]) : 0;
 
            return $role->toArray();
-        });
+        }, 'h');
     }
 
     public function list($ids)
@@ -184,6 +184,6 @@ class CartoonRoleRepository extends Repository
             ];
 
             return $result;
-        });
+        }, 'h');
     }
 }
