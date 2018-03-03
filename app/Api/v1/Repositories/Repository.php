@@ -118,7 +118,7 @@ class Repository
 
     public function Cache($key, $func, $exp = 'd')
     {
-        return Cache::remember($key, is_null($exp) ? $this->expire($exp) : $exp, function () use ($func)
+        return Cache::remember($key, $this->expire($exp), function () use ($func)
         {
             return $func();
         });
