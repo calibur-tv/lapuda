@@ -50,15 +50,15 @@ class CartoonRoleRepository extends Repository
         return $result;
     }
 
-    public function bangumiOfIds($bangumiId, $page)
+    public function bangumiOfIds($bangumiId)
     {
-        return $this->RedisList('bangumi_' . $bangumiId . 'cartoon_role_page_' . $page, function () use ($bangumiId, $page)
+        return $this->RedisSort('bangumi_' . $bangumiId . 'cartoon_role_ids', function () use ($bangumiId)
         {
             return CartoonRole::where('bangumi_id', $bangumiId)
-                ->take(15)
-                ->skip(15 * ($page - 1))
-                ->pluck('id');
-        });
+                ->orderBy('star_count', 'desc')
+                ->latest()
+                ->pluck('fans_count', 'id');
+        }, false, false, false, 'm');
     }
 
     public function checkHasStar($roleId, $userId)

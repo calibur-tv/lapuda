@@ -23,7 +23,6 @@ class CartoonRoleController extends Controller
      * @Get("/bangumi/${bangumiId}/roles")
      *
      * @Parameters({
-     *      @Parameter("page", description="页码", default=1)
      * })
      *
      * @Transaction({
@@ -38,10 +37,10 @@ class CartoonRoleController extends Controller
             return $this->resErrNotFound('不存在的番剧');
         }
 
-        $page = intval($request->get('page')) ?: 1;
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
 
         $cartoonRoleRepository = new CartoonRoleRepository();
-        $ids = $cartoonRoleRepository->bangumiOfIds($bangumiId, $page);
+        $ids = array_slice(array_diff($cartoonRoleRepository->bangumiOfIds($bangumiId), $seen), 0, config('website.list_count'));
 
         if (empty($ids))
         {

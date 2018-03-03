@@ -46,7 +46,7 @@ class Repository
         return $count === -1 ? array_slice($cache, $start) : array_slice($cache, $start, $count);
     }
 
-    public function RedisSort($key, $func, $isTime = false, $force = false, $withScore = false)
+    public function RedisSort($key, $func, $isTime = false, $force = false, $withScore = false, $exp = 'd')
     {
         $cache = $withScore ? Redis::ZREVRANGE($key, 0, -1, 'WITHSCORES') : Redis::ZREVRANGE($key, 0, -1);
 
@@ -70,12 +70,12 @@ class Repository
 
             if (Redis::SETNX('lock_'.$key, 1))
             {
-                Redis::pipeline(function ($pipe) use ($key, $cache)
+                Redis::pipeline(function ($pipe) use ($key, $cache, $exp)
                 {
                     $pipe->EXPIRE('lock_'.$key, 10);
                     $pipe->DEL($key);
                     $pipe->ZADD($key, $cache);
-                    $pipe->EXPIREAT($key, $this->expire());
+                    $pipe->EXPIREAT($key, $this->expire($exp));
                     $pipe->DEL('lock_'.$key);
                 });
             }
