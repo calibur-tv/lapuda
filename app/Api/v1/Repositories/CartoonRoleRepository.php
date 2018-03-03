@@ -27,8 +27,11 @@ class CartoonRoleRepository extends Repository
                return null;
            }
 
-           $userId = CartoonRoleFans::where('role_id', $id)->orderBy('star_count', 'DESC')->pluck('user_id')->first();
-           $role->loverId = !is_null($userId) && count($userId) <= 3 ? intval($userId[0]) : 0;
+           $userId = CartoonRoleFans::where('role_id', $id)
+               ->orderBy('star_count', 'DESC')
+               ->pluck('user_id')
+               ->first();
+           $role->loverId = is_null($userId) ? 0 : intval($userId);
 
            return $role->toArray();
         }, 'h');
@@ -65,7 +68,7 @@ class CartoonRoleRepository extends Repository
     {
         $count = CartoonRoleFans::whereRaw('role_id = ? and user_id = ?', [$roleId, $userId])->pluck('star_count')->first();
 
-        return is_null($count) ? 0 : $count;
+        return is_null($count) ? 0 : intval($count);
     }
 
     public function newFansIds($roleId, $minId, $count = null)
@@ -75,10 +78,10 @@ class CartoonRoleRepository extends Repository
         $ids = $this->RedisSort('cartoon_role_' . $roleId . '_new_fans_ids', function () use ($roleId)
         {
             return CartoonRoleFans::where('role_id', $roleId)
-                ->orderBy('created_at', 'desc')
+                ->orderBy('updated_at', 'desc')
                 ->latest()
                 ->take(100)
-                ->pluck('created_at', 'user_id AS id');
+                ->pluck('updated_at', 'user_id AS id');
 
         }, true, false, true);
 

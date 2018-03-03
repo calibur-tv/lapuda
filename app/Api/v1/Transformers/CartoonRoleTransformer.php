@@ -32,7 +32,8 @@ class CartoonRoleTransformer extends Transformer
                         'zone' => $user['zone'],
                         'nickname' => $user['nickname']
                     ];
-                }) : null
+                }) : null,
+                'has_star' => $role['hasStar']
             ];
         });
     }

@@ -56,13 +56,14 @@ class CartoonRoleController extends Controller
             if ($item['loverId'])
             {
                 $roles[$i]['lover'] = $userRepository->item($item['loverId']);
-                $roles[$i]['loveMe'] = $userId === $item['loverId'];
+                $roles[$i]['loveMe'] = $userId === intval($item['loverId']);
             }
             else
             {
                 $roles[$i]['lover'] = null;
                 $roles[$i]['loveMe'] = false;
             }
+            $roles[$i]['hasStar'] = $userId ? $cartoonRoleRepository->checkHasStar($item['id'], $userId) : 0;
         }
 
         $transformer = new CartoonRoleTransformer();
