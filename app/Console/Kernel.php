@@ -15,6 +15,7 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         Trending\PostHot::class,
         Trending\PostNew::class,
+        Trending\CartoonRole::class,
         Trail\BlackWords::class,
     ];
 
@@ -32,6 +33,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('PostNew')
             ->everyMinute()
             ->withoutOverlapping();
+        $schedule->command('CartoonRole')
+            ->everyFiveMinutes();
         $schedule->command('BlackWords')
             ->everyFiveMinutes();
     }

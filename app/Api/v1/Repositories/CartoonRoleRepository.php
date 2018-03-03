@@ -10,10 +10,12 @@ namespace App\Api\V1\Repositories;
 
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
-use Mockery\Exception;
 
 class CartoonRoleRepository extends Repository
 {
+    protected $userRepository;
+    protected $bangumiRepository;
+
     public function item($id)
     {
         return $this->RedisHash('cartoon_role_' . $id, function () use ($id)
@@ -25,11 +27,14 @@ class CartoonRoleRepository extends Repository
                return null;
            }
 
-           $userId = CartoonRoleFans::where('role_id', $id)->orderBy('star_count', 'DESC')->pluck('user_id')->first();
-           $role->loverId = !is_null($userId) && count($userId) <= 3 ? intval($userId[0]) : 0;
+           $userId = CartoonRoleFans::where('role_id', $id)
+               ->orderBy('star_count', 'DESC')
+               ->pluck('user_id')
+               ->first();
+           $role->loverId = is_null($userId) ? 0 : intval($userId);
 
            return $role->toArray();
-        });
+        }, 'h');
     }
 
     public function list($ids)
@@ -48,22 +53,22 @@ class CartoonRoleRepository extends Repository
         return $result;
     }
 
-    public function bangumiOfIds($bangumiId, $page)
+    public function bangumiOfIds($bangumiId)
     {
-        return $this->RedisList('bangumi_' . $bangumiId . 'cartoon_role_page_' . $page, function () use ($bangumiId, $page)
+        return $this->RedisSort('bangumi_' . $bangumiId . 'cartoon_role_ids', function () use ($bangumiId)
         {
             return CartoonRole::where('bangumi_id', $bangumiId)
-                ->take(15)
-                ->skip(15 * ($page - 1))
-                ->pluck('id');
-        });
+                ->orderBy('star_count', 'desc')
+                ->latest()
+                ->pluck('fans_count', 'id');
+        }, false, false, false, 'm');
     }
 
     public function checkHasStar($roleId, $userId)
     {
         $count = CartoonRoleFans::whereRaw('role_id = ? and user_id = ?', [$roleId, $userId])->pluck('star_count')->first();
 
-        return is_null($count) ? 0 : $count;
+        return is_null($count) ? 0 : intval($count);
     }
 
     public function newFansIds($roleId, $minId, $count = null)
@@ -73,10 +78,10 @@ class CartoonRoleRepository extends Repository
         $ids = $this->RedisSort('cartoon_role_' . $roleId . '_new_fans_ids', function () use ($roleId)
         {
             return CartoonRoleFans::where('role_id', $roleId)
-                ->orderBy('created_at', 'desc')
+                ->orderBy('updated_at', 'desc')
                 ->latest()
                 ->take(100)
-                ->pluck('created_at', 'user_id AS id');
+                ->pluck('updated_at', 'user_id AS id');
 
         }, true, false, true);
 
@@ -120,5 +125,68 @@ class CartoonRoleRepository extends Repository
         }
 
         return array_slice($ids, 0, config('website.list_count'), true);
+    }
+
+    public function trendingIds($force = false)
+    {
+        return $this->RedisSort('cartoon_role_trending_ids', function ()
+        {
+            return CartoonRole::where('fans_count', '>', 0)
+                ->orderBy('star_count', 'desc')
+                ->latest()
+                ->take(100)
+                ->pluck('star_count', 'id');
+
+        }, false, $force);
+    }
+
+    public function trendingItem($roleId)
+    {
+        return $this->RedisHash('cartoon_role_trending_' . $roleId, function () use ($roleId)
+        {
+            $role = $this->item($roleId);
+
+            if (is_null($role))
+            {
+                return null;
+            }
+
+            if (is_null($this->bangumiRepository))
+            {
+                $this->bangumiRepository = new BangumiRepository();
+            }
+
+            $bangumi = $this->bangumiRepository->item($role['bangumi_id']);
+
+            if (is_null($bangumi))
+            {
+                return null;
+            }
+
+            if (is_null($this->userRepository))
+            {
+                $this->userRepository = new UserRepository();
+            }
+
+            $user = $this->userRepository->item($role['loverId']);
+
+            $result = [
+                'id' => $role['id'],
+                'avatar' => $role['avatar'],
+                'name' => $role['name'],
+                'intro' => $role['intro'],
+                'star_count' => $role['star_count'],
+                'fans_count' => $role['fans_count'],
+                'bangumi_id' => $role['bangumi_id'],
+                'bangumi_avatar' => $bangumi['avatar'],
+                'bangumi_name' => $bangumi['name'],
+                'lover_id' => $role['loverId'],
+                'lover_avatar' => $user['avatar'],
+                'lover_nickname' => $user['nickname'],
+                'lover_zone' => $user['zone']
+            ];
+
+            return $result;
+        }, 'h');
     }
 }

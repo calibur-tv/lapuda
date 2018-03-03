@@ -23,7 +23,6 @@ class CartoonRoleController extends Controller
      * @Get("/bangumi/${bangumiId}/roles")
      *
      * @Parameters({
-     *      @Parameter("page", description="页码", default=1)
      * })
      *
      * @Transaction({
@@ -38,10 +37,10 @@ class CartoonRoleController extends Controller
             return $this->resErrNotFound('不存在的番剧');
         }
 
-        $page = intval($request->get('page')) ?: 1;
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
 
         $cartoonRoleRepository = new CartoonRoleRepository();
-        $ids = $cartoonRoleRepository->bangumiOfIds($bangumiId, $page);
+        $ids = array_slice(array_diff($cartoonRoleRepository->bangumiOfIds($bangumiId), $seen), 0, config('website.list_count'));
 
         if (empty($ids))
         {
@@ -57,13 +56,14 @@ class CartoonRoleController extends Controller
             if ($item['loverId'])
             {
                 $roles[$i]['lover'] = $userRepository->item($item['loverId']);
-                $roles[$i]['loveMe'] = $userId === $item['loverId'];
+                $roles[$i]['loveMe'] = $userId === intval($item['loverId']);
             }
             else
             {
                 $roles[$i]['lover'] = null;
                 $roles[$i]['loveMe'] = false;
             }
+            $roles[$i]['hasStar'] = $userId ? $cartoonRoleRepository->checkHasStar($item['id'], $userId) : 0;
         }
 
         $transformer = new CartoonRoleTransformer();
@@ -87,10 +87,15 @@ class CartoonRoleController extends Controller
             CartoonRoleFans::whereRaw('role_id = ? and user_id = ?', [$roleId, $userId])->increment('star_count');
             Redis::pipeline(function ($pipe) use ($roleId, $userId)
             {
+                $trendingKey = 'cartoon_role_trending_' . $roleId;
                 $pipe->ZINCRBY('cartoon_role_' . $roleId . '_hot_fans_ids', 1, $userId);
                 if ($pipe->EXISTS('cartoon_role_'.$roleId))
                 {
                     $pipe->HINCRBYFLOAT('cartoon_role_'.$roleId, 'star_count', 1);
+                }
+                if ($pipe->EXISTS($trendingKey))
+                {
+                    $pipe->HINCRBYFLOAT($trendingKey, 'star_count', 1);
                 }
             });
         }
@@ -108,6 +113,7 @@ class CartoonRoleController extends Controller
             {
                 $newCacheKey = 'cartoon_role_' . $roleId . '_new_fans_ids';
                 $hotCacheKey = 'cartoon_role_' . $roleId . '_hot_fans_ids';
+                $trendingKey = 'cartoon_role_trending_' . $roleId;
                 if ($pipe->EXISTS($newCacheKey))
                 {
                     $pipe->ZADD($newCacheKey, strtotime('now'), $userId);
@@ -120,6 +126,11 @@ class CartoonRoleController extends Controller
                 {
                     $pipe->HINCRBYFLOAT('cartoon_role_'.$roleId, 'fans_count', 1);
                     $pipe->HINCRBYFLOAT('cartoon_role_'.$roleId, 'star_count', 1);
+                }
+                if ($pipe->EXISTS($trendingKey))
+                {
+                    $pipe->HINCRBYFLOAT($trendingKey, 'fans_count', 1);
+                    $pipe->HINCRBYFLOAT($trendingKey, 'star_count', 1);
                 }
             });
         }

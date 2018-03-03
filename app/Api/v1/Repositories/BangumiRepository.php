@@ -195,7 +195,7 @@ class BangumiRepository extends Repository
 
     public function tags($bangumiId)
     {
-        return $this->Cache('bangumi_'.$bangumiId.'_tags', function () use ($bangumiId)
+        return $this->Cache('bangumi_'. $bangumiId .'_tags', function () use ($bangumiId)
         {
             $ids = BangumiTag::where('bangumi_id', $bangumiId)
                 ->pluck('tag_id')

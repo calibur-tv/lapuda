@@ -32,7 +32,8 @@ class CartoonRoleTransformer extends Transformer
                         'zone' => $user['zone'],
                         'nickname' => $user['nickname']
                     ];
-                }) : null
+                }) : null,
+                'has_star' => $role['hasStar']
             ];
         });
     }
@@ -48,6 +49,30 @@ class CartoonRoleTransformer extends Transformer
                 'nickname' => $user['nickname'],
                 'score' => (int)$user['score']
             ];
+        });
+    }
+
+    public function trending($list)
+    {
+        return $this->collection($list, function ($user)
+        {
+            $result = [
+                'id' => (int)$user['id'],
+                'avatar' => $user['avatar'],
+                'name' => $user['name'],
+                'intro' => $user['intro'],
+                'star_count' => (int)$user['star_count'],
+                'fans_count' => (int)$user['fans_count'],
+                'bangumi_id' => (int)$user['bangumi_id'],
+                'bangumi_avatar' => $user['bangumi_avatar'],
+                'bangumi_name' => $user['bangumi_name'],
+                'lover_id' => (int)$user['lover_id'],
+                'lover_avatar' => $user['lover_avatar'],
+                'lover_nickname' => $user['lover_nickname'],
+                'lover_zone' => $user['lover_zone']
+            ];
+
+            return $result;
         });
     }
 }
