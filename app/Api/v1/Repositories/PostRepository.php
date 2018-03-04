@@ -284,13 +284,13 @@ class PostRepository extends Repository
              * 删除主题帖的 ids （所有列表和仅楼主列表）
              */
             Post::where('id', $parentId)->increment('comment_count', -1);
+            if (Redis::EXISTS('post_'.$parentId))
+            {
+                Redis::HINCRBYFLOAT('post_'.$parentId, 'comment_count', -1);
+            }
             Redis::pipeline(function ($pipe) use ($parentId, $userId, $postId)
             {
                 $pipe->LREM('user_'.$userId.'_replyPostIds', 1, $postId);
-                if ($pipe->EXISTS('post_'.$parentId))
-                {
-                    $pipe->HINCRBYFLOAT('post_'.$parentId, 'comment_count', -1);
-                }
                 $pipe->DEL('post_'.$parentId.'_ids');
                 $pipe->DEL('post_'.$parentId.'_ids_only');
             });

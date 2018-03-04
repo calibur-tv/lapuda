@@ -128,14 +128,14 @@ class BangumiRepository extends Repository
         }
 
         Bangumi::where('id', $bangumi_id)->increment('count_like', $num);
+        if (Redis::EXISTS('bangumi_'.$bangumi_id))
+        {
+            Redis::HINCRBYFLOAT('bangumi_'.$bangumi_id, 'count_like', $num);
+        }
         Redis::pipeline(function ($pipe) use ($result, $num, $bangumi_id, $user_id)
         {
             $bangumiFollowsCacheKey = 'bangumi_'.$bangumi_id.'_followersIds';
             $userFollowsCacheKey = 'user_'.$user_id.'_followBangumiIds';
-            if ($pipe->EXISTS('bangumi_'.$bangumi_id))
-            {
-                $pipe->HINCRBYFLOAT('bangumi_'.$bangumi_id, 'count_like', $num);
-            }
             if ($result)
             {
                 $pipe->LPUSHX($userFollowsCacheKey, $bangumi_id);
