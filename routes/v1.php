@@ -103,6 +103,8 @@ $api->version(['v1', 'latest'], function ($api)
             $api->group(['prefix' => '/followed'], function ($api)
             {
                 $api->get('/bangumi', 'App\Api\V1\Controllers\UserController@followedBangumis');
+
+                $api->get('/role', 'App\Api\V1\Controllers\UserController@followedRoles');
             });
 
             $api->group(['prefix' => '/posts'], function ($api)
