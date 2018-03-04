@@ -74,14 +74,11 @@ class PostController extends Controller
         ], $request->get('images'));
 
         $cacheKey = $postRepository->bangumiListCacheKey($bangumiId);
-        Redis::pipeline(function ($pipe) use ($id, $cacheKey, $now, $userId)
+        if (Redis::EXISTS($cacheKey))
         {
-            if ($pipe->EXISTS($cacheKey))
-            {
-                $pipe->ZADD($cacheKey, $now->timestamp, $id);
-            }
-            $pipe->LPUSHX('user_'.$userId.'_minePostIds', $id);
-        });
+            Redis::ZADD($cacheKey, $now->timestamp, $id);
+        }
+        Redis::LPUSHX('user_'.$userId.'_minePostIds', $id);
 
         $job = (new \App\Jobs\Trial\Post\Create($id));
         dispatch($job);
@@ -228,32 +225,32 @@ class PostController extends Controller
             'updated_at' => date('Y-m-d H:i:s',time())
         ]);
         $cacheKey = $repository->bangumiListCacheKey($post['bangumi_id']);
-        Redis::pipeline(function ($pipe) use ($id, $cacheKey, $now, $newId, $images, $userId)
+        // 更新帖子的缓存
+        if (Redis::EXISTS('post_'.$id))
         {
-            // 更新帖子的缓存
-            if ($pipe->EXISTS('post_'.$id))
+            Redis::HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
+            Redis::HSET('post_'.$id, 'updated_at', $now->toDateTimeString());
+        }
+        // 更新帖子图片预览的缓存
+        if (Redis::EXISTS('post_'.$id.'_previewImages') && !empty($images))
+        {
+            foreach ($images as $i => $val)
             {
-                $pipe->HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
-                $pipe->HSET('post_'.$id, 'updated_at', $now->toDateTimeString());
+                $images[$i] = config('website.image') . $val['key'];
             }
-            // 更新帖子楼层的
-            $pipe->RPUSHX('post_'.$id.'_ids', $newId);
-            // 更新帖子图片预览的缓存
-            if ($pipe->EXISTS('post_'.$id.'_previewImages') && !empty($images))
-            {
-                foreach ($images as $i => $val)
-                {
-                    $images[$i] = config('website.image') . $val['key'];
-                }
-                $pipe->RPUSH('post_'.$id.'_previewImages', $images);
-            }
+            Redis::RPUSH('post_'.$id.'_previewImages', $images);
+        }
+        // 更新番剧帖子列表的缓存
+        if (Redis::EXISTS($cacheKey))
+        {
+            Redis::ZADD($cacheKey, $now->timestamp, $id);
+        }
+        Redis::pipeline(function ($pipe) use ($id, $newId, $userId)
+        {
             // 更新用户回复帖子列表的缓存
             $pipe->LPUSHX('user_'.$userId.'_replyPostIds', $newId);
-            // 更新番剧帖子列表的缓存
-            if ($pipe->EXISTS($cacheKey))
-            {
-                $pipe->ZADD($cacheKey, $now->timestamp, $id);
-            }
+            // 更新帖子楼层的
+            $pipe->RPUSHX('post_'.$id.'_ids', $newId);
         });
 
         $reply = $repository->item($newId);
@@ -319,12 +316,12 @@ class PostController extends Controller
         Post::where('id', $id)->update([
             'updated_at' => date('Y-m-d H:i:s',time())
         ]);
+        if (Redis::EXISTS('post_'.$id))
+        {
+            Redis::HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
+        }
         Redis::pipeline(function ($pipe) use ($id, $newId, $userId)
         {
-            if ($pipe->EXISTS('post_'.$id))
-            {
-                $pipe->HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
-            }
             $pipe->RPUSHX('post_'.$id.'_commentIds', $newId);
             $pipe->LPUSHX('user_'.$userId.'_replyPostIds', $newId);
         });
@@ -648,12 +645,12 @@ class PostController extends Controller
 
         Post::where('id', $commentId)->delete();
         Post::where('id', $postId)->increment('comment_count', -1);
+        if (Redis::EXISTS('post_'.$postId))
+        {
+            Redis::HINCRBYFLOAT('post_'.$postId, 'comment_count', -1);
+        }
         Redis::pipeline(function ($pipe) use ($postId, $commentId, $userId)
         {
-            if ($pipe->EXISTS('post_'.$postId))
-            {
-                $pipe->HINCRBYFLOAT('post_'.$postId, 'comment_count', -1);
-            }
             $pipe->LREM('post_'.$postId.'_commentIds', 1, $commentId);
             $pipe->LREM('user_'.$userId.'_replyPostIds', 1, $commentId);
         });

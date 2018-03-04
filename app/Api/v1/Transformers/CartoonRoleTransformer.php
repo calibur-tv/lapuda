@@ -66,11 +66,17 @@ class CartoonRoleTransformer extends Transformer
                 'bangumi_id' => (int)$user['bangumi_id'],
                 'bangumi_avatar' => $user['bangumi_avatar'],
                 'bangumi_name' => $user['bangumi_name'],
-                'lover_id' => (int)$user['lover_id'],
-                'lover_avatar' => $user['lover_avatar'],
-                'lover_nickname' => $user['lover_nickname'],
-                'lover_zone' => $user['lover_zone']
+                'lover_id' => (int)$user['lover_id']
             ];
+
+            if ($user['lover_id'])
+            {
+                $result = array_merge($result, [
+                    'lover_avatar' => $user['lover_avatar'],
+                    'lover_nickname' => $user['lover_nickname'],
+                    'lover_zone' => $user['lover_zone']
+                ]);
+            }
 
             return $result;
         });
