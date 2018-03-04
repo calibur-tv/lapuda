@@ -8,7 +8,9 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
@@ -463,5 +465,37 @@ class UserController extends Controller
         ]);
 
         return $this->resNoContent();
+    }
+
+    public function followedRoles(Request $request, $zone)
+    {
+        $userId = User::where('zone', $zone)->pluck('id')->first();
+        if (is_null($userId))
+        {
+            return $this->resErrNotFound('该用户不存在');
+        }
+
+        $page = $request->get('page') ?: 1;
+        $take = $request->get('take') ?: config('website.list_count');
+        $begin = $take * ($page - 1);
+
+        $repository = new UserRepository();
+        $ids = array_slice($repository->rolesIds($userId), $begin, $begin + $take);
+        if (empty($ids))
+        {
+            return $this->resOK([]);
+        }
+
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $list = $cartoonRoleRepository->list($ids);
+
+        foreach ($list as $i => $item)
+        {
+            $list[$i]['has_star'] = $cartoonRoleRepository->checkHasStar($item['id'], $userId);
+        }
+
+        $transformer = new CartoonRoleTransformer();
+
+        return $this->resOK($transformer->userList($list));
     }
 }

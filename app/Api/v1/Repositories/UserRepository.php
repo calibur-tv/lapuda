@@ -12,6 +12,7 @@ use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\BangumiFollow;
+use App\Models\CartoonRoleFans;
 use App\Models\Notifications;
 use App\Models\Post;
 use App\Models\PostLike;
@@ -321,5 +322,15 @@ class UserRepository extends Repository
         }
 
         return $transformer->notification($result);
+    }
+
+    public function rolesIds($userId)
+    {
+        return $this->RedisList('user_'.$userId.'_followRoleIds', function () use ($userId)
+        {
+            return  CartoonRoleFans::where('user_id', $userId)
+                ->orderBy('updated_at', 'DESC')
+                ->pluck('role_id');
+        });
     }
 }
