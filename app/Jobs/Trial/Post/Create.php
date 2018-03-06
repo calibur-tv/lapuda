@@ -135,12 +135,16 @@ class Create implements ShouldQueue
 
         if (!$badWordsCount && !$badImageCount && !$needDelete)
         {
+            $now = time();
+
             MixinSearch::create([
                 'title' => $post['title'],
                 'content' => $post['desc'],
                 'type_id' => 3,
                 'modal_id' => $post['id'],
-                'url' => '/post/' . $post['id']
+                'url' => '/post/' . $post['id'],
+                'created_at' => $now,
+                'updated_at' => $now
             ]);
 
             Redis::pipeline(function ($pipe) use ($post)
