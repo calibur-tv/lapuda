@@ -86,7 +86,11 @@ class CartoonRoleController extends Controller
         {
             CartoonRoleFans::whereRaw('role_id = ? and user_id = ?', [$roleId, $userId])->increment('star_count');
             $trendingKey = 'cartoon_role_trending_' . $roleId;
-            Redis::ZINCRBY('cartoon_role_' . $roleId . '_hot_fans_ids', 1, $userId);
+            $hotCacheKey = 'cartoon_role_' . $roleId . '_hot_fans_ids';
+            if (Redis::EXISTS($hotCacheKey))
+            {
+                Redis::ZINCRBY('cartoon_role_' . $roleId . '_hot_fans_ids', 1, $userId);
+            }
             if (Redis::EXISTS('cartoon_role_'.$roleId))
             {
                 Redis::HINCRBYFLOAT('cartoon_role_'.$roleId, 'star_count', 1);
