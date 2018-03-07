@@ -89,7 +89,7 @@ class CartoonRoleController extends Controller
             $hotCacheKey = 'cartoon_role_' . $roleId . '_hot_fans_ids';
             if (Redis::EXISTS($hotCacheKey))
             {
-                Redis::ZINCRBY('cartoon_role_' . $roleId . '_hot_fans_ids', 1, $userId);
+                Redis::ZINCRBY($hotCacheKey, 1, $userId);
             }
             if (Redis::EXISTS('cartoon_role_'.$roleId))
             {
