@@ -52,7 +52,9 @@
             "composer dump-autoload",
             "php artisan cache:clear",
             "php artisan config:cache",
-            "php artisan api:cache"
+            "php artisan route:cache",
+            "php artisan api:cache",
+            "php artisan queue:restart"
         ],
         "post-update-cmd": [
             "Illuminate\\Foundation\\ComposerScripts::postUpdate",
