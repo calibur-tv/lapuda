@@ -12,7 +12,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
 class Reply implements ShouldQueue
@@ -53,9 +52,7 @@ class Reply implements ShouldQueue
         foreach ($post['images'] as $url)
         {
             $tmp = explode('|http', $url);
-            Log::info('trial post reply image count: ' . count($tmp));
             $imageUrl = count($tmp) === 2 ? 'http' . end($tmp) : $url;
-            Log::info('trial post reply image url: ' . $imageUrl);
             // 色情
             $respSex = json_decode(file_get_contents($imageUrl . '?qpulp'), true);
             if (intval($respSex['code']) !== 0)

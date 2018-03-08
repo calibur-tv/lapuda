@@ -17,14 +17,16 @@ deploy:
     skip_cleanup: true
     script:
       ssh -p $PORT $USER@$STAGING_SERVER 'cd /var/www/api && git pull' &&
-      ssh -p $PORT $USER@$STAGING_SERVER 'cd /var/www/api && php artisan migrate'
-      ssh -p $PORT $USER@$STAGING_SERVER 'cd /var/www/api && composer install'
+      ssh -p $PORT $USER@$STAGING_SERVER 'cd /var/www/api && php artisan migrate' &&
+      ssh -p $PORT $USER@$STAGING_SERVER 'cd /var/www/api && composer install' &&
+      ssh -p $PORT $USER@$STAGING_SERVER 'service supervisord restart'
     on:
       branch: master
   - provider: script
     skip_cleanup: true
     script:
       ssh -p $PORT $USER@$PRODUCTION_SERVER 'cd /var/www/api && git pull' &&
-      ssh -p $PORT $USER@$PRODUCTION_SERVER 'cd /var/www/api && composer install'
+      ssh -p $PORT $USER@$PRODUCTION_SERVER 'cd /var/www/api && composer install' &&
+      ssh -p $PORT $USER@$PRODUCTION_SERVER 'service supervisord restart'
     on:
       branch: deploy
