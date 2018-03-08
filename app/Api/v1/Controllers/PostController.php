@@ -207,7 +207,7 @@ class PostController extends Controller
 
         $now = Carbon::now();
         $userId = $this->getAuthUserId();
-        $count = Post::where('parent_id', $id)->count();
+        $count = Post::withTrashed()->where('parent_id', $id)->count();
 
         $images = $request->get('images');
         $newId = $repository->create([
