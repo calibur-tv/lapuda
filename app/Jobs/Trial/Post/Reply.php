@@ -52,9 +52,9 @@ class Reply implements ShouldQueue
         foreach ($post['images'] as $url)
         {
             $tmp = explode('|http' ,$url);
-            $url = count($tmp) === 2 ? 'http' . end($tmp) : $url;
+            $imageUrl = count($tmp) === 2 ? 'http' . end($tmp) : $url;
             // 色情
-            $respSex = json_decode(file_get_contents($url . '?qpulp'), true);
+            $respSex = json_decode(file_get_contents($imageUrl . '?qpulp'), true);
             if (intval($respSex['code']) !== 0)
             {
                 $badImageCount++;
@@ -76,7 +76,7 @@ class Reply implements ShouldQueue
                 }
             }
             // 暴恐
-            $respWarn = json_decode(file_get_contents($url . '?qterror'), true);
+            $respWarn = json_decode(file_get_contents($imageUrl . '?qterror'), true);
             if (intval($respWarn['code']) !== 0)
             {
                 $badImageCount++;
@@ -93,7 +93,7 @@ class Reply implements ShouldQueue
                 }
             }
             // 政治敏感
-            $respDaddy = json_decode(file_get_contents($url . '?qpolitician'), true);
+            $respDaddy = json_decode(file_get_contents($imageUrl . '?qpolitician'), true);
             if (intval($respDaddy['code']) !== 0)
             {
                 $badImageCount++;
