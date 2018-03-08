@@ -51,7 +51,7 @@ class Create implements ShouldQueue
         // 图片审核流程
         foreach ($post['images'] as $url)
         {
-            $tmp = explode('|http' ,$url);
+            $tmp = explode('|http', $url);
             $imageUrl = count($tmp) === 2 ? 'http' . end($tmp) : $url;
             // 色情
             $respSex = json_decode(file_get_contents($imageUrl . '?qpulp'), true);
