@@ -61,16 +61,18 @@ class Create implements ShouldQueue
             }
             else
             {
-                if (intval($respSex['result']['label']) === 1)
+                $label = intval($respSex['result']['label']);
+                $review = (boolean)$respSex['result']['review'];
+                if ($label === 1)
                 {
                     $badImageCount++;
                 }
-                else if (intval($respSex['result']['label']) === 0)
+                else if ($label === 0)
                 {
                     $badImageCount++;
                     $needDelete = true;
                 }
-                if ((boolean)$respSex['result']['review'] === true)
+                if ($review === true && $label !== 2)
                 {
                     $needDelete = true;
                 }
@@ -86,10 +88,11 @@ class Create implements ShouldQueue
                 if (intval($respWarn['result']['label']) === 1)
                 {
                     $badImageCount++;
-                }
-                if ((boolean)$respWarn['result']['review'] === true)
-                {
-                    $needDelete = true;
+
+                    if ((boolean)$respWarn['result']['review'] === true)
+                    {
+                        $needDelete = true;
+                    }
                 }
             }
             // 政治敏感
