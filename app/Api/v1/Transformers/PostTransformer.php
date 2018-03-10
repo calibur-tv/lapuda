@@ -245,7 +245,7 @@ class PostTransformer extends Transformer
                 $posts[] = $item;
             }
         }
-        return $this->collection($list, function ($post)
+        return $this->collection($posts, function ($post)
         {
             return [
                 'id' => (int)$post['id'],
