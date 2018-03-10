@@ -121,7 +121,18 @@ class PostController extends Controller
         $only = intval($request->get('only')) ?: 0;
         $ids = $postRepository->getPostIds($id, $only ? $post['user_id'] : false);
 
-        $list = $postRepository->list(array_slice(array_diff($ids, $seen), 0, $take));
+        $replyId = $request->get('replyId') ? intval($request->get('replyId')) : 0;
+        $ids = array_slice(array_diff($ids, $seen), 0, $take);
+
+        if ($replyId && count($ids))
+        {
+            if (!in_array($replyId, $ids))
+            {
+                $ids[count($ids) - 1] = $replyId;
+            }
+        }
+
+        $list = $postRepository->list($ids);
 
         Post::where('id', $post['id'])->increment('view_count');
         if (Redis::EXISTS('post_'.$id))
