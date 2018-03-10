@@ -323,6 +323,7 @@ class PostRepository extends Repository
         return $this->RedisSort('post_new_ids', function ()
         {
             return Post::whereIn('state', [3, 7])
+                ->where('parent_id', 0)
                 ->orderBy('created_at', 'desc')
                 ->latest()
                 ->take(1000)
