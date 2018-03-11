@@ -272,8 +272,16 @@ class UserController extends Controller
         {
             $data[] = $userRepository->replyPostItem($userId, $id);
         }
+        $result = [];
+        foreach ($data as $item)
+        {
+            if ($item)
+            {
+                $result[] = $item;
+            }
+        }
 
-        return $this->resOK(array_filter($data));
+        return $this->resOK($result);
     }
 
     /**
