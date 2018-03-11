@@ -178,7 +178,7 @@ class PostController extends Controller
         return $this->resOK([
             'post' => $postTransformer->show($post),
             'list' => $list,
-            'bangumi' => $bangumiTransformer->item($bangumiRepository->item($post['bangumi_id'])),
+            'bangumi' => $bangumiTransformer->post($bangumiRepository->item($post['bangumi_id'])),
             'user' => $userTransformer->item($userRepository->item($post['user_id'])),
             'total' => count($ids) + 1
         ]);
