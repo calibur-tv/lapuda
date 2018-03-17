@@ -100,7 +100,7 @@ class UserController extends Controller
         $cache = 'user_'.$userId;
         if (Redis::EXISTS($cache))
         {
-            Redis::HSET($cache, $key, $val);
+            Redis::HSET($cache, $key, config('website.image') . $val);
         }
         $job = (new \App\Jobs\Trial\User\Image($userId, $key));
         dispatch($job);

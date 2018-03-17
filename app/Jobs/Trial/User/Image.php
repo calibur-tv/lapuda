@@ -46,7 +46,7 @@ class Image implements ShouldQueue
         $url = $user[$this->type];
 
         // 色情
-        $respSex = json_decode(file_get_contents(env('website.image') . $url . '?qpulp'), true);
+        $respSex = json_decode(file_get_contents($url . '?qpulp'), true);
         if (intval($respSex['code']) !== 0)
         {
             $badImageCount++;
@@ -70,7 +70,7 @@ class Image implements ShouldQueue
             }
         }
         // 暴恐
-        $respWarn = json_decode(file_get_contents(env('website.image') . $url . '?qterror'), true);
+        $respWarn = json_decode(file_get_contents($url . '?qterror'), true);
         if (intval($respWarn['code']) !== 0)
         {
             $badImageCount++;
@@ -88,7 +88,7 @@ class Image implements ShouldQueue
             }
         }
         // 政治敏感
-        $respDaddy = json_decode(file_get_contents(env('website.image') . $url . '?qpolitician'), true);
+        $respDaddy = json_decode(file_get_contents($url . '?qpolitician'), true);
         if (intval($respDaddy['code']) !== 0)
         {
             $badImageCount++;
