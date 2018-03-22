@@ -32,7 +32,8 @@ class BangumiTransformer extends Transformer
                 'name' => $bangumi['name'],
                 'avatar' => $bangumi['avatar'],
                 'others_site_video' => (boolean)$bangumi['others_site_video'],
-                'summary' => $bangumi['summary']
+                'summary' => $bangumi['summary'],
+                'followed' => $bangumi['followed']
             ];
         });
     }
@@ -45,7 +46,8 @@ class BangumiTransformer extends Transformer
                 'id' => (int)$bangumi['id'],
                 'name' => $bangumi['name'],
                 'avatar' => $bangumi['avatar'],
-                'summary' => $bangumi['summary']
+                'summary' => $bangumi['summary'],
+                'followed' => $bangumi['followed']
             ];
         });
     }

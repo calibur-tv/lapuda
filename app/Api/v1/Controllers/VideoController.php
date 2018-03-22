@@ -34,10 +34,12 @@ class VideoController extends Controller
             return $this->resErrNotFound('不存在的视频资源');
         }
 
+        $userId = $this->getAuthUserId();
         $bangumiRepository = new BangumiRepository();
         $bangumi = $bangumiRepository->item($info['bangumi_id']);
         $season = json_decode($bangumi['season']);
         $list = $bangumiRepository->videos($bangumi['id'], $season);
+        $bangumi['followed'] = $userId ? $bangumiRepository->checkUserFollowed($userId, $info['bangumi_id']) : false;
 
         $bangumiTransformer = new BangumiTransformer();
         $videoTransformer = new VideoTransformer();

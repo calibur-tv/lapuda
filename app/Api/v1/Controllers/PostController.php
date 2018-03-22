@@ -52,12 +52,12 @@ class PostController extends Controller
         $bangumiId = $request->get('bangumiId');
         $userId = $this->getAuthUserId();
         $postRepository = new PostRepository();
-        $bangumiRepository = new BangumiRepository();
 
-        if (!$bangumiRepository->checkUserFollowed($userId, $bangumiId))
-        {
-            return $this->resErrRole('关注番剧后才能发帖');
-        }
+//        $bangumiRepository = new BangumiRepository();
+//        if (!$bangumiRepository->checkUserFollowed($userId, $bangumiId))
+//        {
+//            return $this->resErrRole('关注番剧后才能发帖');
+//        }
 
         $now = Carbon::now();
 
@@ -174,11 +174,13 @@ class PostController extends Controller
         $bangumiTransformer = new BangumiTransformer();
         $userTransformer = new UserTransformer();
         $post['previewImages'] = $postRepository->previewImages($id, $only ? $post['user_id'] : false);
+        $bangumi = $bangumiRepository->item($post['bangumi_id']);
+        $bangumi['followed'] = $userId ? $bangumiRepository->checkUserFollowed($userId, $post['bangumi_id']) : false;
 
         return $this->resOK([
             'post' => $postTransformer->show($post),
             'list' => $list,
-            'bangumi' => $bangumiTransformer->post($bangumiRepository->item($post['bangumi_id'])),
+            'bangumi' => $bangumiTransformer->post($bangumi),
             'user' => $userTransformer->item($userRepository->item($post['user_id'])),
             'total' => count($ids) + 1
         ]);
