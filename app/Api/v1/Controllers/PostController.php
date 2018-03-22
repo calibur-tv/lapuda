@@ -53,11 +53,12 @@ class PostController extends Controller
         $userId = $this->getAuthUserId();
         $postRepository = new PostRepository();
 
-//        $bangumiRepository = new BangumiRepository();
-//        if (!$bangumiRepository->checkUserFollowed($userId, $bangumiId))
-//        {
-//            return $this->resErrRole('关注番剧后才能发帖');
-//        }
+        $bangumiRepository = new BangumiRepository();
+        if (!$bangumiRepository->checkUserFollowed($userId, $bangumiId))
+        {
+            $bangumiRepository->toggleFollow($this->getAuthUserId(), $bangumiId);
+            // return $this->resErrRole('关注番剧后才能发帖');
+        }
 
         $now = Carbon::now();
 
