@@ -67,19 +67,22 @@ class BangumiController extends Controller
     {
         $data = Cache::remember('bangumi_release_list', 60, function ()
         {
-            $ids = Bangumi::where('released_at', '<>', 0)->pluck('id');
+            $ids = Bangumi::where('released_at', '<>', 0)
+                ->orderBy('released_time', 'DESC')
+                ->pluck('id');
 
             $repository = new BangumiRepository();
             $list = $repository->list($ids);
 
             $result = [
-                [], [], [], [], [], [], []
+                [], [], [], [], [], [], [], []
             ];
             foreach ($list as $item)
             {
                 $item['update'] = time() - $item['released_time'] < 604800;
                 $id = $item['released_at'];
-                isset($result[$id]) ? $result[$id][] = $item : $result[$id] = [$item];
+                $result[$id][] = $item;
+                $result[0][] = $item;
             }
 
             $transformer = new BangumiTransformer();
