@@ -63,17 +63,9 @@ class Reply implements ShouldQueue
             {
                 $label = intval($respSex['result']['label']);
                 $review = (boolean)$respSex['result']['review'];
-                if ($label === 1)
+                if ($label === 0 || ($review === true && $label !== 2))
                 {
                     $badImageCount++;
-                }
-                else if ($label === 0)
-                {
-                    $badImageCount++;
-                    $needDelete = true;
-                }
-                if ($review === true && $label !== 2)
-                {
                     $needDelete = true;
                 }
             }
