@@ -276,7 +276,7 @@ class PostController extends Controller
             $job = (new \App\Jobs\Notification\Post\Reply($newId));
             dispatch($job);
         }
-        $job = (new \App\Jobs\Trial\Post\Reply($id));
+        $job = (new \App\Jobs\Trial\Post\Reply($newId));
         dispatch($job);
 
         return $this->resCreated($transformer->reply([$reply])[0]);
