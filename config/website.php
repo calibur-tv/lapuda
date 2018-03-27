@@ -2,6 +2,6 @@
 
 return [
     'image' => 'https://image.calibur.tv/',
-    'video' => 'https://video.calibur.tv/',
+    'video' => env('APP_ENV') !== 'production' ? 'https://image.calibur.tv/' : 'https://video.calibur.tv/',
     'list_count' => 15,
 ];
