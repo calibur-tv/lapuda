@@ -90,6 +90,8 @@ $api->version(['v1', 'latest'], function ($api)
             $api->get('/count', 'App\Api\V1\Controllers\UserController@waitingReadNotifications')->middleware('jwt.auth');
 
             $api->post('/read', 'App\Api\V1\Controllers\UserController@readNotification')->middleware('jwt.auth');
+
+            $api->post('/clear', 'App\Api\V1\Controllers\UserController@clearNotification')->middleware('jwt.auth');
         });
 
         $api->post('/daySign', 'App\Api\V1\Controllers\UserController@daySign')->middleware('jwt.auth');

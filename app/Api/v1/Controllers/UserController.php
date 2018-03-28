@@ -475,6 +475,15 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
+    public function clearNotification()
+    {
+        Notifications::where('to_user_id', $this->getAuthUserId())->update([
+            'checked' => true
+        ]);
+
+        return $this->resNoContent();
+    }
+
     public function followedRoles(Request $request, $zone)
     {
         $userId = User::where('zone', $zone)->pluck('id')->first();
