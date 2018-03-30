@@ -25,10 +25,40 @@ class BangumiRepository extends Repository
                 return null;
             }
             $bangumi = $bangumi->toArray();
-            // 这里可以使用 LEFT-JOIN 语句优化
-            $bangumi['released_part'] = $bangumi['released_video_id']
-                ? Video::where('id', $bangumi['released_video_id'])->pluck('part')->first()
-                : 0;
+
+            if ($bangumi['released_video_id'])
+            {
+                $season = json_decode($bangumi['season']);
+                $part = Video::where('id', $bangumi['released_video_id'])->pluck('part')->first();
+                if ($season !== '' && isset($season->part) && isset($season->name))
+                {
+                    $repeat = isset($season->re) ? (boolean)$season->re : false;
+                    if ($repeat)
+                    {
+                        foreach ($season->part as $i => $val)
+                        {
+                            if ($val > $part)
+                            {
+                                $bangumi['released_part'] = $part - $season->part[$i - 1];
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        $bangumi['released_part'] = $part;
+                    }
+                }
+                else
+                {
+                    $bangumi['released_part'] = $part;
+                }
+            }
+            else
+            {
+                $bangumi['released_part'] = 0;
+            }
+
             return $bangumi;
         });
 
