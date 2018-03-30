@@ -44,7 +44,10 @@ class UserRepository extends Repository
         $result = [];
         foreach ($ids as $id)
         {
-            $result[] = $this->item($id);
+            $item = $this->item($id);
+            if ($item) {
+                $result[] = $item;
+            }
         }
         return $result;
     }
