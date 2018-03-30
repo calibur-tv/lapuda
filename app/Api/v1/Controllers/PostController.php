@@ -135,10 +135,13 @@ class PostController extends Controller
 
         $list = $postRepository->list($ids);
 
-        Post::where('id', $post['id'])->increment('view_count');
-        if (Redis::EXISTS('post_'.$id))
+        if (empty($seen))
         {
-            Redis::HINCRBYFLOAT('post_'.$id, 'view_count', 1);
+            Post::where('id', $post['id'])->increment('view_count');
+            if (Redis::EXISTS('post_'.$id))
+            {
+                Redis::HINCRBYFLOAT('post_'.$id, 'view_count', 1);
+            }
         }
 
         $postTransformer = new PostTransformer();

@@ -112,7 +112,7 @@ class Image implements ShouldQueue
                 ->where('id', $this->userId)
                 ->update([
                     'state' => $state,
-                    $this->type = ''
+                    $this->type => ''
                 ]);
         }
         else if ($state)
