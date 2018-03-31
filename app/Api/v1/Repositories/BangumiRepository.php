@@ -312,7 +312,10 @@ class BangumiRepository extends Repository
             $ids = array_slice($data, $start, $take);
 
             $transformer = new BangumiTransformer();
-            return $transformer->category($this->list($ids));
+            return [
+                'list' => $transformer->category($this->list($ids)),
+                'total' => count($data)
+            ];
         });
     }
 }
