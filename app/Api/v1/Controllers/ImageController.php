@@ -38,12 +38,12 @@ class ImageController extends Controller
             {
                 if ($image['user_id'])
                 {
-                    $list[$i]['user'] = $userRepository->item($image['user_id']);
+                    $data[$i]['user'] = $userRepository->item($image['user_id']);
                 }
 
                 if ($image['bangumi_id'])
                 {
-                    $list[$i]['bangumi'] = $bangumiRepository->item($image['bangumi_id']);
+                    $data[$i]['bangumi'] = $bangumiRepository->item($image['bangumi_id']);
                 }
             }
 
