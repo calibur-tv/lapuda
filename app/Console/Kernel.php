@@ -17,6 +17,7 @@ class Kernel extends ConsoleKernel
         Trending\PostNew::class,
         Trending\CartoonRole::class,
         Trail\BlackWords::class,
+        Job\CronPush::class,
     ];
 
     /**
@@ -37,6 +38,8 @@ class Kernel extends ConsoleKernel
             ->everyFiveMinutes();
         $schedule->command('BlackWords')
             ->everyFiveMinutes();
+        $schedule->command('CronPush')
+            ->dailyAt('23:33');
     }
 
     /**

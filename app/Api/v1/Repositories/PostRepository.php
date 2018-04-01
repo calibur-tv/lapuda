@@ -318,6 +318,9 @@ class PostRepository extends Repository
 
             $job = (new \App\Jobs\Search\Post\Delete($postId));
             dispatch($job);
+
+            $job = (new \App\Jobs\Push\Baidu('post' . $postId, 'del'));
+            dispatch($job);
         }
     }
 

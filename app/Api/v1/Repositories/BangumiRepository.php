@@ -151,6 +151,9 @@ class BangumiRepository extends Repository
 
             $result = true;
             $num = 1;
+
+            $job = (new \App\Jobs\Push\Baidu('bangumi' . $bangumi_id, 'update'));
+            dispatch($job);
         }
         else
         {

@@ -84,6 +84,12 @@ class PostController extends Controller
         $job = (new \App\Jobs\Trial\Post\Create($id));
         dispatch($job);
 
+        $job = (new \App\Jobs\Push\Baidu('post' . $id));
+        dispatch($job);
+
+        $job = (new \App\Jobs\Push\Baidu('bangumi' . $bangumiId, 'update'));
+        dispatch($job);
+
         return $this->resCreated($id);
     }
 
@@ -282,6 +288,9 @@ class PostController extends Controller
         $job = (new \App\Jobs\Trial\Post\Reply($newId));
         dispatch($job);
 
+        $job = (new \App\Jobs\Push\Baidu('post' . $id, 'update'));
+        dispatch($job);
+
         return $this->resCreated($transformer->reply([$reply])[0]);
     }
 
@@ -351,6 +360,9 @@ class PostController extends Controller
             dispatch($job);
         }
         $job = (new \App\Jobs\Trial\Post\Comment($id));
+        dispatch($job);
+
+        $job = (new \App\Jobs\Push\Baidu('post' . $post['parent_id'], 'update'));
         dispatch($job);
 
         return $this->resCreated($postTransformer->comments([$repository->comment($id, $newId)])[0]);
