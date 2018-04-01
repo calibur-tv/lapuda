@@ -32,6 +32,11 @@ class Baidu implements ShouldQueue
      */
     public function handle()
     {
+        if (config('app.env') !== 'production')
+        {
+            return;
+        }
+
         $type = in_array($this->type, ['urls', 'update', 'del']) ? $this->type : 'urls';
         $api = 'http://data.zz.baidu.com/' . $type . '?site=https://www.calibur.tv&token=' . config('website.push_baidu_token');
 
