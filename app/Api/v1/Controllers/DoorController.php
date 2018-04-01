@@ -186,6 +186,9 @@ class DoorController extends Controller
         $job = (new \App\Jobs\Search\User\Register($userId));
         dispatch($job);
 
+        $job = (new \App\Jobs\Push\Baidu('user/' . $zone));
+        dispatch($job);
+
         return $this->resCreated($this->responseUser($user));
     }
 

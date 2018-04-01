@@ -49,19 +49,19 @@ class SearchController extends Controller
 
         foreach ($postIds as $id)
         {
-            $job = (new \App\Jobs\Push\Baidu('post' . $id));
+            $job = (new \App\Jobs\Push\Baidu('post/' . $id));
             dispatch($job);
         }
 
         foreach ($bangumiIds as $id)
         {
-            $job = (new \App\Jobs\Push\Baidu('bangumi' . $id));
+            $job = (new \App\Jobs\Push\Baidu('bangumi/' . $id));
             dispatch($job);
         }
 
         foreach ($videoIds as $id)
         {
-            $job = (new \App\Jobs\Push\Baidu('video' . $id));
+            $job = (new \App\Jobs\Push\Baidu('video/' . $id));
             dispatch($job);
         }
     }

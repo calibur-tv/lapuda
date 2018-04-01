@@ -152,6 +152,10 @@ class Create implements ShouldQueue
                 $pipe->ZADD('post_new_ids', strtotime($post['created_at']), $post['id']);
                 $pipe->EXPIREAT('post_new_ids', strtotime(date('Y-m-d')) + 86400 + rand(3600, 10800));
             });
+
+            $job = (new \App\Jobs\Push\Baidu('post/trending/new', 'update'));
+            dispatch($job);
+
             return;
         }
         if ($needDelete)

@@ -9,6 +9,7 @@ use App\Models\BangumiFollow;
 use App\Models\BangumiTag;
 use App\Models\Post;
 use App\Models\Tag;
+use App\Models\User;
 use App\Models\Video;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Redis;
@@ -151,6 +152,12 @@ class BangumiRepository extends Repository
 
             $result = true;
             $num = 1;
+
+            $job = (new \App\Jobs\Push\Baidu('bangumi/' . $bangumi_id, 'update'));
+            dispatch($job);
+
+            $job = (new \App\Jobs\Push\Baidu('user/' . User::where('id', $user_id)->pluck('zone')->first(), 'update'));
+            dispatch($job);
         }
         else
         {
