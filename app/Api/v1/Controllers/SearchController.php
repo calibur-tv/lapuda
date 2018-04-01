@@ -2,9 +2,6 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Models\Bangumi;
-use App\Models\Post;
-use App\Models\Video;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
 use Mews\Purifier\Facades\Purifier;
@@ -39,30 +36,5 @@ class SearchController extends Controller
         $result = $search->index($key);
 
         return $this->resOK(empty($result) ? '' : $result[0]['fields']['url']);
-    }
-
-    public function test()
-    {
-        $postIds = Post::pluck('id');
-        $bangumiIds = Bangumi::pluck('id');
-        $videoIds = Video::pluck('id');
-
-        foreach ($postIds as $id)
-        {
-            $job = (new \App\Jobs\Push\Baidu('post/' . $id));
-            dispatch($job);
-        }
-
-        foreach ($bangumiIds as $id)
-        {
-            $job = (new \App\Jobs\Push\Baidu('bangumi/' . $id));
-            dispatch($job);
-        }
-
-        foreach ($videoIds as $id)
-        {
-            $job = (new \App\Jobs\Push\Baidu('video/' . $id));
-            dispatch($job);
-        }
     }
 }
