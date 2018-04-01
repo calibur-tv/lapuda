@@ -9,7 +9,9 @@
 namespace App\Api\V1\Repositories;
 
 
-class ImageRepository
+use App\Models\Banner;
+
+class ImageRepository extends Repository
 {
     public function uptoken()
     {
@@ -32,5 +34,55 @@ class ImageRepository
             'upToken' => $uptoken,
             'expiredAt' => time() + $timeout
         ];
+    }
+
+    public function banners()
+    {
+        $list = $this->RedisList('loop_banners', function ()
+        {
+            $list =  Banner::select('id', 'url', 'user_id', 'bangumi_id', 'gray')->get()->toArray();
+
+            $userRepository = new UserRepository();
+            $bangumiRepository = new BangumiRepository();
+
+            foreach ($list as $i => $image)
+            {
+                if ($image['user_id'])
+                {
+                    $user = $userRepository->item($image['user_id']);
+                    $list[$i]['user_nickname'] = $user['nickname'];
+                    $list[$i]['user_avatar'] = $user['avatar'];
+                    $list[$i]['user_zone'] = $user['zone'];
+                }
+                else
+                {
+                    $list[$i]['user_nickname'] = '';
+                    $list[$i]['user_avatar'] = '';
+                    $list[$i]['user_zone'] = '';
+                }
+
+                if ($image['bangumi_id'])
+                {
+                    $bangumi = $bangumiRepository->item($image['bangumi_id']);
+                    $list[$i]['bangumi_name'] = $bangumi['name'];
+                }
+                else
+                {
+                    $list[$i]['bangumi_name'] = '';
+                }
+
+                $list[$i] = json_encode($list[$i]);
+            }
+
+            return $list;
+        });
+
+        $result = [];
+        foreach ($list as $item)
+        {
+            $result[] = json_decode($item, true);
+        }
+
+        return $result;
     }
 }
