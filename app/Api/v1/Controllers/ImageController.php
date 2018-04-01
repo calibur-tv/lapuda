@@ -2,7 +2,10 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ImageRepository;
+use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Transformers\ImageTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Banner;
@@ -23,8 +26,28 @@ class ImageController extends Controller
      */
     public function banner()
     {
-        $list = Cache::remember('index_banner', config('cache.ttl'), function () {
-            return Banner::select('id', 'url', 'user_id', 'bangumi_id', 'gray')->get()->toArray();
+        $list = Cache::remember('index_banner', config('cache.ttl'), function ()
+        {
+            $data =  Banner::select('id', 'url', 'user_id', 'bangumi_id', 'gray')->get()->toArray();
+
+            $userRepository = new UserRepository();
+            $bangumiRepository = new BangumiRepository();
+            $transformer = new ImageTransformer();
+
+            foreach ($data as $i => $image)
+            {
+                if ($image['user_id'])
+                {
+                    $list[$i]['user'] = $userRepository->item($image['user_id']);
+                }
+
+                if ($image['bangumi_id'])
+                {
+                    $list[$i]['bangumi'] = $bangumiRepository->item($image['bangumi_id']);
+                }
+            }
+
+            return $transformer->indexBanner($data);
         });
 
         shuffle($list);
