@@ -40,4 +40,29 @@ class SearchController extends Controller
 
         return $this->resOK(empty($result) ? '' : $result[0]['fields']['url']);
     }
+
+    public function test()
+    {
+        $postIds = Post::pluck('id');
+        $bangumiIds = Bangumi::pluck('id');
+        $videoIds = Video::pluck('id');
+
+        foreach ($postIds as $id)
+        {
+            $job = (new \App\Jobs\Push\Baidu('post/' . $id));
+            dispatch($job);
+        }
+
+        foreach ($bangumiIds as $id)
+        {
+            $job = (new \App\Jobs\Push\Baidu('bangumi/' . $id));
+            dispatch($job);
+        }
+
+        foreach ($videoIds as $id)
+        {
+            $job = (new \App\Jobs\Push\Baidu('video/' . $id));
+            dispatch($job);
+        }
+    }
 }

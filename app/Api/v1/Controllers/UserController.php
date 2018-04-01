@@ -105,6 +105,9 @@ class UserController extends Controller
         $job = (new \App\Jobs\Trial\User\Image($userId, $key));
         dispatch($job);
 
+        $job = (new \App\Jobs\Push\Baidu('user/' . User::where('id', $userId)->pluck('zone')->first(), 'update'));
+        dispatch($job);
+
         return $this->resNoContent();
     }
 
@@ -170,6 +173,9 @@ class UserController extends Controller
 
         Redis::DEL('user_'.$userId);
         $job = (new \App\Jobs\Trial\User\Text($userId));
+        dispatch($job);
+
+        $job = (new \App\Jobs\Push\Baidu('user/' . User::where('id', $userId)->pluck('zone')->first(), 'update'));
         dispatch($job);
 
         return $this->resNoContent();
