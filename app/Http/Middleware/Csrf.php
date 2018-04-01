@@ -40,18 +40,32 @@ class Csrf
             \Log::info('request auth: ' . $request->headers->get('Authorization'));
         }
 
-        if (
-            config('app.env') === 'local' ||
-            in_array($request->method(), $this->methods) ||
-            in_array($request->headers->get('Origin'), $this->domains) ||
-            in_array($request->url(), $this->except) ||
-            (
-                time() - intval($request->headers->get('X-Auth-Timestamp')) < 60 &&
-                md5(config('app.md5_salt') . $request->headers->get('X-Auth-Timestamp')) === $request->headers->get('X-Auth-Token')
-            )
-        ) {
+        if (config('app.env') === 'local')
+        {
             return $next($request);
         }
+
+        if (in_array($request->method(), $this->methods))
+        {
+            return $next($request);
+        }
+
+        if (in_array($request->headers->get('Origin'), $this->domains))
+        {
+            return $next($request);
+        }
+
+        if (in_array($request->url(), $this->except))
+        {
+            return $next($request);
+        }
+
+//        if (
+//            time() - intval($request->headers->get('X-Auth-Timestamp')) < 60 &&
+//            md5(config('app.md5_salt') . $request->headers->get('X-Auth-Timestamp')) === $request->headers->get('X-Auth-Token')
+//        ) {
+//            return $next($request);
+//        }
 
         return response([
             'code' => 40101,
