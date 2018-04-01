@@ -17,26 +17,14 @@ class ImageTransformer extends Transformer
         {
             return [
                 'id' => (int)$data['id'],
-                'user_id' => (int)$data['user_id'],
-                'bangumi_id' => (int)$data['bangumi_id'],
                 'url' => $data['url'],
                 'gray' => (int)$data['gray'],
-                'user' => isset($data['user']) ? $this->transformer($data['user'], function ($user)
-                {
-                    return [
-                        'id' => (int)$user['id'],
-                        'nickname' => $user['nickname'],
-                        'zone' => $user['zone'],
-                        'avatar' => $user['avatar']
-                    ];
-                }) : null,
-                'bangumi' => isset($data['bangumi']) ? $this->transformer($data['bangumi'], function ($bangumi)
-                {
-                    return [
-                        'id' => (int)$bangumi['id'],
-                        'name' => $bangumi['name']
-                    ];
-                }) : null
+                'user_id' => (int)$data['user_id'],
+                'user_nickname' => $data['user_nickname'],
+                'user_zone' => $data['user_zone'],
+                'user_avatar' => $data['user_avatar'],
+                'bangumi_id' => (int)$data['bangumi_id'],
+                'bangumi_name' => $data['bangumi_name']
             ];
         });
     }

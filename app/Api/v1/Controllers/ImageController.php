@@ -26,33 +26,13 @@ class ImageController extends Controller
      */
     public function banner()
     {
-        $list = Cache::remember('index_banner', config('cache.ttl'), function ()
-        {
-            $data =  Banner::select('id', 'url', 'user_id', 'bangumi_id', 'gray')->get()->toArray();
+        $repository = new ImageRepository();
+        $transformer = new ImageTransformer();
 
-            $userRepository = new UserRepository();
-            $bangumiRepository = new BangumiRepository();
-            $transformer = new ImageTransformer();
-
-            foreach ($data as $i => $image)
-            {
-                if ($image['user_id'])
-                {
-                    $data[$i]['user'] = $userRepository->item($image['user_id']);
-                }
-
-                if ($image['bangumi_id'])
-                {
-                    $data[$i]['bangumi'] = $bangumiRepository->item($image['bangumi_id']);
-                }
-            }
-
-            return $transformer->indexBanner($data);
-        });
-
+        $list = $repository->banners();
         shuffle($list);
 
-        return $this->resOK($list);
+        return $this->resOK($transformer->indexBanner($list));
     }
 
     /**
