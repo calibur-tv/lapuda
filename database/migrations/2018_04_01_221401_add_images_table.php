@@ -15,6 +15,15 @@ class AddImagesTable extends Migration
     {
         Schema::create('images', function (Blueprint $table) {
             $table->increments('id');
+            $table->unsignedInteger('user_id');
+            $table->unsignedInteger('bangumi_id');
+            $table->unsignedInteger('tag_id');
+            $table->unsignedInteger('role_id')->default(0);
+            $table->boolean('creator')->default(false);
+            $table->string('url');
+            $table->string('name')->default('');
+            $table->unsignedInteger('like_count')->default(0);
+            $table->softDeletes();
             $table->timestamps();
         });
     }
