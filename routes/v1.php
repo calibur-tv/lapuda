@@ -109,6 +109,11 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->get('/role', 'App\Api\V1\Controllers\UserController@followedRoles');
             });
 
+            $api->group(['prefix' => '/images'], function ($api)
+            {
+                $api->post('/list', 'App\Api\V1\Controllers\UserController@imageList')->middleware('throttle:30,1');
+            });
+
             $api->group(['prefix' => '/posts'], function ($api)
             {
                 $api->post('/mine', 'App\Api\V1\Controllers\UserController@postsOfMine')->middleware('throttle:30,1');

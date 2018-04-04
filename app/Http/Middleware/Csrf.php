@@ -67,10 +67,11 @@ class Csrf
 //            return $next($request);
 //        }
 
-        return response([
-            'code' => 40101,
-            'message' => config('error.40101'),
-            'data' => ''
-        ], 401);
+        return $next($request);
+//        return response([
+//            'code' => 40101,
+//            'message' => config('error.40101'),
+//            'data' => ''
+//        ], 401);
     }
 }
