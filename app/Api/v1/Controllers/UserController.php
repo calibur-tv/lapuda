@@ -14,6 +14,7 @@ use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
+use App\Models\Image;
 use App\Models\Notifications;
 use App\Models\User;
 use App\Api\V1\Repositories\UserRepository;
@@ -520,5 +521,25 @@ class UserController extends Controller
         $transformer = new CartoonRoleTransformer();
 
         return $this->resOK($transformer->userList($list));
+    }
+
+    public function imageList(Request $request, $zone)
+    {
+        $userId = User::where('zone', $zone)->pluck('id')->first();
+        if (is_null($userId))
+        {
+            return $this->resErrNotFound('该用户不存在');
+        }
+
+        $visitorId = $this->getAuthUserId();
+        $page = $request->get('page');
+        $take = $request->get('take');
+
+        $ids = Image::where('user_id', $userId)
+            ->take($take)
+            ->skip($take * $page)
+            ->pluck('id');
+
+        return $this->resOK($ids);
     }
 }

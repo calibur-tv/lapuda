@@ -9,5 +9,16 @@ class Image extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = [];
+    protected $table = 'images';
+
+    protected $fillable = [
+        'user_id',
+        'bangumi_id',
+        'tag_id',
+        'role_id',
+        'creator',
+        'url',
+        'name',
+        'like_count'
+    ];
 }
