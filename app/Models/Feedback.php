@@ -12,6 +12,7 @@ class Feedback extends Model
         'user_id',
         'type',
         'desc',
-        'stage'
+        'stage',
+        'ua'
     ];
 }
