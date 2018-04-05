@@ -381,6 +381,7 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'type' => 'required|integer',
             'desc' => 'required|max:120',
+            'ua' => 'required'
         ]);
 
         if ($validator->fails())
@@ -393,6 +394,7 @@ class UserController extends Controller
         Feedback::create([
             'type' => $request->get('type'),
             'desc' => $request->get('desc'),
+            'ua' => $request->get('ua'),
             'user_id' => $userId
         ]);
 
