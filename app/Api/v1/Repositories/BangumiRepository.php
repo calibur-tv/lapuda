@@ -26,10 +26,10 @@ class BangumiRepository extends Repository
                 return null;
             }
             $bangumi = $bangumi->toArray();
+            $season = json_decode($bangumi['season']);
 
             if ($bangumi['released_video_id'])
             {
-                $season = json_decode($bangumi['season']);
                 $part = Video::where('id', $bangumi['released_video_id'])->pluck('part')->first();
                 if ($season !== '' && isset($season->part) && isset($season->name))
                 {
@@ -58,6 +58,15 @@ class BangumiRepository extends Repository
             else
             {
                 $bangumi['released_part'] = 0;
+            }
+
+            if ($season !== '')
+            {
+                $bangumi['end'] = isset($season->end) ? (boolean)$season->end : false;
+            }
+            else
+            {
+                $bangumi['end'] = false;
             }
 
             return $bangumi;
