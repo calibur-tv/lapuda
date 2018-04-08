@@ -60,15 +60,6 @@ class BangumiRepository extends Repository
                 $bangumi['released_part'] = 0;
             }
 
-            if ($season !== '')
-            {
-                $bangumi['end'] = isset($season->end) ? (boolean)$season->end : false;
-            }
-            else
-            {
-                $bangumi['end'] = false;
-            }
-
             return $bangumi;
         });
 
