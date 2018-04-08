@@ -93,7 +93,8 @@ class CartoonRoleTransformer extends Transformer
                 'intro' => $role['intro'],
                 'star_count' => (int)$role['star_count'],
                 'fans_count' => (int)$role['fans_count'],
-                'has_star' => (int)$role['has_star']
+                'has_star' => (int)$role['has_star'],
+                'bangumi_id' => (int)$role['bangumi_id']
             ];
         });
     }
