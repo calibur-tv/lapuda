@@ -11,48 +11,35 @@ namespace App\Api\V1\Transformers;
 
 class ImageTransformer extends Transformer
 {
-    public function item($image)
+    public function userList($list)
     {
-        return $this->transformer($image, function ($image)
+        return $this->collection($list, function ($image)
         {
-           return [
-               'id' => (int)$image['id'],
-               'url' => $image['url'],
-               'name' => $image['name'],
-               'width' => (int)$image['width'],
-               'height' => (int)$image['height'],
-               'like_count' => $image['like_count'],
-               'creator' => (boolean)$image['creator'],
-               'tags' => $image['tags'],
-               'role_id' => $image['role_id'],
-               'user_id' => (int)$image['user_id'],
-               'bangumi_id' => (int)$image['bangumi_id'],
-               'bangumi' => $image['bangumi'] ? $this->transformer($image['bangumi'], function ($bangumi)
-               {
-                   return [
-                       'id' => (int)$bangumi['id'],
-                       'name' => $bangumi['name'],
-                       'avatar' => $bangumi['avatar']
-                   ];
-               }) : null,
-               'user' => $image['user'] ? $this->transformer($image['user'], function ($user)
-               {
-                   return [
-                       'id' => (int)$user['id'],
-                       'zone' => $user['zone'],
-                       'avatar' => $user['avatar'],
-                       'nickname' => $user['nickname']
-                   ];
-               }) : null,
-               'role' => $image['role'] ? $this->transformer($image['role'], function ($role)
-               {
-                   return [
-                       'id' => (int)$role['id'],
-                       'name' => $role['name'],
-                       'avatar' => $role['avatar']
-                   ];
-               }) : null
-           ];
+            return [
+                'id' => (int)$image['id'],
+                'width' => (int)$image['width'],
+                'height' => (int)$image['height'],
+                'url' => $image['url'],
+                'name' => $image['name'],
+                'tags' => $image['tags'],
+                'creator' => (boolean)$image['creator'],
+                'bangumi' => $this->transformer($image['bangumi'], function ($bangumi)
+                {
+                    return [
+                        'id' => (int)$bangumi['id'],
+                        'name' => $bangumi['name'],
+                        'avatar' => $bangumi['avatar']
+                    ];
+                }),
+                'role' => $image['role'] ? $this->transformer($image['role'], function ($role)
+                {
+                    return [
+                        'id' => (int)$role['id'],
+                        'name' => $role['name'],
+                        'avatar' => $role['avatar']
+                    ];
+                }) : null
+            ];
         });
     }
 

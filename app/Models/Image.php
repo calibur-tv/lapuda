@@ -20,7 +20,8 @@ class Image extends Model
         'name',
         'like_count',
         'height',
-        'width'
+        'width',
+        'state'
     ];
 
     protected $casts = [
