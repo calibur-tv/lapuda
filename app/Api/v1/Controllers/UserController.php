@@ -8,9 +8,12 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
+use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
+use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
@@ -536,12 +539,28 @@ class UserController extends Controller
         $visitorId = $this->getAuthUserId();
         $page = $request->get('page');
         $take = $request->get('take');
+        $isMe = $visitorId === $userId;
 
         $ids = Image::where('user_id', $userId)
             ->take($take)
             ->skip($take * $page)
             ->pluck('id');
 
-        return $this->resOK($ids);
+        $imageRepository = new ImageRepository();
+        $bangumiRepository = new BangumiRepository();
+        $cartoonRoleRepository = new CartoonRoleRepository();
+
+        $list = $imageRepository->list($ids);
+
+        foreach ($list as $i => $item)
+        {
+            $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
+            $list[$i]['liked'] = $isMe ? false : $imageRepository->checkLiked($item['id'], $visitorId);
+            $list[$i]['role'] = $item['role_id'] ? $cartoonRoleRepository->item($item['role_id']) : null;
+        }
+
+        $transformer = new ImageTransformer();
+
+        return $this->resOK($transformer->userList($list));
     }
 }

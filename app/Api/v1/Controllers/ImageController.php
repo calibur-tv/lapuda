@@ -125,20 +125,7 @@ class ImageController extends Controller
             'tag_id' => $request->get('tags')
         ]);
 
-        $imageRepository = new ImageRepository();
-        $newImage = $imageRepository->item($id);
-
-        $userRepository = new UserRepository();
-        $newImage['user'] = $userRepository->item($newImage['user_id']);
-
-        $bangumiRepository = new BangumiRepository();
-        $newImage['bangumi'] = $bangumiRepository->item($newImage['bangumi_id']);
-
-        $cartoonRoleRepository = new CartoonRoleRepository();
-        $newImage['role'] = $newImage['role_id'] ? $cartoonRoleRepository->item($newImage['role_id']) : null;
-
-        $transformer = new ImageTransformer();
-
-        return $this->resCreated($transformer->item($newImage));
+        // TODO：审核
+        return $this->resCreated($id);
     }
 }

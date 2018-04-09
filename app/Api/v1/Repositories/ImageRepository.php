@@ -10,6 +10,7 @@ namespace App\Api\V1\Repositories;
 
 use App\Models\Banner;
 use App\Models\Image;
+use App\Models\ImageLike;
 use App\Models\ImageTag;
 use App\Models\Tag;
 
@@ -17,7 +18,7 @@ class ImageRepository extends Repository
 {
     public function item($id)
     {
-        return $this->Cache('image_' . $id, function () use ($id)
+        $result = $this->RedisHash('user_image_' . $id, function () use ($id)
         {
             $image = Image::where('id', $id)->first();
             if (is_null($image))
@@ -26,11 +27,32 @@ class ImageRepository extends Repository
             }
 
             $image = $image->toArray();
-            $tagIds = ImageTag::where('image_id', $id)->pluck('tag_id');
-            $image['tags'] = Tag::whereIn('id', $tagIds)->select('id', 'name')->get();
 
             return $image;
         }, 'm');
+
+        $tagIds = ImageTag::where('image_id', $id)->pluck('tag_id');
+        $result['tags'] = Tag::whereIn('id', $tagIds)->select('id', 'name')->get();
+
+        return $result;
+    }
+
+    public function list($ids)
+    {
+        $result = [];
+        foreach ($ids as $id)
+        {
+            $item = $this->item($id);
+            if ($item) {
+                $result[] = $item;
+            }
+        }
+        return $result;
+    }
+
+    public function checkLiked($imageId, $userId)
+    {
+        return (boolean)ImageLike::where('user_id = ? and image_id = ?', [$userId, $imageId])->count();
     }
 
     public function uptoken()
