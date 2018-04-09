@@ -8,11 +8,31 @@
 
 namespace App\Api\V1\Repositories;
 
-
 use App\Models\Banner;
+use App\Models\Image;
+use App\Models\ImageTag;
+use App\Models\Tag;
 
 class ImageRepository extends Repository
 {
+    public function item($id)
+    {
+        return $this->Cache('image_' . $id, function () use ($id)
+        {
+            $image = Image::where('id', $id)->first();
+            if (is_null($image))
+            {
+                return null;
+            }
+
+            $image = $image->toArray();
+            $tagIds = ImageTag::where('image_id', $id)->pluck('tag_id');
+            $image['tags'] = Tag::whereIn('id', $tagIds)->select('id', 'name')->get();
+
+            return $image;
+        }, 'm');
+    }
+
     public function uptoken()
     {
         $auth = new \App\Services\Qiniu\Auth();
@@ -84,5 +104,19 @@ class ImageRepository extends Repository
         }
 
         return $result;
+    }
+
+    public function uploadImageTypes()
+    {
+        return $this->Cache('upload-image-types', function ()
+        {
+            $size = Tag::where('model', '2')->select('name', 'id')->get();
+            $tags = Tag::where('model', '1')->select('name', 'id')->get();
+
+            return [
+                'size' => $size,
+                'tag' => $tags
+            ];
+        }, 'm');
     }
 }

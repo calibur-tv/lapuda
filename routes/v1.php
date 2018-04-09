@@ -53,7 +53,7 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/followers', 'App\Api\V1\Controllers\BangumiController@followers')->middleware('throttle:30,1');
 
-            $api->get('/roles', 'App\Api\V1\Controllers\CartoonRoleController@listOrBangumi');
+            $api->get('/roles', 'App\Api\V1\Controllers\CartoonRoleController@listOfBangumi');
 
             $api->group(['prefix' => '/role/{roleId}'], function ($api)
             {
@@ -157,9 +157,13 @@ $api->version(['v1', 'latest'], function ($api)
     {
         $api->get('/banner', 'App\Api\V1\Controllers\ImageController@banner');
 
+        $api->get('/uploadType', 'App\Api\V1\Controllers\ImageController@uploadType');
+
         $api->post('/captcha', 'App\Api\V1\Controllers\ImageController@captcha')->middleware('throttle:10,1');
 
         $api->post('/uptoken', 'App\Api\V1\Controllers\ImageController@uptoken')->middleware(['jwt.auth', 'throttle:20,1']);
+
+        $api->post('/upload', 'App\Api\V1\Controllers\ImageController@upload')->middleware(['jwt.auth', 'throttle:20,1']);
     });
 
     $api->group(['prefix' => '/trending'], function ($api)

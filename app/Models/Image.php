@@ -14,11 +14,22 @@ class Image extends Model
     protected $fillable = [
         'user_id',
         'bangumi_id',
-        'tag_id',
         'role_id',
         'creator',
         'url',
         'name',
-        'like_count'
+        'like_count',
+        'height',
+        'width'
     ];
+
+    protected $casts = [
+        'creator' => 'boolean',
+        'role_id' => 'integer'
+    ];
+
+    public function getUrlAttribute($url)
+    {
+        return config('website.image').($url ? $url : 'avatar');
+    }
 }

@@ -30,7 +30,7 @@ class CartoonRoleController extends Controller
      *      @Response(404, body={"code": 40003, "message": "不存在的番剧", "data": ""})
      * })
      */
-    public function listOrBangumi(Request $request, $bangumiId)
+    public function listOfBangumi(Request $request, $bangumiId)
     {
         if (!Bangumi::where('id', $bangumiId)->count())
         {
@@ -38,9 +38,13 @@ class CartoonRoleController extends Controller
         }
 
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $all = $request->get('all') ? (boolean)$request->get('all') : false;
 
         $cartoonRoleRepository = new CartoonRoleRepository();
-        $ids = array_slice(array_diff($cartoonRoleRepository->bangumiOfIds($bangumiId), $seen), 0, config('website.list_count'));
+        $ids = $cartoonRoleRepository->bangumiOfIds($bangumiId);
+        if (!$all) {
+            $ids = array_slice(array_diff($ids, $seen), 0, config('website.list_count'));
+        }
 
         if (empty($ids))
         {

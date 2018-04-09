@@ -3,12 +3,15 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
+use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Transformers\ImageTransformer;
+use App\Models\Image;
+use App\Models\ImageTag;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use App\Models\Banner;
+use Illuminate\Support\Facades\Validator;
+use Mews\Purifier\Facades\Purifier;
 
 /**
  * @Resource("图片相关接口")
@@ -72,5 +75,70 @@ class ImageController extends Controller
         $repository = new ImageRepository();
 
         return $this->resOK($repository->uptoken());
+    }
+
+    public function uploadType()
+    {
+        $repository = new ImageRepository();
+
+        return $this->resOK($repository->uploadImageTypes());
+    }
+
+    public function upload(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'bangumiId' => 'required|integer',
+            'creator' => 'required|boolean',
+            'url' => 'required|string',
+            'width' => 'required|integer',
+            'height' => 'required|integer',
+            'size' => 'required|integer',
+            'tags' => 'required|integer',
+            'roleId' => 'required|integer'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator->errors());
+        }
+
+        $userId = $this->getAuthUserId();
+
+        $id = Image::insertGetId([
+            'user_id' => $userId,
+            'bangumi_id' => $request->get('bangumiId'),
+            'name' => Purifier::clean($request->get('name')),
+            'url' => $request->get('url'),
+            'width' => $request->get('width'),
+            'height' => $request->get('height'),
+            'role_id' => $request->get('roleId'),
+            'creator' => $request->get('creator')
+        ]);
+
+        ImageTag::create([
+            'image_id' => $id,
+            'tag_id' => $request->get('size')
+        ]);
+
+        ImageTag::create([
+            'image_id' => $id,
+            'tag_id' => $request->get('tags')
+        ]);
+
+        $imageRepository = new ImageRepository();
+        $newImage = $imageRepository->item($id);
+
+        $userRepository = new UserRepository();
+        $newImage['user'] = $userRepository->item($newImage['user_id']);
+
+        $bangumiRepository = new BangumiRepository();
+        $newImage['bangumi'] = $bangumiRepository->item($newImage['bangumi_id']);
+
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $newImage['role'] = $newImage['role_id'] ? $cartoonRoleRepository->item($newImage['role_id']) : null;
+
+        $transformer = new ImageTransformer();
+
+        return $this->resCreated($transformer->item($newImage));
     }
 }
