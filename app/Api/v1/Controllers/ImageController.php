@@ -2,17 +2,13 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Api\V1\Repositories\BangumiRepository;
-use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
-use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\Image;
 use App\Models\ImageTag;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Mews\Purifier\Facades\Purifier;
 
 /**
  * @Resource("图片相关接口")
@@ -106,6 +102,7 @@ class ImageController extends Controller
         $userId = $this->getAuthUserId();
 
         $now = Carbon::now();
+
         $id = Image::insertGetId([
             'user_id' => $userId,
             'bangumi_id' => $request->get('bangumiId'),
@@ -128,7 +125,9 @@ class ImageController extends Controller
             'tag_id' => $request->get('tags')
         ]);
 
-        // TODO：审核
+        $job = (new \App\Jobs\Trial\Image\Create($id));
+        dispatch($job);
+
         return $this->resCreated($id);
     }
 }
