@@ -118,10 +118,28 @@ class Repository
 
     public function Cache($key, $func, $exp = 'd')
     {
-        return Cache::remember($key, $this->expire($exp), function () use ($func)
+        return Cache::remember($key, $this->expiredAt($exp), function () use ($func)
         {
             return $func();
         });
+    }
+
+    private function expiredAt($type = 'd')
+    {
+        if ($type === 'd')
+        {
+            return 86400;
+        }
+        else if ($type === 'h')
+        {
+            return 3600;
+        }
+        else if ($type === 'm')
+        {
+            return 60;
+        }
+
+        return 86400;
     }
 
     private function expire($type = 'd')
