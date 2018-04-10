@@ -107,7 +107,6 @@ class ImageController extends Controller
         $id = Image::insertGetId([
             'user_id' => $userId,
             'bangumi_id' => $request->get('bangumiId'),
-            'name' => Purifier::clean($request->get('name')),
             'url' => $request->get('url'),
             'width' => $request->get('width'),
             'height' => $request->get('height'),
