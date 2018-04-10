@@ -488,9 +488,12 @@ class PostController extends Controller
         }
         else
         {
+            $now = Carbon::now();
             $likeId = PostLike::insertGetId([
                 'user_id' => $userId,
-                'post_id' => $postId
+                'post_id' => $postId,
+                'created_at' => $now,
+                'updated_at' => $now
             ]);
             $num = 1;
 
