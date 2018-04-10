@@ -20,7 +20,6 @@ class ImageTransformer extends Transformer
                 'width' => (int)$image['width'],
                 'height' => (int)$image['height'],
                 'url' => $image['url'],
-                'name' => $image['name'],
                 'tags' => $image['tags'],
                 'creator' => (boolean)$image['creator'],
                 'bangumi' => $this->transformer($image['bangumi'], function ($bangumi)

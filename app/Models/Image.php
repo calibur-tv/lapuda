@@ -17,7 +17,6 @@ class Image extends Model
         'role_id',
         'creator',
         'url',
-        'name',
         'like_count',
         'height',
         'width',
