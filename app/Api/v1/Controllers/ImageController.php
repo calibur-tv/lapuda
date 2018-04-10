@@ -9,6 +9,7 @@ use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\Image;
 use App\Models\ImageTag;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Mews\Purifier\Facades\Purifier;
@@ -104,6 +105,7 @@ class ImageController extends Controller
 
         $userId = $this->getAuthUserId();
 
+        $now = Carbon::now();
         $id = Image::insertGetId([
             'user_id' => $userId,
             'bangumi_id' => $request->get('bangumiId'),
@@ -111,7 +113,9 @@ class ImageController extends Controller
             'width' => $request->get('width'),
             'height' => $request->get('height'),
             'role_id' => $request->get('roleId'),
-            'creator' => $request->get('creator')
+            'creator' => $request->get('creator'),
+            'created_at' => $now,
+            'updated_at' => $now
         ]);
 
         ImageTag::create([

@@ -22,6 +22,7 @@ class ImageTransformer extends Transformer
                 'url' => $image['url'],
                 'tags' => $image['tags'],
                 'creator' => (boolean)$image['creator'],
+                'like_count' => (int)$image['like_count'],
                 'bangumi' => $this->transformer($image['bangumi'], function ($bangumi)
                 {
                     return [
@@ -34,10 +35,10 @@ class ImageTransformer extends Transformer
                 {
                     return [
                         'id' => (int)$role['id'],
-                        'name' => $role['name'],
-                        'avatar' => $role['avatar']
+                        'name' => $role['name']
                     ];
-                }) : null
+                }) : null,
+                'created_at' => $image['created_at']
             ];
         });
     }
