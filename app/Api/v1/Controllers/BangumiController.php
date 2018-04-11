@@ -2,13 +2,18 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\CartoonRoleRepository;
+use App\Api\V1\Repositories\ImageRepository;
+use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Transformers\BangumiTransformer;
+use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Bangumi;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\TagRepository;
+use App\Models\Image;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -309,6 +314,67 @@ class BangumiController extends Controller
         return $this->resOK([
             'list' => $transformer->bangumi($list),
             'total' => count($ids)
+        ]);
+    }
+
+    public function images(Request $request, $id)
+    {
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = intval($request->get('take')) ?: 12;
+        $type = intval($request->get('type')) ?: 0;
+        $role = intval($request->get('role')) ?: 0;
+
+        $ids = Image::whereRaw('bangumi_id = ? and state = 1', [$id])
+            ->when($role, function ($query) use ($role)
+            {
+                return $query->where('role_id', $role);
+            })
+            ->when($type, function ($query) use ($type)
+            {
+                return $query->leftJoin('image_tags AS tags', 'images.id', '=', 'tags.image_id')
+                    ->where('tags.tag_id', $type);
+            })
+            ->whereNotIn('id', $seen)
+            ->take($take)
+            ->pluck('id');
+
+        if (empty($ids))
+        {
+            return $this->resOK([
+                'list' => [],
+                'total' => 0
+            ]);
+        }
+
+        $total = Image::whereRaw('bangumi_id = ? and state = 1', [$id])
+            ->when($role, function ($query) use ($role)
+            {
+                return $query->where('role_id', $role);
+            })
+            ->when($type, function ($query) use ($type)
+            {
+                return $query->leftJoin('image_tags AS tags', 'images.id', '=', 'tags.image_id')
+                    ->where('tags.tag_id', $type);
+            })->count();
+
+        $imageRepository = new ImageRepository();
+        $userRepository = new UserRepository();
+        $cartoonRepository = new CartoonRoleRepository();
+        $transformer = new ImageTransformer();
+
+        $userId = $this->getAuthUserId();
+        $list = $imageRepository->list($ids);
+
+        foreach ($list as $i => $item)
+        {
+            $list[$i]['liked'] = $userId ? $imageRepository->checkLiked($item['id'], $userId) : false;
+            $list[$i]['user'] = $userRepository->item($item['user_id']);
+            $list[$i]['role'] = $item['role_id'] ? $cartoonRepository->item($item['role_id']) : null;
+        }
+
+        return $this->resOK([
+            'list' => $transformer->bangumi($list),
+            'total' => $total
         ]);
     }
 }
