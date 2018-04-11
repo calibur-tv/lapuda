@@ -541,7 +541,7 @@ class UserController extends Controller
         $take = $request->get('take');
         $isMe = $visitorId === $userId;
 
-        $ids = Image::where('user_id', $userId)
+        $ids = Image::whereRaw('user_id = ? and state = 1', [$userId])
             ->take($take)
             ->skip($take * $page)
             ->pluck('id');

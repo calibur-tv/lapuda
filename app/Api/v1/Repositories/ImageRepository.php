@@ -52,7 +52,7 @@ class ImageRepository extends Repository
 
     public function checkLiked($imageId, $userId)
     {
-        return (boolean)ImageLike::where('user_id = ? and image_id = ?', [$userId, $imageId])->count();
+        return (boolean)ImageLike::whereRaw('image_id = ? and user_id = ?', [$imageId, $userId])->count();
     }
 
     public function uptoken()

@@ -7,6 +7,7 @@ use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Bangumi;
 use App\Models\BangumiFollow;
 use App\Models\BangumiTag;
+use App\Models\Image;
 use App\Models\Post;
 use App\Models\Tag;
 use App\Models\User;

@@ -11,6 +11,39 @@ namespace App\Api\V1\Transformers;
 
 class ImageTransformer extends Transformer
 {
+    public function bangumi($list)
+    {
+        return $this->collection($list, function ($image)
+        {
+            return [
+                'id' => (int)$image['id'],
+                'width' => (int)$image['width'],
+                'height' => (int)$image['height'],
+                'url' => $image['url'],
+                'tags' => $image['tags'],
+                'creator' => (boolean)$image['creator'],
+                'like_count' => (int)$image['like_count'],
+                'user' => $this->transformer($image['user'], function ($user)
+                {
+                    return [
+                        'id' => (int)$user['id'],
+                        'zone' => $user['zone'],
+                        'nickname' => $user['nickname'],
+                        'avatar' => $user['avatar']
+                    ];
+                }),
+                'role' => $image['role'] ? $this->transformer($image['role'], function ($role)
+                {
+                    return [
+                        'id' => (int)$role['id'],
+                        'name' => $role['name']
+                    ];
+                }) : null,
+                'created_at' => $image['created_at']
+            ];
+        });
+    }
+
     public function userList($list)
     {
         return $this->collection($list, function ($image)

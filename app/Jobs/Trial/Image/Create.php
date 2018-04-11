@@ -33,13 +33,13 @@ class Create implements ShouldQueue
     {
         $url = Image::where('id', $this->imageId)->pluck('url')->first();
 
-        $state = 0;
+        $state = 1;
 
         // 色情
         $respSex = json_decode(file_get_contents($url . '?qpulp'), true);
         if (intval($respSex['code']) !== 0)
         {
-            $state = 1;
+            $state = 2;
         }
         else
         {
@@ -47,7 +47,7 @@ class Create implements ShouldQueue
             $review = (boolean)$respSex['result']['review'];
             if ($label === 0 || $review === true)
             {
-                $state = 1;
+                $state = 2;
             }
         }
 
@@ -55,7 +55,7 @@ class Create implements ShouldQueue
         $respWarn = json_decode(file_get_contents($url . '?qterror'), true);
         if (intval($respWarn['code']) !== 0)
         {
-            $state = 1;
+            $state = 2;
         }
         else
         {
@@ -63,7 +63,7 @@ class Create implements ShouldQueue
             $review = (boolean)$respSex['result']['review'];
             if ($label === 1 || $review)
             {
-                $state = 1;
+                $state = 2;
             }
         }
 
@@ -71,11 +71,11 @@ class Create implements ShouldQueue
         $respDaddy = json_decode(file_get_contents($url . '?qpolitician'), true);
         if (intval($respDaddy['code']) !== 0)
         {
-            $state = 1;
+            $state = 2;
         }
         else if ((boolean)$respDaddy['result']['review'] === true)
         {
-            $state = 1;
+            $state = 2;
         }
 
         Image::where('id', $this->imageId)
