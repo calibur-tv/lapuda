@@ -53,7 +53,7 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/follow', 'App\Api\V1\Controllers\BangumiController@follow')->middleware(['jwt.auth', 'throttle:30,1']);
 
-            $api->post('/followers', 'App\Api\V1\Controllers\BangumiController@followers')->middleware('throttle:30,1');
+            $api->post('/followers', 'App\Api\V1\Controllers\BangumiController@followers');
 
             $api->get('/roles', 'App\Api\V1\Controllers\CartoonRoleController@listOfBangumi');
 

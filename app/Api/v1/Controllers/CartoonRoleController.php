@@ -37,14 +37,8 @@ class CartoonRoleController extends Controller
             return $this->resErrNotFound('不存在的番剧');
         }
 
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $all = $request->get('all') ? (boolean)$request->get('all') : false;
-
         $cartoonRoleRepository = new CartoonRoleRepository();
         $ids = $cartoonRoleRepository->bangumiOfIds($bangumiId);
-        if (!$all) {
-            $ids = array_slice(array_diff($ids, $seen), 0, config('website.list_count'));
-        }
 
         if (empty($ids))
         {
