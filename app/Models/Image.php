@@ -20,7 +20,7 @@ class Image extends Model
         'like_count',
         'height',
         'width',
-        'state',    // 0：待审，1：通过，2：审核中，3：删除
+        'state',    // 0：待审，1：通过，2：审核中，3：删除，4：用户举报
     ];
 
     protected $casts = [

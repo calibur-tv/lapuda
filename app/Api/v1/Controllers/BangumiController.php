@@ -324,7 +324,8 @@ class BangumiController extends Controller
         $type = intval($request->get('type')) ?: 0;
         $role = intval($request->get('role')) ?: 0;
 
-        $ids = Image::whereRaw('bangumi_id = ? and state = 1', [$id])
+        $ids = Image::where('bangumi_id', $id)
+            ->whereIn('state', [1, 4])
             ->when($role, function ($query) use ($role)
             {
                 return $query->where('role_id', $role);
