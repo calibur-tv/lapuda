@@ -130,4 +130,31 @@ class ImageController extends Controller
 
         return $this->resCreated($id);
     }
+
+    public function delete(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $imageId = $request->get('id');
+
+        $image = Image::whereRaw('user_id = ? and id = ?', [$userId, $imageId])->first();
+
+        if (is_null($image))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $image->delete();
+
+        return $this->resNoContent();
+    }
+
+    public function report(Request $request)
+    {
+        Image::where('id', $request->get('id'))
+            ->update([
+                'state' => 4
+            ]);
+
+        return $this->resNoContent();
+    }
 }

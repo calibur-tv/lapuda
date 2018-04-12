@@ -166,6 +166,10 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/uptoken', 'App\Api\V1\Controllers\ImageController@uptoken')->middleware(['jwt.auth', 'throttle:20,1']);
 
         $api->post('/upload', 'App\Api\V1\Controllers\ImageController@upload')->middleware(['jwt.auth', 'throttle:20,1']);
+
+        $api->post('/delete', 'App\Api\V1\Controllers\ImageController@delete')->middleware(['jwt.auth', 'throttle:20,1']);
+
+        $api->post('/report', 'App\Api\V1\Controllers\ImageController@report')->middleware(['throttle:20,1']);
     });
 
     $api->group(['prefix' => '/trending'], function ($api)
