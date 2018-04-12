@@ -21,6 +21,8 @@ class ImageTransformer extends Transformer
                 'height' => (int)$image['height'],
                 'url' => $image['url'],
                 'tags' => $image['tags'],
+                'user_id' => (int)$image['user_id'],
+                'bangumi_id' => (int)$image['bangumi_id'],
                 'creator' => (boolean)$image['creator'],
                 'like_count' => (int)$image['like_count'],
                 'user' => $this->transformer($image['user'], function ($user)
@@ -54,6 +56,8 @@ class ImageTransformer extends Transformer
                 'height' => (int)$image['height'],
                 'url' => $image['url'],
                 'tags' => $image['tags'],
+                'user_id' => (int)$image['user_id'],
+                'bangumi_id' => (int)$image['bangumi_id'],
                 'creator' => (boolean)$image['creator'],
                 'like_count' => (int)$image['like_count'],
                 'bangumi' => $this->transformer($image['bangumi'], function ($bangumi)
