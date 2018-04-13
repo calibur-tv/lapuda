@@ -170,6 +170,8 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/delete', 'App\Api\V1\Controllers\ImageController@delete')->middleware(['jwt.auth', 'throttle:20,1']);
 
         $api->post('/report', 'App\Api\V1\Controllers\ImageController@report')->middleware(['throttle:20,1']);
+
+        $api->post('/edit', 'App\Api\V1\Controllers\ImageController@edit')->middleware(['jwt.auth', 'throttle:20,1']);
     });
 
     $api->group(['prefix' => '/trending'], function ($api)
