@@ -131,6 +131,50 @@ class ImageController extends Controller
         return $this->resCreated($id);
     }
 
+    public function edit(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'bangumiId' => 'required|integer',
+            'size' => 'required|integer',
+            'tags' => 'required|integer',
+            'roleId' => 'required|integer'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator->errors());
+        }
+
+        $userId = $this->getAuthUserId();
+        $imageId = $request->get('id');
+
+        $image = Image::whereRaw('id = ? and user_id = ?', [$imageId, $userId])->first();
+
+        if (is_null($image))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $image->update([
+            'bangumi_id' => $request->get('bangumiId'),
+            'role_id' => $request->get('roleId')
+        ]);
+
+        ImageTag::where('image_id', $imageId)->delete();
+
+        ImageTag::create([
+            'image_id' => $imageId,
+            'tag_id' => $request->get('size')
+        ]);
+
+        ImageTag::create([
+            'image_id' => $imageId,
+            'tag_id' => $request->get('tags')
+        ]);
+
+        return $this->resNoContent();
+    }
+
     public function delete(Request $request)
     {
         $userId = $this->getAuthUserId();
