@@ -555,7 +555,7 @@ class UserController extends Controller
 
         foreach ($list as $i => $item)
         {
-            $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
+            $list[$i]['bangumi'] = $list[$i]['bangumi_id'] ? $bangumiRepository->item($item['bangumi_id']) : null;
             $list[$i]['liked'] = $isMe ? false : $imageRepository->checkLiked($item['id'], $visitorId);
             $list[$i]['role'] = $item['role_id'] ? $cartoonRoleRepository->item($item['role_id']) : null;
         }
