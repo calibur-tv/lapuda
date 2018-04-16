@@ -3,11 +3,14 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\ImageRepository;
+use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\Image;
+use App\Models\ImageLike;
 use App\Models\ImageTag;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -200,5 +203,79 @@ class ImageController extends Controller
             ]);
 
         return $this->resNoContent();
+    }
+
+    public function toggleLike(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $imageId = $request->get('id');
+
+        $image = Image::where('id', $imageId)->first();
+
+        if (is_null($image))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if (intval($image['user_id']) === $userId)
+        {
+            return $this->resErrRole('不能为自己的图片点赞');
+        }
+
+        $liked = ImageLike::whereRaw('user_id = ? and image_id = ?', [$userId, $imageId])->count();
+        $isCreator = (boolean)$image['creator'];
+        $userRepository = new UserRepository();
+
+        if ($liked)
+        {
+            if ($isCreator)
+            {
+                $result = $userRepository->toggleCoin(true, $userId, $image['user_id'], 4, $imageId);
+
+                if (!$result)
+                {
+                    return $this->resErrRole('没有点赞记录');
+                }
+            }
+
+            ImageLike::whereRaw('user_id = ? and image_id = ?', [$userId, $imageId])->delete();
+            Image::where('id', $imageId)->increment('like_count', -1);
+
+            if (Redis::EXISTS('user_image_'.$imageId))
+            {
+                Redis::HINCRBYFLOAT('user_image_'.$imageId, 'like_count', -1);
+            }
+
+            return $this->resOK(false);
+        }
+
+        if ($isCreator)
+        {
+            $success = $userRepository->toggleCoin(false, $userId, $image['user_id'], 4, $imageId);
+
+            if (!$success)
+            {
+                return $this->resErrRole('金币不足');
+            }
+        }
+
+        $now = Carbon::now();
+        $likeId = ImageLike::insertGetId([
+            'user_id' => $userId,
+            'image_id' => $imageId,
+            'created_at' => $now,
+            'updated_at' => $now
+        ]);
+        Image::where('id', $imageId)->increment('like_count', 1);
+
+        if (Redis::EXISTS('user_image_'.$imageId))
+        {
+            Redis::HINCRBYFLOAT('user_image_'.$imageId, 'like_count', 1);
+        }
+
+        $job = (new \App\Jobs\Notification\Image\Like($likeId));
+        dispatch($job);
+
+        return $this->resOK(true);
     }
 }

@@ -24,5 +24,6 @@ class UserCoin extends Model
      * 1：帖子
      * 2：邀请用户注册
      * 3：为偶像应援
+     * 4：为图片点赞
      */
 }
