@@ -25,6 +25,7 @@ class ImageTransformer extends Transformer
                 'bangumi_id' => (int)$image['bangumi_id'],
                 'role_id' => (int)$image['role_id'],
                 'creator' => (boolean)$image['creator'],
+                'liked' => (boolean)$image['liked'],
                 'like_count' => (int)$image['like_count'],
                 'user' => $this->transformer($image['user'], function ($user)
                 {
@@ -61,6 +62,7 @@ class ImageTransformer extends Transformer
                 'bangumi_id' => (int)$image['bangumi_id'],
                 'role_id' => (int)$image['role_id'],
                 'creator' => (boolean)$image['creator'],
+                'liked' => (boolean)$image['liked'],
                 'like_count' => (int)$image['like_count'],
                 'bangumi' => $image['bangumi_id'] ? $this->transformer($image['bangumi'], function ($bangumi)
                 {

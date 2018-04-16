@@ -299,7 +299,8 @@ class UserRepository extends Repository
                     'link' => '/post/'.$postId.'?reply='.$replyId.'&comment='.$commentId,
                 ];
                 $model = 'post';
-            } else if ($type === 3)
+            }
+            else if ($type === 3)
             {
                 $post = $postRepository->item($item['about_id']);
                 $about = [
@@ -308,7 +309,8 @@ class UserRepository extends Repository
                     'link' => '/post/'.$ids[0]
                 ];
                 $model = 'post';
-            } else if ($type === 4)
+            }
+            else if ($type === 4)
             {
                 $post = $postRepository->item($ids[1]);
                 $about = [
@@ -317,6 +319,15 @@ class UserRepository extends Repository
                     'link' => '/post/'.$ids[1].'?reply='.$ids[0]
                 ];
                 $model = 'post';
+            }
+            else if ($type === 5)
+            {
+                $model = 'image';
+                $about = [
+                    'resource' => '',
+                    'title' => '',
+                    'link' => ''
+                ];
             }
 
             $result[] = [
