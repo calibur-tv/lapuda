@@ -29,17 +29,31 @@ class VideoRepository extends Repository
 
             if (isset($resource['video'][720]) && isset($resource['video'][720]['src']))
             {
-                $resource['video'][720]['src'] = config('website.video') . $resource['video'][720]['src'];
+                $resource['video'][720]['src'] = $this->computeVideoSrc($resource['video'][720]['src']);
             }
 
             if (isset($resource['video'][1080]) && isset($resource['video'][1080]['src']))
             {
-                $resource['video'][1080]['src'] = config('website.video') . $resource['video'][1080]['src'];
+                $resource['video'][1080]['src'] = $this->computeVideoSrc($resource['video'][1080]['src']);
             }
 
             $video['resource'] = $resource;
 
             return $video;
-        });
+        }, 'h');
+    }
+
+
+    protected function computeVideoSrc($src)
+    {
+        $t = base_convert(time() + 21600, 10, 16);
+
+        $str = '/' . $src;
+        $pos = strrpos($str, '/') + 1;
+        $encodePath = substr($str, 0, $pos) . urlencode(substr($str, $pos));
+
+        $sign = strtolower(md5(config('website.qiniu_time_key') . $encodePath . $t));
+
+        return config('website.video') . $src . '?sign=' . $sign . '&t=' . $t;
     }
 }
