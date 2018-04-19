@@ -562,6 +562,9 @@ class UserController extends Controller
 
         $transformer = new ImageTransformer();
 
-        return $this->resOK($transformer->userList($list));
+        return $this->resOK([
+            'list' => $transformer->userList($list),
+            'type' => $imageRepository->uploadImageTypes()
+        ]);
     }
 }
