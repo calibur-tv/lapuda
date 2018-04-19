@@ -31,8 +31,18 @@ class ImageRepository extends Repository
             return $image;
         }, 'm');
 
-        $tagIds = ImageTag::where('image_id', $id)->pluck('tag_id');
-        $result['tags'] = Tag::whereIn('id', $tagIds)->select('id', 'name')->get();
+        $meta = $this->Cache('user_image_' . $id . '_meta', function () use ($result)
+        {
+            $tagIds = ImageTag::where('image_id', $result['id'])->pluck('tag_id');
+
+            return [
+                'tags' => Tag::whereIn('id', $tagIds)->select('id', 'name')->get(),
+                'size' => Tag::where('id', $result['size_id'])->select('id', 'name')->first()
+            ];
+        });
+
+        $result['size'] = $meta['size'];
+        $result['tags'] = $meta['tags'];
 
         return $result;
     }

@@ -113,6 +113,7 @@ class ImageController extends Controller
             'width' => $request->get('width'),
             'height' => $request->get('height'),
             'role_id' => $request->get('roleId'),
+            'size_id' => $request->get('size'),
             'creator' => $request->get('creator'),
             'created_at' => $now,
             'updated_at' => $now
@@ -120,13 +121,14 @@ class ImageController extends Controller
 
         ImageTag::create([
             'image_id' => $id,
-            'tag_id' => $request->get('size')
-        ]);
-
-        ImageTag::create([
-            'image_id' => $id,
             'tag_id' => $request->get('tags')
         ]);
+
+        $cacheKey = 'user_' . $userId . '_image_ids';
+        if (Redis::EXISTS($cacheKey))
+        {
+            Redis::LPUSH($cacheKey, $id);
+        }
 
         $job = (new \App\Jobs\Trial\Image\Create($id));
         dispatch($job);
@@ -160,20 +162,18 @@ class ImageController extends Controller
 
         $image->update([
             'bangumi_id' => $request->get('bangumiId'),
-            'role_id' => $request->get('roleId')
+            'role_id' => $request->get('roleId'),
+            'size_id' => $request->get('size')
         ]);
 
         ImageTag::where('image_id', $imageId)->delete();
 
         ImageTag::create([
             'image_id' => $imageId,
-            'tag_id' => $request->get('size')
-        ]);
-
-        ImageTag::create([
-            'image_id' => $imageId,
             'tag_id' => $request->get('tags')
         ]);
+
+        Redis::DEL('user_image_' . $imageId . '_meta');
 
         return $this->resNoContent();
     }
@@ -191,6 +191,15 @@ class ImageController extends Controller
         }
 
         $image->delete();
+        ImageTag::where('image_id', $imageId)->delete();
+
+        $cacheKey = 'user_' . $userId . '_image_ids';
+        if (Redis::EXISTS($cacheKey))
+        {
+            Redis::LREM($cacheKey, 1, $imageId);
+        }
+        Redis::DEL('user_image_' . $imageId);
+        Redis::DEL('user_image_' . $imageId . '_meta');
 
         return $this->resNoContent();
     }
