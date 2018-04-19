@@ -540,6 +540,7 @@ class UserController extends Controller
         $take = intval($request->get('take')) ?: 12;
         $tags = $request->get('tags') ?: 0;
         $size = $request->get('size') ?: 0;
+        $bangumiId = $request->get('bangumiId');
         $imageRepository = new ImageRepository();
 
         $ids = Image::where('user_id', $userId)
@@ -550,6 +551,10 @@ class UserController extends Controller
             ->when($size, function ($query) use ($size)
             {
                 return $query->where('size_id', $size);
+            })
+            ->when($bangumiId !== -1, function ($query) use ($bangumiId)
+            {
+                return $query->where('bangumi_id', $bangumiId);
             })
             ->when($tags, function ($query) use ($tags)
             {
