@@ -347,17 +347,6 @@ class BangumiController extends Controller
             ]);
         }
 
-        $total = Image::whereRaw('bangumi_id = ? and state = 1', [$id])
-            ->when($role, function ($query) use ($role)
-            {
-                return $query->where('role_id', $role);
-            })
-            ->when($type, function ($query) use ($type)
-            {
-                return $query->leftJoin('image_tags AS tags', 'images.id', '=', 'tags.image_id')
-                    ->where('tags.tag_id', $type);
-            })->count();
-
         $imageRepository = new ImageRepository();
         $userRepository = new UserRepository();
         $cartoonRepository = new CartoonRoleRepository();
@@ -375,7 +364,7 @@ class BangumiController extends Controller
 
         return $this->resOK([
             'list' => $transformer->bangumi($list),
-            'total' => $total
+            'type' => $imageRepository->uploadImageTypes()
         ]);
     }
 }

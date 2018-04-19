@@ -137,7 +137,7 @@ class ImageRepository extends Repository
 
             return [
                 'size' => $size,
-                'tag' => $tags
+                'tags' => $tags
             ];
         }, 'm');
     }
