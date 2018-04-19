@@ -128,15 +128,15 @@ class Repository
     {
         if ($type === 'd')
         {
-            return 86400;
+            return 720;
         }
         else if ($type === 'h')
         {
-            return 3600;
+            return 60;
         }
         else if ($type === 'm')
         {
-            return 60;
+            return 5;
         }
 
         return 86400;
