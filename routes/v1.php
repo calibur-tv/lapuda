@@ -174,6 +174,8 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/edit', 'App\Api\V1\Controllers\ImageController@edit')->middleware(['jwt.auth', 'throttle:20,1']);
 
         $api->post('/toggleLike', 'App\Api\V1\Controllers\ImageController@toggleLike')->middleware(['jwt.auth', 'throttle:20,1']);
+
+        $api->post('/trendingList', 'App\Api\V1\Controllers\ImageController@trendingList');
     });
 
     $api->group(['prefix' => '/trending'], function ($api)

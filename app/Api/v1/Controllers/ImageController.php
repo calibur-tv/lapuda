@@ -2,6 +2,7 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Transformers\ImageTransformer;
@@ -286,5 +287,74 @@ class ImageController extends Controller
         dispatch($job);
 
         return $this->resOK(true);
+    }
+
+    public function trendingList(Request $request)
+    {
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = intval($request->get('take')) ?: 12;
+        $size = intval($request->get('size')) ?: 0;
+        $tags = $request->get('tags') ?: 0;
+        $creator = $request->get('creator');
+        $sort = $request->get('sort') ?: 'new';
+        $bangumiId = $request->get('bangumiId');
+
+        $imageRepository = new ImageRepository();
+
+        $ids = Image::whereIn('state', [1, 4])
+            ->whereNotIn('id', $seen)
+            ->take($take)
+            ->when($sort === 'new', function ($query)
+            {
+                return $query->latest();
+            }, function ($query)
+            {
+                return $query->orderBy('like_count', 'DESC');
+            })
+            ->when($bangumiId !== -1, function ($query) use ($bangumiId)
+            {
+                return $query->where('bangumi_id', $bangumiId);
+            })
+            ->when($creator !== -1, function ($query) use ($creator)
+            {
+                return $query->where('creator', $creator);
+            })
+            ->when($size, function ($query) use ($size)
+            {
+                return $query->where('size_id', $size);
+            })
+            ->when($tags, function ($query) use ($tags)
+            {
+                return $query->leftJoin('image_tags AS tags', 'images.id', '=', 'tags.image_id')
+                    ->where('tags.tag_id', $tags);
+            })
+            ->pluck('images.id');
+
+        if (empty($ids))
+        {
+            return $this->resOK([
+                'list' => [],
+                'type' => $imageRepository->uploadImageTypes()
+            ]);
+        }
+
+        $userRepository = new UserRepository();
+        $bangumiRepository = new BangumiRepository();
+        $transformer = new ImageTransformer();
+
+        $userId = $this->getAuthUserId();
+        $list = $imageRepository->list($ids);
+
+        foreach ($list as $i => $item)
+        {
+            $list[$i]['bangumi'] = $list[$i]['bangumi_id'] ? $bangumiRepository->item($item['bangumi_id']) : null;
+            $list[$i]['liked'] = $userId ? $imageRepository->checkLiked($item['id'], $userId) : false;
+            $list[$i]['user'] = $userRepository->item($item['user_id']);
+        }
+
+        return $this->resOK([
+            'list' => $transformer->trending($list),
+            'type' => $imageRepository->uploadImageTypes()
+        ]);
     }
 }
