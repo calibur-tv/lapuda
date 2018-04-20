@@ -333,7 +333,7 @@ class BangumiController extends Controller
             ->whereIn('state', [1, 4])
             ->whereNotIn('id', $seen)
             ->take($take)
-            ->when($sort === 'new', function ($query) use ($size)
+            ->when($sort === 'new', function ($query)
             {
                 return $query->latest();
             }, function ($query)
