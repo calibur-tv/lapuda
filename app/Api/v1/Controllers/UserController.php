@@ -541,13 +541,21 @@ class UserController extends Controller
         $tags = $request->get('tags') ?: 0;
         $size = $request->get('size') ?: 0;
         $bangumiId = $request->get('bangumiId');
+        $creator = $request->get('creator');
+        $sort = $request->get('sort') ?: 'new';
         $imageRepository = new ImageRepository();
 
         $ids = Image::where('user_id', $userId)
             ->whereIn('state', [1, 4])
             ->skip($take * ($page - 1))
             ->take($take)
-            ->latest()
+            ->when($sort === 'new', function ($query) use ($size)
+            {
+                return $query->latest();
+            }, function ($query)
+            {
+                return $query->orderBy('like_count', 'DESC');
+            })
             ->when($size, function ($query) use ($size)
             {
                 return $query->where('size_id', $size);
@@ -555,6 +563,10 @@ class UserController extends Controller
             ->when($bangumiId !== -1, function ($query) use ($bangumiId)
             {
                 return $query->where('bangumi_id', $bangumiId);
+            })
+            ->when($creator !== -1, function ($query) use ($creator)
+            {
+                return $query->where('creator', $creator);
             })
             ->when($tags, function ($query) use ($tags)
             {
