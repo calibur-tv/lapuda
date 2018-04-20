@@ -323,6 +323,8 @@ class BangumiController extends Controller
         $take = intval($request->get('take')) ?: 12;
         $size = intval($request->get('size')) ?: 0;
         $tags = $request->get('tags') ?: 0;
+        $creator = $request->get('creator');
+        $sort = $request->get('sort') ?: 'new';
         $role = $request->get('roleId');
 
         $imageRepository = new ImageRepository();
@@ -331,10 +333,20 @@ class BangumiController extends Controller
             ->whereIn('state', [1, 4])
             ->whereNotIn('id', $seen)
             ->take($take)
-            ->latest()
+            ->when($sort === 'new', function ($query) use ($size)
+            {
+                return $query->latest();
+            }, function ($query)
+            {
+                return $query->orderBy('like_count', 'DESC');
+            })
             ->when($role !== -1, function ($query) use ($role)
             {
                 return $query->where('role_id', $role);
+            })
+            ->when($creator !== -1, function ($query) use ($creator)
+            {
+                return $query->where('creator', $creator);
             })
             ->when($size, function ($query) use ($size)
             {
