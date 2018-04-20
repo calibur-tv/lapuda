@@ -536,22 +536,59 @@ class UserController extends Controller
             return $this->resErrNotFound('该用户不存在');
         }
 
-        $visitorId = $this->getAuthUserId();
-        $page = $request->get('page');
-        $take = $request->get('take');
-        $isMe = $visitorId === $userId;
+        $page = intval($request->get('page')) ?: 1;
+        $take = intval($request->get('take')) ?: 12;
+        $tags = $request->get('tags') ?: 0;
+        $size = $request->get('size') ?: 0;
+        $bangumiId = $request->get('bangumiId');
+        $creator = $request->get('creator');
+        $sort = $request->get('sort') ?: 'new';
+        $imageRepository = new ImageRepository();
 
         $ids = Image::where('user_id', $userId)
             ->whereIn('state', [1, 4])
+            ->skip($take * ($page - 1))
             ->take($take)
-            ->skip($take * $page)
-            ->pluck('id');
+            ->when($sort === 'new', function ($query) use ($size)
+            {
+                return $query->latest();
+            }, function ($query)
+            {
+                return $query->orderBy('like_count', 'DESC');
+            })
+            ->when($size, function ($query) use ($size)
+            {
+                return $query->where('size_id', $size);
+            })
+            ->when($bangumiId !== -1, function ($query) use ($bangumiId)
+            {
+                return $query->where('bangumi_id', $bangumiId);
+            })
+            ->when($creator !== -1, function ($query) use ($creator)
+            {
+                return $query->where('creator', $creator);
+            })
+            ->when($tags, function ($query) use ($tags)
+            {
+                return $query->leftJoin('image_tags AS tags', 'images.id', '=', 'tags.image_id')
+                    ->where('tags.tag_id', $tags);
+            })
+            ->pluck('images.id');
 
-        $imageRepository = new ImageRepository();
+        if (empty($ids))
+        {
+            return $this->resOK([
+                'list' => [],
+                'type' => $imageRepository->uploadImageTypes()
+            ]);
+        }
+
         $bangumiRepository = new BangumiRepository();
         $cartoonRoleRepository = new CartoonRoleRepository();
 
         $list = $imageRepository->list($ids);
+        $visitorId = $this->getAuthUserId();
+        $isMe = $visitorId === $userId;
 
         foreach ($list as $i => $item)
         {

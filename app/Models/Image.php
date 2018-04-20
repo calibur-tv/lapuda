@@ -15,6 +15,7 @@ class Image extends Model
         'user_id',
         'bangumi_id',
         'role_id',
+        'size_id',
         'creator',
         'url',
         'like_count',

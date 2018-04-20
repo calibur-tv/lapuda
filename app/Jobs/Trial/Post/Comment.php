@@ -92,7 +92,7 @@ class Comment implements ShouldQueue
 
         if ($needDelete)
         {
-            Redis::LREM('post_'.$post['parent_id'].'_commentIds', $post['id'], 1);
+            Redis::LREM('post_'.$post['parent_id'].'_commentIds', 1, $post['id']);
         }
     }
 }

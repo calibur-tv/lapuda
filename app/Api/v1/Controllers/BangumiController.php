@@ -321,33 +321,52 @@ class BangumiController extends Controller
     {
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
         $take = intval($request->get('take')) ?: 12;
-        $type = intval($request->get('type')) ?: 0;
-        $role = intval($request->get('role')) ?: 0;
+        $size = intval($request->get('size')) ?: 0;
+        $tags = $request->get('tags') ?: 0;
+        $creator = $request->get('creator');
+        $sort = $request->get('sort') ?: 'new';
+        $role = $request->get('roleId');
+
+        $imageRepository = new ImageRepository();
 
         $ids = Image::where('bangumi_id', $id)
             ->whereIn('state', [1, 4])
-            ->when($role, function ($query) use ($role)
+            ->whereNotIn('id', $seen)
+            ->take($take)
+            ->when($sort === 'new', function ($query) use ($size)
+            {
+                return $query->latest();
+            }, function ($query)
+            {
+                return $query->orderBy('like_count', 'DESC');
+            })
+            ->when($role !== -1, function ($query) use ($role)
             {
                 return $query->where('role_id', $role);
             })
-            ->when($type, function ($query) use ($type)
+            ->when($creator !== -1, function ($query) use ($creator)
+            {
+                return $query->where('creator', $creator);
+            })
+            ->when($size, function ($query) use ($size)
+            {
+                return $query->where('size_id', $size);
+            })
+            ->when($tags, function ($query) use ($tags)
             {
                 return $query->leftJoin('image_tags AS tags', 'images.id', '=', 'tags.image_id')
-                    ->where('tags.tag_id', $type);
+                    ->where('tags.tag_id', $tags);
             })
-            ->whereNotIn('id', $seen)
-            ->take($take)
-            ->pluck('id');
+            ->pluck('images.id');
 
         if (empty($ids))
         {
             return $this->resOK([
                 'list' => [],
-                'total' => 0
+                'type' => $imageRepository->uploadImageTypes()
             ]);
         }
 
-        $imageRepository = new ImageRepository();
         $userRepository = new UserRepository();
         $cartoonRepository = new CartoonRoleRepository();
         $transformer = new ImageTransformer();

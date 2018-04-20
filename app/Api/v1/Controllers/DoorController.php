@@ -468,10 +468,11 @@ class DoorController extends Controller
     {
         $pinyin = strtolower(Overtrue::permalink($name));
 
-        $tail = UserZone::where('name', $pinyin)->count();
+        $tail = UserZone::where('name', $pinyin)->pluck('count');
 
         if ($tail)
         {
+            UserZone::where('name', $pinyin)->increment('count');
             return $pinyin . '-' . implode('-', str_split(($tail), 2));
         }
         else
