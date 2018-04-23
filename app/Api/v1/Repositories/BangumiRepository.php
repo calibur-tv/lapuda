@@ -304,19 +304,50 @@ class BangumiRepository extends Repository
 
     public function getFollowers($bangumiId, $seenIds, $take = 10)
     {
-        $cache = $this->RedisList('bangumi_'.$bangumiId.'_followersIds', function () use ($bangumiId)
+        $ids = $this->RedisSort('bangumi_'.$bangumiId.'_followersIds', function () use ($bangumiId)
         {
             return BangumiFollow::where('bangumi_id', $bangumiId)
                 ->orderBy('id', 'DESC')
-                ->pluck('user_id');
-        });
+                ->pluck('created_at', 'user_id AS id');
+        }, true, false, true);
 
-        $ids = array_slice(array_diff($cache, $seenIds), 0, $take);
+        if (empty($ids))
+        {
+            return [];
+        }
+
+        foreach ($ids as $key => $val)
+        {
+            if (in_array($key, $seenIds))
+            {
+                unset($ids[$key]);
+            }
+        }
+
+        if (empty($ids))
+        {
+            return [];
+        }
+
+        $ids = array_slice($ids, 0, $take, true);
+
+        if (empty($ids))
+        {
+            return [];
+        }
 
         $repository = new UserRepository();
         $transformer = new UserTransformer();
+        $users = [];
+        $i = 0;
+        foreach ($ids as $id => $score)
+        {
+            $users[] = $transformer->item($repository->item($id));
+            $users[$i]['score'] = (int)$score;
+            $i++;
+        }
 
-        return $transformer->list($repository->list($ids));
+        return $users;
     }
 
     public function getPostIds($id, $type)
@@ -327,7 +358,7 @@ class BangumiRepository extends Repository
         return $this->RedisSort($cacheKey, function () use ($id)
         {
             return Post::whereRaw('bangumi_id = ? and parent_id = ?', [$id, 0])
-                ->orderBy('id', 'desc')
+                ->orderBy('id', 'DESC')
                 ->pluck('updated_at', 'id');
         }, true);
     }
