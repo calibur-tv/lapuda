@@ -256,9 +256,7 @@ class BangumiController extends Controller
             return $this->resOK([]);
         }
 
-        $transformer = new UserTransformer();
-
-        return $this->resOK($transformer->list($users));
+        return $this->resOK($users);
     }
 
     /**
