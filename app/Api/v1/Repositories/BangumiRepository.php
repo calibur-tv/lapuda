@@ -271,15 +271,12 @@ class BangumiRepository extends Repository
                         'data' => $length > 0 ? array_slice($list, $begin, $length) : array_slice($list, $begin)
                     ]);
                 }
-                $resetPartNum = isset($season->re) ? (boolean)$season->re : false;
             } else {
                 $videos = $list;
-                $resetPartNum = false;
             }
 
             return [
                 'videos' => $videos,
-                'repeat' => $resetPartNum,
                 'total' => count($list)
             ];
         });
