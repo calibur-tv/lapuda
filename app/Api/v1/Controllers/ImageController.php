@@ -302,6 +302,7 @@ class ImageController extends Controller
         $imageRepository = new ImageRepository();
 
         $ids = Image::whereIn('state', [1, 4])
+            ->where('album_id', 0)
             ->whereNotIn('id', $seen)
             ->take($take)
             ->when($sort === 'new', function ($query)

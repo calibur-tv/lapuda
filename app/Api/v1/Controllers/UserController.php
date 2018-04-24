@@ -545,7 +545,7 @@ class UserController extends Controller
         $sort = $request->get('sort') ?: 'new';
         $imageRepository = new ImageRepository();
 
-        $ids = Image::where('user_id', $userId)
+        $ids = Image::whereRaw('user_id = ? and album_id = 0', [$userId])
             ->whereIn('state', [1, 4])
             ->skip($take * ($page - 1))
             ->take($take)

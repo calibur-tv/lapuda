@@ -327,7 +327,7 @@ class BangumiController extends Controller
 
         $imageRepository = new ImageRepository();
 
-        $ids = Image::where('bangumi_id', $id)
+        $ids = Image::whereRaw('bangumi_id = ? and album_id = 0', [$id])
             ->whereIn('state', [1, 4])
             ->whereNotIn('id', $seen)
             ->take($take)

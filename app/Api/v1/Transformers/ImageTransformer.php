@@ -20,14 +20,18 @@ class ImageTransformer extends Transformer
                 'width' => (int)$image['width'],
                 'height' => (int)$image['height'],
                 'url' => $image['url'],
+                'name' => $image['name'] ?: '',
                 'user_id' => (int)$image['user_id'],
+                'album_id' => (int)$image['album_id'],
                 'bangumi_id' => (int)$image['bangumi_id'],
                 'role_id' => (int)$image['role_id'],
                 'size' => $image['size'],
                 'tags' => $image['tags'],
                 'creator' => (boolean)$image['creator'],
+                'is_cartoon' => (boolean)$image['is_cartoon'],
                 'liked' => (boolean)$image['liked'],
                 'like_count' => (int)$image['like_count'],
+                'image_count' => (int)$image['image_count'],
                 'user' => $this->transformer($image['user'], function ($user)
                 {
                     return [
@@ -58,13 +62,17 @@ class ImageTransformer extends Transformer
                 'width' => (int)$image['width'],
                 'height' => (int)$image['height'],
                 'url' => $image['url'],
+                'name' => $image['name'] ?: '',
                 'user_id' => (int)$image['user_id'],
+                'album_id' => (int)$image['album_id'],
                 'bangumi_id' => (int)$image['bangumi_id'],
                 'size' => $image['size'],
                 'tags' => $image['tags'],
                 'creator' => (boolean)$image['creator'],
+                'is_cartoon' => (boolean)$image['is_cartoon'],
                 'liked' => (boolean)$image['liked'],
                 'like_count' => (int)$image['like_count'],
+                'image_count' => (int)$image['image_count'],
                 'user' => $this->transformer($image['user'], function ($user)
                 {
                     return [
@@ -96,13 +104,17 @@ class ImageTransformer extends Transformer
                 'width' => (int)$image['width'],
                 'height' => (int)$image['height'],
                 'url' => $image['url'],
+                'name' => $image['name'] ?: '',
                 'user_id' => (int)$image['user_id'],
+                'album_id' => (int)$image['album_id'],
                 'bangumi_id' => (int)$image['bangumi_id'],
                 'role_id' => (int)$image['role_id'],
                 'size' => $image['size'],
                 'tags' => $image['tags'],
                 'creator' => (boolean)$image['creator'],
+                'is_cartoon' => (boolean)$image['is_cartoon'],
                 'liked' => (boolean)$image['liked'],
+                'image_count' => (int)$image['image_count'],
                 'like_count' => (int)$image['like_count'],
                 'bangumi' => $image['bangumi_id'] ? $this->transformer($image['bangumi'], function ($bangumi)
                 {
