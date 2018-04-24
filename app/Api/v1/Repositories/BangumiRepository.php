@@ -180,12 +180,12 @@ class BangumiRepository extends Repository
             if ($result)
             {
                 $pipe->LPUSHX($userFollowsCacheKey, $bangumi_id);
-                $pipe->LPUSHX($bangumiFollowsCacheKey, $user_id);
+                $pipe->ZADD($bangumiFollowsCacheKey, strtotime('now'), $user_id);
             }
             else
             {
                 $pipe->LREM($userFollowsCacheKey, 1, $bangumi_id);
-                $pipe->LREM($bangumiFollowsCacheKey, 1, $user_id);
+                $pipe->ZREM($bangumiFollowsCacheKey, $user_id);
             }
         });
 
