@@ -32,22 +32,69 @@ class BangumiRepository extends Repository
             if ($bangumi['released_video_id'])
             {
                 $part = Video::where('id', $bangumi['released_video_id'])->pluck('part')->first();
+                // 如果有季度信息，并且 name 和 part 都存在，那么就要重算 released_part
                 if ($season !== '' && isset($season->part) && isset($season->name))
                 {
-                    $repeat = isset($season->re) ? (boolean)$season->re : false;
-                    if ($repeat)
+                    // 如果设置了 re（重拍），那么就要计算
+                    if (isset($season->re))
                     {
-                        foreach ($season->part as $i => $val)
+                        $reset = $season->re;
+                        // 如果 re 是一个数组
+                        if (gettype($reset) === 'array')
                         {
-                            if ($val > $part)
+                            // 假设有 4季，第二三季是连着的
+                            // season->re：[1, 1, 0]
+                            // season->part: [0, 12, 24, -1]
+                            // $part 可能是 10, 20, 40
+                            // 我们希望得到的结果是：10, 8, 28
+                            foreach ($season->part as $i => $val)
                             {
-                                $bangumi['released_part'] = $part - $season->part[$i - 1];
-                                break;
+                                // 遇到第一个大于当前 $part 的数字或者遇到 -1
+                                if ($val > $part || $val === -1)
+                                {
+                                    // 从后向前遍历
+                                    for ($j = $i; $j >= 0; $j--)
+                                    {
+                                        // 遇到第一个需要 reset 的，就 reset
+                                        if ($reset[$j])
+                                        {
+                                            $bangumi['released_part'] = $part - $season->part[$j];
+                                            break;
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // re 是 0 或 1
+                            if ($reset) // 是 1，需要重排
+                            {
+                                // part 必须是升序排列的，从 0 开始，当番剧未完结时，最后一位是 -1
+                                // 遍历 part
+                                // 比如：[1, 24, 50, -1]
+                                // 我们获取到的 $part  是某个集数，可能是 52 或 26
+                                foreach ($season->part as $i => $val)
+                                {
+                                    // 遇到第一个大于当前 $part 的数字或者遇到 -1
+                                    if ($val > $part || $val === -1)
+                                    {
+                                        // 减去上一季度part的值
+                                        $bangumi['released_part'] = $part - $season->part[$i - 1];
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                $bangumi['released_part'] = $part;
                             }
                         }
                     }
                     else
                     {
+                        // 没有设置 re，不用计算
                         $bangumi['released_part'] = $part;
                     }
                 }
@@ -58,6 +105,7 @@ class BangumiRepository extends Repository
             }
             else
             {
+                // 如果这个番剧是连载的，但是没有传过视频，则 released_part 是 0
                 $bangumi['released_part'] = 0;
             }
 
@@ -211,24 +259,24 @@ class BangumiRepository extends Repository
                 $time = $season->time;
                 $name = $season->name;
                 $videos = [];
+                $resetPart = isset($season->re);
                 for ($i=0, $j=1; $j < count($part); $i++, $j++) {
                     $begin = $part[$i];
                     $length = $part[$j] - $begin;
+                    $reset = $resetPart ? (gettype($season->re) === 'array' ? $season->re[$i] : $season->re) : false;
                     array_push($videos, [
                         'name' => $name[$i],
                         'time' => $time[$i],
+                        'base' => $reset && $i ? $part[$i] : 0,
                         'data' => $length > 0 ? array_slice($list, $begin, $length) : array_slice($list, $begin)
                     ]);
                 }
-                $repeat = isset($season->re) ? (boolean)$season->re : false;
             } else {
                 $videos = $list;
-                $repeat = false;
             }
 
             return [
                 'videos' => $videos,
-                'repeat' => $repeat,
                 'total' => count($list)
             ];
         });
@@ -256,19 +304,50 @@ class BangumiRepository extends Repository
 
     public function getFollowers($bangumiId, $seenIds, $take = 10)
     {
-        $cache = $this->RedisList('bangumi_'.$bangumiId.'_followersIds', function () use ($bangumiId)
+        $ids = $this->RedisSort('bangumi_'.$bangumiId.'_followersIds', function () use ($bangumiId)
         {
             return BangumiFollow::where('bangumi_id', $bangumiId)
                 ->orderBy('id', 'DESC')
-                ->pluck('user_id');
-        });
+                ->pluck('created_at', 'user_id AS id');
+        }, true, false, true);
 
-        $ids = array_slice(array_diff($cache, $seenIds), 0, $take);
+        if (empty($ids))
+        {
+            return [];
+        }
+
+        foreach ($ids as $key => $val)
+        {
+            if (in_array($key, $seenIds))
+            {
+                unset($ids[$key]);
+            }
+        }
+
+        if (empty($ids))
+        {
+            return [];
+        }
+
+        $ids = array_slice($ids, 0, $take, true);
+
+        if (empty($ids))
+        {
+            return [];
+        }
 
         $repository = new UserRepository();
         $transformer = new UserTransformer();
+        $users = [];
+        $i = 0;
+        foreach ($ids as $id => $score)
+        {
+            $users[] = $transformer->item($repository->item($id));
+            $users[$i]['score'] = (int)$score;
+            $i++;
+        }
 
-        return $transformer->list($repository->list($ids));
+        return $users;
     }
 
     public function getPostIds($id, $type)
@@ -279,7 +358,7 @@ class BangumiRepository extends Repository
         return $this->RedisSort($cacheKey, function () use ($id)
         {
             return Post::whereRaw('bangumi_id = ? and parent_id = ?', [$id, 0])
-                ->orderBy('id', 'desc')
+                ->orderBy('id', 'DESC')
                 ->pluck('updated_at', 'id');
         }, true);
     }

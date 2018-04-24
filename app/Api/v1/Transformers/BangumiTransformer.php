@@ -82,15 +82,7 @@ class BangumiTransformer extends Transformer
                         'name' => $tag['name']
                     ];
                 }),
-                'followers' => $this->collection($bangumi['followers'], function ($follower)
-                {
-                    return [
-                        'id' => (int)$follower['id'],
-                        'zone' => $follower['zone'],
-                        'avatar' => $follower['avatar'],
-                        'nickname' => $follower['nickname']
-                    ];
-                })
+                'followers' => $bangumi['followers']
             ];
         });
     }

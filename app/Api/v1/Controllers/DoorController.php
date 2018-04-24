@@ -468,7 +468,7 @@ class DoorController extends Controller
     {
         $pinyin = strtolower(Overtrue::permalink($name));
 
-        $tail = UserZone::where('name', $pinyin)->pluck('count');
+        $tail = UserZone::where('name', $pinyin)->pluck('count')->first();
 
         if ($tail)
         {

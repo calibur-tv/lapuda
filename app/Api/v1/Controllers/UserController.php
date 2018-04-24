@@ -549,7 +549,7 @@ class UserController extends Controller
             ->whereIn('state', [1, 4])
             ->skip($take * ($page - 1))
             ->take($take)
-            ->when($sort === 'new', function ($query) use ($size)
+            ->when($sort === 'new', function ($query)
             {
                 return $query->latest();
             }, function ($query)
@@ -585,6 +585,7 @@ class UserController extends Controller
 
         $bangumiRepository = new BangumiRepository();
         $cartoonRoleRepository = new CartoonRoleRepository();
+        $transformer = new ImageTransformer();
 
         $list = $imageRepository->list($ids);
         $visitorId = $this->getAuthUserId();
@@ -596,8 +597,6 @@ class UserController extends Controller
             $list[$i]['liked'] = $isMe ? false : $imageRepository->checkLiked($item['id'], $visitorId);
             $list[$i]['role'] = $item['role_id'] ? $cartoonRoleRepository->item($item['role_id']) : null;
         }
-
-        $transformer = new ImageTransformer();
 
         return $this->resOK([
             'list' => $transformer->userList($list),

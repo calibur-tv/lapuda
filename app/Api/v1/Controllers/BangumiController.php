@@ -256,9 +256,7 @@ class BangumiController extends Controller
             return $this->resOK([]);
         }
 
-        $transformer = new UserTransformer();
-
-        return $this->resOK($transformer->list($users));
+        return $this->resOK($users);
     }
 
     /**
@@ -333,7 +331,7 @@ class BangumiController extends Controller
             ->whereIn('state', [1, 4])
             ->whereNotIn('id', $seen)
             ->take($take)
-            ->when($sort === 'new', function ($query) use ($size)
+            ->when($sort === 'new', function ($query)
             {
                 return $query->latest();
             }, function ($query)

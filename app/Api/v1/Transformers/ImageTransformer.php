@@ -49,6 +49,44 @@ class ImageTransformer extends Transformer
         });
     }
 
+    public function trending($list)
+    {
+        return $this->collection($list, function ($image)
+        {
+            return [
+                'id' => (int)$image['id'],
+                'width' => (int)$image['width'],
+                'height' => (int)$image['height'],
+                'url' => $image['url'],
+                'user_id' => (int)$image['user_id'],
+                'bangumi_id' => (int)$image['bangumi_id'],
+                'size' => $image['size'],
+                'tags' => $image['tags'],
+                'creator' => (boolean)$image['creator'],
+                'liked' => (boolean)$image['liked'],
+                'like_count' => (int)$image['like_count'],
+                'user' => $this->transformer($image['user'], function ($user)
+                {
+                    return [
+                        'id' => (int)$user['id'],
+                        'zone' => $user['zone'],
+                        'nickname' => $user['nickname'],
+                        'avatar' => $user['avatar']
+                    ];
+                }),
+                'bangumi' => $image['bangumi_id'] ? $this->transformer($image['bangumi'], function ($bangumi)
+                {
+                    return [
+                        'id' => (int)$bangumi['id'],
+                        'name' => $bangumi['name'],
+                        'avatar' => $bangumi['avatar']
+                    ];
+                }) : null,
+                'created_at' => $image['created_at']
+            ];
+        });
+    }
+
     public function userList($list)
     {
         return $this->collection($list, function ($image)
