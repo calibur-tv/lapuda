@@ -11,7 +11,7 @@ namespace App\Api\V1\Transformers;
 
 class ImageTransformer extends Transformer
 {
-    public function bangumi($list)
+    public function waterfall($list)
     {
         return $this->collection($list, function ($image)
         {
@@ -20,15 +20,19 @@ class ImageTransformer extends Transformer
                 'width' => (int)$image['width'],
                 'height' => (int)$image['height'],
                 'url' => $image['url'],
+                'name' => $image['name'] ?: '',
                 'user_id' => (int)$image['user_id'],
+                'album_id' => (int)$image['album_id'],
                 'bangumi_id' => (int)$image['bangumi_id'],
                 'role_id' => (int)$image['role_id'],
                 'size' => $image['size'],
                 'tags' => $image['tags'],
                 'creator' => (boolean)$image['creator'],
+                'is_cartoon' => (boolean)$image['is_cartoon'],
                 'liked' => (boolean)$image['liked'],
                 'like_count' => (int)$image['like_count'],
-                'user' => $this->transformer($image['user'], function ($user)
+                'image_count' => (int)$image['image_count'],
+                'user' => $image['user'] ? $this->transformer($image['user'], function ($user)
                 {
                     return [
                         'id' => (int)$user['id'],
@@ -36,87 +40,20 @@ class ImageTransformer extends Transformer
                         'nickname' => $user['nickname'],
                         'avatar' => $user['avatar']
                     ];
-                }),
-                'role' => $image['role'] ? $this->transformer($image['role'], function ($role)
-                {
-                    return [
-                        'id' => (int)$role['id'],
-                        'name' => $role['name']
-                    ];
-                }) : null,
-                'created_at' => $image['created_at']
-            ];
-        });
-    }
-
-    public function trending($list)
-    {
-        return $this->collection($list, function ($image)
-        {
-            return [
-                'id' => (int)$image['id'],
-                'width' => (int)$image['width'],
-                'height' => (int)$image['height'],
-                'url' => $image['url'],
-                'user_id' => (int)$image['user_id'],
-                'bangumi_id' => (int)$image['bangumi_id'],
-                'size' => $image['size'],
-                'tags' => $image['tags'],
-                'creator' => (boolean)$image['creator'],
-                'liked' => (boolean)$image['liked'],
-                'like_count' => (int)$image['like_count'],
-                'user' => $this->transformer($image['user'], function ($user)
-                {
-                    return [
-                        'id' => (int)$user['id'],
-                        'zone' => $user['zone'],
-                        'nickname' => $user['nickname'],
-                        'avatar' => $user['avatar']
-                    ];
-                }),
-                'bangumi' => $image['bangumi_id'] ? $this->transformer($image['bangumi'], function ($bangumi)
-                {
-                    return [
-                        'id' => (int)$bangumi['id'],
-                        'name' => $bangumi['name'],
-                        'avatar' => $bangumi['avatar']
-                    ];
-                }) : null,
-                'created_at' => $image['created_at']
-            ];
-        });
-    }
-
-    public function userList($list)
-    {
-        return $this->collection($list, function ($image)
-        {
-            return [
-                'id' => (int)$image['id'],
-                'width' => (int)$image['width'],
-                'height' => (int)$image['height'],
-                'url' => $image['url'],
-                'user_id' => (int)$image['user_id'],
-                'bangumi_id' => (int)$image['bangumi_id'],
-                'role_id' => (int)$image['role_id'],
-                'size' => $image['size'],
-                'tags' => $image['tags'],
-                'creator' => (boolean)$image['creator'],
-                'liked' => (boolean)$image['liked'],
-                'like_count' => (int)$image['like_count'],
-                'bangumi' => $image['bangumi_id'] ? $this->transformer($image['bangumi'], function ($bangumi)
-                {
-                    return [
-                        'id' => (int)$bangumi['id'],
-                        'name' => $bangumi['name'],
-                        'avatar' => $bangumi['avatar']
-                    ];
                 }) : null,
                 'role' => $image['role'] ? $this->transformer($image['role'], function ($role)
                 {
                     return [
                         'id' => (int)$role['id'],
                         'name' => $role['name']
+                    ];
+                }) : null,
+                'bangumi' => $image['bangumi_id'] ? $this->transformer($image['bangumi'], function ($bangumi)
+                {
+                    return [
+                        'id' => (int)$bangumi['id'],
+                        'name' => $bangumi['name'],
+                        'avatar' => $bangumi['avatar']
                     ];
                 }) : null,
                 'created_at' => $image['created_at']
@@ -138,6 +75,23 @@ class ImageTransformer extends Transformer
                 'user_avatar' => $data['user_avatar'],
                 'bangumi_id' => (int)$data['bangumi_id'],
                 'bangumi_name' => $data['bangumi_name']
+            ];
+        });
+    }
+
+    public function albums($list)
+    {
+        return $this->collection($list, function ($item)
+        {
+            return [
+                'id' => (int)$item['id'],
+                'name' => $item['name'],
+                'image_count' => (int)$item['image_count'],
+                'bangumi_id' => (int)$item['bangumi_id'],
+                'is_cartoon' => (boolean)$item['is_cartoon'],
+                'url' => $item['url'],
+                'width' => (int)$item['width'],
+                'height' => (int)$item['height'],
             ];
         });
     }

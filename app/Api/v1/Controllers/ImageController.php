@@ -3,6 +3,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
+use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Transformers\ImageTransformer;
@@ -95,7 +96,8 @@ class ImageController extends Controller
             'height' => 'required|integer',
             'size' => 'required|integer',
             'tags' => 'required|integer',
-            'roleId' => 'required|integer'
+            'roleId' => 'required|integer',
+            'albumId' => 'required|integer'
         ]);
 
         if ($validator->fails())
@@ -104,6 +106,7 @@ class ImageController extends Controller
         }
 
         $userId = $this->getAuthUserId();
+        $albumId = $request->get('albumId');
 
         $now = Carbon::now();
 
@@ -116,6 +119,8 @@ class ImageController extends Controller
             'role_id' => $request->get('roleId'),
             'size_id' => $request->get('size'),
             'creator' => $request->get('creator'),
+            'image_count' => 0,
+            'album_id' => $albumId,
             'created_at' => $now,
             'updated_at' => $now
         ]);
@@ -131,13 +136,19 @@ class ImageController extends Controller
             Redis::LPUSH($cacheKey, $id);
         }
 
+        if ($albumId)
+        {
+            Image::where('id', $albumId)->increment('image_count');
+            Redis::DEL('user_image_' . $albumId . '_meta');
+        }
+
         $job = (new \App\Jobs\Trial\Image\Create($id));
         dispatch($job);
 
         return $this->resCreated($id);
     }
 
-    public function edit(Request $request)
+    public function editImage(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'bangumiId' => 'required|integer',
@@ -175,11 +186,24 @@ class ImageController extends Controller
         ]);
 
         Redis::DEL('user_image_' . $imageId . '_meta');
+        Redis::DEL('user_image_' . $imageId);
 
-        return $this->resNoContent();
+        $imageRepository = new ImageRepository();
+        $BangumiRepository = new BangumiRepository();
+        $userRepository = new UserRepository();
+        $cartoonRepository = new CartoonRoleRepository();
+        $transformer = new ImageTransformer();
+
+        $result = $imageRepository->item($imageId);
+        $result['bangumi'] = $BangumiRepository->item($result['bangumi_id']);
+        $result['user'] = $userRepository->item($result['user_id']);
+        $result['liked'] = false;
+        $result['role'] = $result['role_id'] ? $cartoonRepository->item($result['role_id']) : null;
+
+        return $this->resOK($transformer->waterfall([$result])[0]);
     }
 
-    public function delete(Request $request)
+    public function deleteImage(Request $request)
     {
         $userId = $this->getAuthUserId();
         $imageId = $request->get('id');
@@ -289,6 +313,84 @@ class ImageController extends Controller
         return $this->resOK(true);
     }
 
+    public function createAlbum(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'bangumiId' => 'required|integer',
+            'isCartoon' => 'required|boolean',
+            'name' => 'string',
+            'url' => 'string',
+            'width' => 'required|integer',
+            'height' => 'required|integer',
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator->errors());
+        }
+
+        $name = $request->get('name') ? $request->get('name') : date('y-m-d H:i:s',time());
+        $userId = $this->getAuthUserId();
+        $now = Carbon::now();
+
+        $image = Image::create([
+            'user_id' => $userId,
+            'bangumi_id' => $request->get('bangumiId'),
+            'name' => $name,
+            'url' => $request->get('url'),
+            'is_cartoon' => $request->get('isCartoon'),
+            'image_count' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+            'width' => $request->get('width'),
+            'height' => $request->get('height'),
+            'size_id' => 0,
+            'state' => 1
+        ]);
+
+        Redis::DEL('user_' . $userId . '_image_albums');
+        $transformer = new ImageTransformer();
+
+        return $this->resCreated($transformer->albums([$image->toArray()])[0]);
+    }
+
+    public function editAlbum(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $imageId = $request->get('id');
+
+        $image = Image::whereRaw('id = ? and user_id = ?', [$imageId, $userId])->first();
+
+        if (is_null($image))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($request->get('url'))
+        {
+            Image::where('id', $imageId)
+                ->update([
+                    'width' => $request->get('width'),
+                    'height' => $request->get('height'),
+                    'url' => $request->get('url'),
+                    'name' => $request->get('name'),
+                    'bangumi_id' => $request->get('url'),
+                ]);
+        }
+        else
+        {
+            Image::where('id', $imageId)
+                ->update([
+                    'name' => $request->get('name'),
+                    'bangumi_id' => $request->get('url'),
+                ]);
+        }
+
+        Redis::DEL('user_image_' . $imageId);
+
+        return $this->resNoContent();
+    }
+
     public function trendingList(Request $request)
     {
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
@@ -302,6 +404,7 @@ class ImageController extends Controller
         $imageRepository = new ImageRepository();
 
         $ids = Image::whereIn('state', [1, 4])
+            ->whereRaw('album_id = ? and image_count <> ?', [0, 1])
             ->whereNotIn('id', $seen)
             ->take($take)
             ->when($sort === 'new', function ($query)
@@ -350,10 +453,11 @@ class ImageController extends Controller
             $list[$i]['bangumi'] = $list[$i]['bangumi_id'] ? $bangumiRepository->item($item['bangumi_id']) : null;
             $list[$i]['liked'] = $userId ? $imageRepository->checkLiked($item['id'], $userId) : false;
             $list[$i]['user'] = $userRepository->item($item['user_id']);
+            $list[$i]['role'] = null;
         }
 
         return $this->resOK([
-            'list' => $transformer->trending($list),
+            'list' => $transformer->waterfall($list),
             'type' => $imageRepository->uploadImageTypes()
         ]);
     }

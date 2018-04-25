@@ -127,6 +127,8 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/mark', 'App\Api\V1\Controllers\UserController@postsOfMarked')->middleware('throttle:30,1');
             });
         });
+
+        $api->get('/images/albums', 'App\Api\V1\Controllers\UserController@imageAlbums')->middleware(['jwt.auth', 'throttle:20,1']);
     });
 
     $api->group(['prefix' => '/post'], function ($api)
@@ -167,13 +169,17 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/upload', 'App\Api\V1\Controllers\ImageController@upload')->middleware(['jwt.auth', 'throttle:20,1']);
 
-        $api->post('/delete', 'App\Api\V1\Controllers\ImageController@delete')->middleware(['jwt.auth', 'throttle:20,1']);
+        $api->post('/delete', 'App\Api\V1\Controllers\ImageController@deleteImage')->middleware(['jwt.auth', 'throttle:20,1']);
 
         $api->post('/report', 'App\Api\V1\Controllers\ImageController@report')->middleware(['throttle:20,1']);
 
-        $api->post('/edit', 'App\Api\V1\Controllers\ImageController@edit')->middleware(['jwt.auth', 'throttle:20,1']);
+        $api->post('/edit', 'App\Api\V1\Controllers\ImageController@editImage')->middleware(['jwt.auth', 'throttle:20,1']);
 
         $api->post('/toggleLike', 'App\Api\V1\Controllers\ImageController@toggleLike')->middleware(['jwt.auth', 'throttle:20,1']);
+
+        $api->post('/createAlbum', 'App\Api\V1\Controllers\ImageController@createAlbum')->middleware(['jwt.auth', 'throttle:5,1']);
+
+        $api->post('/editAlbum', 'App\Api\V1\Controllers\ImageController@editAlbum')->middleware(['jwt.auth', 'throttle:5,1']);
 
         $api->post('/trendingList', 'App\Api\V1\Controllers\ImageController@trendingList');
     });
