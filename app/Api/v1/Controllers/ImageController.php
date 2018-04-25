@@ -289,6 +289,42 @@ class ImageController extends Controller
         return $this->resOK(true);
     }
 
+    public function createAlbum(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'bangumiId' => 'required|integer',
+            'isCartoon' => 'required|boolean',
+            'name' => 'string',
+            'url' => 'string',
+            'width' => 'required|integer',
+            'height' => 'required|integer',
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator->errors());
+        }
+
+        $name = $request->get('name') ? $request->get('name') : date('y-m-d H:i:s',time());
+        $now = Carbon::now();
+
+        $id = Image::insertGetId([
+            'user_id' => $this->getAuthUserId(),
+            'bangumi_id' => $request->get('bangumiId'),
+            'name' => $name,
+            'url' => $request->get('url'),
+            'is_cartoon' => $request->get('isCartoon'),
+            'image_count' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+            'width' => $request->get('width'),
+            'height' => $request->get('height'),
+            'size_id' => 0
+        ]);
+
+        return $this->resCreated($id);
+    }
+
     public function trendingList(Request $request)
     {
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];

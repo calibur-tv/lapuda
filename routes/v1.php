@@ -175,6 +175,8 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/toggleLike', 'App\Api\V1\Controllers\ImageController@toggleLike')->middleware(['jwt.auth', 'throttle:20,1']);
 
+        $api->post('/createAlbum', 'App\Api\V1\Controllers\ImageController@createAlbum')->middleware(['jwt.auth', 'throttle:5,1']);
+
         $api->post('/trendingList', 'App\Api\V1\Controllers\ImageController@trendingList');
     });
 

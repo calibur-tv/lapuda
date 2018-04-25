@@ -27,6 +27,7 @@ class ImageRepository extends Repository
             }
 
             $image = $image->toArray();
+            $image['image_count'] = $image['image_count'] ? ($image['image_count'] - 1) : 0;
 
             return $image;
         }, 'm');
