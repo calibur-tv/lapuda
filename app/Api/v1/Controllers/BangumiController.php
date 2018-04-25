@@ -327,7 +327,7 @@ class BangumiController extends Controller
 
         $imageRepository = new ImageRepository();
 
-        $ids = Image::whereRaw('bangumi_id = ? and album_id = 0', [$id])
+        $ids = Image::whereRaw('bangumi_id = ? and album_id = 0 and image_count <> 1', [$id])
             ->whereIn('state', [1, 4])
             ->whereNotIn('id', $seen)
             ->take($take)
@@ -380,7 +380,7 @@ class BangumiController extends Controller
         }
 
         return $this->resOK([
-            'list' => $transformer->bangumi($list),
+            'list' => $transformer->waterfall($list),
             'type' => $imageRepository->uploadImageTypes()
         ]);
     }

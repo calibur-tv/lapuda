@@ -13,6 +13,7 @@ use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\BangumiFollow;
 use App\Models\CartoonRoleFans;
+use App\Models\Image;
 use App\Models\Notifications;
 use App\Models\Post;
 use App\Models\PostLike;
@@ -347,9 +348,19 @@ class UserRepository extends Repository
     {
         return $this->RedisList('user_'.$userId.'_followRoleIds', function () use ($userId)
         {
-            return  CartoonRoleFans::where('user_id', $userId)
+            return CartoonRoleFans::where('user_id', $userId)
                 ->orderBy('updated_at', 'DESC')
                 ->pluck('role_id');
         });
+    }
+
+    public function imageAlbums($userId)
+    {
+        return $this->Cache('user_' . $userId . '_image_albums', function () use ($userId)
+        {
+            return Image::whereRaw('user_id = ? and album_id = 0 and image_count <> 0', [$userId])
+                ->get()
+                ->toArray();
+        }, 'm');
     }
 }

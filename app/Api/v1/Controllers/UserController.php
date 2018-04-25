@@ -545,7 +545,7 @@ class UserController extends Controller
         $sort = $request->get('sort') ?: 'new';
         $imageRepository = new ImageRepository();
 
-        $ids = Image::whereRaw('user_id = ? and album_id = 0', [$userId])
+        $ids = Image::whereRaw('user_id = ? and album_id = 0 and image_count <> 1', [$userId])
             ->whereIn('state', [1, 4])
             ->skip($take * ($page - 1))
             ->take($take)
@@ -599,8 +599,26 @@ class UserController extends Controller
         }
 
         return $this->resOK([
-            'list' => $transformer->userList($list),
+            'list' => $transformer->waterfall($list),
             'type' => $imageRepository->uploadImageTypes()
         ]);
+    }
+
+    public function imageAlbums()
+    {
+        $userId = $this->getAuthUserId();
+
+        $repository = new UserRepository();
+
+        $list = $repository->imageAlbums($userId);
+
+        if (empty($list))
+        {
+            return $this->resOK([]);
+        }
+
+        $transformer = new ImageTransformer();
+
+        return $this->resOK($transformer->albums($list));
     }
 }

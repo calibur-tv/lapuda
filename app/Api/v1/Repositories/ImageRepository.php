@@ -28,6 +28,8 @@ class ImageRepository extends Repository
 
             $image = $image->toArray();
             $image['image_count'] = $image['image_count'] ? ($image['image_count'] - 1) : 0;
+            $image['width'] = $image['width'] ? $image['width'] : 200;
+            $image['height'] = $image['height'] ? $image['height'] : 200;
 
             return $image;
         }, 'm');
