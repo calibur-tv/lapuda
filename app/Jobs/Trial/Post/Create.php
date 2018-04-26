@@ -54,54 +54,77 @@ class Create implements ShouldQueue
             $tmp = explode('|http', $url);
             $imageUrl = count($tmp) === 2 ? 'http' . end($tmp) : $url;
             // 色情
-            $respSex = json_decode(file_get_contents($imageUrl . '?qpulp'), true);
-            if (intval($respSex['code']) !== 0)
+            try
             {
-                $badImageCount++;
-            }
-            else
-            {
-                $label = intval($respSex['result']['label']);
-                $review = (boolean)$respSex['result']['review'];
-                if ($label === 0)
+                $respSex = json_decode(file_get_contents($imageUrl . '?qpulp'), true);
+                if (intval($respSex['code']) !== 0)
                 {
                     $badImageCount++;
-                    if ($review === true)
+                }
+                else
+                {
+                    $label = intval($respSex['result']['label']);
+                    $review = (boolean)$respSex['result']['review'];
+                    if ($label === 0)
                     {
-                        $needDelete = true;
+                        $badImageCount++;
+                        if ($review === true)
+                        {
+                            $needDelete = true;
+                        }
                     }
                 }
             }
-            // 暴恐
-            $respWarn = json_decode(file_get_contents($imageUrl . '?qterror'), true);
-            if (intval($respWarn['code']) !== 0)
+            catch (\Exception $e)
             {
                 $badImageCount++;
             }
-            else
-            {
-                if (intval($respWarn['result']['label']) === 1)
-                {
-                    $badImageCount++;
 
-                    if ((boolean)$respWarn['result']['review'] === true)
+            // 暴恐
+            try
+            {
+                $respWarn = json_decode(file_get_contents($imageUrl . '?qterror'), true);
+                if (intval($respWarn['code']) !== 0)
+                {
+                    $badImageCount++;
+                }
+                else
+                {
+                    if (intval($respWarn['result']['label']) === 1)
+                    {
+                        $badImageCount++;
+
+                        if ((boolean)$respWarn['result']['review'] === true)
+                        {
+                            $needDelete = true;
+                        }
+                    }
+                }
+            }
+            catch (\Exception $e)
+            {
+                $badImageCount++;
+            }
+
+            // 政治敏感
+            try
+            {
+                $respDaddy = json_decode(file_get_contents($imageUrl . '?qpolitician'), true);
+                if (intval($respDaddy['code']) !== 0)
+                {
+                    $badImageCount++;
+                }
+                else
+                {
+                    if ((boolean)$respDaddy['result']['review'] === true)
                     {
                         $needDelete = true;
                     }
                 }
             }
-            // 政治敏感
-            $respDaddy = json_decode(file_get_contents($imageUrl . '?qpolitician'), true);
-            if (intval($respDaddy['code']) !== 0)
+            catch (\Exception $e)
             {
                 $badImageCount++;
-            }
-            else
-            {
-                if ((boolean)$respDaddy['result']['review'] === true)
-                {
-                    $needDelete = true;
-                }
             }
         }
 
