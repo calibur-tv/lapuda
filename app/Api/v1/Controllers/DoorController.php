@@ -173,7 +173,15 @@ class DoorController extends Controller
             ? array_merge($arr, ['email' => $request->get('access')])
             : array_merge($arr, ['phone' => $request->get('access')]);
 
-        $user = User::create($data);
+        try
+        {
+            $user = User::create($data);
+        }
+        catch (\Exception $e)
+        {
+            return $this->resErrBad('昵称暂不可用，请尝试其它昵称');
+        }
+
         $userId = $user->id;
 
         $inviteCode = $request->get('inviteCode');
