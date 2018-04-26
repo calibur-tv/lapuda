@@ -41,19 +41,11 @@ class TrendingController extends Controller
 
         foreach ($list as $i => $item)
         {
-            if ($userId)
-            {
-                $id = $item['id'];
-                $list[$i]['liked'] = $repository->checkPostLiked($id, $userId);
-                $list[$i]['marked'] = $repository->checkPostMarked($id, $userId);
-                $list[$i]['commented'] = $repository->checkPostCommented($id, $userId);
-            }
-            else
-            {
-                $list[$i]['liked'] = false;
-                $list[$i]['marked'] = false;
-                $list[$i]['commented'] = false;
-            }
+            $id = $item['id'];
+            $authorId = $item['user_id'];
+            $list[$i]['liked'] = $repository->checkPostLiked($id, $userId, $authorId);
+            $list[$i]['marked'] = $repository->checkPostMarked($id, $userId, $authorId);
+            $list[$i]['commented'] = $repository->checkPostCommented($id, $userId);
         }
 
         $transformer = new PostTransformer();
@@ -89,19 +81,11 @@ class TrendingController extends Controller
 
         foreach ($list as $i => $item)
         {
-            if ($userId)
-            {
-                $id = $item['id'];
-                $list[$i]['liked'] = $repository->checkPostLiked($id, $userId);
-                $list[$i]['marked'] = $repository->checkPostMarked($id, $userId);
-                $list[$i]['commented'] = $repository->checkPostCommented($id, $userId);
-            }
-            else
-            {
-                $list[$i]['liked'] = false;
-                $list[$i]['marked'] = false;
-                $list[$i]['commented'] = false;
-            }
+            $id = $item['id'];
+            $authorId = $item['user_id'];
+            $list[$i]['liked'] = $repository->checkPostLiked($id, $userId, $authorId);
+            $list[$i]['marked'] = $repository->checkPostMarked($id, $userId, $authorId);
+            $list[$i]['commented'] = $repository->checkPostCommented($id, $userId);
         }
 
         $transformer = new PostTransformer();
