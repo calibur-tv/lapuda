@@ -183,6 +183,10 @@ class BangumiRepository extends Repository
 
     public function checkUserFollowed($user_id, $bangumi_id)
     {
+        if (!$user_id)
+        {
+            return false;
+        }
         return (Boolean)BangumiFollow::whereRaw('user_id = ? and bangumi_id = ?', [$user_id, $bangumi_id])->count();
     }
 

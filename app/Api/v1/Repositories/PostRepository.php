@@ -367,18 +367,32 @@ class PostRepository extends Repository
         }, false, $force);
     }
 
-    public function checkPostLiked($postId, $userId)
+    public function checkPostLiked($postId, $visitorId, $authorId)
     {
-        return PostLike::whereRaw('user_id = ? and post_id = ?', [$userId, $postId])->count() !== 0;
+        if ($visitorId == $authorId)
+        {
+            return false;
+        }
+        return $visitorId
+            ? PostLike::whereRaw('user_id = ? and post_id = ?', [$visitorId, $postId])->count() !== 0
+            : false;
     }
 
-    public function checkPostMarked($postId, $userId)
+    public function checkPostMarked($postId, $visitorId, $authorId)
     {
-        return PostMark::whereRaw('user_id = ? and post_id = ?', [$userId, $postId])->count() !== 0;
+        if ($visitorId == $authorId)
+        {
+            return false;
+        }
+        return $visitorId
+            ? PostMark::whereRaw('user_id = ? and post_id = ?', [$visitorId, $postId])->count() !== 0
+            : false;
     }
 
     public function checkPostCommented($postId, $userId)
     {
-        return Post::whereRaw('parent_id = ? and user_id = ?', [$postId, $userId])->count() !== 0;
+        return $userId
+            ? Post::whereRaw('parent_id = ? and user_id = ?', [$postId, $userId])->count() !== 0
+            : false;
     }
 }

@@ -153,7 +153,7 @@ class PostController extends Controller
         $postTransformer = new PostTransformer();
         foreach ($list as $i => $item)
         {
-            $list[$i]['liked'] = $userId ? $postRepository->checkPostLiked($item['id'], $userId) : false;
+            $list[$i]['liked'] = $postRepository->checkPostLiked($item['id'], $userId, $item['user_id']);
         }
 
         $list = $postTransformer->reply($list);
@@ -166,18 +166,9 @@ class PostController extends Controller
             ]);
         }
 
-        if ($userId)
-        {
-            $post['liked'] = $postRepository->checkPostLiked($id, $userId);
-            $post['marked'] = $postRepository->checkPostMarked($id, $userId);
-            $post['commented'] = $postRepository->checkPostCommented($id, $userId);
-        }
-        else
-        {
-            $post['liked'] = false;
-            $post['marked'] = false;
-            $post['commented'] = false;
-        }
+        $post['liked'] = $postRepository->checkPostLiked($id, $userId, $post['user_id']);
+        $post['marked'] = $postRepository->checkPostMarked($id, $userId, $post['user_id']);
+        $post['commented'] = $postRepository->checkPostCommented($id, $userId);
 
         $bangumiRepository = new BangumiRepository();
         $userRepository = new UserRepository();
@@ -185,7 +176,7 @@ class PostController extends Controller
         $userTransformer = new UserTransformer();
         $post['previewImages'] = $postRepository->previewImages($id, $only ? $post['user_id'] : false);
         $bangumi = $bangumiRepository->item($post['bangumi_id']);
-        $bangumi['followed'] = $userId ? $bangumiRepository->checkUserFollowed($userId, $post['bangumi_id']) : false;
+        $bangumi['followed'] = $bangumiRepository->checkUserFollowed($userId, $post['bangumi_id']);
 
         return $this->resOK([
             'post' => $postTransformer->show($post),
@@ -466,7 +457,7 @@ class PostController extends Controller
             return $this->resErrRole('不能给自己点赞');
         }
 
-        $liked = $postRepository->checkPostLiked($postId, $userId);
+        $liked = $postRepository->checkPostLiked($postId, $userId, $post['user_id']);
 
         // 如果是主题帖，要删除楼主所得的金币，但金币不返还给用户
         $isMainPost = intval($post['parent_id']) === 0;
@@ -562,7 +553,7 @@ class PostController extends Controller
             return $this->resErrRole('不能收藏自己的帖子');
         }
 
-        $marked = $postRepository->checkPostMarked($postId, $userId);
+        $marked = $postRepository->checkPostMarked($postId, $userId, $post['user_id']);
         if ($marked)
         {
             PostMark::whereRaw('user_id = ? and post_id = ?', [$userId, $postId])->delete();

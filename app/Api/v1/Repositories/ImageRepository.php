@@ -38,16 +38,20 @@ class ImageRepository extends Repository
         {
             $tagIds = ImageTag::where('image_id', $result['id'])->pluck('tag_id');
 
+            $bangumiRepository = new BangumiRepository();
+            $cartoonRoleRepository = new CartoonRoleRepository();
+            $userRepository = new UserRepository();
+
             return [
+                'user' => $userRepository->item($result['user_id']),
+                'role' => $result['role_id'] ? $cartoonRoleRepository->item($result['role_id']) : null,
+                'bangumi' => $result['bangumi_id'] ? $bangumiRepository->item($result['bangumi_id']) : null,
                 'tags' => Tag::whereIn('id', $tagIds)->select('id', 'name')->get(),
-                'size' => Tag::where('id', $result['size_id'])->select('id', 'name')->first()
+                'size' => $result['image_count'] ? null : Tag::where('id', $result['size_id'])->select('id', 'name')->first()
             ];
         });
 
-        $result['size'] = $meta['size'];
-        $result['tags'] = $meta['tags'];
-
-        return $result;
+        return array_merge($result, $meta);
     }
 
     public function list($ids)
@@ -63,9 +67,15 @@ class ImageRepository extends Repository
         return $result;
     }
 
-    public function checkLiked($imageId, $userId)
+    public function checkLiked($imageId, $userId, $authorId)
     {
-        return (boolean)ImageLike::whereRaw('image_id = ? and user_id = ?', [$imageId, $userId])->count();
+        if ($userId == $authorId)
+        {
+            return false;
+        }
+        return $userId
+            ? (boolean)ImageLike::whereRaw('image_id = ? and user_id = ?', [$imageId, $userId])->count()
+            : false;
     }
 
     public function uptoken()

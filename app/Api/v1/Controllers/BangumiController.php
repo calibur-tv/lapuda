@@ -183,7 +183,7 @@ class BangumiController extends Controller
         $userId = $this->getAuthUserId();
 
         $bangumi['followers'] = $repository->getFollowers($id, []);
-        $bangumi['followed'] = $userId ? $repository->checkUserFollowed($userId, $id) : false;
+        $bangumi['followed'] = $repository->checkUserFollowed($userId, $id);
 
         $transformer = new BangumiTransformer();
 
@@ -292,19 +292,11 @@ class BangumiController extends Controller
 
         foreach ($list as $i => $item)
         {
-            if ($userId)
-            {
-                $id = $item['id'];
-                $list[$i]['liked'] = $postRepository->checkPostLiked($id, $userId);
-                $list[$i]['marked'] = $postRepository->checkPostMarked($id, $userId);
-                $list[$i]['commented'] = $postRepository->checkPostCommented($id, $userId);
-            }
-            else
-            {
-                $list[$i]['liked'] = false;
-                $list[$i]['marked'] = false;
-                $list[$i]['commented'] = false;
-            }
+            $id = $item['id'];
+            $authorId = $item['user_id'];
+            $list[$i]['liked'] = $postRepository->checkPostLiked($id, $userId, $authorId);
+            $list[$i]['marked'] = $postRepository->checkPostMarked($id, $userId, $authorId);
+            $list[$i]['commented'] = $postRepository->checkPostCommented($id, $userId);
         }
 
         $transformer = new PostTransformer();
@@ -365,18 +357,14 @@ class BangumiController extends Controller
             ]);
         }
 
-        $userRepository = new UserRepository();
-        $cartoonRepository = new CartoonRoleRepository();
         $transformer = new ImageTransformer();
 
-        $userId = $this->getAuthUserId();
+        $visitorId = $this->getAuthUserId();
         $list = $imageRepository->list($ids);
 
         foreach ($list as $i => $item)
         {
-            $list[$i]['liked'] = $userId ? $imageRepository->checkLiked($item['id'], $userId) : false;
-            $list[$i]['user'] = $userRepository->item($item['user_id']);
-            $list[$i]['role'] = $item['role_id'] ? $cartoonRepository->item($item['role_id']) : null;
+            $list[$i]['liked'] = $imageRepository->checkLiked($item['id'], $visitorId, $item['user_id']);
         }
 
         return $this->resOK([

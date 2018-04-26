@@ -39,7 +39,7 @@ class VideoController extends Controller
         $bangumi = $bangumiRepository->item($info['bangumi_id']);
         $season = json_decode($bangumi['season']);
         $list = $bangumiRepository->videos($bangumi['id'], $season);
-        $bangumi['followed'] = $userId ? $bangumiRepository->checkUserFollowed($userId, $info['bangumi_id']) : false;
+        $bangumi['followed'] = $bangumiRepository->checkUserFollowed($userId, $info['bangumi_id']);
 
         $bangumiTransformer = new BangumiTransformer();
         $videoTransformer = new VideoTransformer();
