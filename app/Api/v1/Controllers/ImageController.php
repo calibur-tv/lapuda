@@ -428,7 +428,7 @@ class ImageController extends Controller
 
         $ids = Image::whereIn('state', [1, 4])
             ->whereRaw('album_id = ? and image_count <> ?', [0, 1])
-            ->whereNotIn('id', $seen)
+            ->whereNotIn('images.id', $seen)
             ->take($take)
             ->when($sort === 'new', function ($query)
             {

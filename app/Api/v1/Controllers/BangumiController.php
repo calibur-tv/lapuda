@@ -321,7 +321,7 @@ class BangumiController extends Controller
 
         $ids = Image::whereRaw('bangumi_id = ? and album_id = 0 and image_count <> 1', [$id])
             ->whereIn('state', [1, 4])
-            ->whereNotIn('id', $seen)
+            ->whereNotIn('images.id', $seen)
             ->take($take)
             ->when($sort === 'new', function ($query)
             {
