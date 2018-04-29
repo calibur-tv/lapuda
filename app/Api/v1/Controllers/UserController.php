@@ -536,7 +536,7 @@ class UserController extends Controller
             return $this->resErrNotFound('该用户不存在');
         }
 
-        $page = intval($request->get('page')) ?: 1;
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
         $take = intval($request->get('take')) ?: 12;
         $tags = $request->get('tags') ?: 0;
         $size = $request->get('size') ?: 0;
@@ -547,7 +547,7 @@ class UserController extends Controller
 
         $ids = Image::whereRaw('user_id = ? and album_id = 0 and image_count <> 1', [$userId])
             ->whereIn('state', [1, 4])
-            ->skip($take * ($page - 1))
+            ->whereNotIn('images.id', $seen)
             ->take($take)
             ->when($sort === 'new', function ($query)
             {

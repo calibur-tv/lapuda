@@ -91,9 +91,7 @@ class ImageController extends Controller
         $validator = Validator::make($request->all(), [
             'bangumiId' => 'required|integer',
             'creator' => 'required|boolean',
-            'url' => 'required|string',
-            'width' => 'required|integer',
-            'height' => 'required|integer',
+            'images' => 'required|array',
             'size' => 'required|integer',
             'tags' => 'required|integer',
             'roleId' => 'required|integer',
@@ -107,65 +105,80 @@ class ImageController extends Controller
 
         $userId = $this->getAuthUserId();
         $albumId = $request->get('albumId');
+        $images = $request->get('images');
 
         $now = Carbon::now();
+        $ids = [];
 
-        $id = Image::insertGetId([
-            'user_id' => $userId,
-            'bangumi_id' => $request->get('bangumiId'),
-            'url' => $request->get('url'),
-            'width' => $request->get('width'),
-            'height' => $request->get('height'),
-            'role_id' => $request->get('roleId'),
-            'size_id' => $request->get('size'),
-            'creator' => $request->get('creator'),
-            'image_count' => 0,
-            'album_id' => $albumId,
-            'created_at' => $now,
-            'updated_at' => $now
-        ]);
+        foreach ($images as $item)
+        {
+            $id = Image::insertGetId([
+                'user_id' => $userId,
+                'bangumi_id' => $request->get('bangumiId'),
+                'url' => $item['key'],
+                'width' => $item['width'],
+                'height' => $item['height'],
+                'role_id' => $request->get('roleId'),
+                'size_id' => $request->get('size'),
+                'creator' => $request->get('creator'),
+                'image_count' => 0,
+                'album_id' => $albumId,
+                'created_at' => $now,
+                'updated_at' => $now
+            ]);
 
-        ImageTag::create([
-            'image_id' => $id,
-            'tag_id' => $request->get('tags')
-        ]);
+            ImageTag::create([
+                'image_id' => $id,
+                'tag_id' => $request->get('tags')
+            ]);
+
+            $ids[] = $id;
+
+            $job = (new \App\Jobs\Trial\Image\Create($id));
+            dispatch($job);
+        }
 
         $cacheKey = 'user_' . $userId . '_image_ids';
         if (Redis::EXISTS($cacheKey))
         {
-            Redis::LPUSH($cacheKey, $id);
+            Redis::LPUSH($cacheKey, $ids);
         }
 
         if ($albumId)
         {
-            Image::where('id', $albumId)->increment('image_count');
+            Image::where('id', $albumId)->increment('image_count', count($ids));
             $cacheKey = 'user_image_' . $albumId;
             if (Redis::EXISTS($cacheKey))
             {
-                Redis::HINCRBYFLOAT($cacheKey, 'image_count', 1);
+                Redis::HINCRBYFLOAT($cacheKey, 'image_count', count($ids));
             }
             $images = Image::where('id', $albumId)->pluck('images')->first();
             if (is_null($images))
             {
                 Image::where('id', $albumId)
                     ->update([
-                        'images' => $id
+                        'images' => implode(',', $ids)
                     ]);
             }
             else
             {
                 Image::where('id', $albumId)
                     ->update([
-                        'images' => $images . ',' . $id
+                        'images' => $images . ',' . implode(',', $ids)
                     ]);
             }
             Redis::DEL('image_album_' . $albumId . '_images');
         }
 
-        $job = (new \App\Jobs\Trial\Image\Create($id));
-        dispatch($job);
+        $repository = new ImageRepository();
+        $transformer = new ImageTransformer();
+        $list = $repository->list($ids);
+        foreach ($list as $i => $item)
+        {
+            $list[$i]['liked'] = false;
+        }
 
-        return $this->resCreated($id);
+        return $this->resCreated($transformer->waterfall($list));
     }
 
     public function editImage(Request $request)
@@ -336,6 +349,7 @@ class ImageController extends Controller
             'url' => 'string',
             'width' => 'required|integer',
             'height' => 'required|integer',
+            'creator' => 'required|boolean'
         ]);
 
         if ($validator->fails())
@@ -352,6 +366,7 @@ class ImageController extends Controller
             'name' => $name,
             'url' => $request->get('url'),
             'is_cartoon' => $request->get('isCartoon'),
+            'creator' => $request->get('creator'),
             'image_count' => 1,
             'width' => $request->get('width'),
             'height' => $request->get('height'),
