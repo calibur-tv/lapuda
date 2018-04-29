@@ -494,4 +494,30 @@ class ImageController extends Controller
             'type' => $imageRepository->uploadImageTypes()
         ]);
     }
+
+    public function albumShow($id)
+    {
+        $album = Image::whereRaw('id = ? and album_id = 0 and image_count > 1', [$id])->first();
+
+        if (is_null($album))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $userId = $this->getAuthUserId();
+
+        $imageRepository = new ImageRepository();
+        $userRepository = new UserRepository();
+        $bangumiRepository = new BangumiRepository();
+
+        $user = $userRepository->item($album['user_id']);
+        $bangumi = $bangumiRepository->item($album['bangumi_id']);
+        $list = $imageRepository->albumImages($id, $album['images']);
+
+        return $this->resOK([
+            'user' => $user,
+            'bangumi' => $bangumi,
+            'images' => $list
+        ]);
+    }
 }

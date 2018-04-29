@@ -19,6 +19,11 @@ class BangumiRepository extends Repository
 {
     public function item($id)
     {
+        if (!$id)
+        {
+            return null;
+        }
+
         $bangumi = $this->RedisHash('bangumi_'.$id, function () use ($id)
         {
             $bangumi = Bangumi::find($id);

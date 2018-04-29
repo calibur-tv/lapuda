@@ -27,6 +27,11 @@ class UserRepository extends Repository
 {
     public function item($id)
     {
+        if (!$id)
+        {
+            return null;
+        }
+
         return $this->RedisHash('user_'.$id, function () use ($id)
         {
             $user = User::where('id', $id)->first();
