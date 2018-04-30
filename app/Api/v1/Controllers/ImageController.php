@@ -3,7 +3,6 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
-use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Transformers\BangumiTransformer;
@@ -16,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
+use Mews\Purifier\Facades\Purifier;
 
 /**
  * @Resource("图片相关接口")
@@ -347,7 +347,7 @@ class ImageController extends Controller
         $validator = Validator::make($request->all(), [
             'bangumiId' => 'required|integer',
             'isCartoon' => 'required|boolean',
-            'name' => 'string',
+            'name' => 'string|max:20',
             'url' => 'string',
             'width' => 'required|integer',
             'height' => 'required|integer',
@@ -365,7 +365,7 @@ class ImageController extends Controller
         $image = Image::create([
             'user_id' => $userId,
             'bangumi_id' => $request->get('bangumiId'),
-            'name' => $name,
+            'name' => Purifier::clean($name),
             'url' => $request->get('url'),
             'is_cartoon' => $request->get('isCartoon'),
             'creator' => $request->get('creator'),
@@ -527,14 +527,16 @@ class ImageController extends Controller
             $bangumi['followed'] = $bangumiRepository->checkUserFollowed($userId, $bangumiId);
 
             $bangumiTransformer = new BangumiTransformer();
-            $bangumi = $bangumiTransformer->post($bangumi);
+            $bangumi = $bangumiTransformer->album($bangumi);
         }
 
         return $this->resOK([
             'user' => $userTransformer->item($user),
             'bangumi' => $bangumi,
             'images' => $imageTransformer->albumShow($images),
-            'liked' => $imageRepository->checkLiked($id, $userId, $album['user_id'])
+            'liked' => $imageRepository->checkLiked($id, $userId, $album['user_id']),
+            'name' => $album['name'],
+            'poster' => $album['url']
         ]);
     }
 }
