@@ -6,7 +6,9 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
+use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Image;
 use App\Models\ImageLike;
 use App\Models\ImageTag;
@@ -492,6 +494,47 @@ class ImageController extends Controller
         return $this->resOK([
             'list' => $transformer->waterfall($list),
             'type' => $imageRepository->uploadImageTypes()
+        ]);
+    }
+
+    public function albumShow($id)
+    {
+        $album = Image::whereRaw('id = ? and album_id = 0 and image_count > 1', [$id])->first();
+
+        if (is_null($album))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $userId = $this->getAuthUserId();
+
+        $imageRepository = new ImageRepository();
+        $userRepository = new UserRepository();
+
+        $user = $userRepository->item($album['user_id']);
+        $images = $imageRepository->albumImages($id, $album['images']);
+
+        $userTransformer = new UserTransformer();
+        $imageTransformer = new ImageTransformer();
+
+        $bangumi = null;
+        $bangumiId = $album['bangumi_id'];
+        if ($bangumiId)
+        {
+            $bangumiRepository = new BangumiRepository();
+            $bangumi = $bangumiRepository->item($bangumiId);
+
+            $bangumi['followed'] = $bangumiRepository->checkUserFollowed($userId, $bangumiId);
+
+            $bangumiTransformer = new BangumiTransformer();
+            $bangumi = $bangumiTransformer->post($bangumi);
+        }
+
+        return $this->resOK([
+            'user' => $userTransformer->item($user),
+            'bangumi' => $bangumi,
+            'images' => $imageTransformer->albumShow($images),
+            'liked' => $imageRepository->checkLiked($id, $userId, $album['user_id'])
         ]);
     }
 }

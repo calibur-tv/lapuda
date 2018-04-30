@@ -182,6 +182,11 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/editAlbum', 'App\Api\V1\Controllers\ImageController@editAlbum')->middleware(['jwt.auth', 'throttle:5,1']);
 
         $api->post('/trendingList', 'App\Api\V1\Controllers\ImageController@trendingList');
+
+        $api->group(['prefix' => '/album/{id}'], function ($api)
+        {
+            $api->get('/show', 'App\Api\V1\Controllers\ImageController@albumShow');
+        });
     });
 
     $api->group(['prefix' => '/trending'], function ($api)

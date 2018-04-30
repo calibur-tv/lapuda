@@ -15,6 +15,11 @@ class VideoRepository extends Repository
 {
     public function item($id)
     {
+        if (!$id)
+        {
+            return null;
+        }
+
         return $this->Cache('video_'.$id, function () use ($id)
         {
             $video = Video::find($id);

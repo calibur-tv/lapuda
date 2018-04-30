@@ -18,6 +18,11 @@ class ImageRepository extends Repository
 {
     public function item($id)
     {
+        if (!$id)
+        {
+            return null;
+        }
+
         $result = $this->RedisHash('user_image_' . $id, function () use ($id)
         {
             $image = Image::where('id', $id)->first();
@@ -163,5 +168,18 @@ class ImageRepository extends Repository
                 'tags' => $tags
             ];
         }, 'm');
+    }
+
+    public function albumImages($albumId, $imageIds)
+    {
+        return $this->Cache('image_album_' . $albumId . '_' . $imageIds, function () use ($imageIds)
+        {
+            $ids = explode(',', $imageIds);
+
+            return Image::whereIn('id', $ids)
+                ->whereIn('state', [1, 4])
+                ->get()
+                ->toArray();
+        });
     }
 }

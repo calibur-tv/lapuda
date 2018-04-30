@@ -18,6 +18,11 @@ class CartoonRoleRepository extends Repository
 
     public function item($id)
     {
+        if (!$id)
+        {
+            return null;
+        }
+
         return $this->RedisHash('cartoon_role_' . $id, function () use ($id)
         {
            $role = CartoonRole::find($id);

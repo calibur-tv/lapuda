@@ -59,6 +59,11 @@ class PostRepository extends Repository
 
     public function item($id)
     {
+        if (!$id)
+        {
+            return null;
+        }
+
         $post = $this->RedisHash('post_'.$id, function () use ($id)
         {
             $post = Post::find($id);
