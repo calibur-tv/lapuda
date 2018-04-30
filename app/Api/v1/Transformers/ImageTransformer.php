@@ -63,13 +63,13 @@ class ImageTransformer extends Transformer
 
     public function albumShow($images)
     {
-     return $this->collection($images, function ($image)
-     {
-        return [
-            'id' => (int)$image['id'],
-            'url' => $image['width'] . '-' . $image['height'] . '|' . $image['url']
-        ];
-     });
+         return $this->collection($images, function ($image)
+         {
+            return [
+                'id' => (int)$image['id'],
+                'url' => $image['width'] . '-' . $image['height'] . '|' . $image['url']
+            ];
+         });
     }
 
     public function indexBanner($list)
