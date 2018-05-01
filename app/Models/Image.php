@@ -38,6 +38,11 @@ class Image extends Model
         'role_id' => 'integer'
     ];
 
+    public function getUpdatedAtColumn()
+    {
+        return null;
+    }
+
     public function getUrlAttribute($url)
     {
         return config('website.image').($url ? $url : 'avatar');
