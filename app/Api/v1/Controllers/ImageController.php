@@ -506,6 +506,7 @@ class ImageController extends Controller
             return $this->resErrNotFound();
         }
 
+        $album = $album->toArray();
         $userId = $this->getAuthUserId();
 
         $imageRepository = new ImageRepository();
@@ -527,16 +528,23 @@ class ImageController extends Controller
             $bangumi['followed'] = $bangumiRepository->checkUserFollowed($userId, $bangumiId);
 
             $bangumiTransformer = new BangumiTransformer();
-            $bangumi = $bangumiTransformer->album($bangumi);
+            $bangumi = $bangumiTransformer->post($bangumi);
         }
 
         return $this->resOK([
             'user' => $userTransformer->item($user),
             'bangumi' => $bangumi,
             'images' => $imageTransformer->albumShow($images),
-            'liked' => $imageRepository->checkLiked($id, $userId, $album['user_id']),
-            'name' => $album['name'],
-            'poster' => $album['url']
+            'info' => [
+                'liked' => $imageRepository->checkLiked($id, $userId, $album['user_id']),
+                'name' => $album['name'],
+                'poster' => $album['url'],
+                'is_cartoon' => (boolean)$album['is_cartoon'],
+                'is_creator' => (boolean)$album['creator'],
+                'like_count' => (int)$album['like_count'],
+                'created_at' => $album['created_at'],
+                'updated_at' => $album['updated_at']
+            ]
         ]);
     }
 }
