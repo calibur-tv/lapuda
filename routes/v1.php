@@ -186,6 +186,10 @@ $api->version(['v1', 'latest'], function ($api)
         $api->group(['prefix' => '/album/{id}'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\ImageController@albumShow');
+
+            $api->post('/sort', 'App\Api\V1\Controllers\ImageController@albumSort')->middleware(['jwt.auth', 'throttle:25,1']);
+
+            $api->post('/deleteImage', 'App\Api\V1\Controllers\ImageController@deleteAlbumImage')->middleware(['jwt.auth', 'throttle:25,1']);
         });
     });
 

@@ -531,20 +531,76 @@ class ImageController extends Controller
             $bangumi = $bangumiTransformer->post($bangumi);
         }
 
-        return $this->resOK([
+        $transformer = new ImageTransformer();
+        $album['liked'] = $imageRepository->checkLiked($id, $userId, $album['user_id']);
+
+        return $this->resOK($transformer->albumShow([
             'user' => $userTransformer->item($user),
             'bangumi' => $bangumi,
-            'images' => $imageTransformer->albumShow($images),
-            'info' => [
-                'liked' => $imageRepository->checkLiked($id, $userId, $album['user_id']),
-                'name' => $album['name'],
-                'poster' => $album['url'],
-                'is_cartoon' => (boolean)$album['is_cartoon'],
-                'is_creator' => (boolean)$album['creator'],
-                'like_count' => (int)$album['like_count'],
-                'created_at' => $album['created_at'],
-                'updated_at' => $album['updated_at']
-            ]
-        ]);
+            'images' => $images,
+            'info' => $album
+        ]));
+    }
+
+    public function albumSort(Request $request, $id)
+    {
+        $userId = $this->getAuthUserId();
+        $album = Image::whereRaw('id = ? and album_id = 0 and image_count > 1 and user_id = ?', [$id, $userId])->first();
+
+        if (is_null($album))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $result = $request->get('result');
+
+        if (!$result)
+        {
+            return $this->resErrParams();
+        }
+
+        Image::where('id', $id)
+            ->update([
+                'images' => $result
+            ]);
+
+        Redis::DEL('image_album_' . $id . '_images');
+
+        return $this->resNoContent();
+    }
+
+    public function deleteAlbumImage(Request $request, $id)
+    {
+        $userId = $this->getAuthUserId();
+        $album = Image::whereRaw('id = ? and album_id = 0 and image_count > 1 and user_id = ?', [$id, $userId])->first();
+
+        if (is_null($album))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $result = $request->get('result');
+
+        if (!$result)
+        {
+            return $this->resErrParams();
+        }
+
+        Image::where('id', $id)
+            ->update([
+                'images' => $result
+            ]);
+
+        Image::whereRaw('id = ? and user_id = ?', [$request->get('id'), $userId])->delete();
+
+        Redis::DEL('image_album_' . $id . '_images');
+
+        $cacheKey = 'user_image_' . $id;
+        if (Redis::EXISTS($cacheKey))
+        {
+            Redis::HINCRBYFLOAT($cacheKey, 'image_count', -1);
+        }
+
+        return $this->resNoContent();
     }
 }
