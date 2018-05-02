@@ -61,13 +61,35 @@ class ImageTransformer extends Transformer
         });
     }
 
-    public function albumShow($images)
+    public function albumShow($data)
     {
-         return $this->collection($images, function ($image)
+         return $this->transformer($data, function ($album)
          {
             return [
-                'id' => (int)$image['id'],
-                'url' => $image['width'] . '-' . $image['height'] . '|' . $image['url']
+                'user' => $album['user'],
+                'bangumi' => $album['bangumi'],
+                'images' => $this->collection($album['images'], function ($image)
+                 {
+                     return [
+                         'id' => (int)$image['id'],
+                         'url' => $image['width'] . '-' . $image['height'] . '|' . $image['url']
+                     ];
+                 }),
+                'info' => $this->transformer($album['info'], function ($info)
+                {
+                    return [
+                        'liked' => $info['liked'],
+                        'name' => $info['name'],
+                        'poster' => $info['url'],
+                        'images' => $info['images'],
+                        'is_cartoon' => (boolean)$info['is_cartoon'],
+                        'is_creator' => (boolean)$info['creator'],
+                        'like_count' => (int)$info['like_count'],
+                        'image_count' => (int)$info['image_count'],
+                        'created_at' => $info['created_at'],
+                        'updated_at' => $info['updated_at']
+                    ];
+                })
             ];
          });
     }
