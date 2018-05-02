@@ -516,7 +516,6 @@ class ImageController extends Controller
         $images = $imageRepository->albumImages($id, $album['images']);
 
         $userTransformer = new UserTransformer();
-        $imageTransformer = new ImageTransformer();
 
         $bangumi = null;
         $bangumiId = $album['bangumi_id'];
@@ -533,6 +532,7 @@ class ImageController extends Controller
 
         $transformer = new ImageTransformer();
         $album['liked'] = $imageRepository->checkLiked($id, $userId, $album['user_id']);
+        $album['image_count'] = $album['image_count'] - 1;
 
         return $this->resOK($transformer->albumShow([
             'user' => $userTransformer->item($user),
@@ -590,6 +590,7 @@ class ImageController extends Controller
             ->update([
                 'images' => $result
             ]);
+        Image::where('id', $id)->increment('image_count', -1);
 
         Image::whereRaw('id = ? and user_id = ?', [$request->get('id'), $userId])->delete();
 
