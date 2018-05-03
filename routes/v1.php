@@ -193,6 +193,14 @@ $api->version(['v1', 'latest'], function ($api)
         });
     });
 
+    $api->group(['prefix' => '/cartoon_role'], function ($api)
+    {
+        $api->group(['prefix' => '/{id}'], function ($api)
+        {
+            $api->get('/show', 'App\Api\V1\Controllers\CartoonRoleController@show');
+        });
+    });
+
     $api->group(['prefix' => '/trending'], function ($api)
     {
         $api->group(['prefix' => '/post'], function ($api)
