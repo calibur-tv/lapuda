@@ -17,7 +17,6 @@ class CartoonRoleTransformer extends Transformer
         {
             return [
                 'bangumi' => $role['bangumi'],
-                'fans' => $role['fans'],
                 'data' => $this->transformer($role['data'], function ($info)
                 {
                     return [
