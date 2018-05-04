@@ -201,22 +201,8 @@ class CartoonRoleController extends Controller
         $bangumi = $bangumiRepository->item($role['bangumi_id']);
         $bangumi['followed'] = $bangumiRepository->checkUserFollowed($userId, $role['bangumi_id']);
 
-        $fans = [];
-        $fansIds = $cartoonRepository->newFansIds($id, 0, 7);
-        if (!empty($fansIds))
-        {
-            $i = 0;
-            foreach ($fansIds as $fansId => $score)
-            {
-                $fans[] = $userRepository->item($fansId);
-                $fans[$i]['score'] = $score;
-                $i++;
-            }
-        }
-
         return $this->resOK($cartoonTransformer->show([
             'bangumi' => $bangumiTransformer->post($bangumi),
-            'fans' => $cartoonTransformer->fans($fans),
             'data' => $role
         ]));
     }
