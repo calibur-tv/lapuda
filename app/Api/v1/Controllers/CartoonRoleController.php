@@ -89,15 +89,13 @@ class CartoonRoleController extends Controller
         }
 
         $cartoonRoleRepository = new CartoonRoleRepository();
+
         if ($cartoonRoleRepository->checkHasStar($roleId, $userId))
         {
             CartoonRoleFans::whereRaw('role_id = ? and user_id = ?', [$roleId, $userId])->increment('star_count');
+
             $trendingKey = 'cartoon_role_trending_' . $roleId;
-            $hotCacheKey = 'cartoon_role_' . $roleId . '_hot_fans_ids';
-            if (Redis::EXISTS($hotCacheKey))
-            {
-                Redis::ZINCRBY($hotCacheKey, 1, $userId);
-            }
+
             if (Redis::EXISTS('cartoon_role_'.$roleId))
             {
                 Redis::HINCRBYFLOAT('cartoon_role_'.$roleId, 'star_count', 1);
@@ -117,17 +115,8 @@ class CartoonRoleController extends Controller
 
             CartoonRole::where('id', $roleId)->increment('fans_count');
 
-            $newCacheKey = 'cartoon_role_' . $roleId . '_new_fans_ids';
-            $hotCacheKey = 'cartoon_role_' . $roleId . '_hot_fans_ids';
             $trendingKey = 'cartoon_role_trending_' . $roleId;
-            if (Redis::EXISTS($newCacheKey))
-            {
-                Redis::ZADD($newCacheKey, strtotime('now'), $userId);
-            }
-            if (Redis::EXISTS($hotCacheKey))
-            {
-                Redis::ZADD($hotCacheKey, 1, $userId);
-            }
+
             if (Redis::EXISTS('cartoon_role_'.$roleId))
             {
                 Redis::HINCRBYFLOAT('cartoon_role_'.$roleId, 'fans_count', 1);
@@ -139,6 +128,19 @@ class CartoonRoleController extends Controller
                 Redis::HINCRBYFLOAT($trendingKey, 'star_count', 1);
             }
         }
+
+        $newCacheKey = 'cartoon_role_' . $roleId . '_new_fans_ids';
+        $hotCacheKey = 'cartoon_role_' . $roleId . '_hot_fans_ids';
+
+        if (Redis::EXISTS($newCacheKey))
+        {
+            Redis::ZADD($newCacheKey, strtotime('now'), $userId);
+        }
+        if (Redis::EXISTS($hotCacheKey))
+        {
+            Redis::ZINCRBY($hotCacheKey, 1, $userId);
+        }
+
         CartoonRole::where('id', $roleId)->increment('star_count');
 
         return $this->resNoContent();
