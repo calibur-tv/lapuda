@@ -11,6 +11,30 @@ namespace App\Api\V1\Transformers;
 
 class CartoonRoleTransformer extends Transformer
 {
+    public function show($data)
+    {
+        return $this->transformer($data, function ($role)
+        {
+            return [
+                'bangumi' => $role['bangumi'],
+                'fans' => $role['fans'],
+                'data' => $this->transformer($role['data'], function ($info)
+                {
+                    return [
+                        'alias' => $info['alias'],
+                        'avatar' => $info['avatar'],
+                        'fans_count' => (int)$info['fans_count'],
+                        'hasStar' => (int)$info['hasStar'],
+                        'intro' => $info['intro'],
+                        'lover' => $info['lover'],
+                        'name' => $info['name'],
+                        'star_count' => (int)$info['star_count']
+                    ];
+                }),
+            ];
+        });
+    }
+
     public function bangumi($list)
     {
         return $this->collection($list, function ($role)

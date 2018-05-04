@@ -182,4 +182,33 @@ class ImageRepository extends Repository
                 ->toArray();
         });
     }
+
+    public function getRoleImageIds($roleId, $seen, $take, $size, $tags, $creator, $sort)
+    {
+        return Image::whereIn('state', [1, 4])
+            ->whereRaw('role_id = ? and image_count <> ?', [$roleId, 1])
+            ->whereNotIn('images.id', $seen)
+            ->take($take)
+            ->when($sort === 'new', function ($query)
+            {
+                return $query->latest();
+            }, function ($query)
+            {
+                return $query->orderBy('like_count', 'DESC');
+            })
+            ->when($creator !== -1, function ($query) use ($creator)
+            {
+                return $query->where('creator', $creator);
+            })
+            ->when($size, function ($query) use ($size)
+            {
+                return $query->where('size_id', $size);
+            })
+            ->when($tags, function ($query) use ($tags)
+            {
+                return $query->leftJoin('image_tags AS tags', 'images.id', '=', 'tags.image_id')
+                    ->where('tags.tag_id', $tags);
+            })
+            ->pluck('images.id');
+    }
 }

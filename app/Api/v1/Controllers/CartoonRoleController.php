@@ -2,9 +2,13 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
+use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
+use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Bangumi;
 use App\Models\CartoonRole;
@@ -71,6 +75,11 @@ class CartoonRoleController extends Controller
 
     public function star(Request $request, $bangumiId, $roleId)
     {
+        if (!CartoonRole::where('id', $roleId)->count())
+        {
+            return $this->resErrNotFound();
+        }
+
         $userId = $this->getAuthUserId();
         $userRepository = new UserRepository();
 
@@ -137,6 +146,11 @@ class CartoonRoleController extends Controller
 
     public function fans(Request $request, $bangumiId, $roleId)
     {
+        if (!CartoonRole::where('id', $roleId)->count())
+        {
+            return $this->resErrNotFound();
+        }
+
         $sort = $request->get('sort') ?: 'new';
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
         $minId = $request->get('minId') ?: 0;
@@ -161,5 +175,90 @@ class CartoonRoleController extends Controller
         $transformer = new CartoonRoleTransformer();
 
         return $this->resOK($transformer->fans($users));
+    }
+
+    public function show($id)
+    {
+        if (!CartoonRole::where('id', $id)->count())
+        {
+            return $this->resErrNotFound();
+        }
+
+        $userId = $this->getAuthUserId();
+
+        $bangumiRepository = new BangumiRepository();
+        $cartoonRepository = new CartoonRoleRepository();
+        $userRepository = new UserRepository();
+
+        $cartoonTransformer = new CartoonRoleTransformer();
+        $bangumiTransformer = new BangumiTransformer();
+        $userTransformer = new UserTransformer();
+
+        $role = $cartoonRepository->item($id);
+        $role['lover'] = $role['loverId'] ? $userTransformer->item($userRepository->item($role['loverId'])) : null;
+        $role['hasStar'] = $cartoonRepository->checkHasStar($role['id'], $userId);
+
+        $bangumi = $bangumiRepository->item($role['bangumi_id']);
+        $bangumi['followed'] = $bangumiRepository->checkUserFollowed($userId, $role['bangumi_id']);
+
+        $fans = [];
+        $fansIds = $cartoonRepository->newFansIds($id, 0, 7);
+        if (!empty($fansIds))
+        {
+            $i = 0;
+            foreach ($fansIds as $fansId => $score)
+            {
+                $fans[] = $userRepository->item($fansId);
+                $fans[$i]['score'] = $score;
+                $i++;
+            }
+        }
+
+        return $this->resOK($cartoonTransformer->show([
+            'bangumi' => $bangumiTransformer->post($bangumi),
+            'fans' => $cartoonTransformer->fans($fans),
+            'data' => $role
+        ]));
+    }
+
+    public function images(Request $request, $id)
+    {
+        if (!CartoonRole::where('id', $id)->count())
+        {
+            return $this->resErrNotFound();
+        }
+
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = intval($request->get('take')) ?: 12;
+        $size = intval($request->get('size')) ?: 0;
+        $tags = $request->get('tags') ?: 0;
+        $creator = $request->get('creator');
+        $sort = $request->get('sort') ?: 'new';
+
+        $repository = new ImageRepository();
+        $ids = $repository->getRoleImageIds($id, $seen, $take, $size, $tags, $creator, $sort);
+
+        if (empty($ids))
+        {
+            return $this->resOK([
+                'list' => [],
+                'type' => $repository->uploadImageTypes()
+            ]);
+        }
+
+        $transformer = new ImageTransformer();
+
+        $visitorId = $this->getAuthUserId();
+        $list = $repository->list($ids);
+
+        foreach ($list as $i => $item)
+        {
+            $list[$i]['liked'] = $repository->checkLiked($item['id'], $visitorId, $item['user_id']);
+        }
+
+        return $this->resOK([
+            'list' => $transformer->roleShow($list),
+            'type' => $repository->uploadImageTypes()
+        ]);
     }
 }
