@@ -32,6 +32,7 @@ class Image extends Model
     // 普通图片 album_id === 0 && image_count === 0
     // 专辑封面 album_id === 0 && image_count >= 1, image_count = 1 时是空专辑
     // 专辑图片 album_id !== 0
+    // image_count = 1 的是空专辑，不要获取这些数据
 
     protected $casts = [
         'creator' => 'boolean',
