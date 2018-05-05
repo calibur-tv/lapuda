@@ -55,7 +55,8 @@ class UserTransformer extends Transformer
                 'avatar' => $user['avatar'],
                 'banner' => $user['banner'],
                 'nickname' => $user['nickname'],
-                'signature' => $user['signature']
+                'signature' => $user['signature'],
+                'faker' => (boolean)$user['faker']
             ];
         });
     }
