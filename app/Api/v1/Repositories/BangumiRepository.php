@@ -34,6 +34,7 @@ class BangumiRepository extends Repository
             $bangumi = $bangumi->toArray();
             $season = json_decode($bangumi['season']);
 
+            $bangumi['released_part'] = 0;
             if ($bangumi['released_video_id'])
             {
                 $part = Video::where('id', $bangumi['released_video_id'])->pluck('part')->first();
