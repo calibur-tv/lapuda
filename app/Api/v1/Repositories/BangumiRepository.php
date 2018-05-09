@@ -230,21 +230,19 @@ class BangumiRepository extends Repository
         {
             Redis::HINCRBYFLOAT('bangumi_'.$bangumi_id, 'count_like', $num);
         }
-        Redis::pipeline(function ($pipe) use ($result, $num, $bangumi_id, $user_id)
+
+        $bangumiFollowsCacheKey = 'bangumi_'.$bangumi_id.'_followersIds';
+        $userFollowsCacheKey = 'user_'.$user_id.'_followBangumiIds';
+        if ($result)
         {
-            $bangumiFollowsCacheKey = 'bangumi_'.$bangumi_id.'_followersIds';
-            $userFollowsCacheKey = 'user_'.$user_id.'_followBangumiIds';
-            if ($result)
-            {
-                $pipe->LPUSHX($userFollowsCacheKey, $bangumi_id);
-                $pipe->ZADD($bangumiFollowsCacheKey, strtotime('now'), $user_id);
-            }
-            else
-            {
-                $pipe->LREM($userFollowsCacheKey, 1, $bangumi_id);
-                $pipe->ZREM($bangumiFollowsCacheKey, $user_id);
-            }
-        });
+            Redis::LPUSHX($userFollowsCacheKey, $bangumi_id);
+            Redis::ZADD($bangumiFollowsCacheKey, strtotime('now'), $user_id);
+        }
+        else
+        {
+            Redis::LREM($userFollowsCacheKey, 1, $bangumi_id);
+            Redis::ZREM($bangumiFollowsCacheKey, $user_id);
+        }
 
         return $result;
     }

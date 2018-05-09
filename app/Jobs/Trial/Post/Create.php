@@ -168,16 +168,13 @@ class Create implements ShouldQueue
                 'updated_at' => $now
             ]);
 
-            Redis::pipeline(function ($pipe) use ($post)
+            $cache = 'post_'.$post['id'];
+            if (Redis::EXISTS($cache))
             {
-                $cache = 'post_'.$post['id'];
-                if ($pipe->EXISTS($cache))
-                {
-                    $pipe->HSET($cache, 'state', 3);
-                }
-                $pipe->ZADD('post_new_ids', strtotime($post['created_at']), $post['id']);
-                $pipe->EXPIREAT('post_new_ids', strtotime(date('Y-m-d')) + 86400 + rand(3600, 10800));
-            });
+                Redis::HSET($cache, 'state', 3);
+            }
+            Redis::ZADD('post_new_ids', strtotime($post['created_at']), $post['id']);
+            Redis::EXPIREAT('post_new_ids', strtotime(date('Y-m-d')) + 86400 + rand(3600, 10800));
 
             $job = (new \App\Jobs\Push\Baidu('post/trending/new', 'update'));
             dispatch($job);
