@@ -34,7 +34,6 @@ class BangumiRepository extends Repository
             $bangumi = $bangumi->toArray();
             $season = json_decode($bangumi['season']);
 
-            $bangumi['released_part'] = 0;
             if ($bangumi['released_video_id'])
             {
                 $part = Video::where('id', $bangumi['released_video_id'])->pluck('part')->first();
@@ -83,8 +82,8 @@ class BangumiRepository extends Repository
                                 // 我们获取到的 $part  是某个集数，可能是 52 或 26
                                 foreach ($season->part as $i => $val)
                                 {
-                                    // 遇到第一个大于当前 $part 的数字或者遇到 -1
-                                    if ($val > $part || $val === -1)
+                                    // 遇到第一个大于等于当前 $part 的数字或者遇到 -1
+                                    if ($val >= $part || $val === -1)
                                     {
                                         // 减去上一季度part的值
                                         $bangumi['released_part'] = $part - $season->part[$i - 1];
