@@ -156,7 +156,7 @@ class UserController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'sex' => 'required',
-            'signature' => 'string|min:0|max:20',
+            'signature' => 'string|min:0|max:150',
             'nickname' => 'required|min:1|max:14',
             'birthday' => 'required'
         ]);
