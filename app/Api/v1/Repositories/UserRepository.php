@@ -190,11 +190,18 @@ class UserRepository extends Repository
                 return null;
             }
 
+            $bangumi = $bangumiRepository->item($post['bangumi_id']);
+
+            if (is_null($bangumi))
+            {
+                return null;
+            }
+
+            $data['bangumi'] = $bangumi;
             $data['post'] = $post;
             $data['parent'] = $parent;
             $data['images'] = $postRepository->images($data['id']);
             $data['user'] = $this->item($data['target_user_id']);
-            $data['bangumi'] = $bangumiRepository->item($post['bangumi_id']);
 
             return $postTransformer->userReply($data);
         });
