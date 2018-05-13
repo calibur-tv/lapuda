@@ -104,7 +104,14 @@ class PostRepository extends Repository
                 $this->bangumiRepository = new BangumiRepository();
             }
 
-            $post['bangumi'] = $this->bangumiRepository->item($post['bangumi_id']);
+            $bangumi = $this->bangumiRepository->item($post['bangumi_id']);
+
+            if (is_null($bangumi))
+            {
+                return null;
+            }
+
+            $post['bangumi'] = $bangumi;
             $post['likeUsers'] = $this->likeUsers($id);
         }
 
