@@ -2,8 +2,6 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Models\CartoonRole;
-use App\Models\Image;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
 use Mews\Purifier\Facades\Purifier;
@@ -38,25 +36,5 @@ class SearchController extends Controller
         $result = $search->index($key);
 
         return $this->resOK(empty($result) ? '' : $result[0]['fields']['url']);
-    }
-
-    public function test()
-    {
-        $albumIds = Image::where('image_count', '>', 1)->pluck('id');
-        $roleIds = CartoonRole::pluck('id');
-
-        foreach ($albumIds as $id)
-        {
-            $job = (new \App\Jobs\Push\Baidu('album/' . $id));
-            dispatch($job);
-        }
-
-        foreach ($roleIds as $id)
-        {
-            $job = (new \App\Jobs\Push\Baidu('role/' . $id));
-            dispatch($job);
-        }
-
-        return $this->resOK('success');
     }
 }
