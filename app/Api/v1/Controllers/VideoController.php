@@ -37,6 +37,12 @@ class VideoController extends Controller
         $userId = $this->getAuthUserId();
         $bangumiRepository = new BangumiRepository();
         $bangumi = $bangumiRepository->item($info['bangumi_id']);
+
+        if (is_null($bangumi))
+        {
+            return $this->resErrNotFound();
+        }
+
         $season = json_decode($bangumi['season']);
         $list = $bangumiRepository->videos($bangumi['id'], $season);
         $bangumi['followed'] = $bangumiRepository->checkUserFollowed($userId, $info['bangumi_id']);
