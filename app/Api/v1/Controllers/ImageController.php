@@ -154,6 +154,7 @@ class ImageController extends Controller
             {
                 Redis::HINCRBYFLOAT($cacheKey, 'image_count', count($ids));
             }
+
             $images = Image::where('id', $albumId)->pluck('images')->first();
             if (is_null($images))
             {
@@ -161,6 +162,10 @@ class ImageController extends Controller
                     ->update([
                         'images' => implode(',', $ids)
                     ]);
+
+                // 第一次传图
+                $job = (new \App\Jobs\Push\Baidu('album/' . $albumId));
+                dispatch($job);
             }
             else
             {
@@ -168,6 +173,10 @@ class ImageController extends Controller
                     ->update([
                         'images' => $images . ',' . implode(',', $ids)
                     ]);
+
+                // 不是第一次传图
+                $job = (new \App\Jobs\Push\Baidu('album/' . $albumId, 'update'));
+                dispatch($job);
             }
             Redis::DEL('image_album_' . $albumId . '_images');
         }
@@ -583,13 +592,14 @@ class ImageController extends Controller
 
         if (!$result)
         {
-            return $this->resErrParams();
+            return $this->resErrParams('至少要保留一张图');
         }
 
         Image::where('id', $id)
             ->update([
                 'images' => $result
             ]);
+
         Image::where('id', $id)->increment('image_count', -1);
 
         Image::whereRaw('id = ? and user_id = ?', [$request->get('id'), $userId])->delete();
@@ -601,6 +611,10 @@ class ImageController extends Controller
         {
             Redis::HINCRBYFLOAT($cacheKey, 'image_count', -1);
         }
+
+        // 不是第一次传图
+        $job = (new \App\Jobs\Push\Baidu('album/' . $id, 'update'));
+        dispatch($job);
 
         return $this->resNoContent();
     }

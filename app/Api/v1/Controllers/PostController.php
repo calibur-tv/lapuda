@@ -87,8 +87,9 @@ class PostController extends Controller
         $job = (new \App\Jobs\Push\Baidu('post/' . $id));
         dispatch($job);
 
-        $job = (new \App\Jobs\Push\Baidu('bangumi/' . $bangumiId, 'update'));
-        dispatch($job);
+//        第一页现在是视频而不是帖子
+//        $job = (new \App\Jobs\Push\Baidu('bangumi/' . $bangumiId, 'update'));
+//        dispatch($job);
 
         return $this->resCreated($id);
     }
