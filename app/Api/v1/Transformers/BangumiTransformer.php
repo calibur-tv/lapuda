@@ -97,7 +97,9 @@ class BangumiTransformer extends Transformer
                         'name' => $tag['name']
                     ];
                 }),
-                'followers' => $bangumi['followers']
+                'followers' => $bangumi['followers'],
+                'has_video' => (boolean)$bangumi['has_video'],
+                'has_cartoon' => (boolean)$bangumi['has_cartoon']
             ];
         });
     }

@@ -28,7 +28,9 @@ class Bangumi extends Model
         'count_score',
         'collection_id',
         'others_site_video',
-        'end'
+        'end',
+        'has_cartoon',
+        'has_video'
     ];
 
     protected $casts = [
