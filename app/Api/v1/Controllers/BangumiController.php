@@ -372,4 +372,41 @@ class BangumiController extends Controller
             'type' => $imageRepository->uploadImageTypes()
         ]);
     }
+
+    public function cartoon(Request $request, $id)
+    {
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = intval($request->get('take')) ?: 12;
+
+        $imageRepository = new ImageRepository();
+
+        $ids = Image::whereRaw('bangumi_id = ? and is_cartoon = 1 and album_id = 0 and image_count <> 1', [$id])
+            ->whereIn('state', [1, 4])
+            ->whereNotIn('images.id', $seen)
+            ->take($take)
+            ->pluck('images.id');
+
+        if (empty($ids))
+        {
+            return $this->resOK([
+                'list' => [],
+                'type' => []
+            ]);
+        }
+
+        $transformer = new ImageTransformer();
+
+        $visitorId = $this->getAuthUserId();
+        $list = $imageRepository->list($ids);
+
+        foreach ($list as $i => $item)
+        {
+            $list[$i]['liked'] = $imageRepository->checkLiked($item['id'], $visitorId, $item['user_id']);
+        }
+
+        return $this->resOK([
+            'list' => $transformer->waterfall($list),
+            'type' => []
+        ]);
+    }
 }
