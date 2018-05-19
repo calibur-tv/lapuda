@@ -201,6 +201,11 @@ class CartoonRoleController extends Controller
         $role['hasStar'] = $cartoonRepository->checkHasStar($role['id'], $userId);
 
         $bangumi = $bangumiRepository->item($role['bangumi_id']);
+        if (is_null($bangumi))
+        {
+            return $this->resErrNotFound();
+        }
+
         $bangumi['followed'] = $bangumiRepository->checkUserFollowed($userId, $role['bangumi_id']);
 
         return $this->resOK($cartoonTransformer->show([
