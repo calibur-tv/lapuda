@@ -176,6 +176,11 @@ class PostController extends Controller
         $userTransformer = new UserTransformer();
         $post['previewImages'] = $postRepository->previewImages($id, $only ? $post['user_id'] : false);
         $bangumi = $bangumiRepository->item($post['bangumi_id']);
+        if (is_null($bangumi))
+        {
+            return null;
+        }
+
         $bangumi['followed'] = $bangumiRepository->checkUserFollowed($userId, $post['bangumi_id']);
 
         return $this->resOK([

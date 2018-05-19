@@ -533,6 +533,11 @@ class ImageController extends Controller
             $bangumiRepository = new BangumiRepository();
             $bangumi = $bangumiRepository->item($bangumiId);
 
+            if (is_null($bangumi))
+            {
+                return null;
+            }
+
             $bangumi['followed'] = $bangumiRepository->checkUserFollowed($userId, $bangumiId);
 
             $bangumiTransformer = new BangumiTransformer();
