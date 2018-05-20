@@ -11,16 +11,21 @@ namespace App\Api\V1\Repositories;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
+use App\Models\DayStats;
+use App\Models\Bangumi;
 use App\Models\BangumiFollow;
+use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
 use App\Models\Image;
 use App\Models\Notifications;
 use App\Models\Post;
+use App\Models\PostImages;
 use App\Models\PostLike;
 use App\Models\PostMark;
 use App\Models\User;
 use App\Models\UserCoin;
 use App\Models\UserSign;
+use App\Models\Video;
 use Carbon\Carbon;
 
 class UserRepository extends Repository
@@ -374,5 +379,66 @@ class UserRepository extends Repository
                 ->get()
                 ->toArray();
         }, 'm');
+    }
+
+    public function statsByDate($nowTime)
+    {
+        $today = strtotime(date('Y-m-d', $nowTime));
+        $createdAt = date('Y-m-d H:m:s', $today);
+        $yesterday = $today - 86400;
+        // user
+        $userCount = User::where('created_at', '<', $createdAt)
+            ->count();
+        $this->setDayStats('user_register', $yesterday, $userCount);
+        // post
+        $postCount = Post::where('created_at', '<', $createdAt)
+            ->where('parent_id', 0)
+            ->count();
+        $this->setDayStats('create_post', $yesterday, $postCount);
+        // 帖子的回复数（包括了楼层回复和评论回复）
+        $postReplyCount = Post::where('created_at', '<', $createdAt)
+            ->where('parent_id', '<>', 0)
+            ->count();
+        $this->setDayStats('create_post_reply', $yesterday, $postReplyCount);
+        // 帖子里的图片数
+        $postImageCount = PostImages::where('created_at', '<', $createdAt)
+            ->count();
+        $this->setDayStats('create_post_image', $yesterday, $postImageCount);
+        // imageCount
+        $imageCount = Image::where('image_count', 0)
+            ->where('album_id', 0)
+            ->where('created_at', '<', $createdAt)
+            ->count();
+        $this->setDayStats('create_image', $yesterday, $imageCount);
+        // album_count
+        $albumCount = Image::where('created_at', '<', $createdAt)
+            ->where('album_id', 0)
+            ->where('image_count', '>', 1)
+            ->count();
+        $this->setDayStats('create_image_album', $yesterday, $albumCount);
+        // bangumiCount
+        $bangumiCount = Bangumi::where('created_at', '<', $createdAt)
+            ->count();
+        $this->setDayStats('create_bangumi', $yesterday, $bangumiCount);
+        // videoCount
+        $videoCount = Video::where('created_at', '<', $createdAt)
+            ->count();
+        $this->setDayStats('create_video', $yesterday, $videoCount);
+        // roleCount
+        $roleCount = CartoonRole::where('created_at', '<', $createdAt)
+            ->count();
+        $this->setDayStats('create_role', $yesterday, $roleCount);
+    }
+
+    protected function setDayStats($type, $day, $count)
+    {
+        if (!DayStats::whereRaw('type = ? and day = ?', [$type, $day])->count())
+        {
+            DayStats::insert([
+                'type' => $type,
+                'day' => $day,
+                'count' => $count
+            ]);
+        }
     }
 }

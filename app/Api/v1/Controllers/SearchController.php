@@ -2,6 +2,7 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\UserRepository;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
 use Mews\Purifier\Facades\Purifier;
@@ -36,5 +37,19 @@ class SearchController extends Controller
         $result = $search->index($key);
 
         return $this->resOK(empty($result) ? '' : $result[0]['fields']['url']);
+    }
+
+    public function test(Request $request)
+    {
+        $time = $request->get('time') ?: time();
+
+        $repository = new UserRepository();
+
+        for ($i = 0; $i < 100; $i++)
+        {
+            $repository->statsByDate($time - 86400 * $i);
+        }
+
+        return response()->json(['data' => 'success'], 200);
     }
 }
