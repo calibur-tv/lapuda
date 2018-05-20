@@ -38,18 +38,4 @@ class SearchController extends Controller
 
         return $this->resOK(empty($result) ? '' : $result[0]['fields']['url']);
     }
-
-    public function test(Request $request)
-    {
-        $time = $request->get('time') ?: time();
-
-        $repository = new UserRepository();
-
-        for ($i = 0; $i < 100; $i++)
-        {
-            $repository->statsByDate($time - 86400 * $i);
-        }
-
-        return response()->json(['data' => 'success'], 200);
-    }
 }
