@@ -540,8 +540,8 @@ class UserController extends Controller
         $take = intval($request->get('take')) ?: 12;
         $tags = $request->get('tags') ?: 0;
         $size = $request->get('size') ?: 0;
-        $bangumiId = $request->get('bangumiId');
-        $creator = $request->get('creator');
+        $bangumiId = intval($request->get('bangumiId'));
+        $creator = intval($request->get('creator'));
         $sort = $request->get('sort') ?: 'new';
         $imageRepository = new ImageRepository();
 

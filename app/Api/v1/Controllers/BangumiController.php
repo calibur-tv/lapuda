@@ -312,10 +312,10 @@ class BangumiController extends Controller
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
         $take = intval($request->get('take')) ?: 12;
         $size = intval($request->get('size')) ?: 0;
-        $tags = $request->get('tags') ?: 0;
-        $creator = $request->get('creator');
+        $creator = intval($request->get('creator'));
+        $role = intval($request->get('roleId'));
         $sort = $request->get('sort') ?: 'new';
-        $role = $request->get('roleId');
+        $tags = $request->get('tags') ?: 0;
 
         $imageRepository = new ImageRepository();
 
