@@ -16,13 +16,13 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/door'], function ($api)
     {
-        $api->post('/send', 'App\Api\V1\Controllers\DoorController@sendEmailOrMessage')->middleware(['geetest', 'throttle:60,1']);
+        $api->post('/send', 'App\Api\V1\Controllers\DoorController@sendEmailOrMessage')->middleware(['geetest', 'throttle']);
 
         $api->post('/register', 'App\Api\V1\Controllers\DoorController@register')->middleware(['geetest', 'throttle']);
 
         $api->post('/login', 'App\Api\V1\Controllers\DoorController@login')->middleware(['geetest', 'throttle']);
 
-        $api->post('/user', 'App\Api\V1\Controllers\DoorController@refresh')->middleware(['jwt.refresh', 'throttle:60,1']);
+        $api->post('/user', 'App\Api\V1\Controllers\DoorController@refresh')->middleware(['jwt.refresh', 'throttle']);
 
         $api->post('/forgot', 'App\Api\V1\Controllers\DoorController@forgotPassword')->middleware(['geetest', 'throttle']);
 
@@ -47,15 +47,15 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->get('/videos', 'App\Api\V1\Controllers\BangumiController@videos');
 
-            $api->post('/posts', 'App\Api\V1\Controllers\BangumiController@posts');
+            $api->get('/posts', 'App\Api\V1\Controllers\BangumiController@posts');
 
-            $api->post('/images', 'App\Api\V1\Controllers\BangumiController@images');
+            $api->get('/images', 'App\Api\V1\Controllers\BangumiController@images');
 
-            $api->post('/cartoon', 'App\Api\V1\Controllers\BangumiController@cartoon');
+            $api->get('/cartoon', 'App\Api\V1\Controllers\BangumiController@cartoon');
 
             $api->post('/follow', 'App\Api\V1\Controllers\BangumiController@follow')->middleware(['jwt.auth', 'throttle:30,1']);
 
-            $api->post('/followers', 'App\Api\V1\Controllers\BangumiController@followers');
+            $api->get('/followers', 'App\Api\V1\Controllers\BangumiController@followers');
 
             $api->get('/roles', 'App\Api\V1\Controllers\CartoonRoleController@listOfBangumi');
 
@@ -115,18 +115,18 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->group(['prefix' => '/images'], function ($api)
             {
-                $api->post('/list', 'App\Api\V1\Controllers\UserController@imageList')->middleware('throttle:30,1');
+                $api->get('/list', 'App\Api\V1\Controllers\UserController@imageList')->middleware('throttle:30,1');
             });
 
             $api->group(['prefix' => '/posts'], function ($api)
             {
-                $api->post('/mine', 'App\Api\V1\Controllers\UserController@postsOfMine')->middleware('throttle:30,1');
+                $api->get('/mine', 'App\Api\V1\Controllers\UserController@postsOfMine')->middleware('throttle:30,1');
 
-                $api->post('/reply', 'App\Api\V1\Controllers\UserController@postsOfReply')->middleware('throttle:30,1');
+                $api->get('/reply', 'App\Api\V1\Controllers\UserController@postsOfReply')->middleware('throttle:30,1');
 
-                $api->post('/like', 'App\Api\V1\Controllers\UserController@postsOfLiked')->middleware('throttle:30,1');
+                $api->get('/like', 'App\Api\V1\Controllers\UserController@postsOfLiked')->middleware('throttle:30,1');
 
-                $api->post('/mark', 'App\Api\V1\Controllers\UserController@postsOfMarked')->middleware('throttle:30,1');
+                $api->get('/mark', 'App\Api\V1\Controllers\UserController@postsOfMarked')->middleware('throttle:30,1');
             });
         });
 
@@ -139,19 +139,19 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/{id}'], function ($api)
         {
-            $api->post('/show', 'App\Api\V1\Controllers\PostController@show');
+            $api->get('/show', 'App\Api\V1\Controllers\PostController@show');
 
-            $api->post('/comments', 'App\Api\V1\Controllers\PostController@comments')->middleware('throttle:30,1');
+            $api->get('/comments', 'App\Api\V1\Controllers\PostController@comments')->middleware('throttle:30,1');
 
-            $api->post('/reply', 'App\Api\V1\Controllers\PostController@reply')->middleware(['jwt.auth', 'geetest', 'throttle:20,1']);
+            $api->get('/likeUsers', 'App\Api\V1\Controllers\PostController@likeUsers')->middleware('throttle:30,1');
 
             $api->post('/comment', 'App\Api\V1\Controllers\PostController@comment')->middleware(['jwt.auth', 'throttle:20,1']);
+
+            $api->post('/reply', 'App\Api\V1\Controllers\PostController@reply')->middleware(['jwt.auth', 'geetest', 'throttle:20,1']);
 
             $api->post('/toggleLike', 'App\Api\V1\Controllers\PostController@toggleLike')->middleware(['jwt.auth', 'throttle:30,1']);
 
             $api->post('/toggleMark', 'App\Api\V1\Controllers\PostController@toggleMark')->middleware(['jwt.auth', 'throttle:30,1']);
-
-            $api->post('/likeUsers', 'App\Api\V1\Controllers\PostController@likeUsers')->middleware('throttle:30,1');
 
             $api->post('/deletePost', 'App\Api\V1\Controllers\PostController@deletePost')->middleware(['jwt.auth', 'throttle:30,1']);
 
@@ -165,7 +165,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/uploadType', 'App\Api\V1\Controllers\ImageController@uploadType');
 
-        $api->post('/captcha', 'App\Api\V1\Controllers\ImageController@captcha')->middleware('throttle:10,1');
+        $api->get('/captcha', 'App\Api\V1\Controllers\ImageController@captcha')->middleware('throttle:10,1');
 
         $api->post('/uptoken', 'App\Api\V1\Controllers\ImageController@uptoken')->middleware(['jwt.auth', 'throttle:20,1']);
 
@@ -183,7 +183,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/editAlbum', 'App\Api\V1\Controllers\ImageController@editAlbum')->middleware(['jwt.auth', 'throttle:5,1']);
 
-        $api->post('/trendingList', 'App\Api\V1\Controllers\ImageController@trendingList');
+        $api->get('/trendingList', 'App\Api\V1\Controllers\ImageController@trendingList');
 
         $api->group(['prefix' => '/album/{id}'], function ($api)
         {
@@ -201,7 +201,7 @@ $api->version(['v1', 'latest'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\CartoonRoleController@show');
 
-            $api->post('/images', 'App\Api\V1\Controllers\CartoonRoleController@images');
+            $api->get('/images', 'App\Api\V1\Controllers\CartoonRoleController@images');
         });
     });
 
@@ -209,9 +209,9 @@ $api->version(['v1', 'latest'], function ($api)
     {
         $api->group(['prefix' => '/post'], function ($api)
         {
-            $api->post('/new', 'App\Api\V1\Controllers\TrendingController@postNew');
+            $api->get('/new', 'App\Api\V1\Controllers\TrendingController@postNew');
 
-            $api->post('/hot', 'App\Api\V1\Controllers\TrendingController@postHot');
+            $api->get('/hot', 'App\Api\V1\Controllers\TrendingController@postHot');
         });
 
         $api->get('/cartoon_role', 'App\Api\V1\Controllers\TrendingController@cartoonRole');
