@@ -445,10 +445,10 @@ class ImageController extends Controller
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
         $take = intval($request->get('take')) ?: 12;
         $size = intval($request->get('size')) ?: 0;
-        $tags = $request->get('tags') ?: 0;
-        $creator = $request->get('creator');
+        $creator = intval($request->get('creator'));
+        $bangumiId = intval($request->get('bangumiId'));
         $sort = $request->get('sort') ?: 'new';
-        $bangumiId = $request->get('bangumiId');
+        $tags = $request->get('tags') ?: 0;
 
         $imageRepository = new ImageRepository();
 
