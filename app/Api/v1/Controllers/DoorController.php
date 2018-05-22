@@ -14,6 +14,7 @@ use App\Services\Sms\Message;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -245,7 +246,12 @@ class DoorController extends Controller
         {
             $user = Auth::user();
 
-            return $this->resOK($this->responseUser($user));
+            $jwtToken = $this->responseUser($user);
+
+            return response([
+                'code' => 0,
+                'data' => $jwtToken
+            ], 200)->cookie('test', 'fuck', 60, '/', '', true, true);
         }
 
         return $this->resErrBad('用户名或密码错误');
