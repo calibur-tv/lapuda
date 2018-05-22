@@ -44,7 +44,6 @@ class Comment extends Repository
      * 子评论有 parent_id
      * parent_id 就是主评论的 id
      */
-
     protected $modal;
 
     protected $table;
@@ -62,9 +61,10 @@ class Comment extends Repository
     {
         $content =  Purifier::clean($args['content']);
         $userId = $args['user_id'];
-        $parentId = $args['parent_id'] ?: 0;
-        $toUserId = $args['toUserId'] ?: 0;
-        $modalId = $args['modal_id'] ?: 0;
+        $parentId = isset($args['parent_id']) ? $args['parent_id'] : 0;
+        $toUserId = isset($args['to_user_id']) ? $args['to_user_id'] : 0;
+        $modalId = isset($args['modal_id']) ? $args['modal_id'] : 0;
+        $now = Carbon::now();
 
         if (!$content || !$userId || ($parentId === 0 && $modalId === 0))
         {
@@ -76,7 +76,9 @@ class Comment extends Repository
             'user_id' => $userId,
             'parent_id' => $parentId,
             'to_user_id' => $toUserId,
-            'modal_id' => $modalId
+            'modal_id' => $modalId,
+            'updated_at' => $now,
+            'created_at' => $now
         ]);
 
         $job = (new \App\Jobs\Trial\Comment\Create($this->table, $id));
@@ -121,19 +123,21 @@ class Comment extends Repository
 
     protected function item($id, $force = false)
     {
-        $comment = DB::table($this->table)
-            ->where('comment.id', $id)
-            ->when(!$force, function ($query)
+        $tableName = $this->table;
+
+        $comment = DB::table($tableName)
+            ->where("$tableName.id", $id)
+            ->when(!$force, function ($query) use ($tableName)
             {
-                return $query->where('comment.state', 1);
+                return $query->where("$tableName.state", 1);
             })
-            ->leftJoin('users AS from', 'from.id', '=', 'posts.user_id')
-            ->leftJoin('users AS to', 'to.id', '=', 'posts.to_user_id')
+            ->leftJoin('users AS from', 'from.id', '=', "$tableName.user_id")
+            ->leftJoin('users AS to', 'to.id', '=', "$tableName.to_user_id")
             ->select(
-                'comment.id',
-                'comment.content',
-                'comment.created_at',
-                'comment.user_id AS from_user_id',
+                "$tableName.id",
+                "$tableName.content",
+                "$tableName.created_at",
+                "$tableName.user_id AS from_user_id",
                 'from.nickname AS from_user_name',
                 'from.zone AS from_user_zone',
                 'from.avatar AS from_user_avatar',
@@ -148,7 +152,7 @@ class Comment extends Repository
             return null;
         }
 
-        $result = $comment->toArray();
+        $result = json_decode(json_encode($comment), true);
 
         if (!$force)
         {
