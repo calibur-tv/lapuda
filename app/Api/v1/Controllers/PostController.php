@@ -3,6 +3,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Comment;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
@@ -306,7 +307,7 @@ class PostController extends Controller
     public function comment(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'content' => 'required|max:50'
+            'content' => 'required|max:100'
         ]);
 
         if ($validator->fails())
@@ -324,6 +325,7 @@ class PostController extends Controller
         $now = Carbon::now();
         $userId = $this->getAuthUserId();
         $targetUserId = $request->get('targetUserId');
+        $commentService = new Comment('post');
 
         $newId = $repository->create([
             'content' => Purifier::clean($request->get('content')),
@@ -333,6 +335,18 @@ class PostController extends Controller
             'created_at' => $now,
             'updated_at' => $now
         ], []);
+
+        $newComment = $commentService->create([
+            'content' => $request->get('content'),
+            'user_id' => $userId,
+            'modal_id' => $id,
+            'to_user_id' => $targetUserId
+        ]);
+
+        if (is_null($newComment))
+        {
+            return $this->resErrServiceUnavailable();
+        }
 
         Post::where('id', $id)->increment('comment_count');
         Post::where('id', $id)->update([
@@ -348,8 +362,6 @@ class PostController extends Controller
             $pipe->LPUSHX('user_'.$userId.'_replyPostIds', $newId);
         });
 
-        $postTransformer = new PostTransformer();
-
         if (intval($targetUserId) !== 0)
         {
             $job = (new \App\Jobs\Notification\Post\Comment($newId));
@@ -361,7 +373,7 @@ class PostController extends Controller
         $job = (new \App\Jobs\Push\Baidu('post/' . $post['parent_id'], 'update'));
         dispatch($job);
 
-        return $this->resCreated($postTransformer->comments([$repository->comment($id, $newId)])[0]);
+        return $this->resCreated($newComment);
     }
 
     /**
