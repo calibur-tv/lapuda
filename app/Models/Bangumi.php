@@ -30,7 +30,8 @@ class Bangumi extends Model
         'others_site_video',
         'end',
         'has_cartoon',
-        'has_video'
+        'has_video',
+        'cartoon'   // 漫画的 ids
     ];
 
     protected $casts = [
