@@ -9,6 +9,7 @@
 namespace App\Api\V1\Repositories;
 
 
+use App\Api\V1\Services\Comment;
 use App\Models\Post;
 use App\Models\PostImages;
 use App\Models\PostLike;
@@ -185,28 +186,11 @@ class PostRepository extends Repository
         return $result;
     }
 
-    public function comments($postId, $seenIds = [])
+    public function comments($postId, $maxId = 0)
     {
-        $cache = $this->RedisList('post_'.$postId.'_commentIds', function () use ($postId)
-        {
-            return Post::where('parent_id', $postId)
-                ->orderBy('created_at', 'ASC')
-                ->pluck('id')
-                ->toArray();
-        });
-
-        if (empty($cache))
-        {
-            return [];
-        }
-
-        $ids = array_slice(array_diff($cache, $seenIds), 0, 10);
-        $result = [];
-        foreach ($ids as $id)
-        {
-            $result[] = $this->comment($postId, $id);
-        }
-        return $result;
+        $commentService = new Comment('post');
+        $ids = $commentService->getIdsByParentId($postId, $maxId);
+        return $commentService->list($ids);
     }
 
     public function getPostIds($id, $onlySeeMaster)

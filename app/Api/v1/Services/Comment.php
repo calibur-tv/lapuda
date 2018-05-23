@@ -12,6 +12,7 @@ use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Transformers\CommentTransformer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
 class Comment extends Repository
@@ -81,6 +82,16 @@ class Comment extends Repository
             'created_at' => $now
         ]);
 
+        if ($parentId)
+        {
+            Redis::RPUSHX($this->getParentIdsKey($parentId), $id);
+        }
+
+        if ($modalId)
+        {
+            Redis::RPUSHX($this->getModalIdsKey($modalId), $id);
+        }
+
         $job = (new \App\Jobs\Trial\Comment\Create($this->table, $id));
         dispatch($job);
 
@@ -89,6 +100,11 @@ class Comment extends Repository
 
     public function list($ids)
     {
+        if (empty($ids))
+        {
+            return [];
+        }
+
         $result = [];
         foreach ($ids as $id)
         {
@@ -102,11 +118,14 @@ class Comment extends Repository
 
     public function delete($id, $userId)
     {
-        $comment = DB::table($this->table)
-            ->whereRaw('id = ? and user_id = ?', [$id, $userId])
-            ->count();
+        $comment = $this->item($id);
 
-        if (!$comment)
+        if (is_null($comment))
+        {
+            return false;
+        }
+
+        if ($comment['from_user_id'] !== intval($userId))
         {
             return false;
         }
@@ -118,48 +137,87 @@ class Comment extends Repository
                 'deleted_at' => Carbon::now()
             ]);
 
+        if ($comment['parent_id'])
+        {
+            Redis::LREM($this->getParentIdsKey($comment['parent_id']), 1, $id);
+        }
+
+        if ($comment['modal_id'])
+        {
+            Redis::LREM($this->getModalIdsKey($comment['modal_id']), 1, $id);
+        }
+
         return true;
     }
 
-    protected function item($id, $force = false)
+    public function getIdsByModalId($modalId, $maxId, $count = 10)
     {
-        $tableName = $this->table;
+        $ids = $this->RedisList($this->getModalIdsKey($modalId), function () use ($modalId)
+        {
+            return DB::table($this->table)
+                ->where('modal_id', $modalId)
+                ->orderBy('created_at', 'ASC')
+                ->pluck('id');
+        });
 
-        $comment = DB::table($tableName)
-            ->where("$tableName.id", $id)
-            ->when(!$force, function ($query) use ($tableName)
+        return array_slice($ids, $maxId ? array_search($maxId, $ids) + 1 : 0, $count);
+    }
+
+    public function getIdsByParentId($parentId, $maxId = 0, $count = 10)
+    {
+        $ids = $this->RedisList($this->getParentIdsKey($parentId), function () use ($parentId)
+        {
+            return DB::table($this->table)
+                ->where('parent_id', $parentId)
+                ->orderBy('created_at', 'ASC')
+                ->pluck('id');
+        });
+
+        return array_slice($ids, $maxId ? array_search($maxId, $ids) + 1 : 0, $count);
+    }
+
+    public function item($id, $force = false)
+    {
+        $result = $this->RedisHash($this->table . '_' . $id, function () use ($id, $force)
+        {
+            $tableName = $this->table;
+
+            $comment = DB::table($tableName)
+                ->where("$tableName.id", $id)
+                ->when(!$force, function ($query) use ($tableName)
+                {
+                    return $query->where("$tableName.state", 1);
+                })
+                ->leftJoin('users AS from', 'from.id', '=', "$tableName.user_id")
+                ->leftJoin('users AS to', 'to.id', '=', "$tableName.to_user_id")
+                ->select(
+                    "$tableName.id",
+                    "$tableName.content",
+                    "$tableName.modal_id",
+                    "$tableName.parent_id",
+                    "$tableName.created_at",
+                    "$tableName.to_user_id",
+                    "$tableName.user_id AS from_user_id",
+                    'from.nickname AS from_user_name',
+                    'from.zone AS from_user_zone',
+                    'from.avatar AS from_user_avatar',
+                    'to.nickname AS to_user_name',
+                    'to.avatar AS to_user_avatar',
+                    'to.zone AS to_user_zone'
+                )
+                ->first();
+
+            if (is_null($comment))
             {
-                return $query->where("$tableName.state", 1);
-            })
-            ->leftJoin('users AS from', 'from.id', '=', "$tableName.user_id")
-            ->leftJoin('users AS to', 'to.id', '=', "$tableName.to_user_id")
-            ->select(
-                "$tableName.id",
-                "$tableName.content",
-                "$tableName.created_at",
-                "$tableName.user_id AS from_user_id",
-                'from.nickname AS from_user_name',
-                'from.zone AS from_user_zone',
-                'from.avatar AS from_user_avatar',
-                'to.nickname AS to_user_name',
-                'to.avatar AS to_user_avatar',
-                'to.zone AS to_user_zone'
-            )
-            ->first();
+                return null;
+            }
 
-        if (is_null($comment))
+            return json_decode(json_encode($comment), true);
+        });
+
+        if (is_null($result))
         {
             return null;
-        }
-
-        $result = json_decode(json_encode($comment), true);
-
-        if (!$force)
-        {
-            $this->RedisHash($this->table . '_' . $id, function () use ($result)
-            {
-                return $result;
-            });
         }
 
         return $this->transformer()->item($result);
@@ -173,5 +231,15 @@ class Comment extends Repository
         }
 
         return $this->commentTransformer;
+    }
+
+    protected function getParentIdsKey($parentId)
+    {
+        return $this->modal . '_' . $parentId . '_sub_comment_ids';
+    }
+
+    protected function getModalIdsKey($modalId)
+    {
+        return $this->modal . '_' . $modalId . '_comment_ids';
     }
 }

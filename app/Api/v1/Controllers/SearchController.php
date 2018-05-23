@@ -40,30 +40,4 @@ class SearchController extends Controller
 
         return $this->resOK(empty($result) ? '' : $result[0]['fields']['url']);
     }
-
-    public function migration()
-    {
-        $ids = Post::where('floor_count', 0)->pluck('id');
-        if (DB::table('post_comments')->count())
-        {
-            return $this->resErrBad();
-        }
-
-        foreach ($ids as $id)
-        {
-            $post = Post::where('id', $id)->first();
-
-            DB::table('post_comments')->insert([
-                'content' => $post['content'],
-                'user_id' => $post['user_id'],
-                'to_user_id' => $post['target_user_id'],
-                'modal_id' => $post['parent_id'],
-                'created_at' => $post['created_at'],
-                'updated_at' => $post['updated_at'],
-                'state' => 1
-            ]);
-        }
-
-        return $this->resOK();
-    }
 }
