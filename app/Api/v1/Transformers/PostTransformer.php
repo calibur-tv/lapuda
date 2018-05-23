@@ -58,7 +58,7 @@ class PostTransformer extends Transformer
                     'avatar' => $post['user']['avatar'],
                     'nickname' => $post['user']['nickname']
                 ],
-                'comments' => $this->comments($post['comments']),
+                'comments' => $post['comments'],
                 'created_at' => $post['created_at']
             ];
         });

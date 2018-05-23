@@ -322,24 +322,14 @@ class PostController extends Controller
             return $this->resErrNotFound('内容已删除');
         }
 
-        $now = Carbon::now();
         $userId = $this->getAuthUserId();
         $targetUserId = $request->get('targetUserId');
         $commentService = new Comment('post');
 
-        $newId = $repository->create([
-            'content' => Purifier::clean($request->get('content')),
-            'parent_id' => $id,
-            'user_id' => $userId,
-            'target_user_id' => $targetUserId,
-            'created_at' => $now,
-            'updated_at' => $now
-        ], []);
-
         $newComment = $commentService->create([
             'content' => $request->get('content'),
             'user_id' => $userId,
-            'modal_id' => $id,
+            'parent_id' => $id,
             'to_user_id' => $targetUserId
         ]);
 
@@ -348,17 +338,20 @@ class PostController extends Controller
             return $this->resErrServiceUnavailable();
         }
 
+        $newId = $newComment['id'];
+
         Post::where('id', $id)->increment('comment_count');
         Post::where('id', $id)->update([
             'updated_at' => date('Y-m-d H:i:s',time())
         ]);
+
         if (Redis::EXISTS('post_'.$id))
         {
             Redis::HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
         }
+
         Redis::pipeline(function ($pipe) use ($id, $newId, $userId)
         {
-            $pipe->RPUSHX('post_'.$id.'_commentIds', $newId);
             $pipe->LPUSHX('user_'.$userId.'_replyPostIds', $newId);
         });
 
@@ -367,8 +360,6 @@ class PostController extends Controller
             $job = (new \App\Jobs\Notification\Post\Comment($newId));
             dispatch($job);
         }
-        $job = (new \App\Jobs\Trial\Post\Comment($id));
-        dispatch($job);
 
         $job = (new \App\Jobs\Push\Baidu('post/' . $post['parent_id'], 'update'));
         dispatch($job);
@@ -397,16 +388,9 @@ class PostController extends Controller
             return $this->resErrNotFound('不存在的帖子');
         }
 
-        $data = $repository->comments(
-            $id,
-            $request->get('seenIds')
-                ? explode(',', $request->get('seenIds'))
-                : []
-        );
+        $maxId = $request->get('maxId') ?: 0;
 
-        $postTransformer = new PostTransformer();
-
-        return $this->resOK($postTransformer->comments($data));
+        return $this->resOK($repository->comments($id, $maxId));
     }
 
     /**
@@ -664,26 +648,27 @@ class PostController extends Controller
     public function deleteComment(Request $request, $postId)
     {
         $commentId = $request->get('id');
-        $postRepository = new PostRepository();
-        $comment = $postRepository->comment($postId, $commentId);
+
+        $commentService = new Comment('post');
+        $comment = $commentService->item($commentId);
 
         if (is_null($comment))
         {
             return $this->resErrNotFound('不存在的评论');
         }
 
-        $userId = $this->getAuthUserId();
-        if (intval($comment['from_user_id']) !== $userId)
-        {
-            return $this->resErrRole('权限不足');
-        }
-
-        if (intval($postId) !== intval($comment['parent_id']))
+        if (intval($postId) !== $comment['parent_id'])
         {
             return $this->resErrBad('非法的请求');
         }
 
-        Post::where('id', $commentId)->delete();
+        $userId = $this->getAuthUserId();
+        $result = $commentService->delete($commentId, $userId);
+        if (!$result)
+        {
+            return $this->resErrRole('权限不足');
+        }
+
         Post::where('id', $postId)->increment('comment_count', -1);
         if (Redis::EXISTS('post_'.$postId))
         {
@@ -691,13 +676,12 @@ class PostController extends Controller
         }
         Redis::pipeline(function ($pipe) use ($postId, $commentId, $userId)
         {
-            $pipe->LREM('post_'.$postId.'_commentIds', 1, $commentId);
             $pipe->LREM('user_'.$userId.'_replyPostIds', 1, $commentId);
         });
 
-        $post = $postRepository->item(($comment['parent_id']));
-        $job = (new \App\Jobs\Search\Post\Update($post['parent_id'], -2));
-        dispatch($job);
+//        $post = $postRepository->item(($comment['parent_id']));
+//        $job = (new \App\Jobs\Search\Post\Update($post['parent_id'], -2));
+//        dispatch($job);
 
         return $this->resNoContent();
     }
