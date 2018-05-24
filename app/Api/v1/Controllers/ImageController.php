@@ -547,6 +547,7 @@ class ImageController extends Controller
 
         $bangumi = null;
         $bangumiId = $album['bangumi_id'];
+        $cartoonList = [];
         if ($bangumiId)
         {
             $bangumiRepository = new BangumiRepository();
@@ -561,6 +562,17 @@ class ImageController extends Controller
 
             $bangumiTransformer = new BangumiTransformer();
             $bangumi = $bangumiTransformer->post($bangumi);
+
+            if ($album['is_cartoon'])
+            {
+                $cartoons = Bangumi::where('id', $bangumiId)->pluck('cartoon')->first();
+
+                $cartoonIds = explode(',', $cartoons);
+                $cartoonList = Image::whereIn('id', $cartoonIds)
+                    ->select('id', 'name')
+                    ->get()
+                    ->toArray();
+            }
         }
 
         $transformer = new ImageTransformer();
@@ -571,7 +583,8 @@ class ImageController extends Controller
             'user' => $userTransformer->item($user),
             'bangumi' => $bangumi,
             'images' => $images,
-            'info' => $album
+            'info' => $album,
+            'cartoon' => $cartoonList
         ]));
     }
 
