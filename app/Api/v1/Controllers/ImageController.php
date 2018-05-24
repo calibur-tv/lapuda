@@ -8,6 +8,7 @@ use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\UserTransformer;
+use App\Models\Bangumi;
 use App\Models\Image;
 use App\Models\ImageLike;
 use App\Models\ImageTag;
@@ -368,21 +369,39 @@ class ImageController extends Controller
             return $this->resErrParams($validator->errors());
         }
 
+        $isCartoon = $request->get('isCartoon');
+        $bangumiId = $request->get('bangumiId');
+
+        if ($isCartoon && !$bangumiId)
+        {
+            return $this->resErrParams('漫画必须选择番剧');
+        }
+
         $name = $request->get('name') ? $request->get('name') : date('y-m-d H:i:s',time());
         $userId = $this->getAuthUserId();
 
         $image = Image::create([
             'user_id' => $userId,
-            'bangumi_id' => $request->get('bangumiId'),
+            'bangumi_id' => $bangumiId,
             'name' => Purifier::clean($name),
             'url' => $request->get('url'),
-            'is_cartoon' => $request->get('isCartoon'),
+            'is_cartoon' => $isCartoon,
             'creator' => $request->get('creator'),
             'image_count' => 1,
             'width' => $request->get('width'),
             'height' => $request->get('height'),
             'size_id' => 0
         ]);
+
+        if ($isCartoon)
+        {
+            $cartoonText = Bangumi::where('id', $bangumiId)->pluck('cartoon')->first();
+
+            Bangumi::where('id', $bangumiId)
+                ->update([
+                   'cartoon' => $cartoonText ? $cartoonText . ',' . $image['id'] : (String)$image['id']
+                ]);
+        }
 
         Redis::DEL('user_' . $userId . '_image_albums');
         $transformer = new ImageTransformer();

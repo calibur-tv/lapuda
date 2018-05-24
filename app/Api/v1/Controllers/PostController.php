@@ -3,7 +3,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\UserRepository;
-use App\Api\V1\Services\Comment;
+use App\Api\V1\Services\CommentService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
@@ -324,7 +324,7 @@ class PostController extends Controller
 
         $userId = $this->getAuthUserId();
         $targetUserId = $request->get('targetUserId');
-        $commentService = new Comment('post');
+        $commentService = new CommentService('post');
 
         $newComment = $commentService->create([
             'content' => $request->get('content'),
@@ -649,7 +649,7 @@ class PostController extends Controller
     {
         $commentId = $request->get('id');
 
-        $commentService = new Comment('post');
+        $commentService = new CommentService('post');
         $comment = $commentService->item($commentId);
 
         if (is_null($comment))

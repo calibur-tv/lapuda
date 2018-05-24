@@ -9,7 +9,7 @@
 namespace App\Api\V1\Repositories;
 
 
-use App\Api\V1\Services\Comment;
+use App\Api\V1\Services\CommentService;
 use App\Models\Post;
 use App\Models\PostImages;
 use App\Models\PostLike;
@@ -188,7 +188,7 @@ class PostRepository extends Repository
 
     public function comments($postId, $maxId = 0)
     {
-        $commentService = new Comment('post');
+        $commentService = new CommentService('post');
         $ids = $commentService->getIdsByParentId($postId, $maxId);
         return $commentService->list($ids);
     }

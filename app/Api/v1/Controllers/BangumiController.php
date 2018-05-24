@@ -375,24 +375,23 @@ class BangumiController extends Controller
 
     public function cartoon(Request $request, $id)
     {
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
         $take = intval($request->get('take')) ?: 12;
+        $minId = $request->get('minId') ?: 0;
 
         $imageRepository = new ImageRepository();
 
-        $ids = Image::whereRaw('bangumi_id = ? and is_cartoon = 1 and album_id = 0 and image_count <> 1', [$id])
-            ->whereIn('state', [1, 4])
-            ->whereNotIn('images.id', $seen)
-            ->take($take)
-            ->pluck('images.id');
+        $ids = Bangumi::where('id', $id)->pluck('cartoon')->first();
 
-        if (empty($ids))
+        if ($ids === '')
         {
             return $this->resOK([
                 'list' => [],
                 'type' => []
             ]);
         }
+
+        $ids = explode(',', $ids);
+        $ids = array_slice($ids, $minId ? array_search($minId, $ids) + 1 : 0, $take);
 
         $transformer = new ImageTransformer();
 
@@ -401,7 +400,14 @@ class BangumiController extends Controller
 
         foreach ($list as $i => $item)
         {
-            $list[$i]['liked'] = $imageRepository->checkLiked($item['id'], $visitorId, $item['user_id']);
+            if ($list[$i]['image_count'])
+            {
+                $list[$i]['liked'] = $imageRepository->checkLiked($item['id'], $visitorId, $item['user_id']);
+            }
+            else
+            {
+                unset($list[$i]);
+            }
         }
 
         return $this->resOK([

@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
-class Comment extends Repository
+class CommentService extends Repository
 {
     /**
      * comment 的 state
@@ -44,6 +44,11 @@ class Comment extends Repository
      * 主评论没有 parent_id，
      * 子评论有 parent_id
      * parent_id 就是主评论的 id
+     */
+
+    /**
+     * TODO：comment 表加一个 comment_count 字段
+     * TODO: create 和 delete 的时候，操作 comment_count 的 DB 和 Cache
      */
     protected $modal;
 
