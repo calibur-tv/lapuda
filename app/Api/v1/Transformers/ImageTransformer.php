@@ -131,7 +131,8 @@ class ImageTransformer extends Transformer
                         'created_at' => $info['created_at'],
                         'updated_at' => $info['updated_at']
                     ];
-                })
+                }),
+                'cartoon' => $album['cartoon']
             ];
          });
     }
