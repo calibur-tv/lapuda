@@ -567,11 +567,14 @@ class ImageController extends Controller
             {
                 $cartoons = Bangumi::where('id', $bangumiId)->pluck('cartoon')->first();
 
-                $cartoonIds = explode(',', $cartoons);
-                $cartoonList = Image::whereIn('id', $cartoonIds)
-                    ->select('id', 'name')
-                    ->get()
-                    ->toArray();
+                $cartoonIds = array_reverse(explode(',', $cartoons));
+                foreach ($cartoonIds as $cartoonId)
+                {
+                    $cartoonList[] = Image::where('id', $cartoonId)
+                        ->select('id', 'name')
+                        ->first()
+                        ->toArray();
+                }
             }
         }
 
