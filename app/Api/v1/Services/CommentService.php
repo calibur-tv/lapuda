@@ -20,13 +20,12 @@ class CommentService extends Repository
     /**
      * comment 的 state
      * 0：刚创建
-     * 1：机器审核通过
+     * 1：机器或人工审核通过
      * 2：机器审核不通过需要人工审核
      * 3：机器审核不通过已删除
      * 4：用户自己删除
-     * 5xxx：人工审核通过 xxx 是审核员 id
-     * 6xxx：人工审核删除 xxx 是审核员 id
-     * 7xxx：管理员删除 xxx 是管理员的 id
+     * 5xxx：人工审核删除 xxx 是审核员 id
+     * 6xxx：管理员删除 xxx 是管理员的 id
      */
 
     /**
