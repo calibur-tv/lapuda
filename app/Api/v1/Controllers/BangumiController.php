@@ -34,7 +34,7 @@ class BangumiController extends Controller
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": {"list": "番剧列表", "min": "可获取到数据的最小年份"}}),
-     *      @Response(400, body={"code": 40003, "message": "请求参数错误", "data": ""})
+     *      @Response(400, body={"code": 40003, "message": "没有传年份", "data": ""})
      * })
      */
     public function timeline(Request $request)

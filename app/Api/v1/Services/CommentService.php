@@ -38,10 +38,8 @@ class CommentService extends Repository
     /**
      * comment 的 parent_id
      * 评论分为主评论和子评论，
-     * 主评论有 modal_id，
-     * 子评论没有 modal_id；
-     * 主评论没有 parent_id，
-     * 子评论有 parent_id
+     * 主评论只有 modal_id，
+     * 子评论只有 parent_id
      * parent_id 就是主评论的 id
      */
 
@@ -53,13 +51,17 @@ class CommentService extends Repository
 
     protected $table;
 
+    protected $order;
+
     protected $commentTransformer;
 
-    public function __construct($modal)
+    public function __construct($modal, $order = 'ASC')
     {
         $this->modal = $modal;
 
         $this->table = $modal . '_comments';
+
+        $this->order = $order === 'ASC' ? 'ASC' : 'DESC';
     }
 
     public function create(array $args)
@@ -88,12 +90,20 @@ class CommentService extends Repository
 
         if ($parentId)
         {
-            Redis::RPUSHX($this->getParentIdsKey($parentId), $id);
+            if ($this->order === 'ASC') {
+                Redis::RPUSHX($this->getParentIdsKey($parentId), $id);
+            } else {
+                Redis::LPUSHX($this->getParentIdsKey($parentId), $id);
+            }
         }
 
         if ($modalId)
         {
-            Redis::RPUSHX($this->getModalIdsKey($modalId), $id);
+            if ($this->order === 'ASC') {
+                Redis::RPUSHX($this->getModalIdsKey($modalId), $id);
+            } else {
+                Redis::LPUSHX($this->getModalIdsKey($modalId), $id);
+            }
         }
 
         $job = (new \App\Jobs\Trial\Comment\Create($this->table, $id));
@@ -160,7 +170,7 @@ class CommentService extends Repository
         {
             return DB::table($this->table)
                 ->where('modal_id', $modalId)
-                ->orderBy('created_at', 'ASC')
+                ->orderBy('created_at', $this->order)
                 ->pluck('id');
         });
 
@@ -173,7 +183,7 @@ class CommentService extends Repository
         {
             return DB::table($this->table)
                 ->where('parent_id', $parentId)
-                ->orderBy('created_at', 'ASC')
+                ->orderBy('created_at', $this->order)
                 ->pluck('id');
         });
 
