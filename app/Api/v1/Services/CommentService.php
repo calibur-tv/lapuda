@@ -43,10 +43,7 @@ class CommentService extends Repository
      * parent_id 就是主评论的 id
      */
 
-    /**
-     * TODO：comment 表加一个 comment_count 字段
-     * TODO: create 和 delete 的时候，操作 comment_count 的 DB 和 Cache
-     */
+    // TODO 两种transformer
     protected $modal;
 
     protected $table;
@@ -59,7 +56,7 @@ class CommentService extends Repository
     {
         $this->modal = $modal;
 
-        $this->table = $modal . '_comments';
+        $this->table = $modal . '_comments_v2';
 
         $this->order = $order === 'ASC' ? 'ASC' : 'DESC';
     }
@@ -95,6 +92,13 @@ class CommentService extends Repository
             } else {
                 Redis::LPUSHX($this->getParentIdsKey($parentId), $id);
             }
+
+            $this->writeCommentCount($parentId, true);
+
+            $job = (new \App\Jobs\Trial\Comment\CreateSubComment($this->table, $id, $parentId));
+            dispatch($job);
+
+            return $this->getSubCommentItem($id, $parentId, true);
         }
 
         if ($modalId)
@@ -104,17 +108,19 @@ class CommentService extends Repository
             } else {
                 Redis::LPUSHX($this->getModalIdsKey($modalId), $id);
             }
+
+            $job = (new \App\Jobs\Trial\Comment\CreateMainComment($this->table, $id, $modalId));
+            dispatch($job);
+
+            return $this->getMainCommentItem($id, $modalId, true);
         }
 
-        $job = (new \App\Jobs\Trial\Comment\Create($this->table, $id));
-        dispatch($job);
-
-        return $this->item($id, true);
+        return null;
     }
 
-    public function list($ids)
+    public function commentList($parentId, $ids)
     {
-        if (empty($ids))
+        if (!$parentId || empty($ids))
         {
             return [];
         }
@@ -122,7 +128,7 @@ class CommentService extends Repository
         $result = [];
         foreach ($ids as $id)
         {
-            $item = $this->item($id);
+            $item = $this->getSubCommentItem($id, $parentId);
             if ($item) {
                 $result[] = $item;
             }
@@ -130,9 +136,55 @@ class CommentService extends Repository
         return $result;
     }
 
-    public function delete($id, $userId)
+    public function replyList($modalId, $ids)
     {
-        $comment = $this->item($id);
+        if (!$modalId || empty($ids))
+        {
+            return [];
+        }
+
+        $result = [];
+        foreach ($ids as $id)
+        {
+            $item = $this->getMainCommentItem($id, $modalId);
+            if ($item) {
+                $result[] = $item;
+            }
+        }
+        return $result;
+    }
+
+    public function deleteSubComment($id, $parentId, $userId, $isRobot = false)
+    {
+        $comment = $this->getSubCommentItem($id, $parentId);
+
+        if (is_null($comment))
+        {
+            return false;
+        }
+
+        if (!$isRobot && ($comment['from_user_id'] !== intval($userId)))
+        {
+            return false;
+        }
+
+        DB::table($this->table)
+            ->whereRaw('id = ? and parent_id = ?', [$id, $parentId])
+            ->update([
+                'state' => $isRobot ? 2 : 4,
+                'deleted_at' => Carbon::now()
+            ]);
+
+        $this->writeCommentCount($comment['parent_id'], false);
+
+        Redis::LREM($this->getParentIdsKey($comment['parent_id']), 1, $id);
+
+        return true;
+    }
+
+    public function deleteMainComment($id, $modalId, $userId)
+    {
+        $comment = $this->getMainCommentItem($id, $modalId);
 
         if (is_null($comment))
         {
@@ -145,26 +197,18 @@ class CommentService extends Repository
         }
 
         DB::table($this->table)
-            ->whereRaw('id = ? and user_id = ?', [$id, $userId])
+            ->whereRaw('id = ? and modal_id = ?', [$id, $modalId])
             ->update([
                 'state' => 4,
                 'deleted_at' => Carbon::now()
             ]);
 
-        if ($comment['parent_id'])
-        {
-            Redis::LREM($this->getParentIdsKey($comment['parent_id']), 1, $id);
-        }
-
-        if ($comment['modal_id'])
-        {
-            Redis::LREM($this->getModalIdsKey($comment['modal_id']), 1, $id);
-        }
+        Redis::LREM($this->getModalIdsKey($comment['modal_id']), 1, $id);
 
         return true;
     }
 
-    public function getIdsByModalId($modalId, $maxId, $count = 10)
+    public function getIdsByModalId($modalId, $page = 0, $count = 10)
     {
         $ids = $this->RedisList($this->getModalIdsKey($modalId), function () use ($modalId)
         {
@@ -174,10 +218,10 @@ class CommentService extends Repository
                 ->pluck('id');
         });
 
-        return array_slice($ids, $maxId ? array_search($maxId, $ids) + 1 : 0, $count);
+        return array_slice($ids, $page * $count, $count);
     }
 
-    public function getIdsByParentId($parentId, $maxId = 0, $count = 10)
+    public function getIdsByParentId($parentId, $page = 0, $count = 10)
     {
         $ids = $this->RedisList($this->getParentIdsKey($parentId), function () use ($parentId)
         {
@@ -187,17 +231,18 @@ class CommentService extends Repository
                 ->pluck('id');
         });
 
-        return array_slice($ids, $maxId ? array_search($maxId, $ids) + 1 : 0, $count);
+        return array_slice($ids, $page * $count, $count);
     }
 
-    public function item($id, $force = false)
+    public function getSubCommentItem($id, $parentId, $force = false)
     {
-        $result = $this->RedisHash($this->table . '_' . $id, function () use ($id, $force)
+        $result = $this->RedisHash($this->table . '_sub_' . $id, function () use ($id, $parentId, $force)
         {
             $tableName = $this->table;
 
             $comment = DB::table($tableName)
                 ->where("$tableName.id", $id)
+                ->where("$tableName.parent_id", $parentId)
                 ->when(!$force, function ($query) use ($tableName)
                 {
                     return $query->where("$tableName.state", 1);
@@ -211,6 +256,7 @@ class CommentService extends Repository
                     "$tableName.parent_id",
                     "$tableName.created_at",
                     "$tableName.to_user_id",
+                    "$tableName.comment_count",
                     "$tableName.user_id AS from_user_id",
                     'from.nickname AS from_user_name',
                     'from.zone AS from_user_zone',
@@ -234,7 +280,70 @@ class CommentService extends Repository
             return null;
         }
 
-        return $this->transformer()->item($result);
+        return $this->transformer()->sub($result);
+    }
+
+    public function getMainCommentItem($id, $modalId, $force = false)
+    {
+        $result = $this->RedisHash($this->table . '_main_' . $id, function () use ($id, $modalId, $force)
+        {
+            $tableName = $this->table;
+
+            $comment = DB::table($tableName)
+                ->where("$tableName.id", $id)
+                ->where("$tableName.modal_id", $modalId)
+                ->when(!$force, function ($query) use ($tableName)
+                {
+                    return $query->where("$tableName.state", 1);
+                })
+                ->leftJoin('users AS from', 'from.id', '=', "$tableName.user_id")
+                ->leftJoin('users AS to', 'to.id', '=', "$tableName.to_user_id")
+                ->select(
+                    "$tableName.id",
+                    "$tableName.content",
+                    "$tableName.modal_id",
+                    "$tableName.parent_id",
+                    "$tableName.created_at",
+                    "$tableName.to_user_id",
+                    "$tableName.comment_count",
+                    "$tableName.user_id AS from_user_id",
+                    'from.nickname AS from_user_name',
+                    'from.zone AS from_user_zone',
+                    'from.avatar AS from_user_avatar',
+                    'to.nickname AS to_user_name',
+                    'to.avatar AS to_user_avatar',
+                    'to.zone AS to_user_zone'
+                )
+                ->first();
+
+            if (is_null($comment))
+            {
+                return null;
+            }
+
+            return json_decode(json_encode($comment), true);
+        });
+
+        if (is_null($result))
+        {
+            return null;
+        }
+
+        return $this->transformer()->main($result);
+    }
+
+    protected function writeCommentCount($modalId, $isPlus)
+    {
+        DB::table($this->table)
+            ->where('modal_id', $modalId)
+            ->increment('comment_count', $isPlus ? 1 : -1);
+
+        $cacheKey = $this->table . '_main_' . $modalId;
+
+        if (Redis::EXISTS($cacheKey))
+        {
+            Redis::HINCRBYFLOAT($cacheKey, 'comment_count', $isPlus ? 1 : -1);
+        }
     }
 
     protected function transformer()
@@ -254,6 +363,6 @@ class CommentService extends Repository
 
     protected function getModalIdsKey($modalId)
     {
-        return $this->modal . '_' . $modalId . '_comment_ids';
+        return $this->modal . '_' . $modalId . '_main_comment_ids';
     }
 }

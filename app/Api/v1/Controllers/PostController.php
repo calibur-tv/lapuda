@@ -108,6 +108,7 @@ class PostController extends Controller
      *      @Response(404, body={"code": 40401, "message": "不存在的帖子", "data": ""})
      * })
      */
+    // TODO：只看楼主
     public function show(Request $request, $id)
     {
         $postRepository = new PostRepository();
@@ -122,15 +123,16 @@ class PostController extends Controller
             return $this->resErrNotFound('不是主题帖');
         }
 
-        $userId = $this->getAuthUserId();
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = intval($request->get('take')) ?: 10;
-        $take = empty($seen) ? $take - 1 : $take;
-        $only = intval($request->get('only')) ?: 0;
-        $ids = $postRepository->getPostIds($id, $only ? $post['user_id'] : false);
+        $commentService = new PostCommentService();
 
+        $only = intval($request->get('only')) ?: 0;
+        $page = intval($request->get('page')) ?: 0;
+        $take = intval($request->get('take')) ?: 10;
+        $take = $page === 0 ? $take - 1 : $take;
+        $userId = $this->getAuthUserId();
         $replyId = $request->get('replyId') ? intval($request->get('replyId')) : 0;
-        $ids = array_slice(array_diff($ids, $seen), 0, $take);
+
+        $ids = $commentService->getIdsByModalId($post['id'], $page, $take);
 
         if ($replyId && count($ids))
         {
@@ -140,9 +142,9 @@ class PostController extends Controller
             }
         }
 
-        $list = $postRepository->list($ids);
+        $list = $commentService->replyList($post['id'], $ids);
 
-        if (empty($seen))
+        if (!$page)
         {
             Post::where('id', $post['id'])->increment('view_count');
             if (Redis::EXISTS('post_'.$id))
@@ -152,14 +154,14 @@ class PostController extends Controller
         }
 
         $postTransformer = new PostTransformer();
-        foreach ($list as $i => $item)
-        {
-            $list[$i]['liked'] = $postRepository->checkPostLiked($item['id'], $userId, $item['user_id']);
-        }
+//        foreach ($list as $i => $item)
+//        {
+//            $list[$i]['liked'] = $postRepository->checkPostLiked($item['id'], $userId, $item['user_id']);
+//        }
+//
+//        $list = $postTransformer->reply($list);
 
-        $list = $postTransformer->reply($list);
-
-        if (!empty($seen))
+        if ($page)
         {
             return $this->resOK([
                 'list' => $list,
@@ -388,9 +390,9 @@ class PostController extends Controller
             return $this->resErrNotFound('不存在的帖子');
         }
 
-        $maxId = $request->get('maxId') ?: 0;
+        $page = $request->get('page') ?: 0;
 
-        return $this->resOK($repository->comments($id, $maxId));
+        return $this->resOK($repository->comments($id, $page));
     }
 
     /**
@@ -650,7 +652,7 @@ class PostController extends Controller
         $commentId = $request->get('id');
 
         $commentService = new PostCommentService();
-        $comment = $commentService->item($commentId);
+        $comment = $commentService->getSubCommentItem($commentId, $postId);
 
         if (is_null($comment))
         {
@@ -663,17 +665,12 @@ class PostController extends Controller
         }
 
         $userId = $this->getAuthUserId();
-        $result = $commentService->delete($commentId, $userId);
+        $result = $commentService->deleteSubComment($commentId, $postId, $userId);
         if (!$result)
         {
             return $this->resErrRole('权限不足');
         }
 
-        Post::where('id', $postId)->increment('comment_count', -1);
-        if (Redis::EXISTS('post_'.$postId))
-        {
-            Redis::HINCRBYFLOAT('post_'.$postId, 'comment_count', -1);
-        }
         Redis::pipeline(function ($pipe) use ($postId, $commentId, $userId)
         {
             $pipe->LREM('user_'.$userId.'_replyPostIds', 1, $commentId);

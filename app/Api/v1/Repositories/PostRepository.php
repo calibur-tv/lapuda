@@ -186,11 +186,11 @@ class PostRepository extends Repository
         return $result;
     }
 
-    public function comments($postId, $maxId = 0)
+    public function comments($postId, $page = 0)
     {
         $commentService = new PostCommentService();
-        $ids = $commentService->getIdsByParentId($postId, $maxId);
-        return $commentService->list($ids);
+        $ids = $commentService->getIdsByParentId($postId, $page);
+        return $commentService->commentList($postId, $ids);
     }
 
     public function getPostIds($id, $onlySeeMaster)
