@@ -124,6 +124,21 @@ class Repository
         });
     }
 
+    public function ListInsertBefore($key, $value)
+    {
+        Redis::LPUSHX($key, $value);
+    }
+
+    public function ListInsertAfter($key, $value)
+    {
+        Redis::RPUSHX($key, $value);
+    }
+
+    public function ListRemove($key, $value, $count = 1)
+    {
+        Redis::LREM($key, $count, $value);
+    }
+
     private function expiredAt($type = 'd')
     {
         if ($type === 'd')

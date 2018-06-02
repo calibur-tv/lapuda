@@ -2,35 +2,31 @@
 
 namespace App\Jobs\Trial\Comment;
 
+use App\Api\V1\Services\Comment\CommentService;
 use App\Services\Trial\WordsFilter\WordsFilter;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Support\Facades\DB;
 
 class CreateMainComment implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $table;
+    protected $modal;
 
     protected $id;
-
-    protected $modalId;
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($table, $id, $modalId)
+    public function __construct($modal, $id)
     {
-        $this->table = $table;
+        $this->modal = $modal;
 
         $this->id = $id;
-
-        $this->modalId = $modalId;
     }
 
     /**
@@ -40,27 +36,31 @@ class CreateMainComment implements ShouldQueue
      */
     public function handle()
     {
-        $content = DB::table($this->table)
-            ->where('id = ? and modal_id = ?', [$this->id, $this->modalId])
-            ->pluck('content')
-            ->first();
+        if (config('app.env') === 'local')
+        {
+            return;
+        }
+
+        $service = new CommentService($this->modal);
+        $comment = $service->getMainCommentItem($this->id, true);
+
+        $content = $comment['content'];
 
         // TODO：rich content
-
-        $state = 1;
 
         $filter = new WordsFilter();
         $badWordsCount = $filter->count($content);
 
         if ($badWordsCount > 0)
         {
-            $state = 2;
+            $service->update($this->id, [
+                'state' => 2
+            ]);
+            return;
         }
 
-        DB::table($this->table)
-            ->where('id = ? and modal_id = ?', [$this->id, $this->modalId])
-            ->update([
-                'state' => $state
-            ]);
+        $service->update($this->id, [
+            'state' => 1
+        ]);
     }
 }

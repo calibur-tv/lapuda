@@ -143,11 +143,7 @@ $api->version(['v1', 'latest'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\PostController@show');
 
-            $api->get('/comments', 'App\Api\V1\Controllers\PostController@comments');
-
             $api->get('/likeUsers', 'App\Api\V1\Controllers\PostController@likeUsers');
-
-            $api->post('/comment', 'App\Api\V1\Controllers\PostController@comment')->middleware(['jwt.auth']);
 
             $api->post('/reply', 'App\Api\V1\Controllers\PostController@reply')->middleware(['jwt.auth', 'geetest']);
 
@@ -159,6 +155,17 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/deleteComment', 'App\Api\V1\Controllers\PostController@deleteComment')->middleware(['jwt.auth']);
         });
+    });
+
+    $api->group(['prefix' => '/{type}/comment'], function ($api)
+    {
+        $api->get('/{id}/list', 'App\Api\V1\Controllers\CommentController@list')->middleware(['jwt.auth']);
+
+        $api->post('/{id}/reply', 'App\Api\V1\Controllers\CommentController@reply')->middleware(['jwt.auth']);
+
+        $api->post('/delete/{id}', 'App\Api\V1\Controllers\CommentController@delete')->middleware(['jwt.auth']);
+
+        $api->post('/toggleLike/{id}', 'App\Api\V1\Controllers\CommentController@toggleLike')->middleware(['jwt.auth']);
     });
 
     $api->group(['prefix' => '/image'], function ($api)

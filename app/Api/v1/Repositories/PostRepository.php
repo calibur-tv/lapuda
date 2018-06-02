@@ -9,7 +9,7 @@
 namespace App\Api\V1\Repositories;
 
 
-use App\Api\V1\Services\PostCommentService;
+use App\Api\V1\Services\Comment\PostCommentService;
 use App\Models\Post;
 use App\Models\PostImages;
 use App\Models\PostLike;
@@ -30,17 +30,22 @@ class PostRepository extends Repository
 
     public function create($data, $images)
     {
-        $now = Carbon::now();
         $newId = Post::insertGetId($data);
+        $this->savePostImage($newId, $newId, $images);
+        return $newId;
+    }
 
+    public function savePostImage($postId, $commentId, $images)
+    {
         if (!empty($images))
         {
             $arr = [];
+            $now = Carbon::now();
 
             foreach ($images as $item)
             {
                 $arr[] = [
-                    'post_id' => $newId,
+                    'post_id' => $commentId,
                     'src' => $item['key'],
                     'size' => intval($item['size']),
                     'width' => intval($item['width']),
@@ -53,9 +58,17 @@ class PostRepository extends Repository
             }
 
             PostImages::insert($arr);
-        }
 
-        return $newId;
+            // 更新帖子图片预览的缓存
+            if (Redis::EXISTS('post_'.$postId.'_previewImages') && !empty($images))
+            {
+                foreach ($images as $i => $val)
+                {
+                    $images[$i] = config('website.image') . $val['key'];
+                }
+                Redis::RPUSH('post_'.$postId.'_previewImages', $images);
+            }
+        }
     }
 
     public function item($id)
@@ -113,7 +126,6 @@ class PostRepository extends Repository
             }
 
             $post['bangumi'] = $bangumi;
-            $post['likeUsers'] = $this->likeUsers($id);
         }
 
         if ($post['parent_id'] === '0')
@@ -189,8 +201,8 @@ class PostRepository extends Repository
     public function comments($postId, $page = 0)
     {
         $commentService = new PostCommentService();
-        $ids = $commentService->getIdsByParentId($postId, $page);
-        return $commentService->commentList($postId, $ids);
+        $ids = $commentService->getSubCommentIds($postId, $page);
+        return $commentService->subCommentList($ids);
     }
 
     public function getPostIds($id, $onlySeeMaster)
@@ -265,64 +277,6 @@ class PostRepository extends Repository
 
             return $comment->toArray();
         });
-    }
-
-    public function deletePost($post, $state)
-    {
-        $postId = $post['id'];
-        $userId = $post['user_id'];
-        $parentId = $post['parent_id'];
-        $bangumiId = $post['bangumi_id'];
-        DB::table('posts')
-            ->where('id', $postId)
-            ->update([
-                'state' => $state,
-                'deleted_at' => Carbon::now()
-            ]);
-
-        if (intval($parentId) !== 0)
-        {
-            /*
-             * 如果是回帖，那么主题帖不会被删
-             * 主题帖的回复数要 - 1 （数据库和缓存）
-             * 删除主题帖的 ids （所有列表和仅楼主列表）
-             */
-            Post::where('id', $parentId)->increment('comment_count', -1);
-            if (Redis::EXISTS('post_'.$parentId))
-            {
-                Redis::HINCRBYFLOAT('post_'.$parentId, 'comment_count', -1);
-            }
-            Redis::pipeline(function ($pipe) use ($parentId, $userId, $postId)
-            {
-                $pipe->LREM('user_'.$userId.'_replyPostIds', 1, $postId);
-                $pipe->DEL('post_'.$parentId.'_ids');
-                $pipe->DEL('post_'.$parentId.'_ids_only');
-            });
-        }
-        else
-        {
-            /*
-             * 删除主题帖
-             * 删除 bangumi-cache-ids-list 中的这个帖子 id
-             * 删除用户帖子列表的id
-             * 删除最新和热门帖子下该帖子的缓存
-             * 删掉主题帖的缓存
-             */
-            Redis::pipeline(function ($pipe) use ($bangumiId, $postId, $userId)
-            {
-                $pipe->LREM('user_'.$userId.'_minePostIds', 1, $postId);
-                $pipe->ZREM($this->bangumiListCacheKey($bangumiId), $postId);
-                $pipe->ZREM('post_new_ids', $postId);
-                $pipe->ZREM('post_hot_ids', $postId);
-                $pipe->DEL('post_'.$postId);
-            });
-
-            $job = (new \App\Jobs\Search\Post\Delete($postId));
-            dispatch($job);
-
-            $job = (new \App\Jobs\Push\Baidu('post/' . $postId, 'del'));
-            dispatch($job);
-        }
     }
 
     public function getNewIds($force = false)

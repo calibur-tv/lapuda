@@ -2,7 +2,7 @@
 
 namespace App\Jobs\Trial\Comment;
 
-use App\Api\V1\Services\PostCommentService;
+use App\Api\V1\Services\Comment\CommentService;
 use App\Services\Trial\WordsFilter\WordsFilter;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
@@ -18,20 +18,16 @@ class CreateSubComment implements ShouldQueue
     protected $table;
 
     protected $id;
-
-    protected $parentId;
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($table, $id, $parentId)
+    public function __construct($table, $id)
     {
         $this->table = $table;
 
         $this->id = $id;
-
-        $this->parentId = $parentId;
     }
 
     /**
@@ -41,26 +37,25 @@ class CreateSubComment implements ShouldQueue
      */
     public function handle()
     {
-        $service = new PostCommentService();
+        if (config('app.env') === 'local')
+        {
+            return;
+        }
 
-        $comment = $service->getSubCommentItem($this->id, $this->parentId);
+        $service = new CommentService($this->table);
+        $comment = $service->getSubCommentItem($this->id);
         $content = $comment['content'];
-
 
         $filter = new WordsFilter();
         $badWordsCount = $filter->count($content);
 
         if ($badWordsCount > 0)
         {
-            $service->deleteSubComment($this->id, $this->parentId, 0);
+            $service->deleteSubComment($this->id, 0, true);
+            return;
         }
-        else
-        {
-            DB::table($this->table)
-                ->whereRaw('id = ? and parent_id = ?', [$this->id, $this->parentId])
-                ->update([
-                    'state' => 1
-                ]);
-        }
+        $service->update($this->id, [
+            'state' => 1
+        ]);
     }
 }

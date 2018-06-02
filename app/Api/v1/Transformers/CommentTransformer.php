@@ -41,9 +41,20 @@ class CommentTransformer extends Transformer
             return [
                 'id' => (int)$comment['id'],
                 'content' => $comment['content'],
+                'images' => $this->collection($comment['images'], function ($image)
+                {
+                    return [
+                        'url' =>  config('website.image'). $image['key'],
+                        'width' => (int)$image['width'],
+                        'height' => (int)$image['height'],
+                        'size' => (int)$image['size'],
+                        'type' => $image['type']
+                    ];
+                }),
                 'created_at' => $comment['created_at'],
                 'modal_id' => (int)$comment['modal_id'],
                 'comment_count' => (int)$comment['comment_count'],
+                'floor_count' => isset($comment['floor_count']) ? (int)$comment['floor_count'] : 0,
                 'from_user_id' => (int)$comment['from_user_id'],
                 'from_user_name' => $comment['from_user_name'],
                 'from_user_zone' => $comment['from_user_zone'],
