@@ -185,6 +185,7 @@ class BangumiController extends Controller
         $userId = $this->getAuthUserId();
         $bangumiFollowService = new BangumiFollowService();
 
+        $bangumi['count_like'] = $bangumiFollowService->total($id);
         $bangumi['followers'] = $bangumiFollowService->users($id);
         $bangumi['followed'] = $bangumiFollowService->check($userId, $id);
 
@@ -230,10 +231,10 @@ class BangumiController extends Controller
      */
     public function follow($id)
     {
-        $bangumiRepository = new BangumiRepository();
-        $followed = $bangumiRepository->toggleFollow($this->getAuthUserId(), $id);
+        $bangumiFollowService = new BangumiFollowService();
+        $result = $bangumiFollowService->toggle($this->getAuthUserId(), $id);
 
-        return $this->resCreated($followed);
+        return $this->resCreated((boolean)$result);
     }
 
     /**
@@ -248,16 +249,11 @@ class BangumiController extends Controller
      */
     public function followers(Request $request, $bangumiId)
     {
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
         $take = intval($request->get('take')) ?: 10;
+        $page = intval($request->get('page')) ?: 0;
 
-        $repository = new BangumiRepository();
-        $users = $repository->getFollowers($bangumiId, $seen, $take);
-
-        if (empty($users))
-        {
-            return $this->resOK([]);
-        }
+        $bangumiFollowService = new BangumiFollowService();
+        $users = $bangumiFollowService->users($bangumiId, $page, $take);
 
         return $this->resOK($users);
     }
