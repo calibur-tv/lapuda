@@ -11,8 +11,8 @@ namespace App\Api\V1\Services\Counter;
 
 class PostViewCounter extends CounterService
 {
-    public function __construct($id)
+    public function __construct()
     {
-        parent::__construct('posts', 'view_count', $id);
+        parent::__construct('posts', 'view_count');
     }
 }

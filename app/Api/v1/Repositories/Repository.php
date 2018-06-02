@@ -64,7 +64,7 @@ class Repository
             {
                 foreach ($cache as $i => $item)
                 {
-                    $cache[$i] = $item->timestamp;
+                    $cache[$i] = gettype($item) === 'string' ? strtotime($item) : $item->timestamp;
                 }
             }
 
@@ -137,6 +137,18 @@ class Repository
     public function ListRemove($key, $value, $count = 1)
     {
         Redis::LREM($key, $count, $value);
+    }
+
+    public function SortAdd($key, $value, $score = 0)
+    {
+        $score = $score = 0 ? strtotime('now') : $score;
+
+        Redis::ZADD($key, $score, $value);
+    }
+
+    public function SortRemove($key, $value)
+    {
+        Redis::ZREM($key, $value);
     }
 
     private function expiredAt($type = 'd')

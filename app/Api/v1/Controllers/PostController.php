@@ -126,26 +126,37 @@ class PostController extends Controller
             return $this->resErrNotFound('不是主题帖');
         }
 
+        $userId = $this->getAuthUserId();
+        $page = intval($request->get('page')) ?: 0;
+
+        if (!$page)
+        {
+            $bangumiRepository = new BangumiRepository();
+            $bangumi = $bangumiRepository->panel($post['bangumi_id'], $userId);
+            if (is_null($bangumi))
+            {
+                return $this->resErrNotFound('不存在的番剧');
+            }
+        }
+
         $commentService = new PostCommentService();
 
         $only = intval($request->get('only')) ?: 0;
-        $page = intval($request->get('page')) ?: 0;
         $take = intval($request->get('take')) ?: 10;
-        $take = $page === 0 ? $take - 1 : $take;
-        $userId = $this->getAuthUserId();
         $replyId = $request->get('replyId') ? intval($request->get('replyId')) : 0;
 
         $ids = $commentService->getMainCommentIds($post['id'], $page, $take);
 
-        if ($replyId && count($ids))
+        if ($replyId && !$page)
         {
             if (!in_array($replyId, $ids))
             {
-                $ids[count($ids) - 1] = $replyId;
+                $ids[] = $replyId;
             }
         }
 
         $list = $commentService->mainCommentList($ids);
+
         $postCommentLikeService = new PostCommentLikeService();
         foreach ($list as $i => $item)
         {
@@ -161,33 +172,23 @@ class PostController extends Controller
 
         $post['commented'] = $postRepository->checkPostCommented($id, $userId);
 
-        $viewCounter = new PostViewCounter($id);
-        $post['view_count'] = $viewCounter->add();
+        $viewCounter = new PostViewCounter();
+        $post['view_count'] = $viewCounter->add($id);
 
         $postLikeService = new PostLikeService();
         $post['liked'] = $postLikeService->check($userId, $id, $post['user_id']);
         $post['like_count'] = $postLikeService->total($id);
-
-        $likeUserIds = $postLikeService->doUsersIds($id);
+        $post['likeUsers'] = $postLikeService->users($id);
 
         $postMarkService = new PostMarkService();
         $post['marked'] = $postMarkService->check($userId, $id, $post['user_id']);
         $post['mark_count'] = $postMarkService->total($id);
 
-        $bangumiRepository = new BangumiRepository();
         $userRepository = new UserRepository();
         $postTransformer = new PostTransformer();
         $bangumiTransformer = new BangumiTransformer();
         $userTransformer = new UserTransformer();
-        $post['likeUsers'] = $userRepository->list($likeUserIds);
         $post['previewImages'] = $postRepository->previewImages($id, $only ? $post['user_id'] : false);
-        $bangumi = $bangumiRepository->item($post['bangumi_id']);
-        if (is_null($bangumi))
-        {
-            return null;
-        }
-
-        $bangumi['followed'] = $bangumiRepository->checkUserFollowed($userId, $post['bangumi_id']);
 
         return $this->resOK([
             'post' => $postTransformer->show($post),
@@ -526,5 +527,98 @@ class PostController extends Controller
         }
 
         return $this->resErrRole('继续操作前请先登录');
+    }
+
+    /**
+     * 最新帖子列表
+     *
+     * @Post("/trending/post/new")
+     *
+     * @Transaction({
+     *      @Request({"take": "获取数量", "seenIds": "看过的postIds, 用','号分割的字符串"}, headers={"Authorization": "Bearer JWT-Token"}, identifier="A"),
+     *      @Response(200, body={"code": 0, {"data": "帖子列表"}}),
+     * })
+     */
+    public function postNew(Request $request)
+    {
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = intval($request->get('take')) ?: 10;
+
+        $repository = new PostRepository();
+        $ids = $repository->getNewIds();
+
+        if (empty($ids))
+        {
+            return $this->resOK([]);
+        }
+
+        $userId = $this->getAuthUserId();
+        $list = $repository->list(array_slice(array_diff($ids, $seen), 0, $take));
+
+        $postCommentService = new PostCommentService();
+        $postLikeService = new PostLikeService();
+        $postMarkService = new PostMarkService();
+        $postViewCounter = new PostViewCounter();
+
+        foreach ($list as $i => $item)
+        {
+            $id = $item['id'];
+            $authorId = $item['user_id'];
+            $list[$i]['liked'] = $postLikeService->check($userId, $id, $authorId);
+            $list[$i]['marked'] = $postMarkService->check($userId, $id, $authorId);
+            $list[$i]['commented'] = $postCommentService->check($userId, $id);
+            $list[$i]['view_count'] = $postViewCounter->get($id);
+        }
+
+
+        $transformer = new PostTransformer();
+
+        return $this->resOK($transformer->trending($list));
+    }
+
+    /**
+     * 热门帖子列表
+     *
+     * @Post("/trending/post/hot")
+     *
+     * @Transaction({
+     *      @Request({"take": "获取数量", "seenIds": "看过的postIds, 用','号分割的字符串"}, headers={"Authorization": "Bearer JWT-Token"}, identifier="A"),
+     *      @Response(200, body={"code": 0, {"data": "帖子列表"}}),
+     * })
+     */
+    public function postHot(Request $request)
+    {
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = intval($request->get('take')) ?: 10;
+
+        $repository = new PostRepository();
+        $ids = $repository->getHotIds();
+
+        if (empty($ids))
+        {
+            return $this->resOK([]);
+        }
+
+        $userId = $this->getAuthUserId();
+        $list = $repository->list(array_slice(array_diff($ids, $seen), 0, $take));
+
+        $postCommentService = new PostCommentService();
+        $postLikeService = new PostLikeService();
+        $postMarkService = new PostMarkService();
+        $postViewCounter = new PostViewCounter();
+
+        foreach ($list as $i => $item)
+        {
+            $id = $item['id'];
+            $authorId = $item['user_id'];
+            $list[$i]['liked'] = $postLikeService->check($userId, $id, $authorId);
+            $list[$i]['marked'] = $postMarkService->check($userId, $id, $authorId);
+            $list[$i]['commented'] = $postCommentService->check($userId, $id);
+            $list[$i]['view_count'] = $postViewCounter->get($id);
+        }
+
+        $transformer = new PostTransformer();
+
+        return $this->resOK($transformer->trending($list));
     }
 }

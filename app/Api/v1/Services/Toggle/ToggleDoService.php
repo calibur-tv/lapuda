@@ -2,7 +2,9 @@
 
 namespace App\Api\V1\Services\Toggle;
 
+use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Counter\ToggleCountService;
+use App\Api\V1\Transformers\UserTransformer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Api\V1\Repositories\Repository;
@@ -38,12 +40,12 @@ class ToggleDoService extends Repository
             ]);
 
         $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table, $modalId);
-        $toggleCountService->add($count);
+        $toggleCountService->add($modalId, $count);
 
         if ($this->needCacheList)
         {
-            $this->ListInsertBefore($this->doUsersCacheKey($modalId), $userId);
-            $this->ListInsertBefore($this->usersDoCacheKey($userId), $modalId);
+            $this->SortAdd($this->doUsersCacheKey($modalId), $userId);
+            $this->SortAdd($this->usersDoCacheKey($userId), $modalId);
         }
 
         return $id;
@@ -56,12 +58,12 @@ class ToggleDoService extends Repository
             ->delete();
 
         $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table, $modalId);
-        $toggleCountService->add(-1);
+        $toggleCountService->add($modalId, -1);
 
         if ($this->needCacheList)
         {
-            $this->ListRemove($this->doUsersCacheKey($modalId), $userId);
-            $this->ListRemove($this->usersDoCacheKey($userId), $modalId);
+            $this->SortRemove($this->doUsersCacheKey($modalId), $userId);
+            $this->SortRemove($this->usersDoCacheKey($userId), $modalId);
         }
 
         return 0;
@@ -71,7 +73,7 @@ class ToggleDoService extends Repository
     {
         $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table, $modalId);
 
-        return $toggleCountService->get();
+        return $toggleCountService->get($modalId);
     }
 
     public function usersDoTotal()
@@ -113,45 +115,79 @@ class ToggleDoService extends Repository
     {
         $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table, $modalId);
 
-        return $toggleCountService->get();
+        return $toggleCountService->get($modalId);
     }
 
+    public function users($modalId, $page = 0, $count = 10)
+    {
+        $ids = $this->doUsersIds($modalId, $page, $count);
+
+        if (empty($ids))
+        {
+            return [];
+        }
+
+        $userRepository = new UserRepository();
+        $users = [];
+
+        foreach ($ids as $id => $createdAt)
+        {
+            $user = $userRepository->item($id);
+            $user['created_at'] = $createdAt;
+            $users[] = $user;
+        }
+
+        $userTransformer = new UserTransformer();
+
+        return $userTransformer->toggleUsers($users);
+    }
     // 某个用户的文章收藏列表
-    public function usersDoIds($userId, $page = 0, $count = 10)
+    protected function usersDoIds($userId, $page = 0, $count = 10)
     {
         if (!$this->needCacheList)
         {
             return [];
         }
 
-        $ids = $this->RedisList($this->usersDoCacheKey($userId), function () use ($userId)
+        $ids = $this->RedisSort($this->usersDoCacheKey($userId), function () use ($userId)
         {
             return DB::table($this->table)
                 ->where('user_id', $userId)
                 ->orderBy('id', 'DESC')
-                ->pluck('modal_id');
-        });
+                ->pluck('created_at', 'modal_id AS id');
 
-        return array_slice($ids, $page * $count, $count);
+        }, true, false, true);
+
+        if (empty($ids))
+        {
+            return [];
+        }
+
+        return array_slice($ids, $page * $count, $count, true);
     }
-
     // 谋篇文章的收藏者们
-    public function doUsersIds($modalId, $page = 0, $count = 10)
+    protected function doUsersIds($modalId, $page, $count)
     {
         if (!$this->needCacheList)
         {
             return [];
         }
 
-        $ids = $this->RedisList($this->doUsersCacheKey($modalId), function () use ($modalId)
+        $ids = $this->RedisSort($this->doUsersCacheKey($modalId), function () use ($modalId)
         {
             return DB::table($this->table)
                 ->where('modal_id', $modalId)
                 ->orderBy('id', 'DESC')
-                ->pluck('user_id');
-        });
+                ->pluck('created_at', 'user_id AS id');
 
-        return array_slice($ids, $page * $count, $count);
+        }, true, false, true);
+
+        if (empty($ids))
+        {
+            return [];
+        }
+
+        return array_slice($ids, $page * $count, $count, true);
     }
 
     protected function usersDoCacheKey($userId)

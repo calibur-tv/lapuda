@@ -24,73 +24,83 @@ class CounterService
     protected $id;
     protected $table;
     protected $field;
-    protected $cacheKey;
-    protected $writeKey;
     protected $timeout = 60;
 
-    public function __construct($tableName, $filedName, $id)
+    public function __construct($tableName, $filedName)
     {
         $this->table = $tableName;
         $this->field = $filedName;
-        $this->id = $id;
-        $this->cacheKey = $tableName . '_' . $id . '_' . $filedName;
-        $this->writeKey = $tableName . '_' . $id . '_' . $filedName . '_' . 'last_add_at';
     }
 
-    public function get()
+    public function get($id)
     {
-        if (Redis::EXISTS($this->cacheKey))
+        $cacheKey = $this->cacheKey($id);
+
+        if (Redis::EXISTS($cacheKey))
         {
-            return Redis::get($this->cacheKey);
+            return Redis::get($cacheKey);
         }
 
         $count = $this->migrate();
         if (false === $count)
         {
             $count = DB::table($this->table)
-                ->where('id', $this->id)
+                ->where('id', $id)
                 ->pluck($this->field)
                 ->first();
         }
 
-        Redis::set($this->cacheKey, $count);
-        Redis::set($this->writeKey, time());
+        Redis::set($cacheKey, $count);
+        Redis::set($this->writeKey($id), time());
 
         return $count;
     }
 
-    public function add($num = 1)
+    public function add($id, $num = 1)
     {
-        if (Redis::EXISTS($this->cacheKey))
+        $cacheKey = $this->cacheKey($id);
+
+        if (Redis::EXISTS($cacheKey))
         {
-            $result = Redis::INCRBY($this->cacheKey, $num);
+            $result = Redis::INCRBY($cacheKey, $num);
+            $writeKey = $this->writeKey($id);
 
             if (
-                !Redis::EXISTS($this->writeKey) ||
-                time() - Redis::get($this->writeKey) > $this->timeout
+                !Redis::EXISTS($writeKey) ||
+                time() - Redis::get($writeKey) > $this->timeout
             )
             {
                 DB::table($this->table)
-                    ->where('id', $this->id)
+                    ->where('id', $id)
                     ->update([
                         $this->field => $result
                     ]);
 
-                Redis::set($this->writeKey, time());
+                Redis::set($writeKey, time());
             }
 
             return $result;
         }
 
         DB::table($this->table)
-            ->where('id', $this->id)
+            ->where('id', $id)
             ->increment($this->field, $num);
 
-        return $this->get();
+        return $this->get($id);
     }
 
     public function migrate()
     {
         return false;
+    }
+
+    protected function cacheKey($id)
+    {
+        return $this->table . '_' . $id . '_' . $this->field;
+    }
+
+    protected function writeKey($id)
+    {
+        return $this->table . '_' . $id . '_' . $this->field . '_' . 'last_add_at';
     }
 }

@@ -421,8 +421,8 @@ class CommentService extends Repository
             return null;
         }
 
-        $counter = new CounterService($this->table, 'comment_count', $result['id']);
-        $result['comment_count'] = $counter->get();
+        $counter = new CounterService($this->table, 'comment_count');
+        $result['comment_count'] = $counter->get($result['id']);
 
         $result = $this->transformer()->main($result);
         $commentIds = $this->getSubCommentIds($result['id']);
@@ -431,14 +431,26 @@ class CommentService extends Repository
         return $result;
     }
 
+    public function check($userId, $modalId)
+    {
+        if (!$userId)
+        {
+            return false;
+        }
+
+        return (boolean)DB::table($this->table)
+            ->whereRaw('user_id = ? and modal_id = ?', [$userId, $modalId])
+            ->count();
+    }
+
     protected function writeCommentCount($mainCommentId, $isPlus)
     {
         DB::table($this->table)
             ->where('id', $mainCommentId)
             ->increment('comment_count', $isPlus ? 1 : -1);
 
-        $countService = new CounterService($this->table, 'comment_count', $mainCommentId);
-        $countService->add($isPlus ? 1 : -1);
+        $countService = new CounterService($this->table, 'comment_count');
+        $countService->add($mainCommentId, $isPlus ? 1 : -1);
     }
 
     protected function transformer()

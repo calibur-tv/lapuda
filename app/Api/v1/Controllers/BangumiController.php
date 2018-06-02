@@ -2,13 +2,15 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Comment\PostCommentService;
+use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
+use App\Api\V1\Services\Toggle\Post\PostLikeService;
+use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\PostTransformer;
-use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Bangumi;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\PostRepository;
@@ -181,9 +183,10 @@ class BangumiController extends Controller
         }
 
         $userId = $this->getAuthUserId();
+        $bangumiFollowService = new BangumiFollowService();
 
-        $bangumi['followers'] = $repository->getFollowers($id, []);
-        $bangumi['followed'] = $repository->checkUserFollowed($userId, $id);
+        $bangumi['followers'] = $bangumiFollowService->users($id);
+        $bangumi['followed'] = $bangumiFollowService->check($userId, $id);
 
         $transformer = new BangumiTransformer();
 
@@ -290,13 +293,17 @@ class BangumiController extends Controller
         $postRepository = new PostRepository();
         $list = $postRepository->list(array_slice(array_diff($ids, $seen), 0, $take));
 
+        $postCommentService = new PostCommentService();
+        $postLikeService = new PostLikeService();
+        $postMarkService = new PostMarkService();
+
         foreach ($list as $i => $item)
         {
             $id = $item['id'];
             $authorId = $item['user_id'];
-            $list[$i]['liked'] = $postRepository->checkPostLiked($id, $userId, $authorId);
-            $list[$i]['marked'] = $postRepository->checkPostMarked($id, $userId, $authorId);
-            $list[$i]['commented'] = $postRepository->checkPostCommented($id, $userId);
+            $list[$i]['liked'] = $postLikeService->check($userId, $id, $authorId);
+            $list[$i]['marked'] = $postMarkService->check($userId, $id, $authorId);
+            $list[$i]['commented'] = $postCommentService->check($userId, $id);
         }
 
         $transformer = new PostTransformer();

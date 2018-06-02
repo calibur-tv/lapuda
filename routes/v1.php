@@ -155,6 +155,13 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/deleteComment', 'App\Api\V1\Controllers\PostController@deleteComment')->middleware(['jwt.auth']);
         });
+
+        $api->group(['prefix' => '/trending'], function ($api)
+        {
+            $api->get('/new', 'App\Api\V1\Controllers\PostController@postNew');
+
+            $api->get('/hot', 'App\Api\V1\Controllers\PostController@postHot');
+        });
     });
 
     $api->group(['prefix' => '/{type}/comment'], function ($api)
@@ -218,9 +225,9 @@ $api->version(['v1', 'latest'], function ($api)
     {
         $api->group(['prefix' => '/post'], function ($api)
         {
-            $api->get('/new', 'App\Api\V1\Controllers\TrendingController@postNew');
+            $api->get('/new', 'App\Api\V1\Controllers\PostController@postNew');
 
-            $api->get('/hot', 'App\Api\V1\Controllers\TrendingController@postHot');
+            $api->get('/hot', 'App\Api\V1\Controllers\PostController@postHot');
         });
 
         $api->get('/cartoon_role', 'App\Api\V1\Controllers\TrendingController@cartoonRole');

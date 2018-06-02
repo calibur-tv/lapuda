@@ -19,7 +19,7 @@ class ToggleCountService extends CounterService
 
     public function __construct($modalTable, $modalField, $toggleTable, $modalId)
     {
-        parent::__construct($modalTable, $modalField, $modalId);
+        parent::__construct($modalTable, $modalField);
 
         $this->toggleTable = $toggleTable;
         $this->modalId = $modalId;
