@@ -6,6 +6,7 @@ use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
+use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Transformers\BangumiTransformer;
@@ -365,9 +366,11 @@ class BangumiController extends Controller
         $visitorId = $this->getAuthUserId();
         $list = $imageRepository->list($ids);
 
+        $imageLikeService = new ImageLikeService();
         foreach ($list as $i => $item)
         {
-            $list[$i]['liked'] = $imageRepository->checkLiked($item['id'], $visitorId, $item['user_id']);
+            $list[$i]['liked'] = $imageLikeService->check($visitorId, $item['id'], $item['user_id']);
+            $list[$i]['like_count'] = $imageLikeService->total($item['id']);
         }
 
         return $this->resOK([

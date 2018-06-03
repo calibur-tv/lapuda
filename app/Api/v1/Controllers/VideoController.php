@@ -6,6 +6,8 @@ use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Counter\VideoPlayCounter;
 use App\Api\V1\Transformers\VideoTransformer;
 use App\Api\V1\Repositories\BangumiRepository;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * @Resource("视频相关接口")
@@ -61,10 +63,19 @@ class VideoController extends Controller
      *
      * @Request(headers={"Authorization": "Bearer JWT-Token"}),
      */
-    public function playing($id)
+    public function playing(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer|min:1'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator->errors());
+        }
+
         $videoPlayCounter = new VideoPlayCounter();
-        $videoPlayCounter->add($id);
+        $videoPlayCounter->add($request->get('id'));
 
         return $this->resNoContent();
     }

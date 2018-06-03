@@ -167,7 +167,7 @@ class BangumiTransformer extends Transformer
             'name' => $bangumi['name'],
             'avatar' => $bangumi['avatar'],
             'summary' => $bangumi['summary'],
-            'followed' => $bangumi['followed']
+            'followed' => (boolean)$bangumi['followed']
         ];
     }
 

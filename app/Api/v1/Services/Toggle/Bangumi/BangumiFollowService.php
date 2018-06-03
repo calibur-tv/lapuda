@@ -2,7 +2,7 @@
 
 namespace App\Api\V1\Services\Toggle\Bangumi;
 
-use App\Api\V1\Services\Toggle\ToggleDoService;
+use App\Api\V1\Services\Toggle\ToggleService;
 
 /**
  * Created by PhpStorm.
@@ -10,7 +10,7 @@ use App\Api\V1\Services\Toggle\ToggleDoService;
  * Date: 2018/6/2
  * Time: 下午10:28
  */
-class BangumiFollowService extends ToggleDoService
+class BangumiFollowService extends ToggleService
 {
     public function __construct()
     {

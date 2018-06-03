@@ -15,7 +15,7 @@ use App\Api\V1\Repositories\Repository;
  * Date: 2018/6/2
  * Time: 下午3:27
  */
-class ToggleDoService extends Repository
+class ToggleService extends Repository
 {
     protected $modal;
     protected $table;

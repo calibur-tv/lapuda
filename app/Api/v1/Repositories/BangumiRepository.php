@@ -8,12 +8,10 @@ use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Bangumi;
 use App\Models\BangumiFollow;
 use App\Models\BangumiTag;
-use App\Models\Image;
 use App\Models\Post;
 use App\Models\Tag;
 use App\Models\User;
 use App\Models\Video;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Redis;
 
 class BangumiRepository extends Repository
@@ -417,10 +415,14 @@ class BangumiRepository extends Repository
     public function panel($bangumiId, $userId)
     {
         $bangumi = $this->item($bangumiId);
+        if (is_null($bangumi))
+        {
+            return null;
+        }
+
         if ($userId)
         {
             $bangumiFollowService = new BangumiFollowService();
-
             $bangumi['followed'] = $bangumiFollowService->check($userId, $bangumiId);
         }
         else
@@ -429,7 +431,6 @@ class BangumiRepository extends Repository
         }
 
         $transformer = new BangumiTransformer();
-
         return $transformer->panel($bangumi);
     }
 }

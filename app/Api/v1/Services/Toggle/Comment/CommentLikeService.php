@@ -9,9 +9,9 @@
 namespace App\Api\V1\Services\Toggle\Comment;
 
 
-use App\Api\V1\Services\Toggle\ToggleDoService;
+use App\Api\V1\Services\Toggle\ToggleService;
 
-class CommentLikeService extends ToggleDoService
+class CommentLikeService extends ToggleService
 {
     public function __construct($modalTable, $toggleTable)
     {

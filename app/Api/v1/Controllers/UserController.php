@@ -11,6 +11,7 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\PostTransformer;
@@ -562,9 +563,11 @@ class UserController extends Controller
         $list = $imageRepository->list($ids);
         $visitorId = $this->getAuthUserId();
 
+        $imageLikeService = new ImageLikeService();
         foreach ($list as $i => $item)
         {
-            $list[$i]['liked'] = $imageRepository->checkLiked($item['id'], $visitorId, $item['user_id']);
+            $list[$i]['liked'] = $imageLikeService->check($visitorId, $item['id'], $item['user_id']);
+            $list[$i]['like_count'] = $imageLikeService->total($item['id']);
         }
 
         return $this->resOK([

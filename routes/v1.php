@@ -75,9 +75,9 @@ $api->version(['v1', 'latest'], function ($api)
         $api->group(['prefix' => '/{id}'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\VideoController@show');
-
-            $api->post('/playing', 'App\Api\V1\Controllers\VideoController@playing');
         });
+
+        $api->post('/playing', 'App\Api\V1\Controllers\VideoController@playing');
     });
 
     $api->group(['prefix' => '/user'], function ($api)
@@ -198,6 +198,8 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/createAlbum', 'App\Api\V1\Controllers\ImageController@createAlbum')->middleware(['jwt.auth']);
 
         $api->post('/editAlbum', 'App\Api\V1\Controllers\ImageController@editAlbum')->middleware(['jwt.auth']);
+
+        $api->post('/viewedMark', 'App\Api\V1\Controllers\ImageController@viewedMark');
 
         $api->get('/trendingList', 'App\Api\V1\Controllers\ImageController@trendingList');
 

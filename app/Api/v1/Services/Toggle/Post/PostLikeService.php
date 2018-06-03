@@ -8,9 +8,9 @@
 
 namespace App\Api\V1\Services\Toggle\Post;
 
-use App\Api\V1\Services\Toggle\ToggleDoService;
+use App\Api\V1\Services\Toggle\ToggleService;
 
-class PostLikeService extends ToggleDoService
+class PostLikeService extends ToggleService
 {
      public function __construct()
      {

@@ -5,6 +5,8 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Counter\ImageViewCounter;
+use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\UserTransformer;
@@ -514,9 +516,11 @@ class ImageController extends Controller
         $visitorId = $this->getAuthUserId();
         $list = $imageRepository->list($ids);
 
+        $imageLikeService = new ImageLikeService();
         foreach ($list as $i => $item)
         {
-            $list[$i]['liked'] = $imageRepository->checkLiked($item['id'], $visitorId, $item['user_id']);
+            $list[$i]['liked'] = $imageLikeService->check($visitorId, $item['id'], $item['user_id']);
+            $list[$i]['like_count'] = $imageLikeService->total($item['id']);
         }
 
         return $this->resOK([
@@ -548,40 +552,43 @@ class ImageController extends Controller
         $bangumi = null;
         $bangumiId = $album['bangumi_id'];
         $cartoonList = [];
-        if ($bangumiId)
+        $bangumiRepository = new BangumiRepository();
+        $bangumi = $bangumiRepository->panel($bangumiId, $userId);
+
+        if (is_null($bangumi))
         {
-            $bangumiRepository = new BangumiRepository();
-            $bangumi = $bangumiRepository->item($bangumiId);
+            return null;
+        }
 
-            if (is_null($bangumi))
+        if ($album['is_cartoon'])
+        {
+            $cartoons = Bangumi::where('id', $bangumiId)->pluck('cartoon')->first();
+
+            $cartoonIds = array_reverse(explode(',', $cartoons));
+            foreach ($cartoonIds as $cartoonId)
             {
-                return null;
-            }
-
-            $bangumi['followed'] = $bangumiRepository->checkUserFollowed($userId, $bangumiId);
-
-            $bangumiTransformer = new BangumiTransformer();
-            $bangumi = $bangumiTransformer->post($bangumi);
-
-            if ($album['is_cartoon'])
-            {
-                $cartoons = Bangumi::where('id', $bangumiId)->pluck('cartoon')->first();
-
-                $cartoonIds = array_reverse(explode(',', $cartoons));
-                foreach ($cartoonIds as $cartoonId)
+                $cartoon = Image::where('id', $cartoonId)
+                    ->select('id', 'name')
+                    ->first();
+                if (is_null($cartoon))
                 {
-                    $cartoonList[] = Image::where('id', $cartoonId)
-                        ->select('id', 'name')
-                        ->first()
-                        ->toArray();
+                    continue;
                 }
+                $cartoonList[] = $cartoon->toArray();
             }
         }
 
-        $transformer = new ImageTransformer();
-        $album['liked'] = $imageRepository->checkLiked($id, $userId, $album['user_id']);
         $album['image_count'] = $album['image_count'] - 1;
 
+        $imageLikeService = new ImageLikeService();
+        $album['liked'] = $imageLikeService->check($userId, $id, $album['user_id']);
+        $album['like_count'] = $imageLikeService->total($id);
+        $album['like_users'] = $imageLikeService->users($id);
+
+        $imageViewCounter = new ImageViewCounter();
+        $album['view_count'] = $imageViewCounter->add($id);
+
+        $transformer = new ImageTransformer();
         return $this->resOK($transformer->albumShow([
             'user' => $userTransformer->item($user),
             'bangumi' => $bangumi,
@@ -655,6 +662,23 @@ class ImageController extends Controller
         // 不是第一次传图
         $job = (new \App\Jobs\Push\Baidu('album/' . $id, 'update'));
         dispatch($job);
+
+        return $this->resNoContent();
+    }
+
+    public function viewedMark(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer|min:1'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator->errors());
+        }
+
+        $imageViewCounter = new ImageViewCounter();
+        $imageViewCounter->add($request->get('id'));
 
         return $this->resNoContent();
     }
