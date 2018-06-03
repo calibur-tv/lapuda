@@ -111,7 +111,6 @@ class PostController extends Controller
      *      @Response(404, body={"code": 40401, "message": "不存在的帖子", "data": ""})
      * })
      */
-    // TODO：只看楼主
     public function show(Request $request, $id)
     {
         $postRepository = new PostRepository();
@@ -145,9 +144,11 @@ class PostController extends Controller
         $take = intval($request->get('take')) ?: 10;
         $replyId = $request->get('replyId') ? intval($request->get('replyId')) : 0;
 
-        $ids = $commentService->getMainCommentIds($post['id'], $page, $take);
+        $ids = $only
+            ? $commentService->onlySeeMasterIds($post['id'], $post['user_id'], $page, $take)
+            : $commentService->getMainCommentIds($post['id'], $page, $take);
 
-        if ($replyId && !$page)
+        if ($replyId && !$page && !$only)
         {
             if (!in_array($replyId, $ids))
             {
@@ -248,11 +249,11 @@ class PostController extends Controller
         ];
 
         $postCommentService = new PostCommentService();
-        $newComment = $postCommentService->create([
+        $newComment = $postCommentService->reply([
             'content' => $saveContent,
             'user_id' => $userId,
             'modal_id' => $id
-        ]);
+        ], $userId === intval($post['user_id']));
         if (!$newComment)
         {
             return $this->resErrServiceUnavailable();
@@ -507,26 +508,31 @@ class PostController extends Controller
             return $this->resErrNotFound('该评论已被删除');
         }
 
-        $userId = $this->getAuthUserId();
-        // 层主删除
-        if ($userId === $comment['from_user_id'])
-        {
-            $commentService->deletePostComment($commentId, $userId, $comment['modal_id']);
-
-            return $this->resNoContent();
-        }
-
         $postRepository = new PostRepository();
         $post = $postRepository->item($comment['modal_id']);
-        // 楼主删除
-        if (intval($post['user_id']) === $userId)
-        {
-            $commentService->deletePostComment($commentId, $comment['from_user_id'], $comment['modal_id']);
 
-            return $this->resNoContent();
+        if (is_null($post))
+        {
+            return $this->resErrNotFound('帖子已经被删除');
         }
 
-        return $this->resErrRole('继续操作前请先登录');
+        $userId = $this->getAuthUserId();
+        $postUserId = intval($post['user_id']);
+        $commentCreatorId = $comment['from_user_id'];
+
+        if ($userId !== $commentCreatorId && $userId !== $postUserId)
+        {
+            return $this->resErrRole('继续操作前请先登录');
+        }
+
+        $commentService->deletePostComment(
+            $commentId,
+            $comment['from_user_id'],
+            $comment['modal_id'],
+            $postUserId === $commentCreatorId
+        );
+
+        return $this->resNoContent();
     }
 
     /**

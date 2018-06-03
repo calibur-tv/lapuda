@@ -19,7 +19,20 @@ class PostCommentService extends CommentService
         parent::__construct('post_comments_v3', 'ASC', true);
     }
 
-    public function deletePostComment($commentId, $userId, $postId)
+    public function reply(array $args, $isMaster)
+    {
+        $comment = $this->create($args);
+
+        if ($isMaster)
+        {
+            $postId = $args['modal_id'];
+            $this->ListInsertAfter($this->postOnlySeeMasterIdsCacheKey($postId), $comment['id']);
+        }
+
+        return $comment;
+    }
+
+    public function deletePostComment($commentId, $userId, $postId, $isMaster)
     {
         DB::table($this->table)
             ->where('id', $commentId)
@@ -30,5 +43,27 @@ class PostCommentService extends CommentService
 
         $this->ListRemove($this->getModalIdsKey($postId), $commentId);
         $this->ListRemove($this->userCommentCacheKey($userId), $commentId);
+        if ($isMaster)
+        {
+            $this->ListRemove($this->postOnlySeeMasterIdsCacheKey($postId), $commentId);
+        }
+    }
+
+    public function onlySeeMasterIds($postId, $masterId, $page, $count = 10)
+    {
+        $ids = $this->RedisList($this->postOnlySeeMasterIdsCacheKey($postId), function () use ($postId, $masterId)
+        {
+            return DB::table($this->table)
+                ->whereRaw('modal_id = ? and user_id = ?', [$postId, $masterId])
+                ->orderBy('id', $this->order)
+                ->pluck('id');
+        });
+
+        return array_slice($ids, $page * $count, $count);
+    }
+
+    protected function postOnlySeeMasterIdsCacheKey($postId)
+    {
+        return 'post_' . $postId . '_only_see_master_ids';
     }
 }
