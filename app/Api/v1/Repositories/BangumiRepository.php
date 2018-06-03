@@ -2,17 +2,16 @@
 
 namespace App\Api\V1\Repositories;
 
+use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Bangumi;
 use App\Models\BangumiFollow;
 use App\Models\BangumiTag;
-use App\Models\Image;
 use App\Models\Post;
 use App\Models\Tag;
 use App\Models\User;
 use App\Models\Video;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Redis;
 
 class BangumiRepository extends Repository
@@ -411,5 +410,27 @@ class BangumiRepository extends Repository
                 'total' => count($data)
             ];
         });
+    }
+
+    public function panel($bangumiId, $userId)
+    {
+        $bangumi = $this->item($bangumiId);
+        if (is_null($bangumi))
+        {
+            return null;
+        }
+
+        if ($userId)
+        {
+            $bangumiFollowService = new BangumiFollowService();
+            $bangumi['followed'] = $bangumiFollowService->check($userId, $bangumiId);
+        }
+        else
+        {
+            $bangumi['followed'] = false;
+        }
+
+        $transformer = new BangumiTransformer();
+        return $transformer->panel($bangumi);
     }
 }

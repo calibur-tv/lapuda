@@ -3,11 +3,11 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\VideoRepository;
-use App\Api\V1\Transformers\BangumiTransformer;
+use App\Api\V1\Services\Counter\VideoPlayCounter;
 use App\Api\V1\Transformers\VideoTransformer;
-use App\Models\Video;
 use App\Api\V1\Repositories\BangumiRepository;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * @Resource("视频相关接口")
@@ -45,14 +45,12 @@ class VideoController extends Controller
 
         $season = json_decode($bangumi['season']);
         $list = $bangumiRepository->videos($bangumi['id'], $season);
-        $bangumi['followed'] = $bangumiRepository->checkUserFollowed($userId, $info['bangumi_id']);
 
-        $bangumiTransformer = new BangumiTransformer();
         $videoTransformer = new VideoTransformer();
 
         return $this->resOK([
             'info' => $videoTransformer->show($info),
-            'bangumi' => $bangumiTransformer->video($bangumi),
+            'bangumi' => $bangumiRepository->panel($info['bangumi_id'], $userId),
             'season' => $season,
             'list' => $list
         ]);
@@ -65,27 +63,19 @@ class VideoController extends Controller
      *
      * @Request(headers={"Authorization": "Bearer JWT-Token"}),
      */
-    public function playing($id)
+    public function playing(Request $request)
     {
-        $key = 'video_played_counter_' . $id;
-        $value = Cache::rememberForever($key, function () use ($id)
-        {
-            return [
-                'data' => Video::where('id', $id)->pluck('count_played')->first(),
-                'time' => time()
-            ];
-        });
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer|min:1'
+        ]);
 
-        $value['data']++;
-        if (time() - $value['time'] > config('cache.ttl'))
+        if ($validator->fails())
         {
-            $value['time'] = time();
-            Video::find($id)->update([
-                'count_played' => $value['data']
-            ]);
+            return $this->resErrParams($validator->errors());
         }
 
-        Cache::forever($key, $value);
+        $videoPlayCounter = new VideoPlayCounter();
+        $videoPlayCounter->add($request->get('id'));
 
         return $this->resNoContent();
     }

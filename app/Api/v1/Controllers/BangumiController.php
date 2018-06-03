@@ -2,13 +2,16 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Comment\PostCommentService;
+use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
+use App\Api\V1\Services\Toggle\Image\ImageLikeService;
+use App\Api\V1\Services\Toggle\Post\PostLikeService;
+use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\PostTransformer;
-use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Bangumi;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\PostRepository;
@@ -34,7 +37,7 @@ class BangumiController extends Controller
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": {"list": "番剧列表", "min": "可获取到数据的最小年份"}}),
-     *      @Response(400, body={"code": 40003, "message": "请求参数错误", "data": ""})
+     *      @Response(400, body={"code": 40003, "message": "没有传年份", "data": ""})
      * })
      */
     public function timeline(Request $request)
@@ -181,9 +184,11 @@ class BangumiController extends Controller
         }
 
         $userId = $this->getAuthUserId();
+        $bangumiFollowService = new BangumiFollowService();
 
-        $bangumi['followers'] = $repository->getFollowers($id, []);
-        $bangumi['followed'] = $repository->checkUserFollowed($userId, $id);
+        $bangumi['count_like'] = $bangumiFollowService->total($id);
+        $bangumi['followers'] = $bangumiFollowService->users($id);
+        $bangumi['followed'] = $bangumiFollowService->check($userId, $id);
 
         $transformer = new BangumiTransformer();
 
@@ -227,10 +232,10 @@ class BangumiController extends Controller
      */
     public function follow($id)
     {
-        $bangumiRepository = new BangumiRepository();
-        $followed = $bangumiRepository->toggleFollow($this->getAuthUserId(), $id);
+        $bangumiFollowService = new BangumiFollowService();
+        $result = $bangumiFollowService->toggle($this->getAuthUserId(), $id);
 
-        return $this->resCreated($followed);
+        return $this->resCreated((boolean)$result);
     }
 
     /**
@@ -245,16 +250,11 @@ class BangumiController extends Controller
      */
     public function followers(Request $request, $bangumiId)
     {
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
         $take = intval($request->get('take')) ?: 10;
+        $page = intval($request->get('page')) ?: 0;
 
-        $repository = new BangumiRepository();
-        $users = $repository->getFollowers($bangumiId, $seen, $take);
-
-        if (empty($users))
-        {
-            return $this->resOK([]);
-        }
+        $bangumiFollowService = new BangumiFollowService();
+        $users = $bangumiFollowService->users($bangumiId, $page, $take);
 
         return $this->resOK($users);
     }
@@ -290,13 +290,17 @@ class BangumiController extends Controller
         $postRepository = new PostRepository();
         $list = $postRepository->list(array_slice(array_diff($ids, $seen), 0, $take));
 
+        $postCommentService = new PostCommentService();
+        $postLikeService = new PostLikeService();
+        $postMarkService = new PostMarkService();
+
         foreach ($list as $i => $item)
         {
             $id = $item['id'];
             $authorId = $item['user_id'];
-            $list[$i]['liked'] = $postRepository->checkPostLiked($id, $userId, $authorId);
-            $list[$i]['marked'] = $postRepository->checkPostMarked($id, $userId, $authorId);
-            $list[$i]['commented'] = $postRepository->checkPostCommented($id, $userId);
+            $list[$i]['liked'] = $postLikeService->check($userId, $id, $authorId);
+            $list[$i]['marked'] = $postMarkService->check($userId, $id, $authorId);
+            $list[$i]['commented'] = $postCommentService->check($userId, $id);
         }
 
         $transformer = new PostTransformer();
@@ -362,9 +366,11 @@ class BangumiController extends Controller
         $visitorId = $this->getAuthUserId();
         $list = $imageRepository->list($ids);
 
+        $imageLikeService = new ImageLikeService();
         foreach ($list as $i => $item)
         {
-            $list[$i]['liked'] = $imageRepository->checkLiked($item['id'], $visitorId, $item['user_id']);
+            $list[$i]['liked'] = $imageLikeService->check($visitorId, $item['id'], $item['user_id']);
+            $list[$i]['like_count'] = $imageLikeService->total($item['id']);
         }
 
         return $this->resOK([

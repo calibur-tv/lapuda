@@ -26,7 +26,8 @@ class Image extends Model
         'album_id',
         'image_count',  // 专辑里图片的个数，默认是 0 用来判断专辑封面
         'name',     // 图片或专辑的名称
-        'images'    // 专辑里的图片 ids
+        'images',    // 专辑里的图片 ids
+        'view_count'
     ];
 
     // 普通图片 album_id === 0 && image_count === 0

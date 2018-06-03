@@ -128,6 +128,8 @@ class ImageTransformer extends Transformer
                         'is_creator' => (boolean)$info['creator'],
                         'like_count' => (int)$info['like_count'],
                         'image_count' => (int)$info['image_count'],
+                        'view_count' => (int)$info['view_count'],
+                        'like_users' => $info['like_users'],
                         'created_at' => $info['created_at'],
                         'updated_at' => $info['updated_at']
                     ];

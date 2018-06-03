@@ -8,6 +8,10 @@
 
 namespace App\Api\V1\Repositories;
 
+use App\Api\V1\Services\Comment\PostCommentService;
+use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
+use App\Api\V1\Services\Toggle\Post\PostLikeService;
+use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
@@ -49,6 +53,15 @@ class UserRepository extends Repository
 
             return $user;
         });
+    }
+
+    public function getUserIdByZone($zone)
+    {
+        $userId = User::where('zone', $zone)
+            ->pluck('id')
+            ->first();
+
+        return is_null($userId) ? 0 : $userId;
     }
 
     public function list($ids)
@@ -94,33 +107,6 @@ class UserRepository extends Repository
         return $res;
     }
 
-    public function bangumis($userId)
-    {
-        $ids = $this->RedisList('user_'.$userId.'_followBangumiIds', function () use ($userId)
-        {
-           return  BangumiFollow::where('user_id', $userId)
-               ->orderBy('created_at', 'DESC')
-               ->pluck('bangumi_id');
-        });
-
-        if (empty($ids))
-        {
-            return [];
-        }
-
-        $bangumiRepository = new BangumiRepository();
-        $data = $bangumiRepository->list($ids);
-
-        foreach ($data as $i => $item)
-        {
-            $data[$i]['followed'] = true;
-        }
-
-        $bangumiTransformer = new BangumiTransformer();
-
-        return $bangumiTransformer->list($data);
-    }
-
     public function daySigned($userId)
     {
         return UserSign::whereRaw('user_id = ? and created_at > ?', [$userId, Carbon::now()->startOfDay()])->count() !== 0;
@@ -138,23 +124,72 @@ class UserRepository extends Repository
 
     public function replyPostIds($userId)
     {
-        return $this->RedisList('user_'.$userId.'_replyPostIds', function () use ($userId)
-        {
-            return Post::whereRaw('parent_id <> ? and user_id = ?', [0, $userId])
-                ->whereNotIn('target_user_id', [$userId, 0])
-                ->orderBy('created_at', 'DESC')
-                ->pluck('id');
-        });
+        $postCommentService = new PostCommentService();
+
+        return $postCommentService->getUserCommentIds($userId, -1);
     }
 
     public function likedPostIds($userId)
     {
-        return $this->RedisList('user_'.$userId.'_likedPostIds', function () use ($userId)
+        $postLikeService = new PostLikeService();
+
+        return $postLikeService->usersDoIds($userId, -1);
+    }
+
+    public function likedPost($userId)
+    {
+        $postLikeService = new PostLikeService();
+        $ids = $postLikeService->usersDoIds($userId, -1);
+
+        if (empty($ids))
         {
-            return PostLike::where('user_id', $userId)
-                ->orderBy('created_at', 'DESC')
-                ->pluck('post_id AS id');
-        });
+            return [];
+        }
+
+        $postRepository = new PostRepository();
+        $posts = [];
+
+        foreach ($ids as $id => $time)
+        {
+            $post = $postRepository->item($id);
+            if(is_null($post) || !$post['title'])
+            {
+                continue;
+            }
+            $post['created_at'] = $time;
+            $posts[] = $post;
+        }
+
+        $postTransformer = new PostTransformer();
+        return $postTransformer->userLike($posts);
+    }
+
+    public function markedPost($userId)
+    {
+        $postMarkService = new PostMarkService();
+        $ids = $postMarkService->usersDoIds($userId, -1);
+
+        if (empty($ids))
+        {
+            return [];
+        }
+
+        $postRepository = new PostRepository();
+        $posts = [];
+
+        foreach ($ids as $id => $time)
+        {
+            $post = $postRepository->item($id);
+            if(is_null($post))
+            {
+                continue;
+            }
+            $post['created_at'] = $time;
+            $posts[] = $post;
+        }
+
+        $postTransformer = new PostTransformer();
+        return $postTransformer->userMark($posts);
     }
 
     public function markedPostIds($userId)
@@ -169,47 +204,32 @@ class UserRepository extends Repository
 
     public function replyPostItem($userId, $postId)
     {
-        return $this->Cache('user_'.$userId.'_replyPost_'.$postId, function () use ($postId)
+        return $this->Cache('user_'.$userId.'_reply_post_'.$postId, function () use ($postId)
         {
-            $data = Post::where('id', $postId)
-                ->select('id', 'parent_id', 'content', 'created_at', 'target_user_id')
-                ->first()
-                ->toArray();
+            $postCommentService = new PostCommentService();
+            $reply = $postCommentService->getMainCommentItem($postId);
 
             $postRepository = new PostRepository();
-            $postTransformer = new PostTransformer();
-            $bangumiRepository = new BangumiRepository();
-
-            $parent = $postRepository->item($data['parent_id']);
-            if (intval($parent['parent_id']) !== 0)
-            {
-                $post = $postRepository->item($parent['parent_id']);
-            }
-            else
-            {
-                $post = $parent;
-            }
-
-            if (is_null($post) || is_null($parent))
+            $post = $postRepository->item($reply['modal_id']);
+            if (is_null($post))
             {
                 return null;
             }
 
+            $bangumiRepository = new BangumiRepository();
             $bangumi = $bangumiRepository->item($post['bangumi_id']);
-
             if (is_null($bangumi))
             {
                 return null;
             }
 
-            $data['bangumi'] = $bangumi;
-            $data['post'] = $post;
-            $data['parent'] = $parent;
-            $data['images'] = $postRepository->images($data['id']);
-            $data['user'] = $this->item($data['target_user_id']);
+            $reply['bangumi'] = $bangumi;
+            $reply['post'] = $post;
 
-            return $postTransformer->userReply($data);
-        });
+            $postTransformer = new PostTransformer();
+            return $postTransformer->userReply($reply);
+
+        }, 'm');
     }
 
     public function toggleCoin($isDelete, $fromUserId, $toUserId, $type, $type_id)
@@ -379,6 +399,34 @@ class UserRepository extends Repository
                 ->get()
                 ->toArray();
         }, 'm');
+    }
+
+    public function followedBangumis($userId, $page = -1, $count = 10)
+    {
+        $bangumiFollowService = new BangumiFollowService();
+        $bangumiIds = $bangumiFollowService->usersDoIds($userId, $page, $count);
+
+        if (empty($bangumiIds))
+        {
+            return [];
+        }
+
+        $bangumiRepository = new BangumiRepository();
+        $bangumis = [];
+        foreach ($bangumiIds as $id => $time)
+        {
+            $bangumi = $bangumiRepository->item($id);
+            if (is_null($bangumi))
+            {
+                continue;
+            }
+            $bangumi['created_at'] = $time;
+            $bangumis[] = $bangumi;
+        }
+
+        $bangumiTransformer = new BangumiTransformer();
+
+        return $bangumiTransformer->userFollowedList($bangumis);
     }
 
     public function statsByDate($nowTime)

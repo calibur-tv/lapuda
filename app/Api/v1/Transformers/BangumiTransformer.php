@@ -159,4 +159,28 @@ class BangumiTransformer extends Transformer
             ];
         });
     }
+
+    public function panel($bangumi)
+    {
+        return [
+            'id' => (int)$bangumi['id'],
+            'name' => $bangumi['name'],
+            'avatar' => $bangumi['avatar'],
+            'summary' => $bangumi['summary'],
+            'followed' => (boolean)$bangumi['followed']
+        ];
+    }
+
+    public function userFollowedList($bangumis)
+    {
+        return $this->collection($bangumis, function ($bangumi)
+        {
+            return [
+                'id' => (int)$bangumi['id'],
+                'name' => $bangumi['name'],
+                'avatar' => $bangumi['avatar'],
+                'created_at' => (int)$bangumi['created_at']
+            ];
+        });
+    }
 }

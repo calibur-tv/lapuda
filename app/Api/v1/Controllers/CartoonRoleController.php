@@ -181,7 +181,9 @@ class CartoonRoleController extends Controller
 
     public function show($id)
     {
-        if (!CartoonRole::where('id', $id)->count())
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $role = $cartoonRoleRepository->item($id);
+        if (is_null($role))
         {
             return $this->resErrNotFound();
         }
@@ -189,27 +191,21 @@ class CartoonRoleController extends Controller
         $userId = $this->getAuthUserId();
 
         $bangumiRepository = new BangumiRepository();
-        $cartoonRepository = new CartoonRoleRepository();
-        $userRepository = new UserRepository();
-
-        $cartoonTransformer = new CartoonRoleTransformer();
-        $bangumiTransformer = new BangumiTransformer();
-        $userTransformer = new UserTransformer();
-
-        $role = $cartoonRepository->item($id);
-        $role['lover'] = $role['loverId'] ? $userTransformer->item($userRepository->item($role['loverId'])) : null;
-        $role['hasStar'] = $cartoonRepository->checkHasStar($role['id'], $userId);
-
-        $bangumi = $bangumiRepository->item($role['bangumi_id']);
+        $bangumi = $bangumiRepository->panel($role['bangumi_id'], $userId);
         if (is_null($bangumi))
         {
             return $this->resErrNotFound();
         }
 
-        $bangumi['followed'] = $bangumiRepository->checkUserFollowed($userId, $role['bangumi_id']);
+        $userRepository = new UserRepository();
+        $userTransformer = new UserTransformer();
 
+        $role['lover'] = $role['loverId'] ? $userTransformer->item($userRepository->item($role['loverId'])) : null;
+        $role['hasStar'] = $cartoonRoleRepository->checkHasStar($role['id'], $userId);
+
+        $cartoonTransformer = new CartoonRoleTransformer();
         return $this->resOK($cartoonTransformer->show([
-            'bangumi' => $bangumiTransformer->post($bangumi),
+            'bangumi' => $bangumi,
             'data' => $role
         ]));
     }

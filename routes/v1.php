@@ -9,6 +9,8 @@ $api = app('Dingo\Api\Routing\Router');
 
 $api->version(['v1', 'latest'], function ($api)
 {
+    $api->get('/migrate', 'App\Api\V1\Controllers\SearchController@migrate');
+
     $api->group(['prefix' => '/search'], function ($api)
     {
         $api->get('/index', 'App\Api\V1\Controllers\SearchController@index');
@@ -73,9 +75,9 @@ $api->version(['v1', 'latest'], function ($api)
         $api->group(['prefix' => '/{id}'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\VideoController@show');
-
-            $api->post('/playing', 'App\Api\V1\Controllers\VideoController@playing');
         });
+
+        $api->post('/playing', 'App\Api\V1\Controllers\VideoController@playing');
     });
 
     $api->group(['prefix' => '/user'], function ($api)
@@ -141,11 +143,7 @@ $api->version(['v1', 'latest'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\PostController@show');
 
-            $api->get('/comments', 'App\Api\V1\Controllers\PostController@comments');
-
             $api->get('/likeUsers', 'App\Api\V1\Controllers\PostController@likeUsers');
-
-            $api->post('/comment', 'App\Api\V1\Controllers\PostController@comment')->middleware(['jwt.auth']);
 
             $api->post('/reply', 'App\Api\V1\Controllers\PostController@reply')->middleware(['jwt.auth', 'geetest']);
 
@@ -157,6 +155,24 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/deleteComment', 'App\Api\V1\Controllers\PostController@deleteComment')->middleware(['jwt.auth']);
         });
+
+        $api->group(['prefix' => '/trending'], function ($api)
+        {
+            $api->get('/new', 'App\Api\V1\Controllers\PostController@postNew');
+
+            $api->get('/hot', 'App\Api\V1\Controllers\PostController@postHot');
+        });
+    });
+
+    $api->group(['prefix' => '/{type}/comment'], function ($api)
+    {
+        $api->get('/{id}/list', 'App\Api\V1\Controllers\CommentController@list');
+
+        $api->post('/{id}/reply', 'App\Api\V1\Controllers\CommentController@reply')->middleware(['jwt.auth']);
+
+        $api->post('/delete/{id}', 'App\Api\V1\Controllers\CommentController@delete')->middleware(['jwt.auth']);
+
+        $api->post('/toggleLike/{id}', 'App\Api\V1\Controllers\CommentController@toggleLike')->middleware(['jwt.auth']);
     });
 
     $api->group(['prefix' => '/image'], function ($api)
@@ -183,6 +199,8 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/editAlbum', 'App\Api\V1\Controllers\ImageController@editAlbum')->middleware(['jwt.auth']);
 
+        $api->post('/viewedMark', 'App\Api\V1\Controllers\ImageController@viewedMark');
+
         $api->get('/trendingList', 'App\Api\V1\Controllers\ImageController@trendingList');
 
         $api->group(['prefix' => '/album/{id}'], function ($api)
@@ -207,13 +225,6 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/trending'], function ($api)
     {
-        $api->group(['prefix' => '/post'], function ($api)
-        {
-            $api->get('/new', 'App\Api\V1\Controllers\TrendingController@postNew');
-
-            $api->get('/hot', 'App\Api\V1\Controllers\TrendingController@postHot');
-        });
-
         $api->get('/cartoon_role', 'App\Api\V1\Controllers\TrendingController@cartoonRole');
     });
 });
