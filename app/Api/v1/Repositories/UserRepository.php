@@ -31,6 +31,7 @@ use App\Models\UserCoin;
 use App\Models\UserSign;
 use App\Models\Video;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class UserRepository extends Repository
 {
@@ -443,9 +444,10 @@ class UserRepository extends Repository
             ->where('parent_id', 0)
             ->count();
         $this->setDayStats('create_post', $yesterday, $postCount);
-        // 帖子的回复数（包括了楼层回复和评论回复）
-        $postReplyCount = Post::where('created_at', '<', $createdAt)
-            ->where('parent_id', '<>', 0)
+        // 帖子的回复数（不包括楼层评论）
+        $postReplyCount = DB::table('post_comments_v3')
+            ->where('created_at', '<', $createdAt)
+            ->where('modal_id', '<>', 0)
             ->count();
         $this->setDayStats('create_post_reply', $yesterday, $postReplyCount);
         // 帖子里的图片数
