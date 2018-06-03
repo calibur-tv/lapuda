@@ -141,7 +141,7 @@ class Repository
 
     public function SortAdd($key, $value, $score = 0)
     {
-        $score = $score = 0 ? strtotime('now') : $score;
+        $score = $score === 0 ? strtotime('now') : $score;
 
         Redis::ZADD($key, $score, $value);
     }
