@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Trial\WordsFilter;
+namespace App\Services\Trial;
 
 class WordsFilter
 {

@@ -292,8 +292,6 @@ class PostController extends Controller
             $job = (new \App\Jobs\Notification\Post\Reply($newId));
             dispatch($job);
         }
-        $job = (new \App\Jobs\Trial\Post\Reply($newId));
-        dispatch($job);
 
         $job = (new \App\Jobs\Push\Baidu('post/' . $id, 'update'));
         dispatch($job);

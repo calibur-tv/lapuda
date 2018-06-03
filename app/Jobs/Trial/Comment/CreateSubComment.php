@@ -3,7 +3,7 @@
 namespace App\Jobs\Trial\Comment;
 
 use App\Api\V1\Services\Comment\CommentService;
-use App\Services\Trial\WordsFilter\WordsFilter;
+use App\Services\Trial\WordsFilter;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;

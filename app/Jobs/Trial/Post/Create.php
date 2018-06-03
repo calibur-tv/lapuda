@@ -4,7 +4,7 @@ namespace App\Jobs\Trial\Post;
 
 use App\Api\V1\Repositories\PostRepository;
 use App\Models\MixinSearch;
-use App\Services\Trial\WordsFilter\WordsFilter;
+use App\Services\Trial\WordsFilter;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;

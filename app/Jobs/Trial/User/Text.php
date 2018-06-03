@@ -5,7 +5,7 @@ namespace App\Jobs\Trial\User;
 use App\Api\V1\Repositories\UserRepository;
 use App\Models\MixinSearch;
 use App\Models\User;
-use App\Services\Trial\WordsFilter\WordsFilter;
+use App\Services\Trial\WordsFilter;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
