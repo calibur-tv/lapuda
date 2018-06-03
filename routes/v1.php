@@ -166,7 +166,7 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/{type}/comment'], function ($api)
     {
-        $api->get('/{id}/list', 'App\Api\V1\Controllers\CommentController@list')->middleware(['jwt.auth']);
+        $api->get('/{id}/list', 'App\Api\V1\Controllers\CommentController@list');
 
         $api->post('/{id}/reply', 'App\Api\V1\Controllers\CommentController@reply')->middleware(['jwt.auth']);
 
