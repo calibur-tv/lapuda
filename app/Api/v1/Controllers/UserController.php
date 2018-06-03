@@ -8,7 +8,6 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
@@ -197,16 +196,17 @@ class UserController extends Controller
      */
     public function followedBangumis($zone)
     {
-        $userId = User::where('zone', $zone)->pluck('id')->first();
-        if (is_null($userId))
+        $userRepository = new UserRepository();
+        $userId = $userRepository->getUserIdByZone($zone);
+
+        if (!$userId)
         {
             return $this->resErrNotFound('该用户不存在');
         }
 
-        $repository = new UserRepository();
-        $follows = $repository->bangumis($userId);
+        $bangumis = $userRepository->followedBangumis($userId);
 
-        return $this->resOK($follows);
+        return $this->resOK($bangumis);
     }
 
     /**
@@ -222,26 +222,27 @@ class UserController extends Controller
      */
     public function postsOfMine(Request $request, $zone)
     {
-        $userId = User::where('zone', $zone)->pluck('id')->first();
-        if (is_null($userId))
+        $userRepository = new UserRepository();
+        $userId = $userRepository->getUserIdByZone($zone);
+        if (!$userId)
         {
             return $this->resErrNotFound('找不到用户');
         }
 
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = intval($request->get('take')) ?: 10;
-
-        $userRepository = new UserRepository();
         $ids = $userRepository->minePostIds($userId);
-
         if (empty($ids))
         {
             return $this->resOK([]);
         }
 
+        $minId = $request->get('minId') ?: 0;
+        $take = intval($request->get('take')) ?: 10;
+
+        $ids = array_slice($ids, $minId ? array_search($minId, $ids) + 1 : 0, $take);
+
         $postRepository = new PostRepository();
         $postTransformer = new PostTransformer();
-        $list = $postRepository->list(array_slice(array_diff($ids, $seen), 0, $take));
+        $list = $postRepository->list($ids);
 
         return $this->resOK($postTransformer->usersMine($list));
     }
@@ -259,29 +260,30 @@ class UserController extends Controller
      */
     public function postsOfReply(Request $request, $zone)
     {
-        $userId = User::where('zone', $zone)->pluck('id')->first();
-        if (is_null($userId))
+        $userRepository = new UserRepository();
+        $userId = $userRepository->getUserIdByZone($zone);
+        if (!$userId)
         {
             return $this->resErrNotFound('找不到用户');
         }
 
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = intval($request->get('take')) ?: 10;
-
-        $userRepository = new UserRepository();
         $ids = $userRepository->replyPostIds($userId);
-
         if (empty($ids))
         {
             return $this->resOK([]);
         }
 
-        $ids = array_slice(array_diff($ids, $seen), 0, $take);
+        $minId = $request->get('minId') ?: 0;
+        $take = intval($request->get('take')) ?: 10;
+
+        $ids = array_slice($ids, $minId ? array_search($minId, $ids) + 1 : 0, $take);
+
         $data = [];
         foreach ($ids as $id)
         {
             $data[] = $userRepository->replyPostItem($userId, $id);
         }
+
         $result = [];
         foreach ($data as $item)
         {
@@ -307,28 +309,14 @@ class UserController extends Controller
      */
     public function postsOfLiked(Request $request, $zone)
     {
-        $userId = User::where('zone', $zone)->pluck('id')->first();
-        if (is_null($userId))
+        $userRepository = new UserRepository();
+        $userId = $userRepository->getUserIdByZone($zone);
+        if (!$userId)
         {
             return $this->resErrNotFound('找不到用户');
         }
 
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = intval($request->get('take')) ?: 10;
-
-        $userRepository = new UserRepository();
-        $ids = $userRepository->likedPostIds($userId);
-
-        if (empty($ids))
-        {
-            return $this->resOK([]);
-        }
-
-        $postRepository = new PostRepository();
-        $postTransformer = new PostTransformer();
-        $list = $postRepository->list(array_slice(array_diff($ids, $seen), 0, $take));
-
-        return $this->resOK($postTransformer->userLike($list));
+        return $this->resOK($userRepository->likedPost($userId));
     }
 
     /**
@@ -344,28 +332,14 @@ class UserController extends Controller
      */
     public function postsOfMarked(Request $request, $zone)
     {
-        $userId = User::where('zone', $zone)->pluck('id')->first();
-        if (is_null($userId))
+        $userRepository = new UserRepository();
+        $userId = $userRepository->getUserIdByZone($zone);
+        if (!$userId)
         {
             return $this->resErrNotFound('找不到用户');
         }
 
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = intval($request->get('take')) ?: 10;
-
-        $userRepository = new UserRepository();
-        $ids = $userRepository->markedPostIds($userId);
-
-        if (empty($ids))
-        {
-            return $this->resOK([]);
-        }
-
-        $postRepository = new PostRepository();
-        $postTransformer = new PostTransformer();
-        $list = $postRepository->list(array_slice(array_diff($ids, $seen), 0, $take));
-
-        return $this->resOK($postTransformer->userMark($list));
+        return $this->resOK($userRepository->markedPost($userId));
     }
 
     /**

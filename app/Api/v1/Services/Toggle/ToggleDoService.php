@@ -133,6 +133,10 @@ class ToggleDoService extends Repository
         foreach ($ids as $id => $createdAt)
         {
             $user = $userRepository->item($id);
+            if (is_null($user))
+            {
+                continue;
+            }
             $user['created_at'] = $createdAt;
             $users[] = $user;
         }
@@ -142,7 +146,7 @@ class ToggleDoService extends Repository
         return $userTransformer->toggleUsers($users);
     }
     // 某个用户的文章收藏列表
-    protected function usersDoIds($userId, $page = 0, $count = 10)
+    public function usersDoIds($userId, $page = 0, $count = 10)
     {
         if (!$this->needCacheList)
         {
@@ -163,7 +167,9 @@ class ToggleDoService extends Repository
             return [];
         }
 
-        return array_slice($ids, $page * $count, $count, true);
+        return $page === -1
+            ? $ids
+            : array_slice($ids, $page * $count, $count, true);
     }
     // 谋篇文章的收藏者们
     protected function doUsersIds($modalId, $page, $count)

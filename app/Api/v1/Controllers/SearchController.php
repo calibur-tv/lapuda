@@ -84,7 +84,7 @@ class SearchController extends Controller
                     $content[] = [
                         'type' => 'img',
                         'data' => [
-                            'url' => $image->src,
+                            'key' => $image->src,
                             'width' => $image->width,
                             'height' => $image->height,
                             'type' => $image->type,

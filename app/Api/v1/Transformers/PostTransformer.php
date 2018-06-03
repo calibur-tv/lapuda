@@ -180,44 +180,31 @@ class PostTransformer extends Transformer
         });
     }
 
-    public function userReply($post)
+    public function userReply($comment)
     {
-        return $this->transformer($post, function ($post)
+        return $this->transformer($comment, function ($comment)
         {
             return [
-                'id' => (int)$post['id'],
-                'content' => $post['content'],
-                'images' => $post['images'],
-                'created_at' => $post['created_at'],
-                'bangumi' => $this->transformer($post['bangumi'], function ($bangumi)
+                'id' => (int)$comment['id'],
+                'content' => $comment['content'],
+                'images' => $comment['images'],
+                'created_at' => $comment['created_at'],
+                'floor_count' => (int)$comment['floor_count'],
+                'bangumi' => $this->transformer($comment['bangumi'], function ($bangumi)
                 {
                     return [
                         'id' => (int)$bangumi['id'],
-                        'name' => $bangumi['name']
+                        'name' => $bangumi['name'],
+                        'avatar' => $bangumi['avatar']
                     ];
                 }),
-                'user' => $this->transformer($post['user'], function ($user)
+                'post' => $this->transformer($comment['post'], function ($post)
                 {
                     return [
-                        'id' => (int)$user['id'],
-                        'zone' => $user['zone'],
-                        'nickname' => $user['nickname']
-                    ];
-                }),
-                'parent' => $this->transformer($post['parent'], function ($parent)
-                {
-                    return [
-                        'id' => (int)$parent['id'],
-                        'content' => $parent['content'],
-                        'images' => $parent['images'],
-                        'floor_count' => (int)$parent['floor_count']
-                    ];
-                }),
-                'post' => $this->transformer($post['post'], function ($main)
-                {
-                    return [
-                        'id' => (int)$main['id'],
-                        'title' => $main['title']
+                        'id' => (int)$post['id'],
+                        'title' => $post['title'],
+                        'content' => $post['content'],
+                        'images' => $post['images']
                     ];
                 })
             ];
@@ -230,26 +217,20 @@ class PostTransformer extends Transformer
         {
             return [
                 'id' => (int)$post['id'],
-                'title' => $post['title']
+                'title' => $post['title'],
+                'created_at' => (int)$post['created_at']
             ];
         });
     }
 
-    public function userLike($list)
+    public function userLike($posts)
     {
-        $posts = [];
-        foreach ($list as $item)
-        {
-            if ($item['title'])
-            {
-                $posts[] = $item;
-            }
-        }
         return $this->collection($posts, function ($post)
         {
             return [
                 'id' => (int)$post['id'],
-                'title' => $post['title']
+                'title' => $post['title'],
+                'created_at' => (int)$post['created_at']
             ];
         });
     }

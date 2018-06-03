@@ -170,4 +170,17 @@ class BangumiTransformer extends Transformer
             'followed' => $bangumi['followed']
         ];
     }
+
+    public function userFollowedList($bangumis)
+    {
+        return $this->collection($bangumis, function ($bangumi)
+        {
+            return [
+                'id' => (int)$bangumi['id'],
+                'name' => $bangumi['name'],
+                'avatar' => $bangumi['avatar'],
+                'created_at' => (int)$bangumi['created_at']
+            ];
+        });
+    }
 }

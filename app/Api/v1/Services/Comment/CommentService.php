@@ -265,7 +265,7 @@ class CommentService extends Repository
 
     public function getUserCommentIds($userId, $page = 0, $count = 10)
     {
-        $ids = $this->RedisList($this->getUserCommentIds($userId), function () use ($userId)
+        $ids = $this->RedisList($this->userCommentCacheKey($userId), function () use ($userId)
         {
             return DB::table($this->table)
                 ->whereRaw('user_id = ? and modal_id <> 0', [$userId])
@@ -273,7 +273,7 @@ class CommentService extends Repository
                 ->pluck('id');
         });
 
-        return array_slice($ids, $page * $count, $count);
+        return $page === -1 ? $ids : array_slice($ids, $page * $count, $count);
     }
 
     public function getSubCommentItem($id, $force = false)
