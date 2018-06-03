@@ -5,6 +5,7 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Counter\PostViewCounter;
+use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Comment\PostCommentLikeService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
@@ -57,10 +58,10 @@ class PostController extends Controller
         $userId = $this->getAuthUserId();
         $postRepository = new PostRepository();
 
-        $bangumiRepository = new BangumiRepository();
-        if (!$bangumiRepository->checkUserFollowed($userId, $bangumiId))
+        $bangumiFollowService = new BangumiFollowService();
+        if (!$bangumiFollowService->check($userId, $bangumiId))
         {
-            $bangumiRepository->toggleFollow($this->getAuthUserId(), $bangumiId);
+            $bangumiFollowService->do($userId, $bangumiId);
             // return $this->resErrRole('关注番剧后才能发帖');
         }
 
