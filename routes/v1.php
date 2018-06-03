@@ -225,13 +225,6 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/trending'], function ($api)
     {
-        $api->group(['prefix' => '/post'], function ($api)
-        {
-            $api->get('/new', 'App\Api\V1\Controllers\PostController@postNew');
-
-            $api->get('/hot', 'App\Api\V1\Controllers\PostController@postHot');
-        });
-
         $api->get('/cartoon_role', 'App\Api\V1\Controllers\TrendingController@cartoonRole');
     });
 });
