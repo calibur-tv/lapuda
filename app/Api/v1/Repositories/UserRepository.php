@@ -445,7 +445,7 @@ class UserRepository extends Repository
             ->count();
         $this->setDayStats('create_post', $yesterday, $postCount);
         // 帖子的回复数（不包括楼层评论）
-        $postReplyCount = DB::table('post_comments_v3')
+        $postReplyCount = DB::table('post_comments')
             ->where('created_at', '<', $createdAt)
             ->where('modal_id', '<>', 0)
             ->count();

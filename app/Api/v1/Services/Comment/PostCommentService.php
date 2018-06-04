@@ -16,7 +16,7 @@ class PostCommentService extends CommentService
 {
     public function __construct()
     {
-        parent::__construct('post_comments_v3', 'ASC', true);
+        parent::__construct('post_comments', 'ASC', true);
     }
 
     public function reply(array $args, $isMaster)
