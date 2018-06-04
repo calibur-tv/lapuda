@@ -363,7 +363,7 @@ class BangumiRepository extends Repository
 
         return $this->RedisSort($cacheKey, function () use ($id)
         {
-            return Post::whereRaw('bangumi_id = ? and parent_id = ?', [$id, 0])
+            return Post::where('bangumi_id', $id)
                 ->orderBy('id', 'DESC')
                 ->pluck('updated_at', 'id');
         }, true);

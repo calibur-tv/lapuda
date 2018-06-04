@@ -34,7 +34,6 @@ class PostTransformer extends Transformer
                 'created_at' => $post['created_at'],
                 'updated_at' => $post['updated_at'],
                 'preview_images' => $post['preview_images'],
-                'floor_count' => (int)$post['floor_count'],
                 'like_users' => $userTransformer->list($post['like_users']),
             ];
         });

@@ -115,7 +115,7 @@ class UserRepository extends Repository
     {
         return $this->RedisList('user_'.$userId.'_minePostIds', function () use ($userId)
         {
-           return Post::whereRaw('parent_id = ? and user_id = ?', [0, $userId])
+           return Post::where('user_id', $userId)
                ->orderBy('created_at', 'DESC')
                ->pluck('id');
         });
@@ -439,7 +439,6 @@ class UserRepository extends Repository
         $this->setDayStats('user_register', $yesterday, $userCount);
         // post
         $postCount = Post::where('created_at', '<', $createdAt)
-            ->where('parent_id', 0)
             ->count();
         $this->setDayStats('create_post', $yesterday, $postCount);
         // 帖子的回复数（不包括楼层评论）

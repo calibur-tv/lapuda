@@ -121,11 +121,6 @@ class PostController extends Controller
             return $this->resErrNotFound('不存在的帖子');
         }
 
-        if (intval($post['parent_id']) !== 0)
-        {
-            return $this->resErrNotFound('不是主题帖');
-        }
-
         $userId = $this->getAuthUserId();
         $page = intval($request->get('page')) ?: 0;
 
