@@ -49,7 +49,7 @@ class PostCommentService extends CommentService
         }
     }
 
-    public function onlySeeMasterIds($postId, $masterId, $page, $count = 10)
+    public function onlySeeMasterIds($postId, $masterId, $page = 0, $count = 10)
     {
         $ids = $this->RedisList($this->postOnlySeeMasterIdsCacheKey($postId), function () use ($postId, $masterId)
         {
@@ -59,7 +59,7 @@ class PostCommentService extends CommentService
                 ->pluck('id');
         });
 
-        return array_slice($ids, $page * $count, $count);
+        return $page === -1 ? $ids : array_slice($ids, $page * $count, $count);
     }
 
     protected function postOnlySeeMasterIdsCacheKey($postId)

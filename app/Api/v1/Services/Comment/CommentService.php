@@ -247,7 +247,7 @@ class CommentService extends Repository
                 ->pluck('id');
         });
 
-        return array_slice($ids, $page * $count, $count);
+        return $page === -1 ? $ids : array_slice($ids, $page * $count, $count);
     }
 
     public function getSubCommentIds($parentId, $page = 0, $count = 10)

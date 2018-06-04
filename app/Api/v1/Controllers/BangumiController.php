@@ -293,6 +293,7 @@ class BangumiController extends Controller
         $postCommentService = new PostCommentService();
         $postLikeService = new PostLikeService();
         $postMarkService = new PostMarkService();
+        $userRepository = new UserRepository();
 
         foreach ($list as $i => $item)
         {
@@ -301,6 +302,7 @@ class BangumiController extends Controller
             $list[$i]['liked'] = $postLikeService->check($userId, $id, $authorId);
             $list[$i]['marked'] = $postMarkService->check($userId, $id, $authorId);
             $list[$i]['commented'] = $postCommentService->check($userId, $id);
+            $list[$i]['user'] = $userRepository->item($authorId);
         }
 
         $transformer = new PostTransformer();

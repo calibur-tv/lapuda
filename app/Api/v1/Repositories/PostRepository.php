@@ -78,7 +78,7 @@ class PostRepository extends Repository
             return null;
         }
 
-        $post = $this->RedisHash('post_'.$id, function () use ($id)
+        return $this->Cache('post_' . $id, function () use ($id)
         {
             $post = Post::find($id);
 
@@ -86,102 +86,37 @@ class PostRepository extends Repository
             {
                 return null;
             }
+            $post = $post->toArray();
 
-            return $post->toArray();
-        });
+            if (is_null($this->userRepository))
+            {
+                $this->userRepository = new UserRepository();
+            }
 
-        if (is_null($post))
-        {
-            return null;
-        }
+            $user = $this->userRepository->item($post['user_id']);
+            if (is_null($user))
+            {
+                return null;
+            }
 
-        $post['images'] = $this->images($id);
-
-        if (is_null($this->userRepository))
-        {
-            $this->userRepository = new UserRepository();
-        }
-
-        $post['user'] = $this->userRepository->item($post['user_id']);
-
-        if (is_null($post['user']))
-        {
-            return null;
-        }
-
-        $post['comments'] = intval($post['parent_id']) === 0 ? [] : $this->comments($id);
-
-        if (intval($post['bangumi_id']) !== 0)
-        {
             if (is_null($this->bangumiRepository))
             {
                 $this->bangumiRepository = new BangumiRepository();
             }
 
             $bangumi = $this->bangumiRepository->item($post['bangumi_id']);
-
             if (is_null($bangumi))
             {
                 return null;
             }
 
-            $post['bangumi'] = $bangumi;
-        }
-
-        if ($post['parent_id'] === '0')
-        {
-            $post['previewImages'] = $this->previewImages($post['id'], false);
-        }
-
-        return $post;
-    }
-
-    public function likeUsers($postId, $seenIds = [], $take = 10)
-    {
-        $cache = $this->RedisList('post_'.$postId.'_likeUserIds', function () use ($postId)
-        {
-            return PostLike::where('post_id', $postId)
-                ->orderBy('id', 'DESC')
-                ->pluck('user_id');
-        });
-
-        if (empty($cache))
-        {
-            return [];
-        }
-
-        if (is_null($this->userRepository))
-        {
-            $this->userRepository = new UserRepository();
-        }
-
-        $ids = array_slice(array_diff($cache, $seenIds), 0, $take);
-        $result = [];
-        foreach ($ids as $id)
-        {
-            $result[] = $this->userRepository->item($id);
-        }
-        return $result;
-    }
-
-    public function images($postId)
-    {
-        return $this->RedisList('post_'.$postId.'_images', function () use ($postId)
-        {
-            $images = PostImages::where('post_id', $postId)
+            $post['images'] = PostImages::where('post_id', $id)
                 ->orderBy('created_at', 'ASC')
-                ->select('src', 'width', 'height')
+                ->select('src AS url', 'width', 'height', 'size', 'type')
                 ->get()
                 ->toArray();
 
-            $result = [];
-
-            foreach ($images as $item)
-            {
-                $result[] = $item['width'] . '-' . $item['height'] . '|' . $item['src'];
-            }
-
-            return $result;
+            return $post;
         });
     }
 
@@ -198,85 +133,38 @@ class PostRepository extends Repository
         return $result;
     }
 
-    public function comments($postId, $page = 0)
+    public function previewImages($id, $masterId, $onlySeeMaster)
     {
-        $commentService = new PostCommentService();
-        $ids = $commentService->getSubCommentIds($postId, $page);
-        return $commentService->subCommentList($ids);
-    }
-
-    public function getPostIds($id, $onlySeeMaster)
-    {
-        if ($onlySeeMaster)
+        $list = $this->RedisList('post_'.$id.'_previewImages', function () use ($id, $masterId, $onlySeeMaster)
         {
-            return $this->RedisList('post_'.$id.'_ids_only', function () use ($id, $onlySeeMaster)
-            {
-                return Post::whereRaw('parent_id = ? and user_id = ?', [$id, $onlySeeMaster])
-                    ->orderBy('id', 'asc')
-                    ->pluck('id');
-            });
-        }
-
-        return $this->RedisList('post_'.$id.'_ids', function () use ($id)
-        {
-            return Post::where('parent_id', $id)
-                ->orderBy('id', 'asc')
-                ->pluck('id');
-        });
-    }
-
-    public function previewImages($id, $onlySeeMaster)
-    {
-        return $this->RedisList('post_'.$id.'_previewImages', function () use ($id, $onlySeeMaster)
-        {
-            $ids = $this->getPostIds($id, $onlySeeMaster);
+            $postCommentService = new PostCommentService();
+            $ids = $onlySeeMaster
+                ? $postCommentService->onlySeeMasterIds($id, $masterId, -1)
+                : $postCommentService->getMainCommentIds($id, -1);
 
             $ids[] = $id;
 
             $images = PostImages::whereIn('post_id', $ids)
                 ->orderBy('created_at', 'asc')
-                ->select('src', 'width', 'height')
+                ->select('src AS url', 'width', 'height', 'size', 'type')
                 ->get()
                 ->toArray();
 
-            $result = [];
-
-            foreach ($images as $item)
+            foreach ($images as $i => $img)
             {
-                $result[] = $item['width'] . '-' . $item['height'] . '|' . $item['src'];
+                $images[$i] = json_encode($img);
             }
 
-            return $result;
+            return $images;
         });
-    }
 
-    public function comment($postId, $commentId)
-    {
-        return $this->RedisHash('post_'.$postId.'_comment_'.$commentId, function () use ($commentId)
+        $result = [];
+        foreach ($list as $item)
         {
-            $comment = Post::where('posts.id', $commentId)
-                ->leftJoin('users AS from', 'from.id', '=', 'posts.user_id')
-                ->leftJoin('users AS to', 'to.id', '=', 'posts.target_user_id')
-                ->select(
-                    'posts.id',
-                    'posts.content',
-                    'posts.created_at',
-                    'posts.user_id AS from_user_id',
-                    'from.nickname AS from_user_name',
-                    'from.zone AS from_user_zone',
-                    'from.avatar AS from_user_avatar',
-                    'to.nickname AS to_user_name',
-                    'to.zone AS to_user_zone',
-                    'posts.parent_id AS parent_id'
-                )->first();
+            $result[] = json_decode($item, true);
+        }
 
-            if (is_null($comment))
-            {
-                return null;
-            }
-
-            return $comment->toArray();
-        });
+        return $result;
     }
 
     public function getNewIds($force = false)
@@ -315,34 +203,5 @@ class PostRepository extends Repository
 
             return $result;
         }, false, $force);
-    }
-
-    public function checkPostLiked($postId, $visitorId, $authorId)
-    {
-        if ($visitorId == $authorId)
-        {
-            return false;
-        }
-        return $visitorId
-            ? PostLike::whereRaw('user_id = ? and post_id = ?', [$visitorId, $postId])->count() !== 0
-            : false;
-    }
-
-    public function checkPostMarked($postId, $visitorId, $authorId)
-    {
-        if ($visitorId == $authorId)
-        {
-            return false;
-        }
-        return $visitorId
-            ? PostMark::whereRaw('user_id = ? and post_id = ?', [$visitorId, $postId])->count() !== 0
-            : false;
-    }
-
-    public function checkPostCommented($postId, $userId)
-    {
-        return $userId
-            ? Post::whereRaw('parent_id = ? and user_id = ?', [$postId, $userId])->count() !== 0
-            : false;
     }
 }
