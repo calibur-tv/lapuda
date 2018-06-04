@@ -8,6 +8,7 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
@@ -243,7 +244,12 @@ class UserController extends Controller
 
         $postRepository = new PostRepository();
         $postTransformer = new PostTransformer();
+        $bangumiRepository = new BangumiRepository();
         $list = $postRepository->list($ids);
+        foreach ($list as $i => $item)
+        {
+            $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
+        }
 
         return $this->resOK($postTransformer->usersMine($list));
     }

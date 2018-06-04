@@ -172,7 +172,8 @@ class PostController extends Controller
             ]);
         }
 
-        $post['commented'] = $postRepository->checkPostCommented($id, $userId);
+        $postCommentService = new PostCommentService();
+        $post['commented'] = $postCommentService->check($userId, $id);
 
         $viewCounter = new PostViewCounter();
         $post['view_count'] = $viewCounter->add($id);
@@ -180,7 +181,7 @@ class PostController extends Controller
         $postLikeService = new PostLikeService();
         $post['liked'] = $postLikeService->check($userId, $id, $post['user_id']);
         $post['like_count'] = $postLikeService->total($id);
-        $post['likeUsers'] = $postLikeService->users($id);
+        $post['like_users'] = $postLikeService->users($id);
 
         $postMarkService = new PostMarkService();
         $post['marked'] = $postMarkService->check($userId, $id, $post['user_id']);
@@ -190,7 +191,7 @@ class PostController extends Controller
         $postTransformer = new PostTransformer();
         $bangumiTransformer = new BangumiTransformer();
         $userTransformer = new UserTransformer();
-        $post['previewImages'] = $postRepository->previewImages($id, $only ? $post['user_id'] : false);
+        $post['preview_images'] = $postRepository->previewImages($id, $post['user_id'], (boolean)$only);
 
         return $this->resOK([
             'post' => $postTransformer->show($post),
@@ -312,27 +313,12 @@ class PostController extends Controller
      */
     public function likeUsers(Request $request, $id)
     {
-        $repository = new PostRepository();
-        $post = $repository->item($id);
+        $page = $request->get('page') ?: 0;
 
-        if (is_null($post))
-        {
-            return $this->resErrNotFound('不存在的帖子');
-        }
+        $postLikeService = new PostLikeService();
+        $users = $postLikeService->users($id, $page);
 
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = intval($request->get('take')) ?: 10;
-
-        $data = $repository->likeUsers($id, $seen, $take);
-
-        if (empty($data))
-        {
-            return $this->resOK([]);
-        }
-
-        $userTransformer = new UserTransformer();
-
-        return $this->resOK($userTransformer->list($data));
+        return $this->resOK($users);
     }
 
     /**
@@ -564,6 +550,8 @@ class PostController extends Controller
         $postLikeService = new PostLikeService();
         $postMarkService = new PostMarkService();
         $postViewCounter = new PostViewCounter();
+        $userRepository = new UserRepository();
+        $bangumiRepository = new BangumiRepository();
 
         foreach ($list as $i => $item)
         {
@@ -573,6 +561,8 @@ class PostController extends Controller
             $list[$i]['marked'] = $postMarkService->check($userId, $id, $authorId);
             $list[$i]['commented'] = $postCommentService->check($userId, $id);
             $list[$i]['view_count'] = $postViewCounter->get($id);
+            $list[$i]['user'] = $userRepository->item($authorId);
+            $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
         }
 
 
@@ -611,6 +601,8 @@ class PostController extends Controller
         $postLikeService = new PostLikeService();
         $postMarkService = new PostMarkService();
         $postViewCounter = new PostViewCounter();
+        $userRepository = new UserRepository();
+        $bangumiRepository = new BangumiRepository();
 
         foreach ($list as $i => $item)
         {
@@ -620,6 +612,8 @@ class PostController extends Controller
             $list[$i]['marked'] = $postMarkService->check($userId, $id, $authorId);
             $list[$i]['commented'] = $postCommentService->check($userId, $id);
             $list[$i]['view_count'] = $postViewCounter->get($id);
+            $list[$i]['user'] = $userRepository->item($authorId);
+            $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
         }
 
         $transformer = new PostTransformer();
