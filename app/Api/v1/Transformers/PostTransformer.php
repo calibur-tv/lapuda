@@ -16,8 +16,6 @@ class PostTransformer extends Transformer
     {
         return $this->transformer($post, function ($post)
         {
-            $userTransformer = new UserTransformer();
-
             return [
                 'id' => (int)$post['id'],
                 'comment_count' => (int)$post['comment_count'],
@@ -34,7 +32,7 @@ class PostTransformer extends Transformer
                 'created_at' => $post['created_at'],
                 'updated_at' => $post['updated_at'],
                 'preview_images' => $post['preview_images'],
-                'like_users' => $userTransformer->list($post['like_users']),
+                'like_users' => $post['like_users']
             ];
         });
     }
