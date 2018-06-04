@@ -13,6 +13,6 @@ class PostCommentLikeService extends CommentLikeService
 {
     public function __construct()
     {
-        parent::__construct('post_comments_v3', 'post_comment_like');
+        parent::__construct('post_comments', 'post_comment_like');
     }
 }
