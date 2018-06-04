@@ -60,13 +60,13 @@ class PostRepository extends Repository
             PostImages::insert($arr);
 
             // 更新帖子图片预览的缓存
-            if (Redis::EXISTS('post_'.$postId.'_previewImages') && !empty($images))
+            if (Redis::EXISTS('post_'.$postId.'_preview_images') && !empty($images))
             {
                 foreach ($images as $i => $val)
                 {
                     $images[$i] = config('website.image') . $val['key'];
                 }
-                Redis::RPUSH('post_'.$postId.'_previewImages', $images);
+                Redis::RPUSH('post_'.$postId.'_preview_images', $images);
             }
         }
     }
@@ -135,7 +135,7 @@ class PostRepository extends Repository
 
     public function previewImages($id, $masterId, $onlySeeMaster)
     {
-        $list = $this->RedisList('post_'.$id.'_previewImages', function () use ($id, $masterId, $onlySeeMaster)
+        $list = $this->RedisList('post_'.$id.'_preview_images', function () use ($id, $masterId, $onlySeeMaster)
         {
             $postCommentService = new PostCommentService();
             $ids = $onlySeeMaster
