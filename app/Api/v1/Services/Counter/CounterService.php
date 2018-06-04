@@ -50,8 +50,8 @@ class CounterService
                 ->first();
         }
 
-        Redis::set($cacheKey, $count);
-        Redis::set($this->writeKey($id), time());
+        $this->writeCache($cacheKey, $count);
+        $this->writeCache($this->writeKey($id), time());
 
         return $count;
     }
@@ -76,7 +76,7 @@ class CounterService
                         $this->field => $result
                     ]);
 
-                Redis::set($writeKey, time());
+                $this->writeCache($writeKey, time());
             }
 
             return $result;
@@ -92,6 +92,12 @@ class CounterService
     public function migrate()
     {
         return false;
+    }
+
+    protected function writeCache($key, $value)
+    {
+        Redis::set($key, $value);
+        Redis::EXPIRE($key, $this->timeout * 2);
     }
 
     protected function cacheKey($id)
