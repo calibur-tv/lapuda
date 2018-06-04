@@ -114,7 +114,9 @@ class ImageTransformer extends Transformer
                  {
                      return [
                          'id' => (int)$image['id'],
-                         'url' => $image['width'] . '-' . $image['height'] . '|' . $image['url']
+                         'url' => $image['url'],
+                         'width' => (int)$image['width'],
+                         'height' => (int)$image['height']
                      ];
                  }),
                 'info' => $this->transformer($album['info'], function ($info)
