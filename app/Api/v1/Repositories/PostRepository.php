@@ -172,7 +172,6 @@ class PostRepository extends Repository
         return $this->RedisSort('post_new_ids', function ()
         {
             return Post::whereIn('state', [3, 7])
-                ->where('parent_id', 0)
                 ->orderBy('created_at', 'desc')
                 ->latest()
                 ->take(1000)
@@ -185,9 +184,8 @@ class PostRepository extends Repository
     {
         return $this->RedisSort('post_hot_ids', function ()
         {
-            $ids = Post::whereRaw('created_at > ? and parent_id = ?', [
-                Carbon::now()->addDays(-30), 0
-            ])->pluck('id');
+            $ids = Post::where('created_at', '>', Carbon::now()->addDays(-30))
+                ->pluck('id');
 
             $list = $this->list($ids);
             $result = [];
