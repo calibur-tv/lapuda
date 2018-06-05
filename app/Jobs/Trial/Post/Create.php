@@ -4,6 +4,7 @@ namespace App\Jobs\Trial\Post;
 
 use App\Api\V1\Repositories\PostRepository;
 use App\Models\MixinSearch;
+use App\Services\Trial\ImageFilter;
 use App\Services\Trial\WordsFilter;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
@@ -48,89 +49,15 @@ class Create implements ShouldQueue
         $state = 3;
         $deletedAt = null;
 
-        // 图片审核流程
-        foreach ($post['images'] as $url)
-        {
-            $tmp = explode('|http', $url);
-            $imageUrl = count($tmp) === 2 ? 'http' . end($tmp) : $url;
-            // 色情
-            try
-            {
-                $respSex = json_decode(file_get_contents($imageUrl . '?qpulp'), true);
-                if (intval($respSex['code']) !== 0)
-                {
-                    $badImageCount++;
-                }
-                else
-                {
-                    $label = intval($respSex['result']['label']);
-                    $review = (boolean)$respSex['result']['review'];
-                    if ($label === 0)
-                    {
-                        $badImageCount++;
-                        if ($review === true)
-                        {
-                            $needDelete = true;
-                        }
-                    }
-                }
-            }
-            catch (\Exception $e)
-            {
-                $badImageCount++;
-            }
-
-            // 暴恐
-            try
-            {
-                $respWarn = json_decode(file_get_contents($imageUrl . '?qterror'), true);
-                if (intval($respWarn['code']) !== 0)
-                {
-                    $badImageCount++;
-                }
-                else
-                {
-                    if (intval($respWarn['result']['label']) === 1)
-                    {
-                        $badImageCount++;
-
-                        if ((boolean)$respWarn['result']['review'] === true)
-                        {
-                            $needDelete = true;
-                        }
-                    }
-                }
-            }
-            catch (\Exception $e)
-            {
-                $badImageCount++;
-            }
-
-            // 政治敏感
-            try
-            {
-                $respDaddy = json_decode(file_get_contents($imageUrl . '?qpolitician'), true);
-                if (intval($respDaddy['code']) !== 0)
-                {
-                    $badImageCount++;
-                }
-                else
-                {
-                    if ((boolean)$respDaddy['result']['review'] === true)
-                    {
-                        $needDelete = true;
-                    }
-                }
-            }
-            catch (\Exception $e)
-            {
-                $badImageCount++;
-            }
-        }
-
         // 文字审核流程
-        $filter = new WordsFilter();
-        $badWordsCount = $filter->count($post['content']);
+        $wordsFilter = new WordsFilter();
+        $badWordsCount = $wordsFilter->count($post['content']);
+        // 图片审核流程
+        $imageFilter = new ImageFilter();
+        foreach ($post['images'] as $image)
+        {
+            $badImageCount += $imageFilter->exec($image['url']);
+        }
 
         if ($badWordsCount > 1)
         {
