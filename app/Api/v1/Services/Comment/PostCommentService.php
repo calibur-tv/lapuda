@@ -9,6 +9,7 @@
 namespace App\Api\V1\Services\Comment;
 
 
+use App\Api\V1\Services\Counter\Post\PostReplyCounter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -47,6 +48,9 @@ class PostCommentService extends CommentService
         {
             $this->ListRemove($this->postOnlySeeMasterIdsCacheKey($postId), $commentId);
         }
+
+        $replyCounter = new PostReplyCounter($postId);
+        $replyCounter->add($postId, -1);
     }
 
     public function onlySeeMasterIds($postId, $masterId, $page = 0, $count = 10)
