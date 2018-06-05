@@ -37,13 +37,16 @@ class CreateMainComment implements ShouldQueue
      */
     public function handle()
     {
-        if (config('app.env') === 'local')
-        {
-            return;
-        }
-
         $service = new CommentService($this->modal);
         $comment = $service->getMainCommentItem($this->id, true);
+
+        if (config('app.env') === 'local')
+        {
+            $service->update($this->id, [
+                'state' => 1
+            ]);
+            return;
+        }
 
         $content = $comment['content'];
         $images = $comment['images'];

@@ -405,12 +405,13 @@ class BangumiController extends Controller
 
         $visitorId = $this->getAuthUserId();
         $list = $imageRepository->list($ids);
+        $imageLikeService = new ImageLikeService();
 
         foreach ($list as $i => $item)
         {
             if ($list[$i]['image_count'])
             {
-                $list[$i]['liked'] = $imageRepository->checkLiked($item['id'], $visitorId, $item['user_id']);
+                $list[$i]['liked'] = $imageLikeService->check($visitorId, $item['id'], $item['user_id']);
             }
             else
             {

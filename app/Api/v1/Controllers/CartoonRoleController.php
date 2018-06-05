@@ -6,6 +6,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
@@ -239,10 +240,11 @@ class CartoonRoleController extends Controller
 
         $visitorId = $this->getAuthUserId();
         $list = $repository->list($ids);
+        $imageLikeService = new ImageLikeService();
 
         foreach ($list as $i => $item)
         {
-            $list[$i]['liked'] = $repository->checkLiked($item['id'], $visitorId, $item['user_id']);
+            $list[$i]['liked'] = $imageLikeService->check($visitorId, $item['id'], $item['user_id']);
         }
 
         return $this->resOK([

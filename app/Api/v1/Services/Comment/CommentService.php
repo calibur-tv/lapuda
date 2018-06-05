@@ -69,7 +69,7 @@ class CommentService extends Repository
         $toUserId = isset($args['to_user_id']) ? $args['to_user_id'] : 0;
         $modalId = isset($args['modal_id']) ? $args['modal_id'] : 0;
         $now = Carbon::now();
-
+        // TODO：mainComment 的 toUserId 怎么处理
         if (!$content || !$userId || ($parentId === 0 && $modalId === 0))
         {
             return null;
@@ -281,11 +281,6 @@ class CommentService extends Repository
 
     public function getSubCommentItem($id, $force = false)
     {
-        if (config('app.env') === 'local')
-        {
-            $force = true;
-        }
-
         $result = $this->RedisHash($this->subCommentCacheKey($id), function () use ($id, $force)
         {
             $tableName = $this->table;
@@ -339,11 +334,6 @@ class CommentService extends Repository
         if (is_null($cacheKey))
         {
             return null;
-        }
-
-        if (config('app.env') === 'local')
-        {
-            $force = true;
         }
 
         $result = $this->Cache($cacheKey, function () use ($id, $force)

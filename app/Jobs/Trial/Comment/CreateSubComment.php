@@ -37,14 +37,17 @@ class CreateSubComment implements ShouldQueue
      */
     public function handle()
     {
-        if (config('app.env') === 'local')
-        {
-            return;
-        }
-
         $service = new CommentService($this->table);
         $comment = $service->getSubCommentItem($this->id);
         $content = $comment['content'];
+
+        if (config('app.env') === 'local')
+        {
+            $service->update($this->id, [
+                'state' => 1
+            ]);
+            return;
+        }
 
         $filter = new WordsFilter();
         $badWordsCount = $filter->count($content);
@@ -54,6 +57,7 @@ class CreateSubComment implements ShouldQueue
             $service->deleteSubComment($this->id, 0, true);
             return;
         }
+
         $service->update($this->id, [
             'state' => 1
         ]);
