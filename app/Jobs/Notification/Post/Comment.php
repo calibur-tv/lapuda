@@ -3,6 +3,7 @@
 namespace App\Jobs\Notification\Post;
 
 use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Services\Comment\PostCommentService;
 use App\Models\Notifications;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
@@ -32,19 +33,29 @@ class Comment implements ShouldQueue
      */
     public function handle()
     {
-        $repository = new PostRepository();
-        $comment = $repository->item($this->commentId);
-        $reply = $repository->item($comment['parent_id']);
-        $post = $repository->item($reply['parent_id']);
+        $postCommentService = new PostCommentService();
+        $comment = $postCommentService->getSubCommentItem($this->commentId);
+        if (is_null($comment))
+        {
+            return;
+        }
 
-        if(is_null($comment) || is_null($reply) || is_null($post))
+        $reply = $postCommentService->getMainCommentItem($comment['parent_id']);
+        if (is_null($reply))
+        {
+            return;
+        }
+
+        $postRepository = new PostRepository();
+        $post = $postRepository->item($reply['modal_id']);
+        if (is_null($post))
         {
             return;
         }
 
         Notifications::create([
-            'from_user_id' => $comment['user_id'],
-            'to_user_id' => $comment['target_user_id'],
+            'from_user_id' => $comment['from_user_id'],
+            'to_user_id' => $comment['to_user_id'],
             'about_id' => $comment['id'] . ',' . $reply['id'] . ',' . $post['id'],
             'type' => 2
         ]);

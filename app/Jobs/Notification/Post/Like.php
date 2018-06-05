@@ -33,7 +33,7 @@ class Like implements ShouldQueue
      */
     public function handle()
     {
-        $like = PostLike::find($this->likeId);
+        $like = PostLike::where('id', $this->likeId)->first();
 
         if (is_null($like))
         {
@@ -41,7 +41,7 @@ class Like implements ShouldQueue
         }
 
         $repository = new PostRepository();
-        $post = $repository->item($like['post_id']);
+        $post = $repository->item($like['modal_id']);
 
         if (is_null($post))
         {

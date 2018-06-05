@@ -33,7 +33,7 @@ class Like implements ShouldQueue
      */
     public function handle()
     {
-        $like = ImageLike::find($this->likeId);
+        $like = ImageLike::where('id', $this->likeId)->first();
 
         if (is_null($like))
         {

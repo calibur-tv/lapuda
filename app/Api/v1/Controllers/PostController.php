@@ -247,12 +247,16 @@ class PostController extends Controller
             'data' => $request->get('content')
         ];
 
+        $masterId = intval($post['user_id']);
+        $isMaster = $userId === $masterId;
         $postCommentService = new PostCommentService();
         $newComment = $postCommentService->reply([
             'content' => $saveContent,
             'user_id' => $userId,
-            'modal_id' => $id
-        ], $userId === intval($post['user_id']));
+            'modal_id' => $id,
+            'to_user_id' => $isMaster ? 0 : $masterId
+        ], $isMaster);
+
         if (!$newComment)
         {
             return $this->resErrServiceUnavailable();
@@ -280,7 +284,7 @@ class PostController extends Controller
             $pipe->RPUSHX('post_'.$id.'_ids', $newId);
         });
 
-        if (intval($post['user_id']) !== $userId)
+        if (!$isMaster)
         {
             $job = (new \App\Jobs\Notification\Post\Reply($newId));
             dispatch($job);
