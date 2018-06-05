@@ -21,6 +21,7 @@ class CounterService
      * 什么时候需要恢复？set or get？how？
      * get 的时候恢复，在外层实现 migrate 方法
      */
+    protected $id;
     protected $table;
     protected $field;
     protected $timeout = 60;
@@ -33,6 +34,7 @@ class CounterService
 
     public function get($id)
     {
+        $this->id = $id;
         $cacheKey = $this->cacheKey($id);
 
         if (Redis::EXISTS($cacheKey))
@@ -57,6 +59,7 @@ class CounterService
 
     public function add($id, $num = 1)
     {
+        $this->id = $id;
         $cacheKey = $this->cacheKey($id);
 
         if (Redis::EXISTS($cacheKey))
