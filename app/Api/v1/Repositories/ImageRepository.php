@@ -72,17 +72,6 @@ class ImageRepository extends Repository
         return $result;
     }
 
-    public function checkLiked($imageId, $userId, $authorId)
-    {
-        if ($userId == $authorId)
-        {
-            return false;
-        }
-        return $userId
-            ? (boolean)ImageLike::whereRaw('image_id = ? and user_id = ?', [$imageId, $userId])->count()
-            : false;
-    }
-
     public function uptoken()
     {
         $auth = new \App\Services\Qiniu\Auth();
