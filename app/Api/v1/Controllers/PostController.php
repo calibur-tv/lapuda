@@ -74,8 +74,6 @@ class PostController extends Controller
             'desc' => Purifier::clean($request->get('desc')),
             'bangumi_id' => $bangumiId,
             'user_id' => $userId,
-            'target_user_id' => 0,
-            'floor_count' => 1,
             'created_at' => $now,
             'updated_at' => $now
         ], $request->get('images'));
