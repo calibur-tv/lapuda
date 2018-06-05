@@ -14,6 +14,7 @@ use App\Models\Bangumi;
 use App\Models\Image;
 use App\Models\ImageLike;
 use App\Models\ImageTag;
+use App\Services\Geetest\Captcha;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
@@ -56,13 +57,9 @@ class ImageController extends Controller
      */
     public function captcha()
     {
-        $time = time();
+        $captcha = new Captcha();
 
-        return $this->resOK([
-            'id' => config('geetest.id'),
-            'secret' => md5(config('geetest.key') . $time),
-            'access' => $time
-        ]);
+        return $this->resOK($captcha->get());
     }
 
     /**
