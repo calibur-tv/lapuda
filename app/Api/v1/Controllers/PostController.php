@@ -172,7 +172,7 @@ class PostController extends Controller
         $viewCounter = new PostViewCounter();
         $post['view_count'] = $viewCounter->add($id);
 
-        $replyCounter = new PostReplyCounter($id);
+        $replyCounter = new PostReplyCounter();
         $post['comment_count'] = $replyCounter->get($id);
 
         $postLikeService = new PostLikeService();
@@ -550,14 +550,18 @@ class PostController extends Controller
         $postViewCounter = new PostViewCounter();
         $userRepository = new UserRepository();
         $bangumiRepository = new BangumiRepository();
+        $postReplyCounter = new PostReplyCounter();
 
         foreach ($list as $i => $item)
         {
             $id = $item['id'];
             $authorId = $item['user_id'];
             $list[$i]['liked'] = $postLikeService->check($userId, $id, $authorId);
+            $list[$i]['like_count'] = $postLikeService->total($id);
             $list[$i]['marked'] = $postMarkService->check($userId, $id, $authorId);
+            $list[$i]['mark_count'] = $postMarkService->total($id);
             $list[$i]['commented'] = $postCommentService->check($userId, $id);
+            $list[$i]['comment_count'] = $postReplyCounter->get($id);
             $list[$i]['view_count'] = $postViewCounter->get($id);
             $list[$i]['user'] = $userRepository->item($authorId);
             $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
@@ -601,14 +605,18 @@ class PostController extends Controller
         $postViewCounter = new PostViewCounter();
         $userRepository = new UserRepository();
         $bangumiRepository = new BangumiRepository();
+        $postReplyCounter = new PostReplyCounter();
 
         foreach ($list as $i => $item)
         {
             $id = $item['id'];
             $authorId = $item['user_id'];
             $list[$i]['liked'] = $postLikeService->check($userId, $id, $authorId);
+            $list[$i]['like_count'] = $postLikeService->total($id);
             $list[$i]['marked'] = $postMarkService->check($userId, $id, $authorId);
+            $list[$i]['mark_count'] = $postMarkService->total($id);
             $list[$i]['commented'] = $postCommentService->check($userId, $id);
+            $list[$i]['comment_count'] = $postReplyCounter->get($id);
             $list[$i]['view_count'] = $postViewCounter->get($id);
             $list[$i]['user'] = $userRepository->item($authorId);
             $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);

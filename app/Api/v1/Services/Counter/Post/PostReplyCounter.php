@@ -14,13 +14,9 @@ use Illuminate\Support\Facades\DB;
 
 class PostReplyCounter extends CounterService
 {
-    protected $id;
-
-    public function __construct($postId)
+    public function __construct()
     {
         parent::__construct('posts', 'comment_count');
-
-        $this->id = $postId;
     }
 
     public function migrate()
