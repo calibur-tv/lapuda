@@ -69,7 +69,7 @@ class CommentService extends Repository
         $toUserId = isset($args['to_user_id']) ? $args['to_user_id'] : 0;
         $modalId = isset($args['modal_id']) ? $args['modal_id'] : 0;
         $now = Carbon::now();
-        // TODO：mainComment 的 toUserId 怎么处理
+
         if (!$content || !$userId || ($parentId === 0 && $modalId === 0))
         {
             return null;
@@ -84,6 +84,7 @@ class CommentService extends Repository
             $id = DB::table($this->table)->insertGetId([
                 'content' => $content,
                 'user_id' => $userId,
+                'to_user_id' => $toUserId,
                 'modal_id' => $modalId,
                 'floor_count' => $count + 2,
                 'updated_at' => $now,

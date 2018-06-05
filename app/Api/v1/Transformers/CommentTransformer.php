@@ -55,6 +55,7 @@ class CommentTransformer extends Transformer
                 'modal_id' => (int)$comment['modal_id'],
                 'comment_count' => (int)$comment['comment_count'],
                 'floor_count' => isset($comment['floor_count']) ? (int)$comment['floor_count'] : 0,
+                'to_user_id' => (int)$comment['to_user_id'],
                 'from_user_id' => (int)$comment['from_user_id'],
                 'from_user_name' => $comment['from_user_name'],
                 'from_user_zone' => $comment['from_user_zone'],

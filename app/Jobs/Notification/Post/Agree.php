@@ -3,6 +3,7 @@
 namespace App\Jobs\Notification\Post;
 
 use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Services\Comment\PostCommentService;
 use App\Models\Notifications;
 use App\Models\PostLike;
 use Illuminate\Bus\Queueable;
@@ -33,27 +34,25 @@ class Agree implements ShouldQueue
      */
     public function handle()
     {
-        $like = PostLike::find($this->likeId);
+        $like = PostLike::where('id', $this->likeId)->first();
 
         if (is_null($like))
         {
             return;
         }
 
-        $repository = new PostRepository();
-        $reply = $repository->item($like['post_id']);
+        $postCommentService = new PostCommentService();
+        $reply = $postCommentService->item($like['modal_id']);
 
         if (is_null($reply))
         {
             return;
         }
 
-        $post = $repository->item($reply['parent_id']);
-
         Notifications::create([
             'from_user_id' => $like['user_id'],
-            'to_user_id' => $reply['user_id'],
-            'about_id' => $reply['id'] . ',' . $post['id'],
+            'to_user_id' => $reply['to_user_id'],
+            'about_id' => $reply['id'] . ',' . $reply['modal_id'],
             'type' => 4
         ]);
     }
