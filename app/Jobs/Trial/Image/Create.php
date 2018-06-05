@@ -3,6 +3,7 @@
 namespace App\Jobs\Trial\Image;
 
 use App\Models\Image;
+use App\Services\Trial\ImageFilter;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -33,68 +34,11 @@ class Create implements ShouldQueue
     {
         $url = Image::where('id', $this->imageId)->pluck('url')->first();
 
+        $imageFilter = new ImageFilter();
+        $badImageCount = $imageFilter->exec($url);
+
         $state = 1;
-
-        // 色情
-        try
-        {
-            $respSex = json_decode(file_get_contents($url . '?qpulp'), true);
-            if (intval($respSex['code']) !== 0)
-            {
-                $state = 2;
-            }
-            else
-            {
-                $label = intval($respSex['result']['label']);
-                $review = (boolean)$respSex['result']['review'];
-                if ($label === 0 || $review === true)
-                {
-                    $state = 2;
-                }
-            }
-        }
-        catch (\Exception $e)
-        {
-            $state = 2;
-        }
-
-        // 暴恐
-        try
-        {
-            $respWarn = json_decode(file_get_contents($url . '?qterror'), true);
-            if (intval($respWarn['code']) !== 0)
-            {
-                $state = 2;
-            }
-            else
-            {
-                $label = intval($respWarn['result']['label']);
-                $review = (boolean)$respWarn['result']['review'];
-                if ($label === 1 || $review)
-                {
-                    $state = 2;
-                }
-            }
-        }
-        catch (\Exception $e)
-        {
-            $state = 2;
-        }
-
-        // 政治敏感
-        try
-        {
-            $respDaddy = json_decode(file_get_contents($url . '?qpolitician'), true);
-            if (intval($respDaddy['code']) !== 0)
-            {
-                $state = 2;
-            }
-            else if ((boolean)$respDaddy['result']['review'] === true)
-            {
-                $state = 2;
-            }
-        }
-        catch (\Exception $e)
+        if ($badImageCount > 0)
         {
             $state = 2;
         }

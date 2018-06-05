@@ -4,6 +4,7 @@ namespace App\Jobs\Trial\User;
 
 use App\Api\V1\Repositories\UserRepository;
 use App\Models\MixinSearch;
+use App\Services\Trial\ImageFilter;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -40,85 +41,13 @@ class Image implements ShouldQueue
         $repository = new UserRepository();
         $user = $repository->item($this->userId);
 
-        $badImageCount = 0;
-        $needDelete = false;
-        $state = 0;
         $url = $user[$this->type];
 
-        // 色情
-        try
-        {
-            $respSex = json_decode(file_get_contents($url . '?qpulp'), true);
-            if (intval($respSex['code']) !== 0)
-            {
-                $badImageCount++;
-            }
-            else
-            {
-                $label = intval($respSex['result']['label']);
-                $review = (boolean)$respSex['result']['review'];
-                if ($label === 0)
-                {
-                    $badImageCount++;
-                    if ($review === true)
-                    {
-                        $needDelete = true;
-                    }
-                }
-            }
-        }
-        catch (\Exception $e)
-        {
-            $badImageCount++;
-        }
+        $imageFilter = new ImageFilter();
+        $badImageCount = $imageFilter->exec($url);
+        $needDelete = $badImageCount > 1;
 
-        // 暴恐
-        try
-        {
-            $respWarn = json_decode(file_get_contents($url . '?qterror'), true);
-            if (intval($respWarn['code']) !== 0)
-            {
-                $badImageCount++;
-            }
-            else
-            {
-                if (intval($respWarn['result']['label']) === 1)
-                {
-                    $badImageCount++;
-
-                    if ((boolean)$respWarn['result']['review'] === true)
-                    {
-                        $needDelete = true;
-                    }
-                }
-            }
-        }
-        catch (\Exception $e)
-        {
-            $badImageCount++;
-        }
-
-        // 政治敏感
-        try
-        {
-            $respDaddy = json_decode(file_get_contents($url . '?qpolitician'), true);
-            if (intval($respDaddy['code']) !== 0)
-            {
-                $badImageCount++;
-            }
-            else
-            {
-                if ((boolean)$respDaddy['result']['review'] === true)
-                {
-                    $needDelete = true;
-                }
-            }
-        }
-        catch (\Exception $e)
-        {
-            $badImageCount++;
-        }
-
+        $state = 0;
         if ($needDelete || $badImageCount)
         {
             $state = 1;
