@@ -11,6 +11,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Support\Facades\DB;
 
 class Agree implements ShouldQueue
 {
@@ -34,7 +35,9 @@ class Agree implements ShouldQueue
      */
     public function handle()
     {
-        $like = PostLike::where('id', $this->likeId)->first();
+        $like = DB::table('post_comment_like')
+            ->where('id', $this->likeId)
+            ->first();
 
         if (is_null($like))
         {
@@ -42,7 +45,7 @@ class Agree implements ShouldQueue
         }
 
         $postCommentService = new PostCommentService();
-        $reply = $postCommentService->item($like['modal_id']);
+        $reply = $postCommentService->getMainCommentItem($like->modal_id);
 
         if (is_null($reply))
         {
@@ -50,8 +53,8 @@ class Agree implements ShouldQueue
         }
 
         Notifications::create([
-            'from_user_id' => $like['user_id'],
-            'to_user_id' => $reply['to_user_id'],
+            'from_user_id' => $like->user_id,
+            'to_user_id' => $reply['from_user_id'],
             'about_id' => $reply['id'] . ',' . $reply['modal_id'],
             'type' => 4
         ]);

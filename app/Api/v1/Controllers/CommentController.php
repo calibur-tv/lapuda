@@ -137,6 +137,15 @@ class CommentController extends Controller
 
         $result = $commentLikeService->toggle($this->getAuthUserId(), $id);
 
+        if ($result)
+        {
+            if ($type === 'post')
+            {
+                $job = (new \App\Jobs\Notification\Post\Agree($result));
+                dispatch($job);
+            }
+        }
+
         // TODO：dispatch job to update open search weight
 
         return $this->resCreated((boolean)$result);
