@@ -460,7 +460,7 @@ class PostController extends Controller
         Redis::pipeline(function ($pipe) use ($bangumiId, $postId, $userId)
         {
             $pipe->LREM('user_'.$userId.'_minePostIds', 1, $postId);
-            $pipe->ZREM($this->bangumiListCacheKey($bangumiId), $postId);
+            $pipe->ZREM('bangumi_'.$bangumiId.'_posts_new_ids', $postId);
             $pipe->ZREM('post_new_ids', $postId);
             $pipe->ZREM('post_hot_ids', $postId);
             $pipe->DEL('post_'.$postId);
