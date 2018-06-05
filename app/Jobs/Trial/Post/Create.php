@@ -168,11 +168,7 @@ class Create implements ShouldQueue
                 'updated_at' => $now
             ]);
 
-            $cache = 'post_'.$post['id'];
-            if (Redis::EXISTS($cache))
-            {
-                Redis::HSET($cache, 'state', 3);
-            }
+            // TODO：set post-state
             Redis::ZADD('post_new_ids', strtotime($post['created_at']), $post['id']);
             Redis::EXPIREAT('post_new_ids', strtotime(date('Y-m-d')) + 86400 + rand(3600, 10800));
 
