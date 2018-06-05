@@ -243,6 +243,7 @@ class CommentService extends Repository
         {
             return DB::table($this->table)
                 ->where('modal_id', $modalId)
+                ->where('state', 1)
                 ->orderBy('id', $this->order)
                 ->pluck('id');
         });
@@ -256,6 +257,7 @@ class CommentService extends Repository
         {
             return DB::table($this->table)
                 ->where('parent_id', $parentId)
+                ->where('state', 1)
                 ->orderBy('id', $this->order)
                 ->pluck('id');
         });
@@ -269,6 +271,7 @@ class CommentService extends Repository
         {
             return DB::table($this->table)
                 ->whereRaw('user_id = ? and modal_id <> 0', [$userId])
+                ->where('state', 1)
                 ->orderBy('id', 'DESC')
                 ->pluck('id');
         });

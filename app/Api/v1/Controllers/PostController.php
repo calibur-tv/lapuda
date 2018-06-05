@@ -4,7 +4,8 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\PostCommentService;
-use App\Api\V1\Services\Counter\PostViewCounter;
+use App\Api\V1\Services\Counter\Post\PostReplyCounter;
+use App\Api\V1\Services\Counter\Post\PostViewCounter;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Comment\PostCommentLikeService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
@@ -173,6 +174,9 @@ class PostController extends Controller
         $viewCounter = new PostViewCounter();
         $post['view_count'] = $viewCounter->add($id);
 
+        $replyCounter = new PostReplyCounter($id);
+        $post['comment_count'] = $replyCounter->get($id);
+
         $postLikeService = new PostLikeService();
         $post['liked'] = $postLikeService->check($userId, $id, $post['user_id']);
         $post['like_count'] = $postLikeService->total($id);
@@ -259,16 +263,11 @@ class PostController extends Controller
 
         $repository->savePostImage($id, $newId, $images);
 
-        Post::where('id', $id)->increment('comment_count');
+        $postReplyCounter = new PostReplyCounter($id);
+        $postReplyCounter->add($id);
         Post::where('id', $id)->update([
             'updated_at' => date('Y-m-d H:i:s',time())
         ]);
-        // 更新帖子的缓存
-        if (Redis::EXISTS('post_'.$id))
-        {
-            Redis::HINCRBYFLOAT('post_'.$id, 'comment_count', 1);
-            Redis::HSET('post_'.$id, 'updated_at', $now->toDateTimeString());
-        }
         // 更新番剧帖子列表的缓存
         $cacheKey = $repository->bangumiListCacheKey($post['bangumi_id']);
         if (Redis::EXISTS($cacheKey))
@@ -478,8 +477,10 @@ class PostController extends Controller
         return $this->resNoContent();
     }
 
-    public function deleteComment($commentId)
+    public function deleteComment(Request $request, $id)
     {
+        $commentId = $request->get('commentId');
+
         $commentService = new PostCommentService();
         $comment = $commentService->getMainCommentItem($commentId);
 
@@ -489,7 +490,7 @@ class PostController extends Controller
         }
 
         $postRepository = new PostRepository();
-        $post = $postRepository->item($comment['modal_id']);
+        $post = $postRepository->item($id);
 
         if (is_null($post))
         {
