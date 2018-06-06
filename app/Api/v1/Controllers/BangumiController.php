@@ -393,7 +393,7 @@ class BangumiController extends Controller
     public function cartoon(Request $request, $id)
     {
         $take = intval($request->get('take')) ?: 12;
-        $minId = $request->get('minId') ?: 0;
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
 
         $imageRepository = new ImageRepository();
 
@@ -408,7 +408,7 @@ class BangumiController extends Controller
         }
 
         $ids = explode(',', $ids);
-        $ids = array_slice($ids, $minId ? array_search($minId, $ids) + 1 : 0, $take);
+        $ids = array_slice(array_diff($ids, $seen), 0, $take);
 
         $transformer = new ImageTransformer();
 

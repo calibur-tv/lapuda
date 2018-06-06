@@ -39,6 +39,11 @@ class ImageRepository extends Repository
             return $image;
         }, 'm');
 
+        if (is_null($result))
+        {
+            return null;
+        }
+
         $meta = $this->Cache('user_image_' . $id . '_meta', function () use ($result)
         {
             $tagIds = ImageTag::where('image_id', $result['id'])->pluck('tag_id');
