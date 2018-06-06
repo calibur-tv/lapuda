@@ -62,7 +62,17 @@ class Captcha
             return $this->fail_validate($challenge, $validate, $payload);
         }
 
-        return $this->success_validate($challenge, $validate, $args['geetest_seccode'], $payload);
+        return $this->success_validate($challenge, $validate, $args['geetest_seccode'], $this->decode_payload($payload));
+    }
+
+    private function decode_payload($payload)
+    {
+        return json_decode($payload, true);
+    }
+
+    private function encode_payload($params)
+    {
+        return json_encode($params); // TODO：payload加密
     }
 
     /**
@@ -79,7 +89,7 @@ class Captcha
             'success'     => 1,
             'gt'          => $this->captcha_id,
             'challenge'   => $challenge,
-            'payload'     => json_encode($params) // TODO：payload加密
+            'payload'     => $this->encode_payload($params)
         );
         return $result;
     }
