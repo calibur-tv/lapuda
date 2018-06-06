@@ -53,8 +53,8 @@ class Captcha
 
     public function validate(array $args)
     {
-        $challenge = $args['challenge'];
-        $validate = $args['validate'];
+        $challenge = $args['geetest_challenge'];
+        $validate = $args['geetest_validate'];
         $payload = $args['payload'];
 
         if (!$args['success'])
@@ -62,7 +62,7 @@ class Captcha
             return $this->fail_validate($challenge, $validate, $payload);
         }
 
-        return $this->success_validate($challenge, $validate, $args['seccode'], $payload);
+        return $this->success_validate($challenge, $validate, $args['geetest_seccode'], $payload);
     }
 
     /**
@@ -79,7 +79,7 @@ class Captcha
             'success'     => 1,
             'gt'          => $this->captcha_id,
             'challenge'   => $challenge,
-            'payload'     => $params // TODO：payload加密
+            'payload'     => json_encode($params) // TODO：payload加密
         );
         return $result;
     }
@@ -97,7 +97,7 @@ class Captcha
             'success'     => 0,
             'gt'          => $this->captcha_id,
             'challenge'   => $challenge,
-            'payload'     => time()
+            'payload'     => (string)time()
         );
         return $result;
     }
