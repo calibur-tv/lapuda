@@ -421,6 +421,7 @@ class BangumiController extends Controller
             if ($list[$i]['image_count'])
             {
                 $list[$i]['liked'] = $imageLikeService->check($visitorId, $item['id'], $item['user_id']);
+                $list[$i]['like_count'] = $imageLikeService->total($item['id']);
             }
             else
             {
