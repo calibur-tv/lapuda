@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Overtrue\LaravelPinyin\Facades\Pinyin as Overtrue;
@@ -26,29 +27,14 @@ use Tymon\JWTAuth\Facades\JWTAuth;
  */
 class DoorController extends Controller
 {
-    /**
-     * 发送验证码
-     *
-     * @Post("/door/send")
-     *
-     * @Transaction({
-     *      @Request({"method": "phone|email", "access": "账号", "nickname": "用户昵称", "mustNew": "必须是未注册的用户", "mustOld": "必须是已注册的用户", "geetest": "Geetest验证码对象"}),
-     *      @Response(201, body={"code": 0, "data": "邮件或短信发送成功"}),
-     *      @Response(400, body={"code": 40003, "message": "请求参数错误", "data": "错误详情"}),
-     *      @Response(400, body={"code": 40004, "message": "已注册或未注册的账号", "data": ""})
-     * })
-     */
-    public function sendEmailOrMessage(Request $request)
+    public function sendMessage(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'method' => [
+            'type' => [
                 'required',
-                Rule::in(['email', 'phone']),
+                Rule::in(['sign_up', 'forgot_password']),
             ],
-            'access' => 'required',
-            'nickname' => 'required|min:1|max:14',
-            'mustNew' => 'boolean',
-            'mustOld' => 'boolean'
+            'phone_number' => 'required|digits:11'
         ]);
 
         if ($validator->fails())
@@ -56,65 +42,63 @@ class DoorController extends Controller
             return $this->resErrParams($validator->errors());
         }
 
-        $method = $request->get('method');
-        $access = $request->get('access');
-        $nickname = $request->get('nickname');
-        $museNew = $request->get('mustNew');
-        $mustOld = $request->get('mustOld');
+        $phone = $request->get('phone_number');
+        $type = $request->get('type');
 
-        $isEmail = $method === 'email';
-
-        if ($museNew && !$this->accessIsNew($method, $access))
+        if ($type === 'sign_up')
         {
-            return $this->resErrBad($isEmail ? '邮箱已注册' : '手机号已注册');
+            $museNew = true;
+            $mustOld = false;
         }
-
-        if ($mustOld && $this->accessIsNew($method, $access))
+        else if ($type === 'forgot_password')
         {
-            return $this->resErrBad($isEmail ? '未注册的邮箱' : '未注册的手机号');
-        }
-
-        $token = $this->makeConfirm($access);
-
-        if ($isEmail)
-        {
-            Mail::send(new Welcome($access, $nickname, $token));
+            $museNew = false;
+            $mustOld = true;
         }
         else
         {
-            $sms = new Message();
-            $result = $sms->register($access, $token);
-
-            if (!$result)
-            {
-                return $this->resErrServiceUnavailable();
-            }
+            $museNew = false;
+            $mustOld = false;
         }
 
-        return $this->resCreated($isEmail ? '邮件已发送' : '短信已发送');
+        if ($museNew && !$this->accessIsNew('phone', $phone))
+        {
+            return $this->resErrBad('手机号已注册');
+        }
+
+        if ($mustOld && $this->accessIsNew('phone', $phone))
+        {
+            return $this->resErrBad('未注册的手机号');
+        }
+
+        $authCode = $this->createMessageAuthCode($phone, $type);
+        $sms = new Message();
+
+        if ($type === 'sign_up')
+        {
+            $result = $sms->register($phone, $authCode);
+        }
+        else if ($type === 'forgot_password')
+        {
+            $result = $sms->forgotPassword($phone, $authCode);
+        }
+        else
+        {
+            return $this->resErrBad();
+        }
+
+        if (!$result)
+        {
+            return $this->resErrServiceUnavailable();
+        }
+
+        return $this->resCreated('短信已发送');
     }
 
-    /**
-     * 用户注册
-     *
-     * @Post("/door/register")
-     *
-     * @Transaction({
-     *      @Request({"method": "phone|email", "nickname": "用户昵称", "access": "账号", "secret": "密码", "authCode": "短信或邮箱验证码", "inviteCode": "邀请码", "geetest": "Geetest验证码对象"}),
-     *      @Response(200, body={"code": 0, "data": "JWT-Token"}),
-     *      @Response(400, body={"code": 400, "message": "请求参数错误", "data": "错误详情"}),
-     *      @Response(401, body={"code": 401, "message": "验证码过期，请重新获取", "data": ""}),
-     *      @Response(403, body={"code": 403, "message": "该手机或邮箱已绑定另外一个账号", "data": ""})
-     * })
-     */
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'method' => [
-                'required',
-                Rule::in(['email', 'phone']),
-            ],
-            'access' => 'required',
+            'access' => 'required|digits:11',
             'secret' => 'required|min:6|max:16',
             'nickname' => 'required|min:1|max:14',
             'authCode' => 'required|min:6|max:6'
@@ -130,49 +114,26 @@ class DoorController extends Controller
             return $this->resErrParams('昵称只能包含汉字、数字和字母');
         }
 
-        $method = $request->get('method');
         $access = $request->get('access');
-        $isEmail = $method === 'email';
 
-        if ($isEmail)
+        if (!$this->checkMessageAuthCode($access, 'sign_up', $request->get('authCode')))
         {
-            $validator = Validator::make($request->all(), [
-                'access' => 'email'
-            ]);
-        }
-        else
-        {
-            $validator = Validator::make($request->all(), [
-                'access' => 'digits:11'
-            ]);
+            return $this->resErrBad('短信验证码已过期，请重新获取');
         }
 
-        if ($validator->fails())
+        if (!$this->accessIsNew('phone', $access))
         {
-            return $this->resErrParams($validator->errors());
-        }
-
-        if (!$this->accessIsNew($method, $access))
-        {
-            return $this->resErrBad($isEmail ? '该邮箱已注册' : '该手机号已绑定另外一个账号');
-        }
-
-        if (!$this->authCodeCanUse($request->get('authCode'), $access))
-        {
-            return $this->resErrBad($isEmail ? '邮箱验证码过期，请重新获取' : '短信认证码过期，请重新获取');
+            return $this->resErrBad('该手机号已绑定另外一个账号');
         }
 
         $nickname = $request->get('nickname');
         $zone = $this->createUserZone($nickname);
-        $arr = [
+        $data = [
             'nickname' => $nickname,
             'password' => bcrypt($request->get('secret')),
-            'zone' => $zone
+            'zone' => $zone,
+            'phone' => $access
         ];
-
-        $data = $isEmail
-            ? array_merge($arr, ['email' => $request->get('access')])
-            : array_merge($arr, ['phone' => $request->get('access')]);
 
         try
         {
@@ -201,25 +162,10 @@ class DoorController extends Controller
         return $this->resCreated($this->responseUser($user));
     }
 
-    /**
-     * 用户登录
-     *
-     * @Post("/door/login")
-     * @Transaction({
-     *      @Request({"method": "phone|email", "access": "账号", "secret": "密码", "geetest": "Geetest验证码对象"}),
-     *      @Response(200, body={"code": 0, "data": "JWT-Token"}),
-     *      @Response(400, body={"code": 400, "message": "请求参数错误", "data": "错误详情"}),
-     *      @Response(403, body={"code": 403, "message": "用户名或密码错误", "data": ""})
-     * })
-     */
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'method' => [
-                'required',
-                Rule::in(['email', 'phone']),
-            ],
-            'access' => 'required',
+            'access' => 'required|digits:11',
             'secret' => 'required|min:6|max:16'
         ]);
 
@@ -228,19 +174,10 @@ class DoorController extends Controller
             return $this->resErrParams($validator->errors());
         }
 
-        $method = $request->get('method');
-        $access = $request->get('access');
-        $secret = $request->get('secret');
-
-        $data = $method === 'phone'
-            ? [
-                'password' => $secret,
-                'phone' => $access
-            ]
-            : [
-                'password' => $secret,
-                'email' => $access
-            ];
+        $data = [
+            'phone' => $request->get('access'),
+            'password' => $request->get('secret')
+        ];
 
         if (Auth::attempt($data))
         {
@@ -251,7 +188,7 @@ class DoorController extends Controller
             return response([
                 'code' => 0,
                 'data' => $jwtToken
-            ], 200)->cookie('test', 'fuck', 60, '/', '', true, true);
+            ], 200);
         }
 
         return $this->resErrBad('用户名或密码错误');
@@ -306,100 +243,10 @@ class DoorController extends Controller
         return $this->resOK($transformer->self($user));
     }
 
-    /**
-     * 发送重置密码验证码
-     *
-     * @Post("/door/forgot")
-     *
-     * @Transaction({
-     *      @Request({"method": "phone|email", "access": "账号", "geetest": "Geetest验证码对象"}),
-     *      @Response(200, body={"code": 0, "data": "短信或邮件已发送"}),
-     *      @Response(400, body={"code": 400, "message": "请求参数错误", "data": "错误详情"}),
-     *      @Response(403, body={"code": 403, "message": "未注册的邮箱或手机号", "data": ""})
-     * })
-     */
-    public function forgotPassword(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'method' => [
-                'required',
-                Rule::in(['email', 'phone']),
-            ],
-            'access' => 'required'
-        ]);
-
-        if ($validator->fails())
-        {
-            return $this->resErrParams($validator->errors());
-        }
-
-        $method = $request->get('method');
-        $access = $request->get('access');
-        $isEmail = $method === 'email';
-
-        if ($isEmail)
-        {
-            $validator = Validator::make($request->all(), [
-                'access' => 'email'
-            ]);
-        }
-        else
-        {
-            $validator = Validator::make($request->all(), [
-                'access' => 'digits:11'
-            ]);
-        }
-
-        if ($validator->fails())
-        {
-            return $this->resErrParams($validator->errors());
-        }
-
-        if ($this->accessIsNew($method, $access))
-        {
-            return $this->resErrBad($isEmail ? '未注册的邮箱' : '未注册的手机号');
-        }
-
-        $token = $this->makeConfirm($access);
-
-        if ($isEmail)
-        {
-            Mail::send(new ForgetPassword($access, $token));
-        }
-        else
-        {
-            $sms = new Message();
-            $result = $sms->forgotPassword($access, $token);
-
-            if (!$result)
-            {
-                return $this->resErrServiceUnavailable();
-            }
-        }
-
-        return $this->resCreated($isEmail ? '邮件已发送' : '短信已发送');
-    }
-
-    /**
-     * 重置密码
-     *
-     * @Post("/door/reset")
-     *
-     * @Transaction({
-     *      @Request({"method": "phone|email", "access": "账号", "secret": "密码", "authCode": "短信或邮箱验证码", "geetest": "Geetest验证码对象"}),
-     *      @Response(200, body={"code": 0, "data": "短信或邮件已发送"}),
-     *      @Response(400, body={"code": 400, "message": "请求参数错误", "data": "错误详情"}),
-     *      @Response(403, body={"code": 403, "message": "密码重置成功", "data": ""})
-     * })
-     */
     public function resetPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'method' => [
-                'required',
-                Rule::in(['email', 'phone']),
-            ],
-            'access' => 'required',
+            'access' => 'required|digits:11',
             'secret' => 'required|min:6|max:16',
             'authCode' => 'required|min:6|max:6'
         ]);
@@ -411,29 +258,10 @@ class DoorController extends Controller
 
         $method = $request->get('method');
         $access = $request->get('access');
-        $isEmail = $method === 'email';
 
-        if ($isEmail)
+        if (!$this->checkMessageAuthCode($access, 'forgot_password', $request->get('authCode')))
         {
-            $validator = Validator::make($request->all(), [
-                'access' => 'email'
-            ]);
-        }
-        else
-        {
-            $validator = Validator::make($request->all(), [
-                'access' => 'digits:11'
-            ]);
-        }
-
-        if ($validator->fails())
-        {
-            return $this->resErrParams($validator->errors());
-        }
-
-        if (!$this->authCodeCanUse($request->get('authCode'), $access))
-        {
-            return $this->resErrBad($isEmail ? '邮箱验证码过期，请重新获取' : '短信认证码过期，请重新获取');
+            return $this->resErrBad('短信验证码过期，请重新获取');
         }
 
         $time = time();
@@ -452,30 +280,6 @@ class DoorController extends Controller
     private function accessIsNew($method, $access)
     {
         return User::where($method, $access)->count() === 0;
-    }
-
-    private function authCodeCanUse($code, $access)
-    {
-        $confirm = Confirm::whereRaw('code = ? and access = ? and created_at > ?', [$code, $access, Carbon::now()->addDay(-1)])->first();
-        if (is_null($confirm)) {
-            return false;
-        }
-
-        $confirm->delete();
-        return true;
-    }
-
-    private function makeConfirm($access)
-    {
-        $token = Confirm::whereRaw('access = ? and created_at > ?', [$access, Carbon::now()->addMinutes(-5)])->first();
-        if ( ! is_null($token)) {
-            return $token->code;
-        }
-
-        $token = rand(100000, 999999);
-        Confirm::create(['code' => $token, 'access' => $access]);
-
-        return $token;
     }
 
     private function createUserZone($name)
@@ -497,17 +301,32 @@ class DoorController extends Controller
         }
     }
 
-    private function convertSlug($id, $convert = true)
-    {
-        return $convert
-            ? base_convert($id * 1000 + rand(0, 999), 10, 36)
-            : intval(base_convert($id, 36, 10) / 1000);
-    }
-
     private function responseUser($user)
     {
         return JWTAuth::fromUser($user, [
             'remember' => $user->remember_token
         ]);
+    }
+
+    private function createMessageAuthCode($phone, $type)
+    {
+        $key = 'phone_message_' . $type . '_' . $phone;
+        $value = rand(100000, 999999);
+
+        Redis::SET($key, $value);
+        Redis::EXPIRE($key, 300);
+
+        return $value;
+    }
+
+    private function checkMessageAuthCode($phone, $type, $token)
+    {
+        $cache = Redis::GET('phone_message_' . $type . '_' . $phone);
+        if (is_null($cache))
+        {
+            return false;
+        }
+
+        return intval($cache) === intval($token);
     }
 }
