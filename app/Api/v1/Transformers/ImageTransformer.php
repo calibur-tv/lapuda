@@ -61,6 +61,34 @@ class ImageTransformer extends Transformer
         });
     }
 
+    public function cartoon($list)
+    {
+        return $this->collection($list, function ($image)
+        {
+            return [
+                'id' => (int)$image['id'],
+                'width' => (int)$image['width'],
+                'height' => (int)$image['height'],
+                'url' => $image['url'],
+                'name' => $image['name'],
+                'album_id' => (int)$image['album_id'],
+                'liked' => (boolean)$image['liked'],
+                'like_count' => (int)$image['like_count'],
+                'image_count' => (int)$image['image_count'],
+                'user' => $image['user'] ? $this->transformer($image['user'], function ($user)
+                {
+                    return [
+                        'id' => (int)$user['id'],
+                        'zone' => $user['zone'],
+                        'nickname' => $user['nickname'],
+                        'avatar' => $user['avatar']
+                    ];
+                }) : null,
+                'created_at' => $image['created_at']
+            ];
+        });
+    }
+
     public function roleShow($list)
     {
         return $this->collection($list, function ($image)

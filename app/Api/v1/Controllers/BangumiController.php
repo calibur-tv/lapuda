@@ -392,23 +392,23 @@ class BangumiController extends Controller
 
     public function cartoon(Request $request, $id)
     {
-        $take = intval($request->get('take')) ?: 12;
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = 12;
+        $page = intval($request->get('page')) ?: 0;
 
         $imageRepository = new ImageRepository();
 
-        $ids = Bangumi::where('id', $id)->pluck('cartoon')->first();
+        $idsStr = Bangumi::where('id', $id)->pluck('cartoon')->first();
 
-        if ($ids === '')
+        if ($idsStr === '')
         {
             return $this->resOK([
                 'list' => [],
-                'type' => []
+                'noMore' => true
             ]);
         }
 
-        $ids = explode(',', $ids);
-        $ids = array_slice(array_diff($ids, $seen), 0, $take);
+        $allIds = explode(',', $idsStr);
+        $ids = array_slice($allIds, $page * $take, $take);
 
         $transformer = new ImageTransformer();
 
@@ -429,8 +429,8 @@ class BangumiController extends Controller
         }
 
         return $this->resOK([
-            'list' => $transformer->waterfall($list),
-            'type' => []
+            'list' => $transformer->cartoon($list),
+            'noMore' => count($allIds) - ($take * ($page + 1)) <= 0
         ]);
     }
 }
