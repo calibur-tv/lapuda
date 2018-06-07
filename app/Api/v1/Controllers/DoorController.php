@@ -256,7 +256,6 @@ class DoorController extends Controller
             return $this->resErrParams($validator->errors());
         }
 
-        $method = $request->get('method');
         $access = $request->get('access');
 
         if (!$this->checkMessageAuthCode($access, 'forgot_password', $request->get('authCode')))
@@ -267,7 +266,7 @@ class DoorController extends Controller
         $time = time();
         $remember_token = md5($time);
 
-        User::where($method, $access)
+        User::where('phone', $access)
             ->update([
                 'password' => bcrypt($request->get('secret')),
                 'password_change_at' => $time,
