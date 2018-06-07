@@ -53,6 +53,11 @@ class Captcha
 
     public function validate(array $args)
     {
+        if (!isset($args['geetest_challenge']) || !isset($args['geetest_validate']) || !isset($args['geetest_seccode']) || !isset($args['payload']))
+        {
+            return false;
+        }
+
         $challenge = $args['geetest_challenge'];
         $validate = $args['geetest_validate'];
         $payload = $args['payload'];
