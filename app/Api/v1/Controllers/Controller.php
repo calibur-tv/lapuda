@@ -106,6 +106,6 @@ class Controller extends BaseController
             'code' => 50301,
             'message' => config('error.50301'),
             'data' => $data
-        ], 400);
+        ], 503);
     }
 }
