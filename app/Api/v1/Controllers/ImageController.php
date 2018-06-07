@@ -294,35 +294,19 @@ class ImageController extends Controller
             return $this->resErrRole('不能为自己的图片点赞');
         }
 
-        $liked = ImageLike::whereRaw('user_id = ? and image_id = ?', [$userId, $imageId])->count();
-        $isCreator = (boolean)$image['creator'];
-        $userRepository = new UserRepository();
+        $imageLikeService = new ImageLikeService();
+        $liked = $imageLikeService->check($userId, $imageId);
 
         if ($liked)
         {
-            if ($isCreator)
-            {
-                $result = $userRepository->toggleCoin(true, $userId, $image['user_id'], 4, $imageId);
+            $imageLikeService->undo($liked, $userId, $imageId);
 
-                if (!$result)
-                {
-                    return $this->resErrRole('没有点赞记录');
-                }
-            }
-
-            ImageLike::whereRaw('user_id = ? and image_id = ?', [$userId, $imageId])->delete();
-            Image::where('id', $imageId)->increment('like_count', -1);
-
-            if (Redis::EXISTS('user_image_'.$imageId))
-            {
-                Redis::HINCRBYFLOAT('user_image_'.$imageId, 'like_count', -1);
-            }
-
-            return $this->resOK(false);
+            return $this->resCreated(false);
         }
 
-        if ($isCreator)
+        if ((boolean)$image['creator'])
         {
+            $userRepository = new UserRepository();
             $success = $userRepository->toggleCoin(false, $userId, $image['user_id'], 4, $imageId);
 
             if (!$success)
@@ -331,19 +315,7 @@ class ImageController extends Controller
             }
         }
 
-        $now = Carbon::now();
-        $likeId = ImageLike::insertGetId([
-            'user_id' => $userId,
-            'image_id' => $imageId,
-            'created_at' => $now,
-            'updated_at' => $now
-        ]);
-        Image::where('id', $imageId)->increment('like_count', 1);
-
-        if (Redis::EXISTS('user_image_'.$imageId))
-        {
-            Redis::HINCRBYFLOAT('user_image_'.$imageId, 'like_count', 1);
-        }
+        $likeId = $imageLikeService->do($userId, $imageId);
 
         $job = (new \App\Jobs\Notification\Image\Like($likeId));
         dispatch($job);
