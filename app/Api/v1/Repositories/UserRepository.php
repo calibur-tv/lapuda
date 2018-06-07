@@ -453,7 +453,6 @@ class UserRepository extends Repository
         $this->setDayStats('create_post_image', $yesterday, $postImageCount);
         // imageCount
         $imageCount = Image::where('image_count', 0)
-            ->where('album_id', 0)
             ->where('created_at', '<', $createdAt)
             ->count();
         $this->setDayStats('create_image', $yesterday, $imageCount);
