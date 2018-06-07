@@ -271,7 +271,7 @@ class CommentService extends Repository
         $ids = $this->RedisList($this->userCommentCacheKey($userId), function () use ($userId)
         {
             return DB::table($this->table)
-                ->whereRaw('user_id = ? and modal_id <> 0', [$userId])
+                ->whereRaw('user_id = ? and to_user_id <> ? and modal_id <> 0', [$userId, $userId])
                 ->where('state', 1)
                 ->orderBy('id', 'DESC')
                 ->pluck('id');
