@@ -4,6 +4,8 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Counter\VideoPlayCounter;
+use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
+use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\VideoTransformer;
 use App\Api\V1\Repositories\BangumiRepository;
 use Illuminate\Http\Request;
@@ -46,11 +48,15 @@ class VideoController extends Controller
         $season = json_decode($bangumi['season']);
         $list = $bangumiRepository->videos($bangumi['id'], $season);
 
+        $bangumiFollowService = new BangumiFollowService();
+        $bangumi['followed'] = (boolean)$bangumiFollowService->check($userId, $info['bangumi_id']);
+
         $videoTransformer = new VideoTransformer();
+        $bangumiTransformer = new BangumiTransformer();
 
         return $this->resOK([
             'info' => $videoTransformer->show($info),
-            'bangumi' => $bangumiRepository->panel($info['bangumi_id'], $userId),
+            'bangumi' => $bangumiTransformer->video($bangumi),
             'season' => $season,
             'list' => $list
         ]);
