@@ -23,10 +23,28 @@ use Overtrue\LaravelPinyin\Facades\Pinyin as Overtrue;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 /**
- * @Resource("认证相关接口")
+ * @Resource("用户认证相关接口")
  */
 class DoorController extends Controller
 {
+    /**
+     * 发送手机验证码
+     *
+     * 一个通用的接口，通过 `type` 和 `phone_number` 发送手机验证码.
+     * 目前支持 `type` 为：
+     * 1. `sign_up`，注册时调用
+     * 2. `forgot_password`，找回密码时使用
+     *
+     * @Post("/door/message")
+     * @Transaction({
+     *      @Request({"type": "上面的某个type", "phone_number": "只支持11位的手机号", "geetest": "Geetest认证对象"}),
+     *      @Response(201, body={"code": 0, "data": "短信已发送"}),
+     *      @Response(400, body={"code": 40001, "message": "未经过图形验证码认证"}),
+     *      @Response(401, body={"code": 40100, "message": "图形验证码认证失败"}),
+     *      @Response(400, body={"code": 40003, "message": "各种错误"}),
+     *      @Response(503, body={"code": 50310, "message": "短信服务暂不可用或请求过于频繁"})
+     * })
+     */
     public function sendMessage(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -39,7 +57,7 @@ class DoorController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErrParams($validator->errors());
+            return $this->resErrParams($validator);
         }
 
         $phone = $request->get('phone_number');
@@ -95,23 +113,35 @@ class DoorController extends Controller
         return $this->resCreated('短信已发送');
     }
 
+    /**
+     * 用户注册
+     *
+     * 目前仅支持使用手机号注册
+     *
+     * @Post("/door/register")
+     * @Transaction({
+     *      @Request({"access": "手机号", "secret": "6至16位的密码", "nickname": "昵称，只能包含汉字、数字和字母", "authCode": "6位数字的短信验证码"}),
+     *      @Response(201, body={"code": 0, "data": "JWT-Token"}),
+     *      @Response(400, body={"code": 40003, "message": "各种错误"})
+     * })
+     */
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'access' => 'required|digits:11',
             'secret' => 'required|min:6|max:16',
             'nickname' => 'required|min:1|max:14',
-            'authCode' => 'required|min:6|max:6'
+            'authCode' => 'required|digits:6'
         ]);
 
         if ($validator->fails())
         {
-            return $this->resErrParams($validator->errors());
+            return $this->resErrParams($validator);
         }
 
         if (!preg_match('/^([a-zA-Z]+|[0-9]+|[\x{4e00}-\x{9fa5}]+)$/u', $request->get('nickname')))
         {
-            return $this->resErrParams('昵称只能包含汉字、数字和字母');
+            return $this->resErrBad('昵称只能包含汉字、数字和字母');
         }
 
         $access = $request->get('access');
@@ -162,6 +192,20 @@ class DoorController extends Controller
         return $this->resCreated($this->responseUser($user));
     }
 
+    /**
+     * 用户登录
+     *
+     * 目前仅支持手机号和密码登录
+     *
+     * @Post("/door/login")
+     * @Transaction({
+     *      @Request({"access": "手机号", "secret": "密码", "geetest": "Geetest认证对象"}),
+     *      @Response(200, body={"code": 0, "data": "JWT-Token"}),
+     *      @Response(400, body={"code": 40001, "message": "未经过图形验证码认证"}),
+     *      @Response(401, body={"code": 40100, "message": "图形验证码认证失败"}),
+     *      @Response(400, body={"code": 40003, "message": "各种错误"})
+     * })
+     */
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -171,7 +215,7 @@ class DoorController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErrParams($validator->errors());
+            return $this->resErrParams($validator);
         }
 
         $data = [
@@ -199,7 +243,8 @@ class DoorController extends Controller
      *
      * @Post("/door/logout")
      *
-     * @Request(headers={"Authorization": "Bearer JWT-Token"})
+     * @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     * @Response(204)
      */
     public function logout()
     {
@@ -209,15 +254,14 @@ class DoorController extends Controller
     /**
      * 获取用户信息
      *
-     * 每次启动应用或登录/注册成功后调用
+     * 每次`启动应用`、`登录`、`注册`成功后调用
      *
      * @Post("/door/user")
      *
      * @Request(headers={"Authorization": "Bearer JWT-Token"})
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": "用户对象"}),
-     *      @Response(401, body={"code": 40102, "message": "登录超时，请重新登录", "data": ""}),
-     *      @Response(401, body={"code": 40103, "message": "登录凭证错误，请重新登录", "data": ""})
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户"})
      * })
      */
     public function refresh()
@@ -225,11 +269,7 @@ class DoorController extends Controller
         $user = $this->getAuthUser();
         if (is_null($user))
         {
-            return response([
-                'code' => 40103,
-                'message' => config('error.40103'),
-                'data' => ''
-            ], 401);
+            return $this->resErrAuth();
         }
 
         $user = $user->toArray();
@@ -248,12 +288,12 @@ class DoorController extends Controller
         $validator = Validator::make($request->all(), [
             'access' => 'required|digits:11',
             'secret' => 'required|min:6|max:16',
-            'authCode' => 'required|min:6|max:6'
+            'authCode' => 'required|digits:6'
         ]);
 
         if ($validator->fails())
         {
-            return $this->resErrParams($validator->errors());
+            return $this->resErrParams($validator);
         }
 
         $access = $request->get('access');
