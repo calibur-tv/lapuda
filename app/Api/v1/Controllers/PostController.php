@@ -52,7 +52,7 @@ class PostController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErrParams($validator->errors());
+            return $this->resErrParams($validator);
         }
 
         $bangumiId = $request->get('bangumiId');
@@ -220,7 +220,7 @@ class PostController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErrParams($validator->errors());
+            return $this->resErrParams($validator);
         }
 
         $repository = new PostRepository();

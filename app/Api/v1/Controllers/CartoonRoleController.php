@@ -222,7 +222,7 @@ class CartoonRoleController extends Controller
         $take = intval($request->get('take')) ?: 12;
         $size = intval($request->get('size')) ?: 0;
         $tags = $request->get('tags') ?: 0;
-        $creator = $request->get('creator');
+        $creator = intval($request->get('creator'));
         $sort = $request->get('sort') ?: 'new';
 
         $repository = new ImageRepository();

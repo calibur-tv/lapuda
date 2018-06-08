@@ -14,9 +14,8 @@ class Geetest
         if (is_null($geetest))
         {
             return response([
-                'code' => 40002,
-                'message' => config('error.40002'),
-                'data' => 'argument is null'
+                'code' => 40001,
+                'message' => config('error.40001')
             ], 400);
         }
 
@@ -28,9 +27,8 @@ class Geetest
         }
 
         return response([
-            'code' => 40002,
-            'message' => config('error.40002'),
-            'data' => 'validate failed'
-        ], 400);
+            'code' => 40100,
+            'message' => config('error.40100')
+        ], 401);
     }
 }

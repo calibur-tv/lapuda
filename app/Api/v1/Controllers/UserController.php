@@ -93,7 +93,7 @@ class UserController extends Controller
 
         if (!in_array($key, ['avatar', 'banner']))
         {
-            return $this->resErrParams();
+            return $this->resErrBad();
         }
 
         $val = $request->get('url');
@@ -164,7 +164,7 @@ class UserController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErrParams($validator->errors());
+            return $this->resErrParams($validator);
         }
 
         $userId = $this->getAuthUserId();
@@ -370,7 +370,7 @@ class UserController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErrParams($validator->errors());
+            return $this->resErrParams($validator);
         }
 
         $userId = $this->getAuthUserId();

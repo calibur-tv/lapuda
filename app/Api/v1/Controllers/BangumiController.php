@@ -48,7 +48,7 @@ class BangumiController extends Controller
         $take = intval($request->get('take')) ?: 3;
         if (!$year)
         {
-            return $this->resErrParams();
+            return $this->resErrBad();
         }
 
         $repository = new BangumiRepository();
@@ -145,7 +145,7 @@ class BangumiController extends Controller
 
         if (is_null($tags))
         {
-            return $this->resErrParams();
+            return $this->resErrBad();
         }
 
         // 格式化为数组 -> 只保留数字 -> 去重 -> 保留value
@@ -155,7 +155,7 @@ class BangumiController extends Controller
 
         if (empty($tags))
         {
-            return $this->resErrParams();
+            return $this->resErrBad();
         }
 
         sort($tags);

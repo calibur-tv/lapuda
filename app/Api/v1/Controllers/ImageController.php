@@ -102,7 +102,7 @@ class ImageController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErrParams($validator->errors());
+            return $this->resErrParams($validator);
         }
 
         $userId = $this->getAuthUserId();
@@ -203,7 +203,7 @@ class ImageController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErrParams($validator->errors());
+            return $this->resErrParams($validator);
         }
 
         $userId = $this->getAuthUserId();
@@ -337,7 +337,7 @@ class ImageController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErrParams($validator->errors());
+            return $this->resErrParams($validator);
         }
 
         $isCartoon = $request->get('isCartoon');
@@ -345,7 +345,7 @@ class ImageController extends Controller
 
         if ($isCartoon && !$bangumiId)
         {
-            return $this->resErrParams('漫画必须选择番剧');
+            return $this->resErrBad('漫画必须选择番剧');
         }
 
         $name = $request->get('name') ? $request->get('name') : date('y-m-d H:i:s',time());
@@ -581,7 +581,7 @@ class ImageController extends Controller
 
         if (!$result)
         {
-            return $this->resErrParams();
+            return $this->resErrBad();
         }
 
         Image::where('id', $id)
@@ -608,7 +608,7 @@ class ImageController extends Controller
 
         if (!$result)
         {
-            return $this->resErrParams('至少要保留一张图');
+            return $this->resErrBad('至少要保留一张图');
         }
 
         Image::where('id', $id)
@@ -643,7 +643,7 @@ class ImageController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErrParams($validator->errors());
+            return $this->resErrParams($validator);
         }
 
         $imageViewCounter = new ImageViewCounter();

@@ -77,7 +77,7 @@ class VideoController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErrParams($validator->errors());
+            return $this->resErrParams($validator);
         }
 
         $videoPlayCounter = new VideoPlayCounter();

@@ -64,30 +64,35 @@ class Controller extends BaseController
         ], 201);
     }
 
-    protected function resErrBad($message = null, $data = '')
+    protected function resErrBad($message = null)
     {
         return response([
-            'code' => 40004,
-            'message' => $message ?: config('error.40004'),
-            'data' => $data
+            'code' => 40003,
+            'message' => $message ?: config('error.40003')
         ], 400);
+    }
+
+    protected function resErrAuth($message = null)
+    {
+        return response([
+            'code' => 40104,
+            'message' => $message ?: config('error.40104')
+        ], 401);
     }
 
     protected function resErrRole($message = null)
     {
         return response([
             'code' => 40301,
-            'message' => $message ?: config('error.40301'),
-            'data' => ''
+            'message' => $message ?: config('error.40301')
         ], 403);
     }
 
-    protected function resErrParams($message = null)
+    protected function resErrParams($validator)
     {
         return response([
             'code' => 40003,
-            'message' => $message ?: config('error.40003'),
-            'data' => ''
+            'message' => $validator->errors()->all()[0]
         ], 400);
     }
 
@@ -95,17 +100,15 @@ class Controller extends BaseController
     {
         return response([
             'code' => 40401,
-            'message' => $message ?: config('error.40401'),
-            'data' => ''
+            'message' => $message ?: config('error.40401')
         ], 404);
     }
 
-    protected function resErrServiceUnavailable($data = '')
+    protected function resErrServiceUnavailable($message = null)
     {
         return response([
             'code' => 50301,
-            'message' => config('error.50301'),
-            'data' => $data
+            'message' => $message ?: config('error.50301')
         ], 503);
     }
 }

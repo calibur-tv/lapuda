@@ -23,13 +23,13 @@ class CommentController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErrParams('没有页码');
+            return $this->resErrBad('没有页码');
         }
 
         $commentService = $this->getServiceByType($type);
         if (is_null($commentService))
         {
-            return $this->resErrParams('错误的类型');
+            return $this->resErrBad('错误的类型');
         }
 
         $comment = $commentService->getMainCommentItem($id);
@@ -53,13 +53,13 @@ class CommentController extends Controller
 
         if ($validator->fails())
         {
-            return $this->resErrParams($validator->errors());
+            return $this->resErrParams($validator);
         }
 
         $commentService = $this->getServiceByType($type);
         if (is_null($commentService))
         {
-            return $this->resErrParams('错误的类型');
+            return $this->resErrBad('错误的类型');
         }
 
         $comment = $commentService->getMainCommentItem($id);
@@ -106,7 +106,7 @@ class CommentController extends Controller
         $commentService = $this->getServiceByType($type);
         if (is_null($commentService))
         {
-            return $this->resErrParams('错误的类型');
+            return $this->resErrBad('错误的类型');
         }
 
         $result = $commentService->deleteSubComment($id, $this->getAuthUserId());
@@ -132,7 +132,7 @@ class CommentController extends Controller
         }
         else
         {
-            return $this->resErrParams('错误的类型');
+            return $this->resErrBad('错误的类型');
         }
 
         $result = $commentLikeService->toggle($this->getAuthUserId(), $id);
