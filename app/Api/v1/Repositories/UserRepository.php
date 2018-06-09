@@ -315,6 +315,10 @@ class UserRepository extends Repository
             {
                 $postId = $ids[1];
                 $post = $postRepository->item($postId);
+                if (is_null($post))
+                {
+                    continue;
+                }
                 $about = [
                     'resource' => $item['about_id'],
                     'title' => $post['title'],
@@ -328,6 +332,10 @@ class UserRepository extends Repository
                 $replyId = $ids[1];
                 $postId = $ids[2];
                 $post = $postRepository->item($postId);
+                if (is_null($post))
+                {
+                    continue;
+                }
                 $about = [
                     'resource' => $item['about_id'],
                     'title' => $post['title'],
@@ -338,6 +346,10 @@ class UserRepository extends Repository
             else if ($type === 3)
             {
                 $post = $postRepository->item($item['about_id']);
+                if (is_null($post))
+                {
+                    continue;
+                }
                 $about = [
                     'resource' => $item['about_id'],
                     'title' => $post['title'],
@@ -348,6 +360,10 @@ class UserRepository extends Repository
             else if ($type === 4)
             {
                 $post = $postRepository->item($ids[1]);
+                if (is_null($post))
+                {
+                    continue;
+                }
                 $about = [
                     'resource' => $item['about_id'],
                     'title' => $post['title'],
