@@ -80,15 +80,6 @@ class BangumiTransformer extends Transformer
                 'count_score' => (float)$bangumi['count_score'],
                 'count_like' => (int)$bangumi['count_like'],
                 'alias' => $bangumi['alias'] === 'null' ? '' : json_decode($bangumi['alias'])->search,
-                'season' => $bangumi['season'] === 'null' ? null : $this->transformer(json_decode($bangumi['season'], true), function ($season)
-                {
-                    return [
-                        're' => isset($season['re']) ?(boolean)$season['re'] : false,
-                        'name' => $season['name'],
-                        'part' => $season['part'],
-                        'time' => $season['time']
-                    ];
-                }),
                 'followed' => $bangumi['followed'],
                 'tags' => $this->collection($bangumi['tags'], function ($tag)
                 {

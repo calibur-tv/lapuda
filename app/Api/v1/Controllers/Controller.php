@@ -111,4 +111,41 @@ class Controller extends BaseController
             'message' => $message ?: config('error.50301')
         ], 503);
     }
+
+    protected function filterIdsByMaxId($ids, $maxId, $take)
+    {
+        $offset = $maxId ? array_search($maxId, $ids) + 1 : 0;
+        $total = count($ids);
+
+        return [
+            'ids' => array_slice($ids, $offset, $take),
+            'total' => $total,
+            'noMore' => $total - ($offset + $take) <= 0
+        ];
+    }
+
+    protected function filterIdsBySeenIds($ids, $seenIds, $take)
+    {
+        $result = array_slice(array_diff($ids, $seenIds), 0, $take);
+        $total = count($ids);
+
+        return [
+            'ids' => $result,
+            'total' => $total,
+            'noMore' => count($result) < $take
+        ];
+    }
+
+    protected function filterIdsByPage($ids, $page, $take)
+    {
+        $ids = gettype($ids) === 'string' ? explode(',', $ids) : $ids;
+        $result = array_slice($ids, $page * $take, $take);
+        $total = count($ids);
+
+        return [
+            'ids' => $result,
+            'total' => $total,
+            'noMore' => $total - ($page + 1) * $take <= 0
+        ];
+    }
 }

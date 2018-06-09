@@ -116,6 +116,34 @@ class Repository
         return $cache;
     }
 
+    public function RedisItem($key, $func, $exp = 'd')
+    {
+        $cache = Redis::GET($key);
+        if (!is_null($cache))
+        {
+            return $cache;
+        }
+
+        $cache = $func();
+        if (is_null($cache))
+        {
+            return null;
+        }
+
+        if (Redis::SETNX('lock_'.$key, 1))
+        {
+            Redis::pipeline(function ($pipe) use ($key, $cache, $exp)
+            {
+                $pipe->EXPIRE('lock_'.$key, 10);
+                $pipe->SET($key, $cache);
+                $pipe->EXPIREAT($key, $this->expire($exp));
+                $pipe->DEL('lock_'.$key);
+            });
+        }
+
+        return $cache;
+    }
+
     public function Cache($key, $func, $exp = 'd')
     {
         return Cache::remember($key, $this->expiredAt($exp), function () use ($func)
@@ -151,8 +179,49 @@ class Repository
         Redis::ZREM($key, $value);
     }
 
+    public function filterIdsByMaxId($ids, $maxId, $take)
+    {
+        $offset = $maxId ? array_search($maxId, $ids) + 1 : 0;
+        $total = count($ids);
+
+        return [
+            'ids' => array_slice($ids, $offset, $take),
+            'total' => $total,
+            'noMore' => $total - ($offset + $take) <= 0
+        ];
+    }
+
+    public function filterIdsBySeenIds($ids, $seenIds, $take)
+    {
+        $result = array_slice(array_diff($ids, $seenIds), 0, $take);
+        $total = count($ids);
+
+        return [
+            'ids' => $result,
+            'total' => $total,
+            'noMore' => count($result) < $take
+        ];
+    }
+
+    public function filterIdsByPage($ids, $page, $take)
+    {
+        $ids = gettype($ids) === 'string' ? explode(',', $ids) : $ids;
+        $result = array_slice($ids, $page * $take, $take);
+        $total = count($ids);
+
+        return [
+            'ids' => $result,
+            'total' => $total,
+            'noMore' => $total - ($page + 1) * $take <= 0
+        ];
+    }
+
     private function expiredAt($type = 'd')
     {
+        if (gettype($type) === 'integer')
+        {
+            return $type;
+        }
         if ($type === 'd')
         {
             return 720;
@@ -171,6 +240,10 @@ class Repository
 
     private function expire($type = 'd')
     {
+        if (gettype($type) === 'integer')
+        {
+            return $type;
+        }
         /**
          * d：缓存一天，第二天凌晨的 1 ~ 3 点删除
          * h：缓存一小时

@@ -13,6 +13,19 @@ use Illuminate\Http\Request;
  */
 class TrendingController extends Controller
 {
+    /**
+     * 动漫角色排行榜
+     *
+     * @Get("/trending/cartoon_role")
+     *
+     * @Parameters({
+     *      @Parameter("seenIds", description="看过的帖子的`ids`, 用','号分割的字符串", type="string", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, {"data": "角色列表"}})
+     * })
+     */
     public function cartoonRole(Request $request)
     {
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];

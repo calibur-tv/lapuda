@@ -23,16 +23,13 @@ use Illuminate\Support\Facades\Redis;
 class CartoonRoleController extends Controller
 {
     /**
-     * 获取番剧角色列表
+     * 番剧角色列表
      *
-     * @Get("/bangumi/${bangumiId}/roles")
-     *
-     * @Parameters({
-     * })
+     * @Get("/bangumi/`bangumiId`/roles")
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": "角色列表"}),
-     *      @Response(404, body={"code": 40003, "message": "不存在的番剧", "data": ""})
+     *      @Response(404, body={"code": 40401, "message": "不存在的番剧"})
      * })
      */
     public function listOfBangumi(Request $request, $bangumiId)
@@ -74,6 +71,19 @@ class CartoonRoleController extends Controller
         return $this->resOK($transformer->bangumi($roles));
     }
 
+    /**
+     * 给角色应援
+     *
+     * @Post("/bangumi/`bangumiId`/role/`roleId`/star")
+     *
+     * @Request(headers={"Authorization": "Bearer JWT-Token"})
+     *
+     * @Transaction({
+     *      @Response(204),
+     *      @Response(404, body={"code": 40401, "message": "不存在的角色"}),
+     *      @Response(403, body={"code": 40301, "message": "没有足够的金币"})
+     * })
+     */
     public function star(Request $request, $bangumiId, $roleId)
     {
         if (!CartoonRole::where('id', $roleId)->count())
@@ -147,6 +157,8 @@ class CartoonRoleController extends Controller
         return $this->resNoContent();
     }
 
+    // TODO：vote service
+    // TODO：API doc
     public function fans(Request $request, $bangumiId, $roleId)
     {
         if (!CartoonRole::where('id', $roleId)->count())
@@ -180,6 +192,16 @@ class CartoonRoleController extends Controller
         return $this->resOK($transformer->fans($users));
     }
 
+    /**
+     * 角色详情
+     *
+     * @Get("/cartoon_role/`roleId`/show")
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": {"bangumi": "番剧简介", "data": "角色信息"}}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的角色"}),
+     * })
+     */
     public function show($id)
     {
         $cartoonRoleRepository = new CartoonRoleRepository();
@@ -211,6 +233,8 @@ class CartoonRoleController extends Controller
         ]));
     }
 
+    // TODO：trending service
+    // TODO：API doc
     public function images(Request $request, $id)
     {
         if (!CartoonRole::where('id', $id)->count())

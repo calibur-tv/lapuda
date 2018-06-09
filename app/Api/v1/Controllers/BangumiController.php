@@ -28,24 +28,24 @@ use Illuminate\Support\Facades\Cache;
 class BangumiController extends Controller
 {
     /**
-     * 获取番剧时间轴
+     * 番剧时间轴
      *
      * @Get("/bangumi/timeline")
      *
      * @Parameters({
-     *      @Parameter("year", description="从哪一年开始获取", required=true),
-     *      @Parameter("take", description="一次获取几年的内容", default=3)
+     *      @Parameter("year", description="从哪一年开始获取", type="integer", required=true)
      * })
      *
      * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"list": "番剧列表", "min": "可获取到数据的最小年份"}}),
-     *      @Response(400, body={"code": 40003, "message": "没有传年份", "data": ""})
+     *      @Response(200, body={"code": 0, "data": {"list": "番剧列表", "noMore": "没有更多了"}}),
+     *      @Response(400, body={"code": 40003, "message": "参数错误"})
      * })
      */
     public function timeline(Request $request)
     {
         $year = intval($request->get('year'));
-        $take = intval($request->get('take')) ?: 3;
+        $take = 1;
+
         if (!$year)
         {
             return $this->resErrBad();
@@ -53,6 +53,7 @@ class BangumiController extends Controller
 
         $repository = new BangumiRepository();
         $list = [];
+        $minYear = intval($repository->timelineMinYear());
 
         for ($i = 0; $i < $take; $i++) {
             $list = array_merge($list, $repository->timeline($year - $i));
@@ -60,12 +61,12 @@ class BangumiController extends Controller
 
         return $this->resOK([
             'list' => $list,
-            'min' => intval($repository->timelineMinYear())
+            'noMore' => $year <= $minYear
         ]);
     }
 
     /**
-     * 获取新番列表
+     * 新番列表（周）
      *
      * @Get("/bangumi/released")
      *
@@ -108,7 +109,7 @@ class BangumiController extends Controller
     }
 
     /**
-     * 获取所有的番剧标签
+     * 所有的番剧标签
      *
      * @Get("/bangumi/tags")
      *
@@ -124,24 +125,24 @@ class BangumiController extends Controller
     }
 
     /**
-     * 根据参数获取番剧列表
+     * 根据标签获取番剧列表
      *
      * @Get("/bangumi/category")
      *
      * @Parameters({
-     *      @Parameter("id", description="选中的标签id，用 - 链接的字符串", required=true),
-     *      @Parameter("page", description="页码", required=true, default=1)
+     *      @Parameter("id", description="选中的标签id，`用 - 链接的字符串`", type="string", required=true),
+     *      @Parameter("page", description="页码", type="integer", default=0, required=true)
      * })
      *
      * @Transaction({
-     *      @Response(200, body={"code": 0, "data": "番剧列表"}),
-     *      @Response(400, body={"code": 40003, "message": "请求参数错误", "data": ""})
+     *      @Response(200, body={"code": 0, "data": {"list": "番剧列表", "total": "该标签下番剧的总数", "noMore": "是否没有更多了"}}),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误"})
      * })
      */
     public function category(Request $request)
     {
         $tags = $request->get('id');
-        $page = $request->get('page') ?: 1;
+        $page = $request->get('page') ?: 0;
 
         if (is_null($tags))
         {
@@ -165,15 +166,13 @@ class BangumiController extends Controller
     }
 
     /**
-     * 获取番剧详情
+     * 番剧详情
      *
-     * @Get("/bangumi/${bangumiId}/show")
-     *
-     * @Request(headers={"Authorization": "Bearer JWT-Token"})
+     * @Get("/bangumi/`bangumiId`/show")
      *
      * @Transaction({
-     *      @Response(200, body={"code": 0, "data": "番剧对象"}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的番剧", "data": ""})
+     *      @Response(200, body={"code": 0, "data": "番剧信息"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的番剧"})
      * })
      */
     public function show($id)
@@ -198,13 +197,13 @@ class BangumiController extends Controller
     }
 
     /**
-     * 获取番剧视频
+     * 番剧视频
      *
-     * @Get("/bangumi/${bangumiId}/videos")
+     * @Get("/bangumi/`bangumiId`/videos")
      *
      * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"videos": "视频列表", "repeat": "视频集数是否连续", "total": "视频总数"}}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的番剧", "data": ""})
+     *      @Response(200, body={"code": 0, "data": {"videos": "视频列表", "has_season": "是否有多个季度", "total": "视频总数"}}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的番剧"})
      * })
      */
     public function videos($id)
@@ -223,13 +222,13 @@ class BangumiController extends Controller
     /**
      * 关注或取消关注番剧
      *
-     * @Post("/bangumi/${bangumiId}/follow")
+     * @Post("/bangumi/`bangumiId`/toggleFollow")
      *
      * @Request(headers={"Authorization": "Bearer JWT-Token"})
      *
      * @Transaction({
      *      @Response(201, body={"code": 0, "data": "是否已关注"}),
-     *      @Response(401, body={"code": 40104, "message": "用户认证失败", "data": ""})
+     *      @Response(401, body={"code": 40104, "message": "用户认证失败"})
      * })
      */
     public function follow($id)
@@ -241,13 +240,13 @@ class BangumiController extends Controller
     }
 
     /**
-     * 获取关注番剧的用户列表
+     * 关注番剧的用户列表
      *
-     * @Post("/bangumi/${bangumiId}/followers")
+     * @Get("/bangumi/`bangumiId`/followers")
      *
      * @Transaction({
      *      @Request({"seenIds": "看过的userIds，用','隔开的字符串", "take": "获取数量"}),
-     *      @Response(200, body={"code": 0, "data": "用户列表"})
+     *      @Response(200, body={"code": 0, "data": {"list": "用户列表", "noMore": "没有更多"}})
      * })
      */
     public function followers(Request $request, $bangumiId)
@@ -258,39 +257,47 @@ class BangumiController extends Controller
         $bangumiFollowService = new BangumiFollowService();
         $users = $bangumiFollowService->users($bangumiId, $page, $take);
 
-        return $this->resOK($users);
+        return $this->resOK([
+            'list' => $users,
+            'noMore' => $bangumiFollowService->total($bangumiId) - (($page + 1) * $take) <= 0
+        ]);
     }
 
     /**
      * 番剧的帖子列表
      *
-     * @Post("/bangumi/${bangumiId}/posts")
+     * @Get("/bangumi/`bangumiId`/posts/news")
+     *
+     * @Parameters({
+     *      @Parameter("maxId", description="看过的帖子里，最大的一个id", type="integer", required=true)
+     * })
      *
      * @Transaction({
-     *      @Request({"seenIds": "看过的userIds，用','隔开的字符串", "take": "获取数量"}, headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(200, body={"code": 0, "data": {"list": "番剧列表", "total": "总数"}})
+     *      @Response(200, body={"code": 0, "data": {"list": "番剧列表", "total": "总数", "noMore": "没有更多"}})
      * })
      */
-    public function posts(Request $request, $id)
+    public function newsPosts(Request $request, $id)
     {
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = intval($request->get('take')) ?: 10;
-        $type = $request->get('type') ?: 'new';
+        $maxId = intval($request->get('maxId')) ?: 0;
+        $take = 10;
 
         $bangumiRepository = new BangumiRepository();
-        $ids = $bangumiRepository->getPostIds($id, $type);
+        $ids = $bangumiRepository->getPostIds($id, 'new');
 
         if (empty($ids))
         {
             return $this->resOK([
                 'list' => [],
-                'total' => 0
+                'total' => 0,
+                'noMore' => true
             ]);
         }
 
+        $idsObject = $this->filterIdsByMaxId($ids, $maxId, $take);
+
         $userId = $this->getAuthUserId();
         $postRepository = new PostRepository();
-        $list = $postRepository->list(array_slice(array_diff($ids, $seen), 0, $take));
+        $list = $postRepository->list($idsObject['ids']);
 
         $postCommentService = new PostCommentService();
         $postLikeService = new PostLikeService();
@@ -304,11 +311,14 @@ class BangumiController extends Controller
         {
             $id = $item['id'];
             $authorId = $item['user_id'];
-            $list[$i]['liked'] = $postLikeService->check($userId, $id, $authorId);
+//            $list[$i]['liked'] = $postLikeService->check($userId, $id, $authorId);
+            $list[$i]['liked'] = false;
             $list[$i]['like_count'] = $postLikeService->total($id);
-            $list[$i]['marked'] = $postMarkService->check($userId, $id, $authorId);
+//            $list[$i]['marked'] = $postMarkService->check($userId, $id, $authorId);
+            $list[$i]['marked'] = false;
             $list[$i]['mark_count'] = $postMarkService->total($id);
-            $list[$i]['commented'] = $postCommentService->check($userId, $id);
+//            $list[$i]['commented'] = $postCommentService->check($userId, $id);
+            $list[$i]['commented'] = false;
             $list[$i]['comment_count'] = $postReplyCounter->get($id);
             $list[$i]['view_count'] = $postViewCounter->get($id);
             $list[$i]['user'] = $userRepository->item($authorId);
@@ -318,10 +328,13 @@ class BangumiController extends Controller
 
         return $this->resOK([
             'list' => $transformer->bangumi($list),
-            'total' => count($ids)
+            'total' => $idsObject['total'],
+            'noMore' => $idsObject['noMore']
         ]);
     }
 
+    // TODO：trending service
+    // TODO：api docs
     public function images(Request $request, $id)
     {
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
@@ -390,6 +403,19 @@ class BangumiController extends Controller
         ]);
     }
 
+    /**
+     * 番剧的漫画列表
+     *
+     * @Get("/bangumi/`bangumiId`/cartoon")
+     *
+     * @Parameters({
+     *      @Parameter("page", description="页码", type="integer", default=0, required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": {"list": "漫画列表", "total": "总数", "noMore": "没有更多"}})
+     * })
+     */
     public function cartoon(Request $request, $id)
     {
         $take = 12;
@@ -407,13 +433,12 @@ class BangumiController extends Controller
             ]);
         }
 
-        $allIds = explode(',', $idsStr);
-        $ids = array_slice($allIds, $page * $take, $take);
+        $idsObj = $this->filterIdsByPage($idsStr, $page, $take);
 
         $transformer = new ImageTransformer();
 
         $visitorId = $this->getAuthUserId();
-        $list = $imageRepository->list($ids);
+        $list = $imageRepository->list($idsObj['ids']);
         $imageLikeService = new ImageLikeService();
 
         foreach ($list as $i => $item)
@@ -431,7 +456,8 @@ class BangumiController extends Controller
 
         return $this->resOK([
             'list' => $transformer->cartoon($list),
-            'noMore' => count($allIds) - ($take * ($page + 1)) <= 0
+            'total' => $idsObj['total'],
+            'noMore' => $idsObj['noMore']
         ]);
     }
 }

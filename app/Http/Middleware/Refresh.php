@@ -26,16 +26,14 @@ class Refresh extends \Tymon\JWTAuth\Middleware\RefreshToken
         {
             return response([
                 'code' => 40102,
-                'message' => config('error.40102'),
-                'data' => ''
+                'message' => config('error.40102')
             ], 401);
         }
         catch (JWTException $e)
         {
             return response([
                 'code' => 40103,
-                'message' => config('error.40103'),
-                'data' => ''
+                'message' => config('error.40103')
             ], 401);
         }
 

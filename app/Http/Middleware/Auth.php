@@ -20,9 +20,8 @@ class Auth extends GetUserFromToken
         if (! $token = $this->auth->setRequest($request)->getToken())
         {
             return response([
-                'code' => 40105,
-                'message' => config('error.40105'),
-                'data' => ''
+                'code' => 40104,
+                'message' => config('error.40105')
             ], 401);
         }
 
@@ -33,17 +32,15 @@ class Auth extends GetUserFromToken
         catch (TokenExpiredException $e)
         {
             return response([
-                'code' => 40102,
-                'message' => config('error.40102'),
-                'data' => ''
+                'code' => 40104,
+                'message' => config('error.40102')
             ], 401);
         }
         catch (JWTException $e)
         {
             return response([
-                'code' => 40103,
-                'message' => config('error.40103'),
-                'data' => ''
+                'code' => 40104,
+                'message' => config('error.40103')
             ], 401);
         }
 
@@ -51,17 +48,15 @@ class Auth extends GetUserFromToken
         {
             return response([
                 'code' => 40104,
-                'message' => config('error.40104'),
-                'data' => ''
+                'message' => config('error.40104')
             ], 401);
         }
 
         if ($this->auth->getPayload($token)['remember'] !== $user->remember_token)
         {
             return response([
-                'code' => 40106,
-                'message' => config('error.40106'),
-                'data' => ''
+                'code' => 40104,
+                'message' => config('error.40106')
             ], 401);
         }
 

@@ -49,10 +49,10 @@ class ImageController extends Controller
     /**
      * 获取 Geetest 验证码
      *
-     * @Post("/image/captcha")
+     * @Get("/image/captcha")
      *
      * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"id": "Geetest.gt", "secret": "Geetest.challenge", "access": "认证密匙"}})
+     *      @Response(200, body={"code": 0, "data": {"success": "数字0或1", "gt": "Geetest.gt", "challenge": "Geetest.challenge", "payload": "字符串荷载"}})
      * })
      */
     public function captcha()
@@ -65,13 +65,13 @@ class ImageController extends Controller
     /**
      * 获取图片上传token
      *
-     * @Post("/image/uptoken")
+     * @Get("/image/uptoken")
      *
      * @Request(headers={"Authorization": "Bearer JWT-Token"})
      *
      * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"upToken": "上传图片的token", "expiredAt": "token过期时间戳，单位为s"}}),
-     *      @Response(401, body={"code": 40104, "message": "未登录的用户", "data": ""})
+     *      @Response(200, body={"code": 0, "data": {"upToken": "上传图片的token", "expiredAt": "token过期时的时间戳，单位为s"}}),
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户"})
      * })
      */
     public function uptoken()
@@ -81,6 +81,15 @@ class ImageController extends Controller
         return $this->resOK($repository->uptoken());
     }
 
+    /**
+     * 上传相册图片时，可选的 tag s和 size 列表
+     *
+     * @Get("/image/uploadType")
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": {"size": "可选的图片尺寸分类", "tags": "可选的图片标签分类"}})
+     * })
+     */
     public function uploadType()
     {
         $repository = new ImageRepository();
@@ -88,6 +97,34 @@ class ImageController extends Controller
         return $this->resOK($repository->uploadImageTypes());
     }
 
+    /**
+     * 上传相册图片
+     *
+     * > 图片对象示例：
+     * 1. `key` 七牛传图后得到的 key，不包含图片地址的 host，如一张图片 image.calibur.tv/user/1/avatar.png，七牛返回的 key 是：user/1/avatar.png，将这个 key 传到后端
+     * 2. `width` 图片的宽度，七牛上传图片后得到
+     * 3. `height` 图片的高度，七牛上传图片后得到
+     * 4. `size` 图片的尺寸，七牛上传图片后得到
+     * 5. `type` 图片的类型，七牛上传图片后得到
+     *
+     * @Post("/image/upload")
+     *
+     * @Parameters({
+     *      @Parameter("bangumiId", description="所选的番剧 id（bangumi.id）", type="integer", required=true),
+     *      @Parameter("creator", description="是否是原创", type="boolean", required=true),
+     *      @Parameter("images", description="图片对象列表", type="array", required=true),
+     *      @Parameter("size", description="所选的尺寸 id（size.id）", type="integer", required=true),
+     *      @Parameter("tags", description="所选的标签 id（tag.id）", type="integer", required=true),
+     *      @Parameter("roleId", description="所选的角色 id（role.id）", type="integer", required=true),
+     *      @Parameter("albumId", description="所选的相册 id（album.id）", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(201, body={"code": 0, "data": "图片对象列表"}),
+     *      @Response(400, body={"code": 40003, "message": "参数错误"})
+     * })
+     */
     public function upload(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -108,6 +145,11 @@ class ImageController extends Controller
         $userId = $this->getAuthUserId();
         $albumId = $request->get('albumId');
         $images = $request->get('images');
+        $bangumiId = $request->get('bangumiId');
+        $roleId = $request->get('roleId');
+        $sizeId = $request->get('size');
+        $creator = $request->get('creator');
+        $tagId = $request->get('tags');
 
         $now = Carbon::now();
         $ids = [];
@@ -116,13 +158,13 @@ class ImageController extends Controller
         {
             $id = Image::insertGetId([
                 'user_id' => $userId,
-                'bangumi_id' => $request->get('bangumiId'),
+                'bangumi_id' => $bangumiId,
                 'url' => $item['key'],
                 'width' => $item['width'],
                 'height' => $item['height'],
-                'role_id' => $request->get('roleId'),
-                'size_id' => $request->get('size'),
-                'creator' => $request->get('creator'),
+                'role_id' => $roleId,
+                'size_id' => $sizeId,
+                'creator' => $creator,
                 'image_count' => 0,
                 'album_id' => $albumId,
                 'created_at' => $now,
@@ -131,7 +173,7 @@ class ImageController extends Controller
 
             ImageTag::create([
                 'image_id' => $id,
-                'tag_id' => $request->get('tags')
+                'tag_id' => $tagId
             ]);
 
             $ids[] = $id;
@@ -192,9 +234,29 @@ class ImageController extends Controller
         return $this->resCreated($transformer->waterfall($list));
     }
 
+    /**
+     * 编辑图片
+     *
+     * @Post("/image/edit")
+     *
+     * @Parameters({
+     *      @Parameter("id", description="图片的 id", type="integer", required=true),
+     *      @Parameter("bangumiId", description="所选的番剧 id（bangumi.id）", type="integer", required=true),
+     *      @Parameter("size", description="所选的尺寸 id（size.id）", type="integer", required=true),
+     *      @Parameter("tags", description="所选的标签 id（tag.id）", type="integer", required=true),
+     *      @Parameter("roleId", description="所选的角色 id（role.id）", type="integer", required=true),
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body={"code": 0, "data": "新的图片对象"}),
+     *      @Response(400, body={"code": 40003, "message": "参数错误"})
+     * })
+     */
     public function editImage(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'id' => 'required|integer',
             'bangumiId' => 'required|integer',
             'size' => 'required|integer',
             'tags' => 'required|integer',
@@ -241,6 +303,22 @@ class ImageController extends Controller
         return $this->resOK($transformer->waterfall([$result])[0]);
     }
 
+    /**
+     * 删除图片
+     *
+     * @Post("/image/delete")
+     *
+     * @Parameters({
+     *      @Parameter("id", description="图片的 id", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(204),
+     *      @Response(400, body={"code": 40104, "message": "未登录的用户"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的图片"})
+     * })
+     */
     public function deleteImage(Request $request)
     {
         $userId = $this->getAuthUserId();
@@ -267,6 +345,19 @@ class ImageController extends Controller
         return $this->resNoContent();
     }
 
+    /**
+     * 举报图片
+     *
+     * @Post("/image/report")
+     *
+     * @Parameters({
+     *      @Parameter("id", description="图片的 id", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(204)
+     * })
+     */
     public function report(Request $request)
     {
         Image::where('id', $request->get('id'))
@@ -277,6 +368,23 @@ class ImageController extends Controller
         return $this->resNoContent();
     }
 
+    /**
+     * 喜欢或取消喜欢图片
+     *
+     * @Post("/image/toggleLike")
+     *
+     * @Parameters({
+     *      @Parameter("id", description="图片的 id", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(201, body={"code": 0, "data": "是否已点赞"}),
+     *      @Response(400, body={"code": 40104, "message": "未登录的用户"}),
+     *      @Response(403, body={"code": 40003, "message": "不能为自己的图片点赞|`原创图片`金币不足"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的图片"})
+     * })
+     */
     public function toggleLike(Request $request)
     {
         $userId = $this->getAuthUserId();
@@ -320,9 +428,30 @@ class ImageController extends Controller
         $job = (new \App\Jobs\Notification\Image\Like($likeId));
         dispatch($job);
 
-        return $this->resOK(true);
+        return $this->resCreated(true);
     }
 
+    /**
+     * 新建相册
+     *
+     * @Post("/image/createAlbum")
+     *
+     * @Parameters({
+     *      @Parameter("bangumiId", description="所选的番剧 id（bangumi.id）", type="integer", required=true),
+     *      @Parameter("creator", description="是否是原创", type="boolean", required=true),
+     *      @Parameter("isCartoon", description="是不是漫画", type="boolean", required=true),
+     *      @Parameter("name", description="相册名`20字以内`", type="string", required=true),
+     *      @Parameter("url", description="封面图片的 url，不包含`host`", type="string", required=true),
+     *      @Parameter("width", description="封面图片的宽度", type="integer", required=true),
+     *      @Parameter("height", description="封面图片的高度", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(201, body={"code": 0, "data": "相册对象"}),
+     *      @Response(400, body={"code": 40003, "message": "参数错误"})
+     * })
+     */
     public function createAlbum(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -383,8 +512,43 @@ class ImageController extends Controller
         return $this->resCreated($transformer->albums([$image->toArray()])[0]);
     }
 
+    /**
+     * 编辑相册
+     *
+     * @Post("/image/editAlbum")
+     *
+     * @Parameters({
+     *      @Parameter("id", description="相册的 id", type="integer", required=true),
+     *      @Parameter("bangumiId", description="所选的番剧 id（bangumi.id）", type="integer", required=true),
+     *      @Parameter("name", description="相册名`20字以内`", type="string", required=true),
+     *      @Parameter("url", description="封面图片的 url，不包含`host`", type="string", required=true),
+     *      @Parameter("width", description="封面图片的宽度", type="integer", required=true),
+     *      @Parameter("height", description="封面图片的高度", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body={"code": 0, "data": "相册对象"}),
+     *      @Response(400, body={"code": 40003, "message": "参数错误"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的相册"})
+     * })
+     */
     public function editAlbum(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer',
+            'bangumiId' => 'required|integer',
+            'name' => 'string|max:20',
+            'url' => 'string',
+            'width' => 'required|integer',
+            'height' => 'required|integer'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
         $userId = $this->getAuthUserId();
         $imageId = $request->get('id');
 
@@ -430,6 +594,8 @@ class ImageController extends Controller
         return $this->resOK($transformer->waterfall([$result])[0]);
     }
 
+    // TODO：trending service
+    // TODO：API Doc
     public function trendingList(Request $request)
     {
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
@@ -498,6 +664,16 @@ class ImageController extends Controller
         ]);
     }
 
+    /**
+     * 相册详情
+     *
+     * @Get("/image/album/`albumId`/show")
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "相册信息"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的相册"})
+     * })
+     */
     public function albumShow($id)
     {
         $album = Image::whereRaw('id = ? and album_id = 0 and image_count > 1', [$id])->first();
@@ -567,6 +743,22 @@ class ImageController extends Controller
         ]));
     }
 
+    /**
+     * 相册内图片的排序
+     *
+     * @Post("/image/album/`albumId`/sort")
+     *
+     * @Parameters({
+     *      @Parameter("result", description="相册内图片排序后的`ids`，用`,`拼接的字符串", type="string", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(204),
+     *      @Response(400, body={"code": 40003, "data": "参数错误"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的相册"})
+     * })
+     */
     public function albumSort(Request $request, $id)
     {
         $userId = $this->getAuthUserId();
@@ -594,6 +786,22 @@ class ImageController extends Controller
         return $this->resNoContent();
     }
 
+    /**
+     * 删除相册里的图片
+     *
+     * @Post("/image/album/`albumId`/deleteImage")
+     *
+     * @Parameters({
+     *      @Parameter("result", description="相册内图片排序后的`ids`，用`,`拼接的字符串", type="string", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(204),
+     *      @Response(400, body={"code": 40003, "data": "至少要保留一张图"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的相册"})
+     * })
+     */
     public function deleteAlbumImage(Request $request, $id)
     {
         $userId = $this->getAuthUserId();
@@ -635,6 +843,19 @@ class ImageController extends Controller
         return $this->resNoContent();
     }
 
+    /**
+     * 图片查看大图时的标记
+     *
+     * @Post("/image/viewedMark")
+     *
+     * @Parameters({
+     *      @Parameter("id", description="图片的 id", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(204)
+     * })
+     */
     public function viewedMark(Request $request)
     {
         $validator = Validator::make($request->all(), [
