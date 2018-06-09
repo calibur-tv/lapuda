@@ -231,7 +231,7 @@ class BangumiController extends Controller
      *      @Response(401, body={"code": 40104, "message": "用户认证失败"})
      * })
      */
-    public function follow($id)
+    public function toggleFollow($id)
     {
         $bangumiFollowService = new BangumiFollowService();
         $result = $bangumiFollowService->toggle($this->getAuthUserId(), $id);
