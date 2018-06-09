@@ -199,16 +199,6 @@ class UserRepository extends Repository
         ];
     }
 
-    public function markedPostIds($userId)
-    {
-        return $this->RedisList('user_'.$userId.'_markedPostIds', function () use ($userId)
-        {
-            return PostMark::where('user_id', $userId)
-                ->orderBy('created_at', 'DESC')
-                ->pluck('post_id AS id');
-        });
-    }
-
     public function replyPostItem($userId, $postId)
     {
         return $this->Cache('user_'.$userId.'_reply_post_'.$postId, function () use ($postId)
