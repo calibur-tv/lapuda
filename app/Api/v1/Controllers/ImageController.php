@@ -151,6 +151,16 @@ class ImageController extends Controller
         $creator = $request->get('creator');
         $tagId = $request->get('tags');
 
+        $isCartoon = false;
+        if ($albumId)
+        {
+            $albumData = Image::where('id', $albumId)->pluck('is_cartoon')->first();
+            if ($albumData)
+            {
+                $isCartoon = true;
+            }
+        }
+
         $now = Carbon::now();
         $ids = [];
 
@@ -178,8 +188,12 @@ class ImageController extends Controller
 
             $ids[] = $id;
 
-            $job = (new \App\Jobs\Trial\Image\Create($id));
-            dispatch($job);
+            if (!$isCartoon)
+            {
+                // 漫画不进审核
+                $job = (new \App\Jobs\Trial\Image\Create($id));
+                dispatch($job);
+            }
         }
 
         $cacheKey = 'user_' . $userId . '_image_ids';
@@ -502,12 +516,15 @@ class ImageController extends Controller
                    'cartoon' => $cartoonText ? $cartoonText . ',' . $image['id'] : (String)$image['id']
                 ]);
         }
+        else
+        {
+            // 漫画不进审核
+            $job = (new \App\Jobs\Trial\Image\Create($image['id']));
+            dispatch($job);
+        }
 
         Redis::DEL('user_' . $userId . '_image_albums');
         $transformer = new ImageTransformer();
-
-        $job = (new \App\Jobs\Trial\Image\Create($image['id']));
-        dispatch($job);
 
         return $this->resCreated($transformer->albums([$image->toArray()])[0]);
     }
@@ -611,6 +628,7 @@ class ImageController extends Controller
         $ids = Image::whereIn('state', [1, 4])
             ->whereRaw('album_id = ? and image_count <> ?', [0, 1])
             ->whereNotIn('images.id', $seen)
+            ->where('is_cartoon', false)
             ->take($take)
             ->when($sort === 'new', function ($query)
             {
