@@ -179,7 +179,7 @@ class BangumiRepository extends Repository
 
     public function timelineMinYear()
     {
-        return $this->Cache('bangumi_news_year_min', function ()
+        return $this->RedisItem('bangumi_news_year_min', function ()
         {
             return date('Y', Bangumi::where('published_at', '<>', '0')->min('published_at'));
         });
@@ -256,7 +256,8 @@ class BangumiRepository extends Repository
                 ->get()
                 ->toArray();
 
-            if ($season !== '' && isset($season->part) && isset($season->name))
+            $hasSeason = $season !== '' && isset($season->part) && isset($season->name);
+            if ($hasSeason)
             {
                 usort($list, function($prev, $next) {
                     return $prev['part'] - $next['part'];
@@ -283,6 +284,7 @@ class BangumiRepository extends Repository
 
             return [
                 'videos' => $videos,
+                'has_season' => $hasSeason,
                 'total' => count($list)
             ];
         });
@@ -373,8 +375,7 @@ class BangumiRepository extends Repository
     {
         return $this->Cache('bangumi_tags_' . implode('_', $tags) . '_page_'.$page, function () use ($tags, $page)
         {
-            $take = config('website.list_count');
-            $start = ($page - 1) * $take;
+            $take = 10;
             $count = count($tags);
             // bangumi 和 tags 是多对多的关系
             // 这里通过一个 tag_id Array 拿到一个 bangumi_id 的 Array
@@ -402,12 +403,14 @@ class BangumiRepository extends Repository
                 }
             }
 
-            $ids = array_slice($data, $start, $take);
+            $ids = array_slice($data, $page * $take, $take);
+            $total = count($data);
 
             $transformer = new BangumiTransformer();
             return [
                 'list' => $transformer->category($this->list($ids)),
-                'total' => count($data)
+                'noMore' => $total - ($take * ($page + 1)) <= 0,
+                'total' => $total
             ];
         });
     }

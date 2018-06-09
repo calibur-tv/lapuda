@@ -42,8 +42,8 @@ class UserController extends Controller
      * @Transaction({
      *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(204),
-     *      @Response(401, body={"code": 40104, "message": "未登录的用户", "data": ""}),
-     *      @Response(403, body={"code": 40301, "message": "今日已签到", "data": ""})
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户"}),
+     *      @Response(403, body={"code": 40301, "message": "今日已签到"})
      * })
      */
     public function daySign()
@@ -79,11 +79,14 @@ class UserController extends Controller
      *
      * @Post("/user/setting/image")
      *
+     * @Parameters({
+     *      @Parameter("type", description="`avatar`或`banner`", type="string", required=true),
+     *      @Parameter("url", description="图片地址，不带`host`", type="string", required=true)
+     * })
+     *
      * @Transaction({
-     *      @Request({"type": "avatar或banner", "url": "图片地址"}, headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(204),
-     *      @Response(400, body={"code": 40003, "message": "请求参数错误", "data": ""}),
-     *      @Response(401, body={"code": 40104, "message": "未登录的用户", "data": ""})
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(204)
      * })
      */
     public function image(Request $request)
@@ -117,14 +120,13 @@ class UserController extends Controller
     }
 
     /**
-     * 获取用户页面信息
+     * 用户详情
      *
-     * @Post("/user/${userZone}/show")
+     * @Get("/user/`zone`/show")
      *
      * @Transaction({
-     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(200, body={"code": 0, "data": "用户信息对象"}),
-     *      @Response(404, body={"code": 40401, "message": "该用户不存在", "data": ""})
+     *      @Response(404, body={"code": 40401, "message": "该用户不存在"})
      * })
      */
     public function show($zone)
@@ -142,17 +144,8 @@ class UserController extends Controller
         return $this->resOK($transformer->show($user));
     }
 
-    /**
-     * 修改用户自己的信息
-     *
-     * @Post("/user/setting/profile")
-     *
-     * @Transaction({
-     *      @Request({"sex": "性别: 0, 1, 2, 3, 4", "signature": "用户签名，最多20字", "nickname": "用户昵称，最多14个字符", "birthday": "以秒为单位的时间戳"}, headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(204),
-     *      @Response(404, body={"code": 40104, "message": "该用户不存在", "data": ""})
-     * })
-     */
+    // TODO：用户性别怎么设计
+    // TODO：API Doc
     public function profile(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -187,13 +180,13 @@ class UserController extends Controller
     }
 
     /**
-     * 用去用户关注番剧的列表
+     * 用户关注的番剧列表
      *
-     * @Post("/user/${userZone}/followed/bangumi")
+     * @Get("/user/`zone`/followed/bangumi")
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": "番剧列表"}),
-     *      @Response(404, body={"code": 40104, "message": "该用户不存在", "data": ""})
+     *      @Response(404, body={"code": 40401, "message": "该用户不存在"})
      * })
      */
     public function followedBangumis($zone)
@@ -214,12 +207,12 @@ class UserController extends Controller
     /**
      * 用户发布的帖子列表
      *
-     * @Post("/user/${userZone}/posts/mine")
+     * @Get("/user/`zone`/posts/mine")
      *
      * @Transaction({
-     *      @Request({"seenIds": "看过的postIds, 用','分割的字符串", "take": "获取的数量"}),
+     *      @Request({"minId": "看过的帖子列表里，id 最小的那个帖子的 id"}),
      *      @Response(200, body={"code": 0, "data": "帖子列表"}),
-     *      @Response(404, body={"code": 40104, "message": "找不到用户", "data": ""})
+     *      @Response(404, body={"code": 40401, "message": "找不到用户"})
      * })
      */
     public function postsOfMine(Request $request, $zone)
@@ -234,35 +227,42 @@ class UserController extends Controller
         $ids = $userRepository->minePostIds($userId);
         if (empty($ids))
         {
-            return $this->resOK([]);
+            return $this->resOK([
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ]);
         }
 
         $minId = $request->get('minId') ?: 0;
-        $take = intval($request->get('take')) ?: 10;
-
-        $ids = array_slice($ids, $minId ? array_search($minId, $ids) + 1 : 0, $take);
+        $take = 10;
+        $idsObject = $this->filterIdsByMaxId($ids, $minId, $take);
 
         $postRepository = new PostRepository();
         $postTransformer = new PostTransformer();
         $bangumiRepository = new BangumiRepository();
-        $list = $postRepository->list($ids);
+        $list = $postRepository->list($idsObject['ids']);
         foreach ($list as $i => $item)
         {
             $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
         }
 
-        return $this->resOK($postTransformer->usersMine($list));
+        return $this->resOK([
+            'list' => $postTransformer->usersMine($list),
+            'total' => $idsObject['total'],
+            'noMore' => $idsObject['noMore']
+        ]);
     }
 
     /**
      * 用户回复的帖子列表
      *
-     * @Post("/user/${userZone}/posts/reply")
+     * @Get("/user/`zone`/posts/reply")
      *
      * @Transaction({
-     *      @Request({"seenIds": "看过的postIds, 用','分割的字符串", "take": "获取的数量"}),
+     *      @Request({"minId": "看过的帖子列表里，id 最小的那个帖子的 id"}),
      *      @Response(200, body={"code": 0, "data": "帖子列表"}),
-     *      @Response(404, body={"code": 40104, "message": "找不到用户", "data": ""})
+     *      @Response(404, body={"code": 40401, "message": "找不到用户"})
      * })
      */
     public function postsOfReply(Request $request, $zone)
@@ -277,16 +277,19 @@ class UserController extends Controller
         $ids = $userRepository->replyPostIds($userId);
         if (empty($ids))
         {
-            return $this->resOK([]);
+            return $this->resOK([
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ]);
         }
 
         $minId = $request->get('minId') ?: 0;
-        $take = intval($request->get('take')) ?: 10;
-
-        $ids = array_slice($ids, $minId ? array_search($minId, $ids) + 1 : 0, $take);
+        $take = 10;
+        $idsObject = $this->filterIdsByMaxId($ids, $minId, $take);
 
         $data = [];
-        foreach ($ids as $id)
+        foreach ($idsObject['ids'] as $id)
         {
             $data[] = $userRepository->replyPostItem($userId, $id);
         }
@@ -300,18 +303,21 @@ class UserController extends Controller
             }
         }
 
-        return $this->resOK($result);
+        return $this->resOK([
+            'list' => $result,
+            'total' => $idsObject['total'],
+            'noMore' => $idsObject['noMore']
+        ]);
     }
 
     /**
      * 用户喜欢的帖子列表
      *
-     * @Post("/user/${userZone}/posts/mine")
+     * @Get("/user/`zone`/posts/like")
      *
      * @Transaction({
-     *      @Request({"seenIds": "看过的postIds, 用','分割的字符串", "take": "获取的数量"}),
      *      @Response(200, body={"code": 0, "data": "帖子列表"}),
-     *      @Response(404, body={"code": 40104, "message": "找不到用户", "data": ""})
+     *      @Response(404, body={"code": 40401, "message": "找不到用户"})
      * })
      */
     public function postsOfLiked(Request $request, $zone)
@@ -329,12 +335,11 @@ class UserController extends Controller
     /**
      * 用户收藏的帖子列表
      *
-     * @Post("/user/${userZone}/posts/mine")
+     * @Get("/user/`zone`/posts/mark")
      *
      * @Transaction({
-     *      @Request({"seenIds": "看过的postIds, 用','分割的字符串", "take": "获取的数量"}),
      *      @Response(200, body={"code": 0, "data": "帖子列表"}),
-     *      @Response(404, body={"code": 40104, "message": "找不到用户", "data": ""})
+     *      @Response(404, body={"code": 40401, "message": "找不到用户"})
      * })
      */
     public function postsOfMarked(Request $request, $zone)
@@ -357,7 +362,7 @@ class UserController extends Controller
      * @Transaction({
      *      @Request({"type": "反馈的类型", "desc": "反馈内容，最多120字"}),
      *      @Response(204),
-     *      @Response(400, body={"code": 40003, "message": "请求参数错误", "data": ""})
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误"})
      * })
      */
     public function feedback(Request $request)
@@ -394,12 +399,13 @@ class UserController extends Controller
     /**
      * 用户消息列表
      *
-     * @Post("/user/notifications/list")
+     * @Get("/user/notifications/list")
      *
      * @Transaction({
-     *      @Request({"take": "获取个数", "minId": "看过的最小id"}),
+     *      @Request({"minId": "看过的最小id"}),
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(200, body={"code": 0, "data": "消息列表"}),
-     *      @Response(401, body={"code": 40104, "message": "未登录的用户", "data": ""})
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户"})
      * })
      */
     public function notifications(Request $request)
@@ -407,7 +413,7 @@ class UserController extends Controller
         $userId = $this->getAuthUserId();
 
         $minId = $request->get('minId') ?: 0;
-        $take = $request->get('take') ?: 10;
+        $take = 10;
 
         $repository = new UserRepository();
         $data = $repository->getNotifications($userId, $minId, $take);
@@ -418,11 +424,11 @@ class UserController extends Controller
     /**
      * 用户未读消息个数
      *
-     * @Post("/user/notifications/count")
+     * @Get("/user/notifications/count")
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": "未读个数"}),
-     *      @Response(401, body={"code": 40104, "message": "未登录的用户", "data": ""})
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户"})
      * })
      */
     public function waitingReadNotifications()
@@ -440,10 +446,8 @@ class UserController extends Controller
      *
      * @Transaction({
      *      @Request({"id": "消息id"}),
-     *      @Response(204),
-     *      @Response(401, body={"code": 40104, "message": "未登录的用户", "data": ""}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的消息", "data": ""}),
-     *      @Response(403, body={"code": 40301, "message": "没有权限进行操作", "data": ""})
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(204)
      * })
      */
     public function readNotification(Request $request)
@@ -453,12 +457,12 @@ class UserController extends Controller
 
         if (is_null($notification))
         {
-            return $this->resErrNotFound('不存在的消息');
+            return $this->resNoContent();
         }
 
         if (intval($notification['to_user_id']) !== $this->getAuthUserId())
         {
-            return $this->resErrRole('没有权限进行操作');
+            return $this->resNoContent();
         }
 
         Notifications::where('id', $id)->update([
@@ -468,6 +472,16 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
+    /**
+     * 清空未读消息
+     *
+     * @Post("/user/notifications/clear")
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(204)
+     * })
+     */
     public function clearNotification()
     {
         Notifications::where('to_user_id', $this->getAuthUserId())->update([
@@ -477,6 +491,20 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
+    /**
+     * 用户应援的角色列表
+     *
+     * @Get("/user/`zone`/followed/role")
+     *
+     * @Parameters({
+     *      @Parameter("page", description="页码", type="integer", default=0, required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": {"list": "角色列表", "total": "总数", "noMore": "没有更多"}}),
+     *      @Response(404, body={"code": 40401, "message": "该用户不存在"})
+     * })
+     */
     public function followedRoles(Request $request, $zone)
     {
         $userId = User::where('zone', $zone)->pluck('id')->first();
@@ -485,19 +513,23 @@ class UserController extends Controller
             return $this->resErrNotFound('该用户不存在');
         }
 
-        $page = $request->get('page') ?: 1;
-        $take = $request->get('take') ?: config('website.list_count');
-        $begin = $take * ($page - 1);
-
         $repository = new UserRepository();
-        $ids = array_slice($repository->rolesIds($userId), $begin, $begin + $take);
+        $ids = $repository->rolesIds($userId);
         if (empty($ids))
         {
-            return $this->resOK([]);
+            return $this->resOK([
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ]);
         }
 
+        $page = $request->get('page') ?: 0;
+        $take = 10;
+        $idsObject = $this->filterIdsByPage($ids, $page, $take);
+
         $cartoonRoleRepository = new CartoonRoleRepository();
-        $list = $cartoonRoleRepository->list($ids);
+        $list = $cartoonRoleRepository->list($idsObject['ids']);
 
         foreach ($list as $i => $item)
         {
@@ -506,9 +538,15 @@ class UserController extends Controller
 
         $transformer = new CartoonRoleTransformer();
 
-        return $this->resOK($transformer->userList($list));
+        return $this->resOK([
+            'list' => $transformer->userList($list),
+            'total' => $idsObject['total'],
+            'noMore' => $idsObject['noMore']
+        ]);
     }
 
+    // TODO：trending service
+    // TODO：API Doc
     public function imageList(Request $request, $zone)
     {
         $userId = User::where('zone', $zone)->pluck('id')->first();
@@ -582,6 +620,16 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * 用户的图片相册列表
+     *
+     * @Get("/user/images/albums")
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body={"code": 0, "data": "相册列表"})
+     * })
+     */
     public function imageAlbums()
     {
         $userId = $this->getAuthUserId();

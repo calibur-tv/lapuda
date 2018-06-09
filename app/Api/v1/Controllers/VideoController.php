@@ -23,7 +23,7 @@ class VideoController extends Controller
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": {"info": "视频对象", "bangumi": "番剧信息", "list": {"total": "视频总数", "repeat": "是否重排", "videos": "视频列表"}}}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的视频资源", "data": ""})
+     *      @Response(404, body={"code": 40401, "message": "不存在的视频资源"})
      * })
      */
     public function show($id)

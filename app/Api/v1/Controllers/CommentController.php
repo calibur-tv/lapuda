@@ -13,8 +13,36 @@ use App\Api\V1\Services\Toggle\Comment\PostCommentLikeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
+/**
+ * @Resource("评论相关接口")
+ */
 class CommentController extends Controller
 {
+    /**
+     * 子评论列表
+     *
+     * > 一个通用的接口，通过 `type` 和 `commentId` 来获取子评论列表.
+     * 目前支持 `type` 为：
+     * 1. `post`，帖子
+     *
+     * > `commentId`是父评论的 id：
+     * 1. `父评论` 一部视频下的评论列表，列表中的每一个就是一个父评论
+     * 2. `子评论` 每个父评论都有回复列表，这个回复列表中的每一个就是子评论
+     *
+     * @Get("/`type`/comment/`id`/list")
+     *
+     * @Parameters({
+     *      @Parameter("type", description="上面的某种 type", type="string", required=true),
+     *      @Parameter("commentId", description="父评论 id", type="integer", required=true),
+     *      @Parameter("page", description="页码", type="integer", default=0, required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "评论列表"}),
+     *      @Response(400, body={"code": 40003, "message": "没有页码|错误的类型"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的评论"})
+     * })
+     */
     public function list(Request $request, $type, $id)
     {
         $validator = Validator::make($request->all(), [
@@ -44,6 +72,25 @@ class CommentController extends Controller
         return $this->resOK($comments);
     }
 
+    /**
+     * 回复评论
+     *
+     * @Post("/`type`/comment/`commentId`/reply")
+     *
+     * @Parameters({
+     *      @Parameter("type", description="上面的某种 type", type="string", required=true),
+     *      @Parameter("commentId", description="父评论 id", type="integer", required=true),
+     *      @Parameter("targetUserId", description="父评论的用户 id", type="integer", required=true),
+     *      @Parameter("content", description="评论内容，`纯文本，100字以内`", type="string", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(201, body={"code": 0, "data": "子评论对象"}),
+     *      @Response(400, body={"code": 40003, "message": "参数错误"}),
+     *      @Response(404, body={"code": 40401, "message": "内容已删除"})
+     * })
+     */
     public function reply(Request $request, $type, $id)
     {
         $validator = Validator::make($request->all(), [
@@ -69,12 +116,13 @@ class CommentController extends Controller
         }
 
         $content = $request->get('content');
-        $targetUserId = $request->get('targetUserId');
+        $targetUserId = intval($request->get('targetUserId'));
+        $userId = $this->getAuthUserId();
 
         $newComment = $commentService->create([
             'content' => $content,
-            'to_user_id' => $targetUserId,
-            'user_id' => $this->getAuthUserId(),
+            'to_user_id' => $userId === $targetUserId ? 0 : $targetUserId,
+            'user_id' => $userId,
             'parent_id' => $id
         ]);
 
@@ -101,6 +149,20 @@ class CommentController extends Controller
         return $this->resCreated($newComment);
     }
 
+    /**
+     * 删除子评论
+     *
+     * @Post("/`type`/comment/delete/`commentId`")
+     *
+     * @Request(headers={"Authorization": "Bearer JWT-Token"})
+     *
+     * @Transaction({
+     *      @Response(204),
+     *      @Response(400, body={"code": 40003, "message": "参数错误"}),
+     *      @Response(404, body={"code": 40401, "message": "该评论已被删除"}),
+     *      @Response(403, body={"code": 40301, "message": "继续操作前请先登录"})
+     * })
+     */
     public function delete($type, $id)
     {
         $commentService = $this->getServiceByType($type);
@@ -124,6 +186,18 @@ class CommentController extends Controller
         return $this->resNoContent();
     }
 
+    /**
+     * 喜欢子评论
+     *
+     * @Post("/`type`/comment/toggleLike/`commentId`")
+     *
+     * @Request(headers={"Authorization": "Bearer JWT-Token"})
+     *
+     * @Transaction({
+     *      @Response(201, body={"code": 0, "data": "是否已喜欢"}),
+     *      @Response(400, body={"code": 40003, "message": "参数错误"})
+     * })
+     */
     public function toggleLike($type, $id)
     {
         if ($type === 'post')

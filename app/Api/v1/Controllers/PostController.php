@@ -31,13 +31,27 @@ class PostController extends Controller
     /**
      * 新建帖子
      *
+     * > 图片对象示例：
+     * 1. `key` 七牛传图后得到的 key，不包含图片地址的 host，如一张图片 image.calibur.tv/user/1/avatar.png，七牛返回的 key 是：user/1/avatar.png，将这个 key 传到后端
+     * 2. `width` 图片的宽度，七牛上传图片后得到
+     * 3. `height` 图片的高度，七牛上传图片后得到
+     * 4. `size` 图片的尺寸，七牛上传图片后得到
+     * 5. `type` 图片的类型，七牛上传图片后得到
+     *
      * @Post("/post/create")
      *
+     * @Parameters({
+     *      @Parameter("bangumiId", description="所选的番剧 id", type="integer", required=true),
+     *      @Parameter("title", description="标题`40字以内`", type="string", required=true),
+     *      @Parameter("desc", description="content可能是富文本，desc是`120字以内的纯文本`", type="string", required=true),
+     *      @Parameter("content", description="内容，`1000字以内`", type="string", required=true),
+     *      @Parameter("images", description="图片对象数组", type="array", required=true)
+     * })
+     *
      * @Transaction({
-     *      @Request({"title": "标题，不超过40个字", "bangumiId": "番剧id", "content": "帖子内容，不超过1000个字", "desc": "帖子描述，不超过120个字", "images": "帖子图片列表"}, headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(201, body={"code": 0, "data": "帖子id"}),
-     *      @Response(400, body={"code": 40003, "message": "请求参数错误", "data": "错误详情"}),
-     *      @Response(401, body={"code": 40104, "message": "未登录的用户", "data": ""})
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误", "data": "错误详情"})
      * })
      */
     public function create(Request $request)
@@ -97,20 +111,8 @@ class PostController extends Controller
         return $this->resCreated($id);
     }
 
-    /**
-     * 帖子信息
-     *
-     * @Post("/post/${postId}/show")
-     *
-     * @Transaction({
-     *      @Request({"take": "获取数量", "only": "是否只看楼主"}, headers={"Authorization": "Bearer JWT-Token"}, identifier="A"),
-     *      @Response(200, body={"code": 0, {"post": "主题帖信息", "list": "帖子列表", "bangumi": "帖子番剧信息", "user": "楼主信息", "total": "帖子总数"}}),
-     *      @Request({"seenIds": "看过的postIds，用','隔开的字符串", "take": "获取数量", "only": "是否只看楼主"}, headers={"Authorization": "Bearer JWT-Token"}, identifier="B"),
-     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "total": "帖子总数"}}),
-     *      @Response(400, body={"code": 40004, "message": "不是主题帖", "data": ""}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的帖子", "data": ""})
-     * })
-     */
+    // TODO：楼层和主题帖分开获取
+    // TODO：API Doc
     public function show(Request $request, $id)
     {
         $postRepository = new PostRepository();
@@ -201,14 +203,19 @@ class PostController extends Controller
     /**
      * 回复主题帖
      *
-     * @Post("/post/${postId}/reply")
+     * @Post("/post/`postId`/reply")
+     *
+     * @Parameters({
+     *      @Parameter("content", description="内容，`1000字以内`", type="string", required=true),
+     *      @Parameter("images", description="图片对象数组", type="array", required=true)
+     * })
      *
      * @Transaction({
-     *      @Request({"content": "帖子内容，不超过1000个字", "images": "帖子图片列表"}, headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(201, body={"code": 0, "data": "帖子对象"}),
-     *      @Response(400, body={"code": 40003, "message": "请求参数错误", "data": "错误详情"}),
-     *      @Response(401, body={"code": 40104, "message": "未登录的用户", "data": ""}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的帖子", "data": ""})
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误"}),
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的帖子"})
      * })
      */
     public function reply(Request $request, $id)
@@ -304,7 +311,7 @@ class PostController extends Controller
      * @Transaction({
      *      @Request({"seenIds": "看过的userIds, 用','分割的字符串", "take": "获取的数量"}),
      *      @Response(200, body={"code": 0, "data": "用户列表"}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的帖子", "data": ""})
+     *      @Response(404, body={"code": 40401, "message": "不存在的帖子"})
      * })
      */
     public function likeUsers(Request $request, $id)
@@ -320,14 +327,14 @@ class PostController extends Controller
     /**
      * 给帖子点赞或取消点赞
      *
-     * @Post("/post/${postId}/toggleLike")
+     * @Post("/post/`postId`/toggleLike")
      *
      * @Transaction({
      *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(201, body={"code": 0, "data": "是否已赞"}),
-     *      @Response(401, body={"code": 40104, "message": "未登录的用户", "data": ""}),
-     *      @Response(403, body={"code": 40301, "message": "不能给自己点赞/金币不足/请求错误", "data": ""}),
-     *      @Response(404, body={"code": 40401, "message": "内容已删除", "data": ""})
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户"}),
+     *      @Response(403, body={"code": 40301, "message": "不能给自己点赞/金币不足/请求错误"}),
+     *      @Response(404, body={"code": 40401, "message": "内容已删除"})
      * })
      */
     public function toggleLike($postId)
@@ -378,14 +385,14 @@ class PostController extends Controller
     /**
      * 收藏主题帖或取消收藏
      *
-     * @Post("/post/${postId}/toggleMark")
+     * @Post("/post/`postId`/toggleMark")
      *
      * @Transaction({
      *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(201, body={"code": 0, "data": "是否已收藏"}),
-     *      @Response(401, body={"code": 40104, "message": "未登录的用户", "data": ""}),
-     *      @Response(403, body={"code": 40301, "message": "不能收藏自己的帖子/不是主题帖", "data": ""}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的帖子", "data": ""})
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户"}),
+     *      @Response(403, body={"code": 40301, "message": "不能收藏自己的帖子"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的帖子"})
      * })
      */
     public function toggleMark($postId)
@@ -421,14 +428,14 @@ class PostController extends Controller
     /**
      * 删除帖子
      *
-     * @Post("/post/${postId}/deletePost")
+     * @Post("/post/`postId`/deletePost")
      *
      * @Transaction({
      *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(204),
-     *      @Response(401, body={"code": 40104, "message": "未登录的用户", "data": ""}),
-     *      @Response(403, body={"code": 40301, "message": "权限不足", "data": ""}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的帖子", "data": ""})
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户"}),
+     *      @Response(403, body={"code": 40301, "message": "权限不足"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的帖子"})
      * })
      */
     public function deletePost($postId)
@@ -479,6 +486,23 @@ class PostController extends Controller
         return $this->resNoContent();
     }
 
+    /**
+     * 删除帖子的某一层
+     *
+     * @Post("/post/`postId`/deleteComment")
+     *
+     * @Parameters({
+     *      @Parameter("commentId", description="楼层帖子的 id", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(204),
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户"}),
+     *      @Response(403, body={"code": 40301, "message": "继续操作前请先登录"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的帖子|该评论已被删除"})
+     * })
+     */
     public function deleteComment(Request $request, $id)
     {
         $commentId = $request->get('commentId');
@@ -518,16 +542,8 @@ class PostController extends Controller
         return $this->resNoContent();
     }
 
-    /**
-     * 最新帖子列表
-     *
-     * @Post("/trending/post/new")
-     *
-     * @Transaction({
-     *      @Request({"take": "获取数量", "seenIds": "看过的postIds, 用','号分割的字符串"}, headers={"Authorization": "Bearer JWT-Token"}, identifier="A"),
-     *      @Response(200, body={"code": 0, {"data": "帖子列表"}}),
-     * })
-     */
+    // TODO：trending service
+    // TODO：API Doc
     public function postNew(Request $request)
     {
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
@@ -556,11 +572,14 @@ class PostController extends Controller
         {
             $id = $item['id'];
             $authorId = $item['user_id'];
-            $list[$i]['liked'] = $postLikeService->check($userId, $id, $authorId);
+//            $list[$i]['liked'] = $postLikeService->check($userId, $id, $authorId);
+            $list[$i]['liked'] = false;
             $list[$i]['like_count'] = $postLikeService->total($id);
-            $list[$i]['marked'] = $postMarkService->check($userId, $id, $authorId);
+//            $list[$i]['marked'] = $postMarkService->check($userId, $id, $authorId);
+            $list[$i]['marked'] = false;
             $list[$i]['mark_count'] = $postMarkService->total($id);
-            $list[$i]['commented'] = $postCommentService->check($userId, $id);
+//            $list[$i]['commented'] = $postCommentService->check($userId, $id);
+            $list[$i]['commented'] = false;
             $list[$i]['comment_count'] = $postReplyCounter->get($id);
             $list[$i]['view_count'] = $postViewCounter->get($id);
             $list[$i]['user'] = $userRepository->item($authorId);
@@ -576,17 +595,20 @@ class PostController extends Controller
     /**
      * 热门帖子列表
      *
-     * @Post("/trending/post/hot")
+     * @Get("/post/trending/hot")
+     *
+     * @Parameters({
+     *      @Parameter("seenIds", description="看过的帖子的`ids`, 用','号分割的字符串", type="string", required=true)
+     * })
      *
      * @Transaction({
-     *      @Request({"take": "获取数量", "seenIds": "看过的postIds, 用','号分割的字符串"}, headers={"Authorization": "Bearer JWT-Token"}, identifier="A"),
-     *      @Response(200, body={"code": 0, {"data": "帖子列表"}}),
+     *      @Response(200, body={"code": 0, {"data": "帖子列表"}})
      * })
      */
     public function postHot(Request $request)
     {
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = intval($request->get('take')) ?: 10;
+        $take = 10;
 
         $repository = new PostRepository();
         $ids = $repository->getHotIds();
@@ -611,11 +633,14 @@ class PostController extends Controller
         {
             $id = $item['id'];
             $authorId = $item['user_id'];
-            $list[$i]['liked'] = $postLikeService->check($userId, $id, $authorId);
+//            $list[$i]['liked'] = $postLikeService->check($userId, $id, $authorId);
+            $list[$i]['liked'] = false;
             $list[$i]['like_count'] = $postLikeService->total($id);
-            $list[$i]['marked'] = $postMarkService->check($userId, $id, $authorId);
+//            $list[$i]['marked'] = $postMarkService->check($userId, $id, $authorId);
+            $list[$i]['marked'] = false;
             $list[$i]['mark_count'] = $postMarkService->total($id);
-            $list[$i]['commented'] = $postCommentService->check($userId, $id);
+//            $list[$i]['commented'] = $postCommentService->check($userId, $id);
+            $list[$i]['commented'] = false;
             $list[$i]['comment_count'] = $postReplyCounter->get($id);
             $list[$i]['view_count'] = $postViewCounter->get($id);
             $list[$i]['user'] = $userRepository->item($authorId);

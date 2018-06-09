@@ -30,14 +30,22 @@ class DoorController extends Controller
     /**
      * 发送手机验证码
      *
-     * 一个通用的接口，通过 `type` 和 `phone_number` 发送手机验证码.
+     * > 一个通用的接口，通过 `type` 和 `phone_number` 发送手机验证码.
      * 目前支持 `type` 为：
      * 1. `sign_up`，注册时调用
      * 2. `forgot_password`，找回密码时使用
      *
+     * > 目前返回的数字验证码是`6位`
+     *
      * @Post("/door/message")
+     *
+     * @Parameters({
+     *      @Parameter("type", description="上面的某种type", type="string", required=true),
+     *      @Parameter("phone_number", description="只支持`11位`的手机号", type="number", required=true),
+     *      @Parameter("geetest", description="Geetest认证对象", type="object", required=true)
+     * })
+     *
      * @Transaction({
-     *      @Request({"type": "上面的某个type", "phone_number": "只支持11位的手机号", "geetest": "Geetest认证对象"}),
      *      @Response(201, body={"code": 0, "data": "短信已发送"}),
      *      @Response(400, body={"code": 40001, "message": "未经过图形验证码认证"}),
      *      @Response(401, body={"code": 40100, "message": "图形验证码认证失败"}),
@@ -119,8 +127,15 @@ class DoorController extends Controller
      * 目前仅支持使用手机号注册
      *
      * @Post("/door/register")
+     *
+     * @Parameters({
+     *      @Parameter("access", description="手机号", type="number", required=true),
+     *      @Parameter("secret", description="`6至16位`的密码", type="string", required=true),
+     *      @Parameter("nickname", description="昵称，只能包含`汉字、数字和字母，2~14个字符组成，1个汉字占2个字符`", type="string", required=true),
+     *      @Parameter("authCode", description="6位数字的短信验证码", type="number", required=true),
+     * })
+     *
      * @Transaction({
-     *      @Request({"access": "手机号", "secret": "6至16位的密码", "nickname": "昵称，只能包含汉字、数字和字母", "authCode": "6位数字的短信验证码"}),
      *      @Response(201, body={"code": 0, "data": "JWT-Token"}),
      *      @Response(400, body={"code": 40003, "message": "各种错误"})
      * })
@@ -198,8 +213,14 @@ class DoorController extends Controller
      * 目前仅支持手机号和密码登录
      *
      * @Post("/door/login")
+     *
+     * @Parameters({
+     *      @Parameter("access", description="手机号", type="number", required=true),
+     *      @Parameter("secret", description="6至16位的密码", type="string", required=true),
+     *      @Parameter("geetest", description="Geetest认证对象", type="object", required=true)
+     * })
+     *
      * @Transaction({
-     *      @Request({"access": "手机号", "secret": "密码", "geetest": "Geetest认证对象"}),
      *      @Response(200, body={"code": 0, "data": "JWT-Token"}),
      *      @Response(400, body={"code": 40001, "message": "未经过图形验证码认证"}),
      *      @Response(401, body={"code": 40100, "message": "图形验证码认证失败"}),
@@ -283,6 +304,24 @@ class DoorController extends Controller
         return $this->resOK($transformer->self($user));
     }
 
+    /**
+     * 重置密码
+     *
+     * @Post("/door/reset")
+     *
+     * @Parameters({
+     *      @Parameter("access", description="手机号", type="number", required=true),
+     *      @Parameter("secret", description="6至16位的密码", type="string", required=true),
+     *      @Parameter("authCode", description="6位数字的短信验证码", type="number", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "密码重置成功"}),
+     *      @Response(400, body={"code": 40001, "message": "未经过图形验证码认证"}),
+     *      @Response(401, body={"code": 40100, "message": "图形验证码认证失败"}),
+     *      @Response(400, body={"code": 40003, "message": "各种错误"})
+     * })
+     */
     public function resetPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -360,12 +399,14 @@ class DoorController extends Controller
 
     private function checkMessageAuthCode($phone, $type, $token)
     {
-        $cache = Redis::GET('phone_message_' . $type . '_' . $phone);
-        if (is_null($cache))
+        $key = 'phone_message_' . $type . '_' . $phone;
+        $value = Redis::GET($key);
+        if (is_null($value))
         {
             return false;
         }
 
-        return intval($cache) === intval($token);
+        Redis::DEL($key);
+        return intval($value) === intval($token);
     }
 }

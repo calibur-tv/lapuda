@@ -160,7 +160,11 @@ class UserRepository extends Repository
         }
 
         $postTransformer = new PostTransformer();
-        return $postTransformer->userLike($posts);
+        return [
+            'list' => $postTransformer->userLike($posts),
+            'total' => count($ids),
+            'noMore' => true
+        ];
     }
 
     public function markedPost($userId)
@@ -188,7 +192,11 @@ class UserRepository extends Repository
         }
 
         $postTransformer = new PostTransformer();
-        return $postTransformer->userMark($posts);
+        return [
+            'list' => $postTransformer->userMark($posts),
+            'total' => count($ids),
+            'noMore' => true
+        ];
     }
 
     public function markedPostIds($userId)

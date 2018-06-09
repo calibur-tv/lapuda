@@ -20,8 +20,7 @@ class Throttle extends ThrottleRequests
         if ($this->limiter->tooManyAttempts($key, $maxAttempts, $decayMinutes)) {
             return response([
                 'code' => 42901,
-                'message' => config('error.42901'),
-                'data' => ''
+                'message' => config('error.42901')
             ], 429);
         }
 

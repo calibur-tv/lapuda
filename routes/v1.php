@@ -45,13 +45,16 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->get('/videos', 'App\Api\V1\Controllers\BangumiController@videos');
 
-            $api->get('/posts', 'App\Api\V1\Controllers\BangumiController@posts');
+            $api->group(['prefix' => '/posts'], function ($api)
+            {
+                $api->get('/news', 'App\Api\V1\Controllers\BangumiController@newsPosts');
+            });
 
             $api->get('/images', 'App\Api\V1\Controllers\BangumiController@images');
 
             $api->get('/cartoon', 'App\Api\V1\Controllers\BangumiController@cartoon');
 
-            $api->post('/follow', 'App\Api\V1\Controllers\BangumiController@follow')->middleware(['jwt.auth']);
+            $api->post('/toggleFollow', 'App\Api\V1\Controllers\BangumiController@toggleFollow')->middleware(['jwt.auth']);
 
             $api->get('/followers', 'App\Api\V1\Controllers\BangumiController@followers');
 
@@ -179,7 +182,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/captcha', 'App\Api\V1\Controllers\ImageController@captcha');
 
-        $api->post('/uptoken', 'App\Api\V1\Controllers\ImageController@uptoken')->middleware(['jwt.auth']);
+        $api->get('/uptoken', 'App\Api\V1\Controllers\ImageController@uptoken')->middleware(['jwt.auth']);
 
         $api->post('/upload', 'App\Api\V1\Controllers\ImageController@upload')->middleware(['jwt.auth']);
 
