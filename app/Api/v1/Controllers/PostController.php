@@ -550,7 +550,7 @@ class PostController extends Controller
      * })
      *
      * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "total": "总数", "noMore": "没有更多了"})
+     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "total": "总数", "noMore": "没有更多了"}})
      * })
      */
     public function postNews(Request $request)
@@ -574,7 +574,7 @@ class PostController extends Controller
      * })
      *
      * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "total": "总数", "noMore": "没有更多了"})
+     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "total": "总数", "noMore": "没有更多了"}})
      * })
      */
     public function postActive(Request $request)
@@ -598,7 +598,7 @@ class PostController extends Controller
      * })
      *
      * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "total": "总数", "noMore": "没有更多了"})
+     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "total": "总数", "noMore": "没有更多了"}})
      * })
      */
     public function postHot(Request $request)
