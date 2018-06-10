@@ -46,11 +46,11 @@ class Repository
         return $count === -1 ? array_slice($cache, $start) : array_slice($cache, $start, $count);
     }
 
-    public function RedisSort($key, $func, $isTime = false, $force = false, $withScore = false, $exp = 'd')
+    public function RedisSort($key, $func, $isTime = false, $withScore = false, $exp = 'd')
     {
         $cache = $withScore ? Redis::ZREVRANGE($key, 0, -1, 'WITHSCORES') : Redis::ZREVRANGE($key, 0, -1);
 
-        if ($force || empty($cache))
+        if (empty($cache))
         {
             $cache = $func();
             $cache = gettype($cache) === 'array' ? $cache : $cache->toArray();

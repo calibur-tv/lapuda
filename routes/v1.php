@@ -157,7 +157,9 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/trending'], function ($api)
         {
-            $api->get('/new', 'App\Api\V1\Controllers\PostController@postNew');
+            $api->get('/news', 'App\Api\V1\Controllers\PostController@postNews');
+
+            $api->get('/active', 'App\Api\V1\Controllers\PostController@postActive');
 
             $api->get('/hot', 'App\Api\V1\Controllers\PostController@postHot');
         });

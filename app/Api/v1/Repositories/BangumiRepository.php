@@ -317,7 +317,7 @@ class BangumiRepository extends Repository
             return BangumiFollow::where('bangumi_id', $bangumiId)
                 ->orderBy('id', 'DESC')
                 ->pluck('created_at', 'user_id AS id');
-        }, true, false, true);
+        }, true, true);
 
         if (empty($ids))
         {

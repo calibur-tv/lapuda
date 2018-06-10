@@ -13,8 +13,7 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        Trending\PostHot::class,
-        Trending\PostNew::class,
+        Trending\Post::class,
         Trending\CartoonRole::class,
         Trail\BlackWords::class,
         Job\CronPush::class,
@@ -29,14 +28,12 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('PostHot')
+        $schedule->command('PostTrending')
              ->everyMinute()
              ->withoutOverlapping();
-        $schedule->command('PostNew')
-            ->everyMinute()
-            ->withoutOverlapping();
         $schedule->command('CartoonRole')
-            ->everyFiveMinutes();
+            ->everyFiveMinutes()
+            ->withoutOverlapping();
         $schedule->command('BlackWords')
             ->everyFiveMinutes();
         $schedule->command('CronPush')

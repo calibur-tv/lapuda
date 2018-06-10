@@ -174,40 +174,4 @@ class PostRepository extends Repository
 
         return $result;
     }
-
-    public function getNewIds($force = false)
-    {
-        return $this->RedisSort('post_new_ids', function ()
-        {
-            return Post::whereIn('state', [3, 7])
-                ->orderBy('created_at', 'desc')
-                ->latest()
-                ->take(1000)
-                ->pluck('created_at', 'id');
-
-        }, true, $force);
-    }
-
-    public function getHotIds($force = false)
-    {
-        return $this->RedisSort('post_hot_ids', function ()
-        {
-            $ids = Post::where('created_at', '>', Carbon::now()->addDays(-30))
-                ->pluck('id');
-
-            $list = $this->list($ids);
-            $result = [];
-            // https://segmentfault.com/a/1190000004253816
-            foreach ($list as $item)
-            {
-                $result[$item['id']] = (
-                    $item['like_count'] +
-                    (intval($item['view_count']) && log($item['view_count'], 10) * 4) +
-                    (intval($item['comment_count']) && log($item['comment_count'], M_E))
-                ) / pow((((time() * 2 - strtotime($item['created_at']) - strtotime($item['updated_at'])) / 2) + 1), 0.3);
-            }
-
-            return $result;
-        }, false, $force);
-    }
 }
