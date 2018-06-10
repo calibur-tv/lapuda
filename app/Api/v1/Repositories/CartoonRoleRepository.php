@@ -69,7 +69,7 @@ class CartoonRoleRepository extends Repository
                 ->orderBy('star_count', 'desc')
                 ->latest()
                 ->pluck('fans_count', 'id');
-        }, false, false, false, 'm');
+        }, false, false, 'm');
     }
 
     public function checkHasStar($roleId, $userId)
@@ -96,7 +96,7 @@ class CartoonRoleRepository extends Repository
                 ->take(100)
                 ->pluck('updated_at', 'user_id AS id');
 
-        }, true, false, true);
+        }, true, true);
 
         if (empty($ids))
         {
@@ -122,7 +122,7 @@ class CartoonRoleRepository extends Repository
                 ->take(100)
                 ->pluck('star_count', 'user_id AS id');
 
-        }, false, false, true);
+        }, false, true);
 
         if (empty($ids))
         {
@@ -149,7 +149,7 @@ class CartoonRoleRepository extends Repository
                 ->take(100)
                 ->pluck('star_count', 'id');
 
-        }, false, $force);
+        });
     }
 
     public function trendingItem($roleId)

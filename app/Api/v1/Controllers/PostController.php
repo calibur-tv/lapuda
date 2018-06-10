@@ -10,6 +10,7 @@ use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Comment\PostCommentLikeService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
+use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
@@ -542,54 +543,27 @@ class PostController extends Controller
         return $this->resNoContent();
     }
 
-    // TODO：trending service
     // TODO：API Doc
-    public function postNew(Request $request)
+    public function postNews(Request $request)
     {
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = intval($request->get('take')) ?: 10;
-
-        $repository = new PostRepository();
-        $ids = $repository->getNewIds();
-
-        if (empty($ids))
-        {
-            return $this->resOK([]);
-        }
+        $minId = intval($request->get('minId')) ?: 0;
+        $take = 10;
 
         $userId = $this->getAuthUserId();
-        $list = $repository->list(array_slice(array_diff($ids, $seen), 0, $take));
+        $postTrendingService = new PostTrendingService($userId);
 
-        $postCommentService = new PostCommentService();
-        $postLikeService = new PostLikeService();
-        $postMarkService = new PostMarkService();
-        $postViewCounter = new PostViewCounter();
-        $userRepository = new UserRepository();
-        $bangumiRepository = new BangumiRepository();
-        $postReplyCounter = new PostReplyCounter();
+        return $this->resOK($postTrendingService->news($minId, $take));
+    }
 
-        foreach ($list as $i => $item)
-        {
-            $id = $item['id'];
-            $authorId = $item['user_id'];
-//            $list[$i]['liked'] = $postLikeService->check($userId, $id, $authorId);
-            $list[$i]['liked'] = false;
-            $list[$i]['like_count'] = $postLikeService->total($id);
-//            $list[$i]['marked'] = $postMarkService->check($userId, $id, $authorId);
-            $list[$i]['marked'] = false;
-            $list[$i]['mark_count'] = $postMarkService->total($id);
-//            $list[$i]['commented'] = $postCommentService->check($userId, $id);
-            $list[$i]['commented'] = false;
-            $list[$i]['comment_count'] = $postReplyCounter->get($id);
-            $list[$i]['view_count'] = $postViewCounter->get($id);
-            $list[$i]['user'] = $userRepository->item($authorId);
-            $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
-        }
+    public function postActive(Request $request)
+    {
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = 10;
 
+        $userId = $this->getAuthUserId();
+        $postTrendingService = new PostTrendingService($userId);
 
-        $transformer = new PostTransformer();
-
-        return $this->resOK($transformer->trending($list));
+        return $this->resOK($postTrendingService->active($seen, $take));
     }
 
     /**
@@ -602,7 +576,7 @@ class PostController extends Controller
      * })
      *
      * @Transaction({
-     *      @Response(200, body={"code": 0, {"data": "帖子列表"}})
+     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "noMore": "没有更多了"})
      * })
      */
     public function postHot(Request $request)
@@ -610,45 +584,9 @@ class PostController extends Controller
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
         $take = 10;
 
-        $repository = new PostRepository();
-        $ids = $repository->getHotIds();
-
-        if (empty($ids))
-        {
-            return $this->resOK([]);
-        }
-
         $userId = $this->getAuthUserId();
-        $list = $repository->list(array_slice(array_diff($ids, $seen), 0, $take));
+        $postTrendingService = new PostTrendingService($userId);
 
-        $postCommentService = new PostCommentService();
-        $postLikeService = new PostLikeService();
-        $postMarkService = new PostMarkService();
-        $postViewCounter = new PostViewCounter();
-        $userRepository = new UserRepository();
-        $bangumiRepository = new BangumiRepository();
-        $postReplyCounter = new PostReplyCounter();
-
-        foreach ($list as $i => $item)
-        {
-            $id = $item['id'];
-            $authorId = $item['user_id'];
-//            $list[$i]['liked'] = $postLikeService->check($userId, $id, $authorId);
-            $list[$i]['liked'] = false;
-            $list[$i]['like_count'] = $postLikeService->total($id);
-//            $list[$i]['marked'] = $postMarkService->check($userId, $id, $authorId);
-            $list[$i]['marked'] = false;
-            $list[$i]['mark_count'] = $postMarkService->total($id);
-//            $list[$i]['commented'] = $postCommentService->check($userId, $id);
-            $list[$i]['commented'] = false;
-            $list[$i]['comment_count'] = $postReplyCounter->get($id);
-            $list[$i]['view_count'] = $postViewCounter->get($id);
-            $list[$i]['user'] = $userRepository->item($authorId);
-            $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
-        }
-
-        $transformer = new PostTransformer();
-
-        return $this->resOK($transformer->trending($list));
+        return $this->resOK($postTrendingService->hot($seen, $take));
     }
 }

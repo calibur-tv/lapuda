@@ -160,7 +160,7 @@ class ToggleService extends Repository
                 ->orderBy('id', 'DESC')
                 ->pluck('created_at', 'modal_id AS id');
 
-        }, true, false, true);
+        }, true, true);
 
         if (empty($ids))
         {
@@ -186,7 +186,7 @@ class ToggleService extends Repository
                 ->orderBy('id', 'DESC')
                 ->pluck('created_at', 'user_id AS id');
 
-        }, true, false, true);
+        }, true, true);
 
         if (empty($ids))
         {

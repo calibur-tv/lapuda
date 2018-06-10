@@ -9,23 +9,23 @@
 
 namespace App\Console\Trending;
 
-use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Services\Trending\PostTrendingService;
 use Illuminate\Console\Command;
 
-class PostNew extends Command
+class Post extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'PostNew';
+    protected $signature = 'PostTrending';
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'compute post new list';
+    protected $description = 'compute post trending id list';
     /**
      * Execute the console command.
      *
@@ -33,7 +33,11 @@ class PostNew extends Command
      */
     public function handle()
     {
-        $repository = new PostRepository();
-        $repository->getNewIds(true);
+        $postTrendingService = new PostTrendingService();
+        $postTrendingService->computeNewsIds();
+        $postTrendingService->computeActiveIds();
+        $postTrendingService->computeHotIds();
+
+        return true;
     }
 }
