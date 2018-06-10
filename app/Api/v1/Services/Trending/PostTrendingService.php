@@ -127,7 +127,7 @@ class PostTrendingService extends TrendingService
                     $item['like_count'] +
                     (intval($item['view_count']) && log($item['view_count'], 10) * 4) +
                     (intval($item['comment_count']) && log($item['comment_count'], M_E))
-                ) / pow((((time() * 2 - strtotime($item['created_at']) - strtotime($item['updated_at'])) / 2) + 1), 0.5);
+                ) / pow((((time() * 2 - strtotime($item['created_at']) - strtotime($item['updated_at'])) / 2) + 1), 0.3);
         }
 
         return $result;

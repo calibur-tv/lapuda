@@ -11,6 +11,7 @@ use App\Api\V1\Services\Toggle\Comment\PostCommentLikeService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Services\Trending\PostTrendingService;
+use App\Api\V1\Services\Trending\TrendingService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
@@ -101,12 +102,6 @@ class PostController extends Controller
         Redis::LPUSHX('user_'.$userId.'_minePostIds', $id);
 
         $job = (new \App\Jobs\Trial\Post\Create($id));
-        dispatch($job);
-
-        $job = (new \App\Jobs\Push\Baidu('post/' . $id));
-        dispatch($job);
-
-        $job = (new \App\Jobs\Push\Baidu('bangumi/' . $bangumiId, 'update'));
         dispatch($job);
 
         return $this->resCreated($id);
@@ -278,6 +273,8 @@ class PostController extends Controller
         Post::where('id', $id)->update([
             'updated_at' => date('Y-m-d H:i:s',time())
         ]);
+        $trendingService = new TrendingService('posts');
+        $trendingService->update($id);
         // 更新番剧帖子列表的缓存
         $cacheKey = $repository->bangumiListCacheKey($post['bangumi_id']);
         if (Redis::EXISTS($cacheKey))
@@ -473,10 +470,10 @@ class PostController extends Controller
         {
             $pipe->LREM('user_'.$userId.'_minePostIds', 1, $postId);
             $pipe->ZREM('bangumi_'.$bangumiId.'_posts_new_ids', $postId);
-            $pipe->ZREM('post_new_ids', $postId);
-            $pipe->ZREM('post_hot_ids', $postId);
             $pipe->DEL('post_'.$postId);
         });
+        $trendingService = new TrendingService('posts');
+        $trendingService->delete($postId);
 
         $job = (new \App\Jobs\Search\Post\Delete($postId));
         dispatch($job);
@@ -543,7 +540,19 @@ class PostController extends Controller
         return $this->resNoContent();
     }
 
-    // TODO：API Doc
+    /**
+     * 最新帖子列表
+     *
+     * @Get("/post/trending/news")
+     *
+     * @Parameters({
+     *      @Parameter("minId", description="看过的帖子里，id 最小的一个", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "total": "总数", "noMore": "没有更多了"})
+     * })
+     */
     public function postNews(Request $request)
     {
         $minId = intval($request->get('minId')) ?: 0;
@@ -555,6 +564,19 @@ class PostController extends Controller
         return $this->resOK($postTrendingService->news($minId, $take));
     }
 
+    /**
+     * 动态帖子列表
+     *
+     * @Get("/post/trending/active")
+     *
+     * @Parameters({
+     *      @Parameter("minId", description="看过的帖子里，id 最小的一个", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "total": "总数", "noMore": "没有更多了"})
+     * })
+     */
     public function postActive(Request $request)
     {
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
@@ -576,7 +598,7 @@ class PostController extends Controller
      * })
      *
      * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "noMore": "没有更多了"})
+     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "total": "总数", "noMore": "没有更多了"})
      * })
      */
     public function postHot(Request $request)

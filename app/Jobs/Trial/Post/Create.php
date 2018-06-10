@@ -3,6 +3,7 @@
 namespace App\Jobs\Trial\Post;
 
 use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Services\Trending\TrendingService;
 use App\Models\MixinSearch;
 use App\Services\Trial\ImageFilter;
 use App\Services\Trial\WordsFilter;
@@ -95,11 +96,16 @@ class Create implements ShouldQueue
                 'updated_at' => $now
             ]);
 
-            // TODO：set post-state
-            Redis::ZADD('post_new_ids', strtotime($post['created_at']), $post['id']);
-            Redis::EXPIREAT('post_new_ids', strtotime(date('Y-m-d')) + 86400 + rand(3600, 10800));
+            $trendingService = new TrendingService('posts');
+            $trendingService->create($post['id']);
 
             $job = (new \App\Jobs\Push\Baidu('post/trending/new', 'update'));
+            dispatch($job);
+
+            $job = (new \App\Jobs\Push\Baidu('post/' . $post['id']));
+            dispatch($job);
+
+            $job = (new \App\Jobs\Push\Baidu('bangumi/' . $post['bangumi_id'], 'update'));
             dispatch($job);
 
             return;
