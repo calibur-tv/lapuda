@@ -137,17 +137,32 @@ class CommentController extends Controller
 
         $take = 10;
         $fetchId = intval($request->get('fetchId')) ?: 0;
+        $onlySeeMaster = intval($request->get('onlySeeMaster')) ?: 0;
+        $seeReplyId = intval($request->get('seeReplyId')) ?: 0;
 
-        $ids = $commentService->getMainCommentIds($id);
+        $ids = $onlySeeMaster
+            ? $commentService->getAuthorMainCommentIds($id, $parent['user_id'])
+            : $commentService->getMainCommentIds($id);
+
         $idsObject = $this->filterIdsByMaxId($ids, $fetchId, $take);
         $userId = $this->getAuthUserId();
+
+        // 获取第一页数据，并且指明要看某一条数据
+        if (!$fetchId && $seeReplyId)
+        {
+            $replyIndex = array_search($seeReplyId, $ids);
+            if ($replyIndex && $replyIndex >= $take)
+            {
+                array_push($idsObject['ids'], $seeReplyId);
+            }
+        }
 
         $list = $commentService->mainCommentList($idsObject['ids']);
         $commentLikeService = $this->getLikeServiceByType($type);
 
         foreach ($list as $i => $item)
         {
-            $list[$i]['liked'] = $commentLikeService->check($userId, $item['id'], $item['from_user_id']);
+            $list[$i]['liked'] = $commentLikeService->check($userId, $item['id']);
             $list[$i]['like_count'] = $commentLikeService->total($item['id']);
         }
 

@@ -83,7 +83,7 @@ class ToggleService extends Repository
         // user_stats?
     }
 
-    public function check($userId, $modalId, $modalCreatorId = 0)
+    public function check($userId, $modalId, $modalCreatorId = null)
     {
         if (!$userId)
         {
