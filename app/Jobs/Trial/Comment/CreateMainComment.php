@@ -59,9 +59,7 @@ class CreateMainComment implements ShouldQueue
 
         if ($badCount > 0)
         {
-            $service->update($this->id, [
-                'state' => 2
-            ]);
+            $service->deleteMainComment($this->id, 0, 0, true);
             return;
         }
 

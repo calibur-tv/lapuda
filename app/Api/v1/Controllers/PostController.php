@@ -118,57 +118,23 @@ class PostController extends Controller
             return $this->resErrNotFound('不存在的帖子');
         }
 
+        $userRepository = new UserRepository();
+        $author = $userRepository->item($post['user_id']);
+        if (is_null($author))
+        {
+            return $this->resErrNotFound('不存在的用户');
+        }
+
         $userId = $this->getAuthUserId();
-        $page = intval($request->get('page')) ?: 0;
-
-        if (!$page)
+        $bangumiRepository = new BangumiRepository();
+        $bangumi = $bangumiRepository->panel($post['bangumi_id'], $userId);
+        if (is_null($bangumi))
         {
-            $bangumiRepository = new BangumiRepository();
-            $bangumi = $bangumiRepository->panel($post['bangumi_id'], $userId);
-            if (is_null($bangumi))
-            {
-                return $this->resErrNotFound('不存在的番剧');
-            }
-        }
-
-        $commentService = new PostCommentService();
-
-        $only = intval($request->get('only')) ?: 0;
-        $take = intval($request->get('take')) ?: 10;
-        $replyId = $request->get('replyId') ? intval($request->get('replyId')) : 0;
-
-        $ids = $only
-            ? $commentService->onlySeeMasterIds($post['id'], $post['user_id'], $page, $take)
-            : $commentService->getMainCommentIds($post['id'], $page, $take);
-
-        if ($replyId && !$page && !$only)
-        {
-            if (!in_array($replyId, $ids))
-            {
-                $ids[] = $replyId;
-            }
-        }
-
-        $list = $commentService->mainCommentList($ids);
-
-        $postCommentLikeService = new PostCommentLikeService();
-        foreach ($list as $i => $item)
-        {
-            $list[$i]['liked'] = $postCommentLikeService->check($userId, $item['id'], $item['from_user_id']);
-        }
-
-        if ($page)
-        {
-            return $this->resOK([
-                'list' => $list
-            ]);
+            return $this->resErrNotFound('不存在的番剧');
         }
 
         $postCommentService = new PostCommentService();
         $post['commented'] = $postCommentService->check($userId, $id);
-
-        $viewCounter = new PostViewCounter();
-        $post['view_count'] = $viewCounter->add($id);
 
         $replyCounter = new PostReplyCounter();
         $post['comment_count'] = $replyCounter->get($id);
@@ -182,123 +148,23 @@ class PostController extends Controller
         $post['marked'] = $postMarkService->check($userId, $id, $post['user_id']);
         $post['mark_count'] = $postMarkService->total($id);
 
-        $userRepository = new UserRepository();
+        $post['preview_images'] = $postRepository->previewImages(
+            $id,
+            $post['user_id'],
+            (boolean)(intval($request->get('only')) ?: 0)
+        );
+
+        $viewCounter = new PostViewCounter();
+        $post['view_count'] = $viewCounter->add($id);
+
         $postTransformer = new PostTransformer();
-        $bangumiTransformer = new BangumiTransformer();
         $userTransformer = new UserTransformer();
-        $post['preview_images'] = $postRepository->previewImages($id, $post['user_id'], (boolean)$only);
 
         return $this->resOK([
+            'bangumi' => $bangumi,
             'post' => $postTransformer->show($post),
-            'list' => $list,
-            'bangumi' => $bangumiTransformer->post($bangumi),
-            'user' => $userTransformer->item($userRepository->item($post['user_id']))
+            'user' => $userTransformer->item($author)
         ]);
-    }
-
-    /**
-     * 回复主题帖
-     *
-     * @Post("/post/`postId`/reply")
-     *
-     * @Parameters({
-     *      @Parameter("content", description="内容，`1000字以内`", type="string", required=true),
-     *      @Parameter("images", description="图片对象数组", type="array", required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(201, body={"code": 0, "data": "帖子对象"}),
-     *      @Response(400, body={"code": 40003, "message": "请求参数错误"}),
-     *      @Response(401, body={"code": 40104, "message": "未登录的用户"}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的帖子"})
-     * })
-     */
-    public function reply(Request $request, $id)
-    {
-        $validator = Validator::make($request->all(), [
-            'content' => 'required|max:1200',
-            'images' => 'array'
-        ]);
-
-        if ($validator->fails())
-        {
-            return $this->resErrParams($validator);
-        }
-
-        $repository = new PostRepository();
-        $post = $repository->item($id);
-        if(is_null($post))
-        {
-            return $this->resErrNotFound('不存在的帖子');
-        }
-
-        $now = Carbon::now();
-        $userId = $this->getAuthUserId();
-        $images = $request->get('images');
-
-        $saveContent = [];
-        foreach ($images as $image)
-        {
-            $saveContent[] = [
-                'type' => 'img',
-                'data' => $image
-            ];
-        }
-        $saveContent[] = [
-            'type' => 'txt',
-            'data' => $request->get('content')
-        ];
-
-        $masterId = intval($post['user_id']);
-        $isMaster = $userId === $masterId;
-        $postCommentService = new PostCommentService();
-        $newComment = $postCommentService->reply([
-            'content' => $saveContent,
-            'user_id' => $userId,
-            'modal_id' => $id,
-            'to_user_id' => $isMaster ? 0 : $masterId
-        ], $isMaster);
-
-        if (!$newComment)
-        {
-            return $this->resErrServiceUnavailable();
-        }
-        $newId = $newComment['id'];
-
-        $repository->savePostImage($id, $newId, $images);
-
-        $postReplyCounter = new PostReplyCounter($id);
-        $postReplyCounter->add($id);
-        Post::where('id', $id)->update([
-            'updated_at' => date('Y-m-d H:i:s',time())
-        ]);
-        $trendingService = new TrendingService('posts');
-        $trendingService->update($id);
-        // 更新番剧帖子列表的缓存
-        $cacheKey = $repository->bangumiListCacheKey($post['bangumi_id']);
-        if (Redis::EXISTS($cacheKey))
-        {
-            Redis::ZADD($cacheKey, $now->timestamp, $id);
-        }
-        Redis::pipeline(function ($pipe) use ($id, $newId, $userId)
-        {
-            // 更新用户回复帖子列表的缓存
-            $pipe->LPUSHX('user_'.$userId.'_replyPostIds', $newId);
-            // 更新帖子楼层的
-            $pipe->RPUSHX('post_'.$id.'_ids', $newId);
-        });
-
-        if (!$isMaster)
-        {
-            $job = (new \App\Jobs\Notification\Post\Reply($newId));
-            dispatch($job);
-        }
-
-        $job = (new \App\Jobs\Push\Baidu('post/' . $id, 'update'));
-        dispatch($job);
-
-        return $this->resCreated($newComment);
     }
 
     /**
@@ -503,16 +369,6 @@ class PostController extends Controller
      */
     public function deleteComment(Request $request, $id)
     {
-        $commentId = $request->get('commentId');
-
-        $commentService = new PostCommentService();
-        $comment = $commentService->getMainCommentItem($commentId);
-
-        if (is_null($comment))
-        {
-            return $this->resErrNotFound('该评论已被删除');
-        }
-
         $postRepository = new PostRepository();
         $post = $postRepository->item($id);
 
@@ -521,21 +377,27 @@ class PostController extends Controller
             return $this->resErrNotFound('帖子已经被删除');
         }
 
-        $userId = $this->getAuthUserId();
-        $postUserId = intval($post['user_id']);
-        $commentCreatorId = $comment['from_user_id'];
+        $commentId = $request->get('commentId');
+        $commentService = new PostCommentService();
 
-        if ($userId !== $commentCreatorId && $userId !== $postUserId)
+        $result = $commentService->deleteMainComment(
+            $commentId,
+            $this->getAuthUserId(),
+            $post['user_id']
+        );
+
+        if (is_null($result))
         {
-            return $this->resErrRole('继续操作前请先登录');
+            return $this->resErrNotFound('评论已经被删除');
         }
 
-        $commentService->deletePostComment(
-            $commentId,
-            $comment['from_user_id'],
-            $comment['modal_id'],
-            $postUserId === $commentCreatorId
-        );
+        if (false === $result)
+        {
+            return $this->resErrNotFound('继续操作前请先登录');
+        }
+
+        $replyCounter = new PostReplyCounter();
+        $replyCounter->add($post['id'], -1);
 
         return $this->resNoContent();
     }
@@ -570,7 +432,7 @@ class PostController extends Controller
      * @Get("/post/trending/active")
      *
      * @Parameters({
-     *      @Parameter("minId", description="看过的帖子里，id 最小的一个", type="integer", required=true)
+     *      @Parameter("seenIds", description="看过的帖子的`ids`, 用','号分割的字符串", type="string", required=true)
      * })
      *
      * @Transaction({

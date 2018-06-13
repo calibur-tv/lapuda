@@ -4,18 +4,12 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Transformers\UserTransformer;
-use App\Mail\ForgetPassword;
-use App\Mail\Welcome;
-use App\Models\Confirm;
 use App\Models\User;
 use App\Models\UserZone;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Services\Sms\Message;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;

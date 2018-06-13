@@ -8,6 +8,7 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Toggle\Comment\PostCommentLikeService;
 use Illuminate\Http\Request;
@@ -18,6 +19,129 @@ use Illuminate\Support\Facades\Validator;
  */
 class CommentController extends Controller
 {
+    public function create(Request $request, $type, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'content' => 'required|max:1200',
+            'images' => 'array'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $commentService = $this->getServiceByType($type);
+        if (is_null($commentService))
+        {
+            return $this->resErrBad('错误的类型');
+        }
+
+        $repository = $this->getRepositoryByType($type);
+        if (is_null($repository))
+        {
+            return $this->resErrBad('错误的类型');
+        }
+
+        $parent = $repository->item($id);
+        if (is_null($parent))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $saveContent = [];
+        $userId = $this->getAuthUserId();
+        $images = $request->get('images');
+        $masterId = intval($parent['user_id']);
+
+        foreach ($images as $image)
+        {
+            $saveContent[] = [
+                'type' => 'img',
+                'data' => $image
+            ];
+        }
+        $saveContent[] = [
+            'type' => 'txt',
+            'data' => $request->get('content')
+        ];
+
+        $newComment = $commentService->create([
+            'content' => $saveContent,
+            'user_id' => $userId,
+            'modal_id' => $id,
+            'to_user_id' => $masterId
+        ]);
+
+        if (!$newComment)
+        {
+            return $this->resErrServiceUnavailable();
+        }
+
+        $repository->applyComment($userId, $parent, $images, $newComment);
+
+        if ($type === 'post')
+        {
+            if ($userId !== $masterId)
+            {
+                $job = (new \App\Jobs\Notification\Post\Reply($newComment['id']));
+                dispatch($job);
+            }
+        }
+
+        if ($type === 'post')
+        {
+            $job = (new \App\Jobs\Push\Baidu('post/' . $id, 'update'));
+            dispatch($job);
+        }
+
+        return $this->resCreated($newComment);
+    }
+
+    public function list(Request $request, $type, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'fetchId' => 'required'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrBad();
+        }
+
+        $commentService = $this->getServiceByType($type);
+        if (is_null($commentService))
+        {
+            return $this->resErrBad('错误的类型');
+        }
+
+        $repository = $this->getRepositoryByType($type);
+        if (is_null($repository))
+        {
+            return $this->resErrBad('错误的类型');
+        }
+
+        $parent = $repository->item($id);
+        if (is_null($parent))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $take = 10;
+        $fetchId = intval($request->get('fetchId')) ?: 0;
+
+        $ids = $commentService->getMainCommentIds($id);
+        $idsObject = $this->filterIdsByMaxId($ids, $fetchId, $take);
+
+        $list = $commentService->mainCommentList($idsObject['ids']);
+
+        return $this->resOK([
+            'list' => $list,
+            'total' => $idsObject['total'],
+            'noMore' => $idsObject['noMore']
+        ]);
+    }
+
     /**
      * 子评论列表
      *
@@ -29,29 +153,29 @@ class CommentController extends Controller
      * 1. `父评论` 一部视频下的评论列表，列表中的每一个就是一个父评论
      * 2. `子评论` 每个父评论都有回复列表，这个回复列表中的每一个就是子评论
      *
-     * @Get("/`type`/comment/`id`/list")
+     * @Get("/`type`/comment/`id`/comments")
      *
      * @Parameters({
      *      @Parameter("type", description="上面的某种 type", type="string", required=true),
      *      @Parameter("commentId", description="父评论 id", type="integer", required=true),
-     *      @Parameter("page", description="页码", type="integer", default=0, required=true)
+     *      @Parameter("maxId", description="该父评论下看过的最大的子评论 id", type="integer", default=0, required=true)
      * })
      *
      * @Transaction({
-     *      @Response(200, body={"code": 0, "data": "评论列表"}),
-     *      @Response(400, body={"code": 40003, "message": "没有页码|错误的类型"}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的评论"})
+     *      @Response(200, body={"code": 0, "data": {"list": "评论列表", "total": "评论总数", "noMore": "没有更多了"}}),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的父评论"})
      * })
      */
-    public function list(Request $request, $type, $id)
+    public function comments(Request $request, $type, $id)
     {
         $validator = Validator::make($request->all(), [
-            'page' => 'required|Integer|min:0'
+            'maxId' => 'required'
         ]);
 
         if ($validator->fails())
         {
-            return $this->resErrBad('没有页码');
+            return $this->resErrBad();
         }
 
         $commentService = $this->getServiceByType($type);
@@ -66,10 +190,19 @@ class CommentController extends Controller
             return $this->resErrNotFound('不存在的评论');
         }
 
-        $ids = $commentService->getSubCommentIds($id, $request->get('page'));
-        $comments = $commentService->subCommentList($ids);
+        $take = 10;
+        $maxId = intval($request->get('maxId')) ?: 0;
 
-        return $this->resOK($comments);
+        $ids = $commentService->getSubCommentIds($id);
+        $idsObject = $this->filterIdsByMaxId($ids, $maxId, $take);
+
+        $comments = $commentService->subCommentList($idsObject['ids']);
+
+        return $this->resOK([
+            'list' => $comments,
+            'total' => $idsObject['total'],
+            'noMore' => $idsObject['noMore']
+        ]);
     }
 
     /**
@@ -230,6 +363,18 @@ class CommentController extends Controller
         if ($type === 'post')
         {
             return new PostCommentService();
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    protected function getRepositoryByType($type)
+    {
+        if ($type === 'post')
+        {
+            return new PostRepository();
         }
         else
         {
