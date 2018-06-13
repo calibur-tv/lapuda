@@ -51,10 +51,11 @@ class ToggleService extends Repository
         return $id;
     }
 
-    public function undo($doId, $userId, $modalId)
+    public function undo($userId, $modalId)
     {
         DB::table($this->table)
-            ->where('id', $doId)
+            ->where('user_id', $userId)
+            ->where('modal_id', $modalId)
             ->delete();
 
         $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table, $modalId);
@@ -84,38 +85,34 @@ class ToggleService extends Repository
 
     public function check($userId, $modalId, $modalCreatorId = 0)
     {
+        if (!$userId)
+        {
+            return false;
+        }
+
         if ($userId === $modalCreatorId)
         {
-            return 0;
+            return false;
         }
 
-        $id = DB::table($this->table)
+        return (boolean)
+            DB::table($this->table)
             ->whereRaw('user_id = ? and modal_id = ?', [$userId, $modalId])
-            ->pluck('id')
-            ->first();
-
-        if (is_null($id))
-        {
-            return 0;
-        }
-
-        return $id;
+            ->count();
     }
 
     public function toggle($userId, $modalId)
     {
-        $doId = $this->check($userId, $modalId);
+        $Gone = $this->check($userId, $modalId);
 
-        return $doId
-            ? $this->undo($doId, $userId, $modalId)
-            : $this->do($userId, $modalId);
+        return $Gone ? $this->undo($userId, $modalId) : $this->do($userId, $modalId);
     }
 
     public function total($modalId)
     {
         $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table, $modalId);
 
-        return $toggleCountService->get($modalId);
+        return (int)$toggleCountService->get($modalId);
     }
 
     public function users($modalId, $page = 0, $count = 10)

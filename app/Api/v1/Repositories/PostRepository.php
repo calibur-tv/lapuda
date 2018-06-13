@@ -72,7 +72,7 @@ class PostRepository extends Repository
         }
     }
 
-    public function applyComment($userId, $post, $images, $newComment)
+    public function applyAddComment($userId, $post, $images, $newComment)
     {
         $id = $post['id'];
         $newId = $newComment['id'];
@@ -82,6 +82,8 @@ class PostRepository extends Repository
         Post::where('id', $id)->update([
             'updated_at' => $now
         ]);
+
+        Post::where('id', $id)->increment('comment_count');
 
         $trendingService = new TrendingService('posts');
         $trendingService->update($id);

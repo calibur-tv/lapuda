@@ -351,58 +351,6 @@ class PostController extends Controller
     }
 
     /**
-     * 删除帖子的某一层
-     *
-     * @Post("/post/`postId`/deleteComment")
-     *
-     * @Parameters({
-     *      @Parameter("commentId", description="楼层帖子的 id", type="integer", required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(204),
-     *      @Response(401, body={"code": 40104, "message": "未登录的用户"}),
-     *      @Response(403, body={"code": 40301, "message": "继续操作前请先登录"}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的帖子|该评论已被删除"})
-     * })
-     */
-    public function deleteComment(Request $request, $id)
-    {
-        $postRepository = new PostRepository();
-        $post = $postRepository->item($id);
-
-        if (is_null($post))
-        {
-            return $this->resErrNotFound('帖子已经被删除');
-        }
-
-        $commentId = $request->get('commentId');
-        $commentService = new PostCommentService();
-
-        $result = $commentService->deleteMainComment(
-            $commentId,
-            $this->getAuthUserId(),
-            $post['user_id']
-        );
-
-        if (is_null($result))
-        {
-            return $this->resErrNotFound('评论已经被删除');
-        }
-
-        if (false === $result)
-        {
-            return $this->resErrNotFound('继续操作前请先登录');
-        }
-
-        $replyCounter = new PostReplyCounter();
-        $replyCounter->add($post['id'], -1);
-
-        return $this->resNoContent();
-    }
-
-    /**
      * 最新帖子列表
      *
      * @Get("/post/trending/news")

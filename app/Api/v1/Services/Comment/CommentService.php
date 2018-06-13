@@ -117,7 +117,7 @@ class CommentService extends Repository
             $job = (new \App\Jobs\Trial\Comment\CreateSubComment($this->table, $id));
             dispatch($job);
 
-            return $this->getSubCommentItem($id, true);
+            return $this->getSubCommentItem($id);
         }
 
         if ($modalId)
@@ -191,55 +191,21 @@ class CommentService extends Repository
         return $result;
     }
 
-    public function deleteSubComment($id, $userId, $masterId = 0, $isRobot = false)
+    public function deleteSubComment($id, $parentId, $isRobot = false)
     {
-        $comment = $this->getSubCommentItem($id);
-
-        if (is_null($comment))
-        {
-            return null;
-        }
-
-        $isMaster = intval($masterId) === $comment['from_user_id'];
-        $isAuthor = intval($userId) === $comment['from_user_id'];
-
-        if (!$isRobot && !$isMaster && !$isAuthor)
-        {
-            return false;
-        }
-
         DB::table($this->table)
             ->where('id', $id)
             ->update([
                 'state' => $isRobot ? 2 : 4,
                 'deleted_at' => Carbon::now()
             ]);
-
-        $parentId = $comment['parent_id'];
 
         $this->ListRemove($this->subCommentIdsKey($parentId), $id);
         $this->writeCommentCount($parentId, false);
-
-        return $comment;
     }
 
-    public function deleteMainComment($id, $userId, $masterId = 0, $isRobot = false)
+    public function deleteMainComment($id, $modalId, $userId = 0, $isMaster = false, $isRobot = false)
     {
-        $comment = $this->getMainCommentItem($id);
-
-        if (is_null($comment))
-        {
-            return null;
-        }
-
-        $isMaster = intval($masterId) === $comment['from_user_id'];
-        $isAuthor = intval($userId) === $comment['from_user_id'];
-
-        if (!$isRobot && !$isMaster && !$isAuthor)
-        {
-            return false;
-        }
-
         DB::table($this->table)
             ->where('id', $id)
             ->update([
@@ -247,15 +213,16 @@ class CommentService extends Repository
                 'deleted_at' => Carbon::now()
             ]);
 
-        $modalId = $comment['modal_id'];
-        $this->ListRemove($this->userCommentIdsKey($userId), $id);
         $this->ListRemove($this->mainCommentIdsKey($modalId), $id);
+        // 不是楼主删层主
+        if ($userId && !$isMaster)
+        {
+            $this->ListRemove($this->userCommentIdsKey($userId), $id);
+        }
         if ($isMaster && $this->author_sort)
         {
             $this->ListRemove($this->authorMainCommentIdsKey($modalId), $id);
         }
-
-        return $comment;
     }
 
     public function getMainCommentIds($modalId)
@@ -264,7 +231,7 @@ class CommentService extends Repository
         {
             return DB::table($this->table)
                 ->where('modal_id', $modalId)
-                ->where('state', 1)
+                ->whereNull('deleted_at')
                 ->orderBy('id', $this->order)
                 ->pluck('id');
         });
@@ -272,12 +239,16 @@ class CommentService extends Repository
 
     public function getAuthorMainCommentIds($modalId, $authorId)
     {
+        if (!$this->author_sort)
+        {
+            return $this->getMainCommentIds($modalId);
+        }
         return $this->RedisList($this->authorMainCommentIdsKey($modalId), function () use ($modalId, $authorId)
         {
             return DB::table($this->table)
                 ->where('modal_id', $modalId)
                 ->where('user_id', $authorId)
-                ->where('state', 1)
+                ->whereNull('deleted_at')
                 ->orderBy('id', $this->order)
                 ->pluck('id');
         });
@@ -289,7 +260,7 @@ class CommentService extends Repository
         {
             return DB::table($this->table)
                 ->where('parent_id', $parentId)
-                ->where('state', 1)
+                ->whereNull('deleted_at')
                 ->orderBy('id', 'ASC')
                 ->pluck('id');
         });
@@ -301,24 +272,21 @@ class CommentService extends Repository
         {
             return DB::table($this->table)
                 ->whereRaw('user_id = ? and to_user_id <> ? and modal_id <> 0', [$userId, $userId])
-                ->where('state', 1)
+                ->whereNull('deleted_at')
                 ->orderBy('id', 'DESC')
                 ->pluck('id');
         });
     }
 
-    public function getSubCommentItem($id, $force = false)
+    public function getSubCommentItem($id)
     {
-        $result = $this->RedisHash($this->subCommentCacheKey($id), function () use ($id, $force)
+        $result = $this->RedisHash($this->subCommentCacheKey($id), function () use ($id)
         {
             $tableName = $this->table;
 
             $comment = DB::table($tableName)
                 ->where("$tableName.id", $id)
-                ->when(!$force, function ($query) use ($tableName)
-                {
-                    return $query->where("$tableName.state", 1);
-                })
+                ->whereNull("$tableName.deleted_at")
                 ->leftJoin('users AS from', 'from.id', '=', "$tableName.user_id")
                 ->leftJoin('users AS to', 'to.id', '=', "$tableName.to_user_id")
                 ->select(
@@ -354,18 +322,15 @@ class CommentService extends Repository
         return $this->transformer()->sub($result);
     }
 
-    public function getMainCommentItem($id, $force = false)
+    public function getMainCommentItem($id)
     {
-        $result = $this->Cache($this->mainCommentCacheKey($id), function () use ($id, $force)
+        $result = $this->Cache($this->mainCommentCacheKey($id), function () use ($id)
         {
             $tableName = $this->table;
 
             $comment = DB::table($tableName)
                 ->where("$tableName.id", $id)
-                ->when(!$force, function ($query) use ($tableName)
-                {
-                    return $query->where("$tableName.state", 1);
-                })
+                ->whereNull("$tableName.deleted_at")
                 ->leftJoin('users AS from', 'from.id', '=', "$tableName.user_id")
                 ->leftJoin('users AS to', 'to.id', '=', "$tableName.to_user_id")
                 ->when($this->floor_count, function ($query) use ($tableName)
@@ -392,6 +357,7 @@ class CommentService extends Repository
                         "$tableName.content",
                         "$tableName.created_at",
                         "$tableName.to_user_id",
+                        "$tableName.modal_id",
                         "$tableName.user_id AS from_user_id",
                         'from.nickname AS from_user_name',
                         'from.zone AS from_user_zone',

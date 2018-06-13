@@ -9,10 +9,6 @@
 namespace App\Api\V1\Services\Comment;
 
 
-use App\Api\V1\Services\Counter\Post\PostReplyCounter;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
-
 class PostCommentService extends CommentService
 {
     public function __construct()
