@@ -103,6 +103,8 @@ class CommentController extends Controller
             dispatch($job);
         }
 
+        $newComment['liked'] = false;
+
         return $this->resCreated($newComment);
     }
 
