@@ -54,7 +54,7 @@ class CreateSubComment implements ShouldQueue
 
         if ($badWordsCount > 0)
         {
-            $service->deleteSubComment($this->id, 0, true);
+            $service->deleteSubComment($this->id, $comment['parent_id'], true);
             return;
         }
 

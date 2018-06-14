@@ -10,6 +10,7 @@ namespace App\Api\V1\Repositories;
 
 
 use App\Api\V1\Services\Comment\PostCommentService;
+use App\Api\V1\Services\Trending\TrendingService;
 use App\Models\Post;
 use App\Models\PostImages;
 use App\Models\PostLike;
@@ -69,6 +70,37 @@ class PostRepository extends Repository
                 Redis::RPUSH('post_'.$postId.'_preview_images', $images);
             }
         }
+    }
+
+    public function applyAddComment($userId, $post, $images, $newComment)
+    {
+        $id = $post['id'];
+        $newId = $newComment['id'];
+        $this->savePostImage($id, $newId, $images);
+        $now = Carbon::now();
+
+        Post::where('id', $id)->update([
+            'updated_at' => $now
+        ]);
+
+        Post::where('id', $id)->increment('comment_count');
+
+        $trendingService = new TrendingService('posts');
+        $trendingService->update($id);
+        // 更新番剧帖子列表的缓存
+        $cacheKey = $this->bangumiListCacheKey($post['bangumi_id']);
+        if (Redis::EXISTS($cacheKey))
+        {
+            Redis::ZADD($cacheKey, $now->timestamp, $id);
+        }
+
+        Redis::pipeline(function ($pipe) use ($id, $newId, $userId)
+        {
+            // 更新用户回复帖子列表的缓存
+            $pipe->LPUSHX('user_'.$userId.'_replyPostIds', $newId);
+            // 更新帖子楼层的
+            $pipe->RPUSHX('post_'.$id.'_ids', $newId);
+        });
     }
 
     public function item($id)
@@ -146,8 +178,8 @@ class PostRepository extends Repository
         {
             $postCommentService = new PostCommentService();
             $ids = $onlySeeMaster
-                ? $postCommentService->onlySeeMasterIds($id, $masterId, -1)
-                : $postCommentService->getMainCommentIds($id, -1);
+                ? $postCommentService->getAuthorMainCommentIds($id, $masterId)
+                : $postCommentService->getMainCommentIds($id);
 
             $ids[] = $id;
 

@@ -125,7 +125,7 @@ class UserRepository extends Repository
     {
         $postCommentService = new PostCommentService();
 
-        return $postCommentService->getUserCommentIds($userId, -1);
+        return $postCommentService->getUserCommentIds($userId);
     }
 
     public function likedPostIds($userId)

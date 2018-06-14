@@ -8,8 +8,12 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Services\Comment\PostCommentService;
+use App\Api\V1\Services\Counter\Post\PostReplyCounter;
+use App\Api\V1\Services\Counter\Post\PostViewCounter;
 use App\Api\V1\Services\Toggle\Comment\PostCommentLikeService;
+use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -18,6 +22,157 @@ use Illuminate\Support\Facades\Validator;
  */
 class CommentController extends Controller
 {
+    public function create(Request $request, $type, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'content' => 'required|max:1200',
+            'images' => 'array'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $commentService = $this->getCommentServiceByType($type);
+        if (is_null($commentService))
+        {
+            return $this->resErrBad('错误的类型');
+        }
+
+        $repository = $this->getRepositoryByType($type);
+        if (is_null($repository))
+        {
+            return $this->resErrBad('错误的类型');
+        }
+
+        $parent = $repository->item($id);
+        if (is_null($parent))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $saveContent = [];
+        $userId = $this->getAuthUserId();
+        $images = $request->get('images');
+        $masterId = intval($parent['user_id']);
+
+        foreach ($images as $image)
+        {
+            $saveContent[] = [
+                'type' => 'img',
+                'data' => $image
+            ];
+        }
+        $saveContent[] = [
+            'type' => 'txt',
+            'data' => $request->get('content')
+        ];
+
+        $newComment = $commentService->create([
+            'content' => $saveContent,
+            'user_id' => $userId,
+            'modal_id' => $id,
+            'to_user_id' => $masterId
+        ]);
+
+        if (!$newComment)
+        {
+            return $this->resErrServiceUnavailable();
+        }
+
+        $repository->applyAddComment($userId, $parent, $images, $newComment);
+        $counterService = $this->getCounterServiceByType($type);
+        if (!is_null($counterService))
+        {
+            $counterService->add($id);
+        }
+
+        if ($type === 'post')
+        {
+            if ($userId !== $masterId)
+            {
+                $job = (new \App\Jobs\Notification\Post\Reply($newComment['id']));
+                dispatch($job);
+            }
+        }
+
+        if ($type === 'post')
+        {
+            $job = (new \App\Jobs\Push\Baidu('post/' . $id, 'update'));
+            dispatch($job);
+        }
+
+        return $this->resCreated($newComment);
+    }
+
+    public function mainList(Request $request, $type, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'fetchId' => 'required'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrBad();
+        }
+
+        $commentService = $this->getCommentServiceByType($type);
+        if (is_null($commentService))
+        {
+            return $this->resErrBad('错误的类型');
+        }
+
+        $repository = $this->getRepositoryByType($type);
+        if (is_null($repository))
+        {
+            return $this->resErrBad('错误的类型');
+        }
+
+        $parent = $repository->item($id);
+        if (is_null($parent))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $take = 10;
+        $fetchId = intval($request->get('fetchId')) ?: 0;
+        $onlySeeMaster = intval($request->get('onlySeeMaster')) ?: 0;
+        $seeReplyId = intval($request->get('seeReplyId')) ?: 0;
+
+        $ids = $onlySeeMaster
+            ? $commentService->getAuthorMainCommentIds($id, $parent['user_id'])
+            : $commentService->getMainCommentIds($id);
+
+        $idsObject = $this->filterIdsByMaxId($ids, $fetchId, $take);
+        $userId = $this->getAuthUserId();
+
+        // 获取第一页数据，并且指明要看某一条数据
+        if (!$fetchId && $seeReplyId)
+        {
+            $replyIndex = array_search($seeReplyId, $ids);
+            if ($replyIndex && $replyIndex >= $take)
+            {
+                array_push($idsObject['ids'], $seeReplyId);
+            }
+        }
+
+        $list = $commentService->mainCommentList($idsObject['ids']);
+        $commentLikeService = $this->getLikeServiceByType($type);
+
+        foreach ($list as $i => $item)
+        {
+            $list[$i]['liked'] = $commentLikeService->check($userId, $item['id']);
+            $list[$i]['like_count'] = $commentLikeService->total($item['id']);
+        }
+
+        return $this->resOK([
+            'list' => $list,
+            'total' => $idsObject['total'],
+            'noMore' => $idsObject['noMore']
+        ]);
+    }
+
     /**
      * 子评论列表
      *
@@ -29,32 +184,32 @@ class CommentController extends Controller
      * 1. `父评论` 一部视频下的评论列表，列表中的每一个就是一个父评论
      * 2. `子评论` 每个父评论都有回复列表，这个回复列表中的每一个就是子评论
      *
-     * @Get("/`type`/comment/`id`/list")
+     * @Get("/`type`/comment/`id`/sub/list")
      *
      * @Parameters({
      *      @Parameter("type", description="上面的某种 type", type="string", required=true),
      *      @Parameter("commentId", description="父评论 id", type="integer", required=true),
-     *      @Parameter("page", description="页码", type="integer", default=0, required=true)
+     *      @Parameter("maxId", description="该父评论下看过的最大的子评论 id", type="integer", default=0, required=true)
      * })
      *
      * @Transaction({
-     *      @Response(200, body={"code": 0, "data": "评论列表"}),
-     *      @Response(400, body={"code": 40003, "message": "没有页码|错误的类型"}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的评论"})
+     *      @Response(200, body={"code": 0, "data": {"list": "评论列表", "total": "评论总数", "noMore": "没有更多了"}}),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的父评论"})
      * })
      */
-    public function list(Request $request, $type, $id)
+    public function subList(Request $request, $type, $id)
     {
         $validator = Validator::make($request->all(), [
-            'page' => 'required|Integer|min:0'
+            'maxId' => 'required'
         ]);
 
         if ($validator->fails())
         {
-            return $this->resErrBad('没有页码');
+            return $this->resErrBad();
         }
 
-        $commentService = $this->getServiceByType($type);
+        $commentService = $this->getCommentServiceByType($type);
         if (is_null($commentService))
         {
             return $this->resErrBad('错误的类型');
@@ -66,10 +221,19 @@ class CommentController extends Controller
             return $this->resErrNotFound('不存在的评论');
         }
 
-        $ids = $commentService->getSubCommentIds($id, $request->get('page'));
-        $comments = $commentService->subCommentList($ids);
+        $take = 10;
+        $maxId = intval($request->get('maxId')) ?: 0;
 
-        return $this->resOK($comments);
+        $ids = $commentService->getSubCommentIds($id);
+        $idsObject = $this->filterIdsByMaxId($ids, $maxId, $take);
+
+        $comments = $commentService->subCommentList($idsObject['ids']);
+
+        return $this->resOK([
+            'list' => $comments,
+            'total' => $idsObject['total'],
+            'noMore' => $idsObject['noMore']
+        ]);
     }
 
     /**
@@ -103,7 +267,7 @@ class CommentController extends Controller
             return $this->resErrParams($validator);
         }
 
-        $commentService = $this->getServiceByType($type);
+        $commentService = $this->getCommentServiceByType($type);
         if (is_null($commentService))
         {
             return $this->resErrBad('错误的类型');
@@ -152,7 +316,7 @@ class CommentController extends Controller
     /**
      * 删除子评论
      *
-     * @Post("/`type`/comment/delete/`commentId`")
+     * @Post("/`type`/comment/delete/sub/`commentId`")
      *
      * @Request(headers={"Authorization": "Bearer JWT-Token"})
      *
@@ -163,33 +327,84 @@ class CommentController extends Controller
      *      @Response(403, body={"code": 40301, "message": "继续操作前请先登录"})
      * })
      */
-    public function delete($type, $id)
+    public function deleteSubComment($type, $id)
     {
-        $commentService = $this->getServiceByType($type);
+        $commentService = $this->getCommentServiceByType($type);
         if (is_null($commentService))
         {
             return $this->resErrBad('错误的类型');
         }
 
-        $result = $commentService->deleteSubComment($id, $this->getAuthUserId());
-
-        if (is_null($result))
+        $comment = $commentService->getSubCommentItem($id);
+        if (is_null($comment))
         {
             return $this->resErrNotFound('该评论已被删除');
         }
 
-        if (false === $result)
+        $userId = $this->getAuthUserId();
+        // 不是子评论的作者
+        if ($userId !== $comment['from_user_id'])
         {
-            return $this->resErrRole('继续操作前请先登录');
+            $parent = $commentService->getMainCommentItem($comment['parent_id']);
+            // 不是主评论作者
+            if ($parent['from_user_id'] !== $userId)
+            {
+                return $this->resErrRole();
+            }
+        }
+
+        $commentService->deleteSubComment($id, $comment['parent_id']);
+
+        return $this->resNoContent();
+    }
+
+    public function deleteMainComment($type, $id)
+    {
+        $commentService = $this->getCommentServiceByType($type);
+        if (is_null($commentService))
+        {
+            return $this->resErrBad('错误的类型');
+        }
+
+        $comment = $commentService->getMainCommentItem($id);
+        if (is_null($comment))
+        {
+            return $this->resErrNotFound('该评论已被删除');
+        }
+
+        $userId = $this->getAuthUserId();
+        $isMaster = false;
+        // 不是评论的作者
+        if ($userId !== $comment['from_user_id'])
+        {
+            $repository = $this->getRepositoryByType($type);
+            $parent = $repository->item($comment['modal_id']);
+            // 不是主题的作者
+            if ($parent['user_id'] !== $userId)
+            {
+                return $this->resErrRole();
+            }
+            else
+            {
+                $isMaster = true;
+            }
+        }
+
+        $commentService->deleteMainComment($id, $comment['modal_id'], $userId, $isMaster);
+        $counterService = $this->getCounterServiceByType($type);
+
+        if (!is_null($counterService))
+        {
+            $counterService->add($comment['modal_id'], -1);
         }
 
         return $this->resNoContent();
     }
 
     /**
-     * 喜欢子评论
+     * <喜欢/取消喜欢>主评论
      *
-     * @Post("/`type`/comment/toggleLike/`commentId`")
+     * @Post("/`type`/comment/main/toggleLike/`commentId`")
      *
      * @Request(headers={"Authorization": "Bearer JWT-Token"})
      *
@@ -198,13 +413,10 @@ class CommentController extends Controller
      *      @Response(400, body={"code": 40003, "message": "参数错误"})
      * })
      */
-    public function toggleLike($type, $id)
+    public function toggleLikeMainComment($type, $id)
     {
-        if ($type === 'post')
-        {
-            $commentLikeService = new PostCommentLikeService();
-        }
-        else
+        $commentLikeService = $this->getLikeServiceByType($type);
+        if (is_null($commentLikeService))
         {
             return $this->resErrBad('错误的类型');
         }
@@ -225,11 +437,74 @@ class CommentController extends Controller
         return $this->resCreated((boolean)$result);
     }
 
-    protected function getServiceByType($type)
+    /**
+     * <喜欢/取消喜欢>子评论
+     *
+     * @Post("/`type`/comment/sub/toggleLike/`commentId`")
+     *
+     * @Request(headers={"Authorization": "Bearer JWT-Token"})
+     *
+     * @Transaction({
+     *      @Response(201, body={"code": 0, "data": "是否已喜欢"}),
+     *      @Response(400, body={"code": 40003, "message": "参数错误"})
+     * })
+     */
+    public function toggleLikeSubComment($type, $id)
+    {
+        $commentLikeService = $this->getLikeServiceByType($type);
+        if (is_null($commentLikeService))
+        {
+            return $this->resErrBad('错误的类型');
+        }
+
+        $result = $commentLikeService->toggle($this->getAuthUserId(), $id);
+
+        // TODO：dispatch job to update open search weight
+
+        return $this->resCreated((boolean)$result);
+    }
+
+    protected function getCommentServiceByType($type)
     {
         if ($type === 'post')
         {
             return new PostCommentService();
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    protected function getRepositoryByType($type)
+    {
+        if ($type === 'post')
+        {
+            return new PostRepository();
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    protected function getLikeServiceByType($type)
+    {
+        if ($type === 'post')
+        {
+            return new PostLikeService();
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    protected function getCounterServiceByType($type)
+    {
+        if ($type === 'post')
+        {
+            return new PostReplyCounter();
         }
         else
         {

@@ -154,12 +154,18 @@ class Repository
 
     public function ListInsertBefore($key, $value)
     {
-        Redis::LPUSHX($key, $value);
+        if (Redis::EXISTS($key))
+        {
+            Redis::LPUSHX($key, $value);
+        }
     }
 
     public function ListInsertAfter($key, $value)
     {
-        Redis::RPUSHX($key, $value);
+        if (Redis::EXISTS($key))
+        {
+            Redis::RPUSHX($key, $value);
+        }
     }
 
     public function ListRemove($key, $value, $count = 1)
@@ -169,9 +175,11 @@ class Repository
 
     public function SortAdd($key, $value, $score = 0)
     {
-        $score = $score === 0 ? strtotime('now') : $score;
-
-        Redis::ZADD($key, $score, $value);
+        if (Redis::EXISTS($key))
+        {
+            $score = $score === 0 ? strtotime('now') : $score;
+            Redis::ZADD($key, $score, $value);
+        }
     }
 
     public function SortRemove($key, $value)

@@ -44,20 +44,17 @@ class CommentService extends Repository
      */
 
     protected $table;
-
     protected $order;
-
     protected $floor_count;
-
+    protected $author_sort;
     protected $commentTransformer;
 
-    public function __construct($table, $order = 'ASC', $floor_count = false)
+    public function __construct($table, $order = 'ASC', $floor_count = false, $author_sort = false)
     {
         $this->table = $table;
-
         $this->order = $order === 'ASC' ? 'ASC' : 'DESC';
-
         $this->floor_count = $floor_count;
+        $this->author_sort = $author_sort;
     }
 
     public function create(array $args)
@@ -73,6 +70,13 @@ class CommentService extends Repository
         if (!$content || !$userId || ($parentId === 0 && $modalId === 0))
         {
             return null;
+        }
+
+        $isMaster = false;
+        if ($userId === $toUserId)
+        {
+            $isMaster = true;
+            $toUserId = 0;
         }
 
         if ($modalId && $this->floor_count)
@@ -106,29 +110,36 @@ class CommentService extends Repository
 
         if ($parentId)
         {
-            if ($this->order === 'ASC') {
-                $this->ListInsertAfter($this->getParentIdsKey($parentId), $id);
-            } else {
-                $this->ListInsertBefore($this->getParentIdsKey($parentId), $id);
-            }
+            $this->ListInsertAfter($this->subCommentIdsKey($parentId), $id);
             // 更改主评论的回复数
             $this->writeCommentCount($parentId, true);
 
             $job = (new \App\Jobs\Trial\Comment\CreateSubComment($this->table, $id));
             dispatch($job);
 
-            return $this->getSubCommentItem($id, true);
+            return $this->getSubCommentItem($id);
         }
 
         if ($modalId)
         {
-            if ($this->order === 'ASC') {
-                $this->ListInsertAfter($this->getModalIdsKey($modalId), $id);
-            } else {
-                $this->ListInsertBefore($this->getModalIdsKey($modalId), $id);
+            if ($this->order === 'ASC')
+            {
+                $this->ListInsertAfter($this->mainCommentIdsKey($modalId), $id);
+                if ($isMaster && $this->author_sort)
+                {
+                    $this->ListInsertAfter($this->authorMainCommentIdsKey($modalId), $id);
+                }
+            }
+            else
+            {
+                $this->ListInsertBefore($this->mainCommentIdsKey($modalId), $id);
+                if ($isMaster && $this->author_sort)
+                {
+                    $this->ListInsertBefore($this->authorMainCommentIdsKey($modalId), $id);
+                }
             }
             // 更新用户的回复列表
-            $this->ListInsertBefore($this->userCommentCacheKey($userId), $id);
+            $this->ListInsertBefore($this->userCommentIdsKey($userId), $id);
 
             $job = (new \App\Jobs\Trial\Comment\CreateMainComment($this->table, $id));
             dispatch($job);
@@ -141,11 +152,7 @@ class CommentService extends Repository
 
     public function update($id, array $data)
     {
-        DB::table($this->table)
-            ->where('id', $id)
-            ->update(array_merge($data, [
-                'updated_at' => Carbon::now()
-            ]));
+        // TODO
     }
 
     public function subCommentList($ids)
@@ -184,20 +191,8 @@ class CommentService extends Repository
         return $result;
     }
 
-    public function deleteSubComment($id, $userId, $isRobot = false)
+    public function deleteSubComment($id, $parentId, $isRobot = false)
     {
-        $comment = $this->getSubCommentItem($id);
-
-        if (is_null($comment))
-        {
-            return null;
-        }
-
-        if (!$isRobot && ($comment['from_user_id'] !== intval($userId)))
-        {
-            return false;
-        }
-
         DB::table($this->table)
             ->where('id', $id)
             ->update([
@@ -205,103 +200,102 @@ class CommentService extends Repository
                 'deleted_at' => Carbon::now()
             ]);
 
-        $this->ListRemove($this->getParentIdsKey($comment['parent_id']), $id);
-        $this->writeCommentCount($comment['parent_id'], false);
-
-        return $comment;
+        $this->ListRemove($this->subCommentIdsKey($parentId), $id);
+        $this->writeCommentCount($parentId, false);
     }
 
-    public function deleteMainComment($id, $userId)
+    public function deleteMainComment($id, $modalId, $userId = 0, $isMaster = false, $isRobot = false)
     {
-        $comment = $this->getMainCommentItem($id);
-
-        if (is_null($comment))
-        {
-            return null;
-        }
-
-        if ($comment['from_user_id'] !== intval($userId))
-        {
-            return false;
-        }
-
         DB::table($this->table)
             ->where('id', $id)
             ->update([
-                'state' => 4,
+                'state' => $isRobot ? 2 : 4,
                 'deleted_at' => Carbon::now()
             ]);
 
-        $this->ListRemove($this->getModalIdsKey($comment['modal_id']), $id);
-        $this->ListRemove($this->userCommentCacheKey($userId), $id);
-
-        return $comment;
+        $this->ListRemove($this->mainCommentIdsKey($modalId), $id);
+        // 不是楼主删层主
+        if ($userId && !$isMaster)
+        {
+            $this->ListRemove($this->userCommentIdsKey($userId), $id);
+        }
+        if ($isMaster && $this->author_sort)
+        {
+            $this->ListRemove($this->authorMainCommentIdsKey($modalId), $id);
+        }
     }
 
-    public function getMainCommentIds($modalId, $page = 0, $count = 10)
+    public function getMainCommentIds($modalId)
     {
-        $ids = $this->RedisList($this->getModalIdsKey($modalId), function () use ($modalId)
+        return $this->RedisList($this->mainCommentIdsKey($modalId), function () use ($modalId)
         {
             return DB::table($this->table)
                 ->where('modal_id', $modalId)
-                ->where('state', 1)
+                ->whereNull('deleted_at')
                 ->orderBy('id', $this->order)
                 ->pluck('id');
         });
-
-        return $page === -1 ? $ids : array_slice($ids, $page * $count, $count);
     }
 
-    public function getSubCommentIds($parentId, $page = 0, $count = 10)
+    public function getAuthorMainCommentIds($modalId, $authorId)
     {
-        $ids = $this->RedisList($this->getParentIdsKey($parentId), function () use ($parentId)
+        if (!$this->author_sort)
+        {
+            return $this->getMainCommentIds($modalId);
+        }
+        return $this->RedisList($this->authorMainCommentIdsKey($modalId), function () use ($modalId, $authorId)
+        {
+            return DB::table($this->table)
+                ->where('modal_id', $modalId)
+                ->where('user_id', $authorId)
+                ->whereNull('deleted_at')
+                ->orderBy('id', $this->order)
+                ->pluck('id');
+        });
+    }
+
+    public function getSubCommentIds($parentId)
+    {
+        return $this->RedisList($this->subCommentIdsKey($parentId), function () use ($parentId)
         {
             return DB::table($this->table)
                 ->where('parent_id', $parentId)
-                ->where('state', 1)
-                ->orderBy('id', $this->order)
+                ->whereNull('deleted_at')
+                ->orderBy('id', 'ASC')
                 ->pluck('id');
         });
-
-        return array_slice($ids, $page * $count, $count);
     }
 
-    public function getUserCommentIds($userId, $page = 0, $count = 10)
+    public function getUserCommentIds($userId)
     {
-        $ids = $this->RedisList($this->userCommentCacheKey($userId), function () use ($userId)
+        return $this->RedisList($this->userCommentIdsKey($userId), function () use ($userId)
         {
             return DB::table($this->table)
                 ->whereRaw('user_id = ? and to_user_id <> ? and modal_id <> 0', [$userId, $userId])
-                ->where('state', 1)
+                ->whereNull('deleted_at')
                 ->orderBy('id', 'DESC')
                 ->pluck('id');
         });
-
-        return $page === -1 ? $ids : array_slice($ids, $page * $count, $count);
     }
 
-    public function getSubCommentItem($id, $force = false)
+    public function getSubCommentItem($id)
     {
-        $result = $this->RedisHash($this->subCommentCacheKey($id), function () use ($id, $force)
+        $result = $this->RedisHash($this->subCommentCacheKey($id), function () use ($id)
         {
             $tableName = $this->table;
 
             $comment = DB::table($tableName)
                 ->where("$tableName.id", $id)
-                ->when(!$force, function ($query) use ($tableName)
-                {
-                    return $query->where("$tableName.state", 1);
-                })
+                ->whereNull("$tableName.deleted_at")
                 ->leftJoin('users AS from', 'from.id', '=', "$tableName.user_id")
                 ->leftJoin('users AS to', 'to.id', '=', "$tableName.to_user_id")
                 ->select(
                     "$tableName.id",
                     "$tableName.content",
                     "$tableName.modal_id",
-                    "$tableName.parent_id",
                     "$tableName.created_at",
                     "$tableName.to_user_id",
-                    "$tableName.comment_count",
+                    "$tableName.parent_id",
                     "$tableName.user_id AS from_user_id",
                     'from.nickname AS from_user_name',
                     'from.zone AS from_user_zone',
@@ -328,25 +322,15 @@ class CommentService extends Repository
         return $this->transformer()->sub($result);
     }
 
-    public function getMainCommentItem($id, $force = false)
+    public function getMainCommentItem($id)
     {
-        $cacheKey = $this->mainCommentCacheKey($id);
-
-        if (is_null($cacheKey))
-        {
-            return null;
-        }
-
-        $result = $this->Cache($cacheKey, function () use ($id, $force)
+        $result = $this->Cache($this->mainCommentCacheKey($id), function () use ($id)
         {
             $tableName = $this->table;
 
             $comment = DB::table($tableName)
                 ->where("$tableName.id", $id)
-                ->when(!$force, function ($query) use ($tableName)
-                {
-                    return $query->where("$tableName.state", 1);
-                })
+                ->whereNull("$tableName.deleted_at")
                 ->leftJoin('users AS from', 'from.id', '=', "$tableName.user_id")
                 ->leftJoin('users AS to', 'to.id', '=', "$tableName.to_user_id")
                 ->when($this->floor_count, function ($query) use ($tableName)
@@ -355,9 +339,8 @@ class CommentService extends Repository
                         "$tableName.floor_count",
                         "$tableName.id",
                         "$tableName.content",
-                        "$tableName.modal_id",
-                        "$tableName.parent_id",
                         "$tableName.created_at",
+                        "$tableName.modal_id",
                         "$tableName.to_user_id",
                         "$tableName.user_id AS from_user_id",
                         'from.nickname AS from_user_name',
@@ -372,10 +355,9 @@ class CommentService extends Repository
                     return $query->select(
                         "$tableName.id",
                         "$tableName.content",
-                        "$tableName.modal_id",
-                        "$tableName.parent_id",
                         "$tableName.created_at",
                         "$tableName.to_user_id",
+                        "$tableName.modal_id",
                         "$tableName.user_id AS from_user_id",
                         'from.nickname AS from_user_name',
                         'from.zone AS from_user_zone',
@@ -415,12 +397,26 @@ class CommentService extends Repository
             return null;
         }
 
-        $counter = new CounterService($this->table, 'comment_count');
-        $result['comment_count'] = $counter->get($result['id']);
-
         $result = $this->transformer()->main($result);
-        $commentIds = $this->getSubCommentIds($result['id']);
-        $result['comments'] = $this->subCommentList($commentIds);
+
+        $commentIds = $this->getSubCommentIds($id);
+        if (count($commentIds))
+        {
+            $commentIdsObj = $this->filterIdsByMaxId($commentIds, 0, 5);
+            $result['comments'] = [
+                'list' => $this->subCommentList($commentIdsObj['ids']),
+                'total' => $commentIdsObj['total'],
+                'noMore' => $commentIdsObj['noMore']
+            ];
+        }
+        else
+        {
+            $result['comments'] = [
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ];
+        }
 
         return $result;
     }
@@ -457,37 +453,32 @@ class CommentService extends Repository
         return $this->commentTransformer;
     }
 
-    protected function getParentIdsKey($parentId)
+    protected function subCommentIdsKey($parentId)
     {
         return $this->table . '_' . $parentId . '_sub_comment_ids';
     }
 
-    protected function getModalIdsKey($modalId)
+    protected function mainCommentIdsKey($modalId)
     {
         return $this->table . '_' . $modalId . '_main_comment_ids';
     }
 
-    protected function subCommentCacheKey($id)
+    protected function authorMainCommentIdsKey($modalId)
     {
-        return $this->table . '_sub_' . $id;
+        return $this->table . '_' . $modalId . '_author_main_comment_ids';
     }
 
-    protected function mainCommentCacheKey($id)
+    protected function subCommentCacheKey($parentId)
     {
-        $updatedAt = DB::table($this->table)
-            ->where('id', $id)
-            ->pluck('updated_at')
-            ->first();
-
-        if (!$updatedAt)
-        {
-            return null;
-        }
-
-        return $this->table . '_main_' . $id . '_' . strtotime($updatedAt);
+        return $this->table . '_sub_comment_' . $parentId;
     }
 
-    protected function userCommentCacheKey($userId)
+    protected function mainCommentCacheKey($modalId)
+    {
+        return $this->table . '_main_comment_' . $modalId;
+    }
+
+    protected function userCommentIdsKey($userId)
     {
         return $this->table . '_user_' . $userId . '_reply_ids';
     }

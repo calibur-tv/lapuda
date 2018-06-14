@@ -38,7 +38,7 @@ class CreateMainComment implements ShouldQueue
     public function handle()
     {
         $service = new CommentService($this->modal);
-        $comment = $service->getMainCommentItem($this->id, true);
+        $comment = $service->getMainCommentItem($this->id);
 
         if (config('app.env') === 'local')
         {
@@ -59,9 +59,7 @@ class CreateMainComment implements ShouldQueue
 
         if ($badCount > 0)
         {
-            $service->update($this->id, [
-                'state' => 2
-            ]);
+            $service->deleteMainComment($this->id, 0, 0, false, true);
             return;
         }
 

@@ -23,6 +23,7 @@ class PostReplyCounter extends CounterService
     {
         return DB::table('post_comments')
             ->where('modal_id', $this->id)
+            ->whereNull('deleted_at')
             ->count();
     }
 }
