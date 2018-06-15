@@ -162,11 +162,8 @@ class CommentController extends Controller
         $list = $commentService->mainCommentList($idsObject['ids']);
         $commentLikeService = $this->getLikeServiceByType($type);
 
-        foreach ($list as $i => $item)
-        {
-            $list[$i]['liked'] = $commentLikeService->check($userId, $item['id']);
-            $list[$i]['like_count'] = $commentLikeService->total($item['id']);
-        }
+        $list = $commentLikeService->batchCheck($list, $userId, 'liked');
+        $list = $commentLikeService->batchTotal($list, 'like_count');
 
         return $this->resOK([
             'list' => $list,

@@ -19,10 +19,14 @@ class PostReplyCounter extends CounterService
         parent::__construct('posts', 'comment_count');
     }
 
-    public function migrate()
+    public function migrate($modalId)
     {
+        if (!$modalId)
+        {
+            return false;
+        }
         return DB::table('post_comments')
-            ->where('modal_id', $this->id)
+            ->where('modal_id', $modalId)
             ->whereNull('deleted_at')
             ->count();
     }

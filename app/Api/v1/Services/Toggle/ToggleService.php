@@ -39,7 +39,7 @@ class ToggleService extends Repository
                 'created_at' => Carbon::now()
             ]);
 
-        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table, $modalId);
+        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table);
         $toggleCountService->add($modalId, $count);
 
         if ($this->needCacheList)
@@ -58,7 +58,7 @@ class ToggleService extends Repository
             ->where('modal_id', $modalId)
             ->delete();
 
-        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table, $modalId);
+        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table);
         $toggleCountService->add($modalId, -1);
 
         if ($this->needCacheList)
@@ -72,7 +72,7 @@ class ToggleService extends Repository
 
     public function doUsersTotal($modalId)
     {
-        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table, $modalId);
+        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table);
 
         return $toggleCountService->get($modalId);
     }
@@ -101,6 +101,34 @@ class ToggleService extends Repository
             ->count();
     }
 
+    public function batchCheck($list, $userId, $key)
+    {
+        $ids = array_map(function ($item)
+        {
+            return $item['id'];
+        }, $list);
+
+        $results = DB::table($this->table)
+            ->where('user_id', $userId)
+            ->whereIn('modal_id', $ids)
+            ->pluck('modal_id AS id')
+            ->toArray();
+
+        foreach ($list as $i => $item)
+        {
+            if (in_array($item['id'], $results))
+            {
+                $list[$i][$key] = true;
+            }
+            else
+            {
+                $list[$i][$key] = false;
+            }
+        }
+
+        return $list;
+    }
+
     public function toggle($userId, $modalId)
     {
         $Gone = $this->check($userId, $modalId);
@@ -110,9 +138,16 @@ class ToggleService extends Repository
 
     public function total($modalId)
     {
-        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table, $modalId);
+        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table);
 
         return (int)$toggleCountService->get($modalId);
+    }
+
+    public function batchTotal($list, $key)
+    {
+        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table);
+
+        return $toggleCountService->batchGet($list, $key);
     }
 
     public function users($modalId, $page = 0, $count = 10)

@@ -42,7 +42,7 @@ class CounterService
             return Redis::get($cacheKey);
         }
 
-        $count = $this->migrate();
+        $count = $this->migrate($id);
         if (false === $count)
         {
             $count = DB::table($this->table)
@@ -55,6 +55,16 @@ class CounterService
         $this->writeCache($this->writeKey($id), time());
 
         return $count;
+    }
+
+    public function batchGet($list, $key)
+    {
+        foreach ($list as $i => $item)
+        {
+            $list[$i][$key] = $this->get($item['id']);
+        }
+
+        return $list;
     }
 
     public function add($id, $num = 1)
@@ -91,7 +101,7 @@ class CounterService
         return $this->get($id);
     }
 
-    public function migrate()
+    public function migrate($id)
     {
         return false;
     }
