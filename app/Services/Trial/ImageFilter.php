@@ -18,62 +18,37 @@ class ImageFilter
         try
         {
             $respSex = json_decode(file_get_contents($url . '?qpulp'), true);
-            if (intval($respSex['code']) !== 0)
+            if (intval($respSex['code']) === 0)
             {
                 $badCount++;
-            }
-            else
-            {
-                $label = intval($respSex['result']['label']);
-                $review = (boolean)$respSex['result']['review'];
-                if ($label === 0 || $review === true)
-                {
-                    $badCount++;
-                }
             }
         }
         catch (\Exception $e)
         {
-            $badCount++;
         }
         // 暴恐
         try
         {
             $respWarn = json_decode(file_get_contents($url . '?qterror'), true);
-            if (intval($respWarn['code']) !== 0)
+            if (intval($respWarn['code']) === 1 && (boolean)$respWarn['result']['review'])
             {
                 $badCount++;
-            }
-            else
-            {
-                $label = intval($respWarn['result']['label']);
-                $review = (boolean)$respWarn['result']['review'];
-                if ($label === 1 || $review)
-                {
-                    $badCount++;
-                }
             }
         }
         catch (\Exception $e)
         {
-            $badCount++;
         }
         // 政治敏感
         try
         {
             $respDaddy = json_decode(file_get_contents($url . '?qpolitician'), true);
-            if (intval($respDaddy['code']) !== 0)
-            {
-                $badCount++;
-            }
-            else if ((boolean)$respDaddy['result']['review'] === true)
+            if ((boolean)$respDaddy['result']['review'])
             {
                 $badCount++;
             }
         }
         catch (\Exception $e)
         {
-            $badCount++;
         }
 
         return $badCount;
