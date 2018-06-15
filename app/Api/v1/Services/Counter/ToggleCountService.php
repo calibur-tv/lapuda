@@ -17,18 +17,21 @@ class ToggleCountService extends CounterService
 
     protected $modalId;
 
-    public function __construct($modalTable, $modalField, $toggleTable, $modalId)
+    public function __construct($modalTable, $modalField, $toggleTable)
     {
         parent::__construct($modalTable, $modalField);
 
         $this->toggleTable = $toggleTable;
-        $this->modalId = $modalId;
     }
 
-    public function migrate()
+    public function migrate($modalId)
     {
+        if (!$modalId)
+        {
+            return false;
+        }
         return DB::table($this->toggleTable)
-            ->where('modal_id', $this->modalId)
+            ->where('modal_id', $modalId)
             ->count();
     }
 }

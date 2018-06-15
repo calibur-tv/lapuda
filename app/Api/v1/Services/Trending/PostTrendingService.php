@@ -12,6 +12,7 @@ namespace App\Api\V1\Services\Trending;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Counter\Post\PostReplyCounter;
 use App\Api\V1\Services\Counter\Post\PostViewCounter;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
@@ -30,6 +31,7 @@ class PostTrendingService extends TrendingService
 
     protected $likeService;
     protected $markService;
+    protected $commentService;
 
     protected $replyCounter;
     protected $viewCounter;
@@ -50,6 +52,7 @@ class PostTrendingService extends TrendingService
 
         $this->likeService = new PostLikeService();
         $this->markService = new PostMarkService();
+        $this->commentService = new PostCommentService();
 
         $this->replyCounter = new PostReplyCounter();
         $this->viewCounter = new PostViewCounter();
@@ -160,25 +163,16 @@ class PostTrendingService extends TrendingService
             $item['user'] = $user;
             $item['bangumi'] = $bangumi;
 
-            $postId = $item['id'];
-            $authorId = $item['user_id'];
-
-            $item['liked'] = false;
-//            $item['liked'] = $this->likeService->check($this->visitorId, $postId, $authorId);
-            $item['like_count'] = $this->likeService->total($postId);
-
-            $item['marked'] = false;
-//            $item['marked'] = $this->markService->check($this->visitorId, $postId, $authorId);
-            $item['mark_count'] = $this->markService->total($postId);
-
-            $item['commented'] = false;
-//            $item['commented'] = $this->replyCounter->check($this->visitorId, $postId);
-            $item['comment_count'] = $this->replyCounter->get($postId);
-
-            $item['view_count'] = $this->viewCounter->get($postId);
-
             $result[] = $item;
         }
+
+        $result = $this->likeService->batchCheck($result, $this->visitorId, 'liked');
+        $result = $this->likeService->batchTotal($result, 'like_count');
+        $result = $this->markService->batchCheck($result, $this->visitorId, 'marked');
+        $result = $this->markService->batchTotal($result, 'mark_count');
+        $result = $this->commentService->batchCheck($result, $this->visitorId, 'commented');
+        $result = $this->replyCounter->batchGet($result, 'comment_count');
+        $result = $this->viewCounter->batchGet($result, 'view_count');
 
         return $this->transformer->trending($result);
     }

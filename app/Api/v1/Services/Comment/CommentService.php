@@ -433,6 +433,34 @@ class CommentService extends Repository
             ->count();
     }
 
+    public function batchCheck($list, $userId, $key)
+    {
+        $ids = array_map(function ($item)
+        {
+            return $item['id'];
+        }, $list);
+
+        $results = DB::table($this->table)
+            ->where('user_id', $userId)
+            ->whereIn('modal_id', $ids)
+            ->pluck('modal_id AS id')
+            ->toArray();
+
+        foreach ($list as $i => $item)
+        {
+            if (in_array($item['id'], $results))
+            {
+                $list[$i][$key] = true;
+            }
+            else
+            {
+                $list[$i][$key] = false;
+            }
+        }
+
+        return $list;
+    }
+
     protected function writeCommentCount($mainCommentId, $isPlus)
     {
         DB::table($this->table)

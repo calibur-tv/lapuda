@@ -39,7 +39,7 @@ class VoteService extends Repository
                 'created_at' => Carbon::now()
             ]);
 
-        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table, $modalId);
+        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table);
         $toggleCountService->add($modalId, $count);
 
         if ($this->needCacheList)
@@ -57,7 +57,7 @@ class VoteService extends Repository
             ->where('id', $doId)
             ->delete();
 
-        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table, $modalId);
+        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table);
         $toggleCountService->add($modalId, -1);
 
         if ($this->needCacheList)
@@ -71,7 +71,7 @@ class VoteService extends Repository
 
     public function doUsersTotal($modalId)
     {
-        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table, $modalId);
+        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table);
 
         return $toggleCountService->get($modalId);
     }
@@ -113,7 +113,7 @@ class VoteService extends Repository
 
     public function total($modalId)
     {
-        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table, $modalId);
+        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table);
 
         return $toggleCountService->get($modalId);
     }
