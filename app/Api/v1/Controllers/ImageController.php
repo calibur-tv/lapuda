@@ -421,7 +421,7 @@ class ImageController extends Controller
 
         if ($liked)
         {
-            $imageLikeService->undo($liked, $userId, $imageId);
+            $imageLikeService->undo($userId, $imageId);
 
             return $this->resCreated(false);
         }

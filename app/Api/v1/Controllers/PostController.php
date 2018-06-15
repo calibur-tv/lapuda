@@ -222,7 +222,7 @@ class PostController extends Controller
 
         if ($liked)
         {
-            $postLikeService->undo($liked, $userId, $postId);
+            $postLikeService->undo($userId, $postId);
 
             return $this->resCreated(false);
         }
