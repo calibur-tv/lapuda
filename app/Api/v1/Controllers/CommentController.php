@@ -22,6 +22,22 @@ use Illuminate\Support\Facades\Validator;
  */
 class CommentController extends Controller
 {
+    /**
+     * 新建主评论
+     *
+     * @Post("/`type`/comment/`type_id`/create")
+     *
+     * @Parameters({
+     *      @Parameter("content", description="内容，`1000字以内`", type="string", required=true),
+     *      @Parameter("images", description="图片对象数组", type="array", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(201, body={"code": 0, "data": "主评论对象"}),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误"})
+     * })
+     */
     public function create(Request $request, $type, $id)
     {
         $validator = Validator::make($request->all(), [
@@ -108,6 +124,23 @@ class CommentController extends Controller
         return $this->resCreated($newComment);
     }
 
+    /**
+     * 获取主评论列表
+     *
+     * @Post("/`type`/comment/`type_id`/main/list")
+     *
+     * @Parameters({
+     *      @Parameter("type", description="上面的某种 type", type="string", required=true),
+     *      @Parameter("type_id", description="如果是帖子，则是帖子id", type="integer", required=true),
+     *      @Parameter("fetchId", description="你通过这个接口获取的评论列表里最后的那个id", type="integer", default="0", required=true),
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body={"code": 0, "data": {"list": "主评论列表", "total": "总数", "noMore": "没有更多了"}}),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误"})
+     * })
+     */
     public function mainList(Request $request, $type, $id)
     {
         $validator = Validator::make($request->all(), [
@@ -183,7 +216,7 @@ class CommentController extends Controller
      * 1. `父评论` 一部视频下的评论列表，列表中的每一个就是一个父评论
      * 2. `子评论` 每个父评论都有回复列表，这个回复列表中的每一个就是子评论
      *
-     * @Get("/`type`/comment/`id`/sub/list")
+     * @Get("/`type`/comment/`commentId`/sub/list")
      *
      * @Parameters({
      *      @Parameter("type", description="上面的某种 type", type="string", required=true),
@@ -357,6 +390,20 @@ class CommentController extends Controller
         return $this->resNoContent();
     }
 
+    /**
+     * 删除主评论
+     *
+     * @Post("/`type`/comment/delete/main/`commentId`")
+     *
+     * @Request(headers={"Authorization": "Bearer JWT-Token"})
+     *
+     * @Transaction({
+     *      @Response(204),
+     *      @Response(400, body={"code": 40003, "message": "参数错误"}),
+     *      @Response(404, body={"code": 40401, "message": "该评论已被删除"}),
+     *      @Response(403, body={"code": 40301, "message": "继续操作前请先登录"})
+     * })
+     */
     public function deleteMainComment($type, $id)
     {
         $commentService = $this->getCommentServiceByType($type);
