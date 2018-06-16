@@ -65,7 +65,8 @@ class PostRepository extends Repository
             {
                 foreach ($images as $i => $val)
                 {
-                    $images[$i] = config('website.image') . $val['key'];
+                    $images[$i]['url'] = config('website.image') . $val['key'];
+                    $images[$i] = json_encode($images[$i]);
                 }
                 Redis::RPUSH('post_'.$postId.'_preview_images', $images);
             }

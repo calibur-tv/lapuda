@@ -31,7 +31,16 @@ class PostTransformer extends Transformer
                 'images' => $post['images'],
                 'created_at' => $post['created_at'],
                 'updated_at' => $post['updated_at'],
-                'preview_images' => $post['preview_images'],
+                'preview_images' => $this->collection($post['preview_images'], function ($image)
+                {
+                    return [
+                        'width' => (int)$image['width'],
+                        'height' => (int)$image['height'],
+                        'size' => (int)$image['size'],
+                        'type' => $image['type'],
+                        'url' => $image['url']
+                    ];
+                }),
                 'like_users' => $post['like_users']
             ];
         });
