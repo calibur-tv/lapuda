@@ -61,7 +61,7 @@ class CounterService
     {
         foreach ($list as $i => $item)
         {
-            $list[$i][$key] = $this->get($item['id']);
+            $list[$i][$key] = (int)$this->get($item['id']);
         }
 
         return $list;

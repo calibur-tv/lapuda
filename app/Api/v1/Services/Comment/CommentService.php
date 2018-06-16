@@ -448,14 +448,7 @@ class CommentService extends Repository
 
         foreach ($list as $i => $item)
         {
-            if (in_array($item['id'], $results))
-            {
-                $list[$i][$key] = true;
-            }
-            else
-            {
-                $list[$i][$key] = false;
-            }
+            $list[$i][$key] = in_array($item['id'], $results);
         }
 
         return $list;
