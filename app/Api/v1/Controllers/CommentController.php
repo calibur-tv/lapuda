@@ -127,7 +127,7 @@ class CommentController extends Controller
     /**
      * 获取主评论列表
      *
-     * @Post("/`type`/comment/`type_id`/main/list")
+     * @Get("/`type`/comment/`type_id`/main/list")
      *
      * @Parameters({
      *      @Parameter("type", description="上面的某种 type", type="string", required=true),
