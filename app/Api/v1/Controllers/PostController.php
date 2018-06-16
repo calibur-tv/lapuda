@@ -53,7 +53,7 @@ class PostController extends Controller
      * @Transaction({
      *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(201, body={"code": 0, "data": "帖子id"}),
-     *      @Response(400, body={"code": 40003, "message": "请求参数错误", "data": "错误详情"})
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误"})
      * })
      */
     public function create(Request $request)
@@ -107,8 +107,21 @@ class PostController extends Controller
         return $this->resCreated($id);
     }
 
-    // TODO：楼层和主题帖分开获取
-    // TODO：API Doc
+    /**
+     * 帖子详情
+     *
+     * @Get("/post/`postId`/show")
+     *
+     * @Parameters({
+     *      @Parameter("only", description="是否只看楼主", type="integer", default="0", required=false)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body={"code": 0, "data": {"bangumi":"番剧信息", "user": "作者信息", "post": "帖子信息"}}),
+     *      @Response(404, body={"code": 40401, "message": "帖子不存在/番剧不存在/作者不存在"})
+     * })
+     */
     public function show(Request $request, $id)
     {
         $postRepository = new PostRepository();
