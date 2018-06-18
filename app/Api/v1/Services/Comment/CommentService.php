@@ -9,7 +9,9 @@
 namespace App\Api\V1\Services\Comment;
 
 use App\Api\V1\Repositories\Repository;
+use App\Api\V1\Services\Counter\CommentCounterService;
 use App\Api\V1\Services\Counter\CounterService;
+use App\Api\V1\Services\Toggle\ToggleService;
 use App\Api\V1\Transformers\CommentTransformer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -42,16 +44,23 @@ class CommentService extends Repository
      * 子评论只有 parent_id
      * parent_id 就是主评论的 id
      */
-
+    protected $modal;
     protected $table;
     protected $order;
     protected $floor_count;
     protected $author_sort;
     protected $commentTransformer;
+    protected $like_table;
+    protected $modal_table;
+    protected $comment_count_field = 'comment_count';
 
-    public function __construct($table, $order = 'ASC', $floor_count = false, $author_sort = false)
+    public function __construct($modal, $order = 'ASC', $floor_count = false, $author_sort = false)
     {
-        $this->table = $table;
+        $this->modal = $modal;
+        $this->table = $modal . '_comments';
+        $this->like_table = $modal . '_comment_like';
+        $this->modal_table = $modal . 's';
+
         $this->order = $order === 'ASC' ? 'ASC' : 'DESC';
         $this->floor_count = $floor_count;
         $this->author_sort = $author_sort;
@@ -110,11 +119,9 @@ class CommentService extends Repository
 
         if ($parentId)
         {
-            $this->ListInsertAfter($this->subCommentIdsKey($parentId), $id);
-            // 更改主评论的回复数
-            $this->writeCommentCount($parentId, true);
+            $this->changeSubCommentCount($parentId, $id, true);
 
-            $job = (new \App\Jobs\Trial\Comment\CreateSubComment($this->table, $id));
+            $job = (new \App\Jobs\Trial\Comment\CreateSubComment($this->modal, $id));
             dispatch($job);
 
             return $this->getSubCommentItem($id);
@@ -122,29 +129,12 @@ class CommentService extends Repository
 
         if ($modalId)
         {
-            if ($this->order === 'ASC')
-            {
-                $this->ListInsertAfter($this->mainCommentIdsKey($modalId), $id);
-                if ($isMaster && $this->author_sort)
-                {
-                    $this->ListInsertAfter($this->authorMainCommentIdsKey($modalId), $id);
-                }
-            }
-            else
-            {
-                $this->ListInsertBefore($this->mainCommentIdsKey($modalId), $id);
-                if ($isMaster && $this->author_sort)
-                {
-                    $this->ListInsertBefore($this->authorMainCommentIdsKey($modalId), $id);
-                }
-            }
-            // 更新用户的回复列表
-            $this->ListInsertBefore($this->userCommentIdsKey($userId), $id);
+            $this->changeMainCommentCount($modalId, $id, $userId, $isMaster, true);
 
-            $job = (new \App\Jobs\Trial\Comment\CreateMainComment($this->table, $id));
+            $job = (new \App\Jobs\Trial\Comment\CreateMainComment($this->modal, $id));
             dispatch($job);
 
-            return $this->getMainCommentItem($id, true);
+            return $this->getMainCommentItem($id);
         }
 
         return null;
@@ -200,8 +190,7 @@ class CommentService extends Repository
                 'deleted_at' => Carbon::now()
             ]);
 
-        $this->ListRemove($this->subCommentIdsKey($parentId), $id);
-        $this->writeCommentCount($parentId, false);
+        $this->changeSubCommentCount($parentId, $id, false);
     }
 
     public function deleteMainComment($id, $modalId, $userId = 0, $isMaster = false, $isRobot = false)
@@ -213,16 +202,7 @@ class CommentService extends Repository
                 'deleted_at' => Carbon::now()
             ]);
 
-        $this->ListRemove($this->mainCommentIdsKey($modalId), $id);
-        // 不是楼主删层主
-        if ($userId && !$isMaster)
-        {
-            $this->ListRemove($this->userCommentIdsKey($userId), $id);
-        }
-        if ($isMaster && $this->author_sort)
-        {
-            $this->ListRemove($this->authorMainCommentIdsKey($modalId), $id);
-        }
+        $this->changeMainCommentCount($modalId, $id, $userId, $isMaster, false);
     }
 
     public function getMainCommentIds($modalId)
@@ -421,7 +401,7 @@ class CommentService extends Repository
         return $result;
     }
 
-    public function check($userId, $modalId)
+    public function checkCommented($userId, $modalId)
     {
         if (!$userId)
         {
@@ -433,7 +413,7 @@ class CommentService extends Repository
             ->count();
     }
 
-    public function batchCheck($list, $userId, $key)
+    public function batchCheckCommented($list, $userId, $key = 'commented')
     {
         $ids = array_map(function ($item)
         {
@@ -454,14 +434,109 @@ class CommentService extends Repository
         return $list;
     }
 
-    protected function writeCommentCount($mainCommentId, $isPlus)
+    public function toggleLike($userId, $modalId)
     {
+        $toggleService = new ToggleService(
+            $this->table,
+            $this->comment_count_field,
+            $this->like_table
+        );
+
+        return $toggleService->toggle($userId, $modalId);
+    }
+
+    public function checkLiked($userId, $modalId)
+    {
+        $toggleService = $this->getCommentToggleLikeService();
+
+        return $toggleService->check($userId, $modalId);
+    }
+
+    public function batchCheckLiked($list, $userId, $key = 'liked')
+    {
+        $toggleService = $this->getCommentToggleLikeService();
+
+        return $toggleService->batchCheck($list, $userId, $key);
+    }
+
+    public function getLikeCount($modalId)
+    {
+        $toggleService = $this->getCommentToggleLikeService();
+
+        return $toggleService->total($modalId);
+    }
+
+    public function batchGetLikeCount($list, $key = 'like_count')
+    {
+        $toggleService = $this->getCommentToggleLikeService();
+
+        return $toggleService->batchTotal($list, $key);
+    }
+
+    public function getCommentCount($modalId)
+    {
+        $counterService = $this->getCommentCounterService();
+
+        return $counterService->get($modalId);
+    }
+
+    public function batchGetCommentCount($list, $key = 'comment_count')
+    {
+        $counterService = $this->getCommentCounterService();
+
+        return $counterService->batchGet($list, $key);
+    }
+
+    protected function changeMainCommentCount($modalId, $commentId, $userId, $isMaster, $isCreate)
+    {
+        if ($isCreate)
+        {
+            if ($this->order === 'ASC')
+            {
+                $this->ListInsertAfter($this->mainCommentIdsKey($modalId), $commentId);
+                if ($isMaster && $this->author_sort)
+                {
+                    $this->ListInsertAfter($this->authorMainCommentIdsKey($modalId), $commentId);
+                }
+            }
+            else
+            {
+                $this->ListInsertBefore($this->mainCommentIdsKey($modalId), $commentId);
+                if ($isMaster && $this->author_sort)
+                {
+                    $this->ListInsertBefore($this->authorMainCommentIdsKey($modalId), $commentId);
+                }
+            }
+            // 更新用户的回复列表
+            $this->ListInsertBefore($this->userCommentIdsKey($userId), $commentId);
+        }
+        else
+        {
+            $this->ListRemove($this->mainCommentIdsKey($modalId), $commentId);
+            // 不是楼主删层主
+            if ($userId && !$isMaster)
+            {
+                $this->ListRemove($this->userCommentIdsKey($userId), $commentId);
+            }
+            if ($isMaster && $this->author_sort)
+            {
+                $this->ListRemove($this->authorMainCommentIdsKey($modalId), $commentId);
+            }
+        }
+
+        $counterService = $this->getCommentCounterService();
+        $isCreate ? $counterService->add($modalId) : $counterService->add($modalId, -1);
+    }
+
+    protected function changeSubCommentCount($mainCommentId, $subCommentId, $isCreate)
+    {
+        $isCreate
+            ? $this->ListInsertAfter($this->subCommentIdsKey($mainCommentId), $subCommentId)
+            : $this->ListRemove($this->subCommentIdsKey($mainCommentId), $subCommentId);
+
         DB::table($this->table)
             ->where('id', $mainCommentId)
-            ->increment('comment_count', $isPlus ? 1 : -1);
-
-        $countService = new CounterService($this->table, 'comment_count');
-        $countService->add($mainCommentId, $isPlus ? 1 : -1);
+            ->increment('comment_count', $isCreate ? 1 : -1);
     }
 
     protected function transformer()
@@ -502,5 +577,23 @@ class CommentService extends Repository
     protected function userCommentIdsKey($userId)
     {
         return $this->table . '_user_' . $userId . '_reply_ids';
+    }
+
+    protected function getCommentToggleLikeService()
+    {
+        return new ToggleService(
+            $this->table,
+            $this->comment_count_field,
+            $this->like_table
+        );
+    }
+
+    protected function getCommentCounterService()
+    {
+        return new CommentCounterService(
+            $this->table,
+            $this->comment_count_field,
+            $this->modal_table
+        );
     }
 }

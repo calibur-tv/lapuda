@@ -2,17 +2,17 @@
 /**
  * Created by PhpStorm.
  * User: yuistack
- * Date: 2018/5/30
- * Time: 下午8:58
+ * Date: 2018/6/18
+ * Time: 下午8:51
  */
 
 namespace App\Api\V1\Services\Comment;
 
 
-class PostCommentService extends CommentService
+class ImageCommentService extends CommentService
 {
     public function __construct()
     {
-        parent::__construct('post', 'ASC', true, true);
+        parent::__construct('image', 'DESC');
     }
 }

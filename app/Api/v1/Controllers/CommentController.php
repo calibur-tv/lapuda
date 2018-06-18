@@ -8,11 +8,12 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Repositories\VideoRepository;
+use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Comment\PostCommentService;
-use App\Api\V1\Services\Counter\Post\PostReplyCounter;
-use App\Api\V1\Services\Toggle\Comment\PostCommentLikeService;
-use App\Api\V1\Services\Toggle\Post\PostLikeService;
+use App\Api\V1\Services\Comment\VideoCommentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -97,11 +98,6 @@ class CommentController extends Controller
         }
 
         $repository->applyAddComment($userId, $parent, $images, $newComment);
-        $counterService = $this->getCounterServiceByType($type);
-        if (!is_null($counterService))
-        {
-            $counterService->add($id);
-        }
 
         if ($type === 'post')
         {
@@ -192,10 +188,8 @@ class CommentController extends Controller
         }
 
         $list = $commentService->mainCommentList($idsObject['ids']);
-        $commentLikeService = $this->getLikeServiceByType($type);
-
-        $list = $commentLikeService->batchCheck($list, $userId, 'liked');
-        $list = $commentLikeService->batchTotal($list, 'like_count');
+        $list = $commentService->batchCheckLiked($list, $userId, 'liked');
+        $list = $commentService->batchGetLikeCount($list, 'like_count');
 
         return $this->resOK([
             'list' => $list,
@@ -436,12 +430,6 @@ class CommentController extends Controller
         }
 
         $commentService->deleteMainComment($id, $comment['modal_id'], $userId, $isMaster);
-        $counterService = $this->getCounterServiceByType($type);
-
-        if (!is_null($counterService))
-        {
-            $counterService->add($comment['modal_id'], -1);
-        }
 
         return $this->resNoContent();
     }
@@ -460,13 +448,13 @@ class CommentController extends Controller
      */
     public function toggleLikeMainComment($type, $id)
     {
-        $commentLikeService = $this->getLikeServiceByType($type);
-        if (is_null($commentLikeService))
+        $commentService = $this->getCommentServiceByType($type);
+        if (is_null($commentService))
         {
             return $this->resErrBad('错误的类型');
         }
 
-        $result = $commentLikeService->toggle($this->getAuthUserId(), $id);
+        $result = $commentService->toggleLike($this->getAuthUserId(), $id);
 
         if ($result)
         {
@@ -496,13 +484,13 @@ class CommentController extends Controller
      */
     public function toggleLikeSubComment($type, $id)
     {
-        $commentLikeService = $this->getLikeServiceByType($type);
-        if (is_null($commentLikeService))
+        $commentService = $this->getCommentServiceByType($type);
+        if (is_null($commentService))
         {
             return $this->resErrBad('错误的类型');
         }
 
-        $result = $commentLikeService->toggle($this->getAuthUserId(), $id);
+        $result = $commentService->toggleLike($this->getAuthUserId(), $id);
 
         // TODO：dispatch job to update open search weight
 
@@ -514,6 +502,14 @@ class CommentController extends Controller
         if ($type === 'post')
         {
             return new PostCommentService();
+        }
+        else if ($type === 'video')
+        {
+            return new VideoCommentService();
+        }
+        else if ($type === 'image')
+        {
+            return new ImageCommentService();
         }
         else
         {
@@ -527,29 +523,13 @@ class CommentController extends Controller
         {
             return new PostRepository();
         }
-        else
+        else if ($type === 'video')
         {
-            return null;
+            return new VideoRepository();
         }
-    }
-
-    protected function getLikeServiceByType($type)
-    {
-        if ($type === 'post')
+        else if ($type === 'image')
         {
-            return new PostCommentLikeService();
-        }
-        else
-        {
-            return null;
-        }
-    }
-
-    protected function getCounterServiceByType($type)
-    {
-        if ($type === 'post')
-        {
-            return new PostReplyCounter();
+            return new ImageRepository();
         }
         else
         {

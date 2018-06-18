@@ -5,8 +5,7 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\PostCommentService;
-use App\Api\V1\Services\Counter\Post\PostReplyCounter;
-use App\Api\V1\Services\Counter\Post\PostViewCounter;
+use App\Api\V1\Services\Counter\PostViewCounter;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
@@ -305,25 +304,24 @@ class BangumiController extends Controller
         $postViewCounter = new PostViewCounter();
         $userRepository = new UserRepository();
         $bangumiRepository = new BangumiRepository();
-        $postReplyCounter = new PostReplyCounter();
 
         foreach ($list as $i => $item)
         {
             $id = $item['id'];
+
             $authorId = $item['user_id'];
-//            $list[$i]['liked'] = $postLikeService->check($userId, $id, $authorId);
-            $list[$i]['liked'] = false;
-            $list[$i]['like_count'] = $postLikeService->total($id);
-//            $list[$i]['marked'] = $postMarkService->check($userId, $id, $authorId);
-            $list[$i]['marked'] = false;
-            $list[$i]['mark_count'] = $postMarkService->total($id);
-//            $list[$i]['commented'] = $postCommentService->check($userId, $id);
-            $list[$i]['commented'] = false;
-            $list[$i]['comment_count'] = $postReplyCounter->get($id);
             $list[$i]['view_count'] = $postViewCounter->get($id);
+
             $list[$i]['user'] = $userRepository->item($authorId);
             $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
         }
+        $list = $postLikeService->batchCheck($list, $userId, 'liked');
+        $list = $postLikeService->batchTotal($list, 'like_count');
+        $list = $postMarkService->batchCheck($list, $userId, 'marked');
+        $list = $postMarkService->batchTotal($list, 'mark_count');
+        $list = $postCommentService->batchCheckCommented($list, $userId);
+        $list = $postCommentService->batchGetCommentCount($list);
+
         $transformer = new PostTransformer();
 
         return $this->resOK([
