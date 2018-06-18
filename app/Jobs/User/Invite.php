@@ -37,8 +37,8 @@ class Invite implements ShouldQueue
      */
     public function handle()
     {
-        $inviteUser = User::where('id', $this->inviteCode)->select('id', 'phone', 'nickname')->first();
-        if ($inviteUser)
+        $inviteUser = User::where('id', $this->inviteCode)->select('id', 'phone', 'nickname', 'faker')->first();
+        if ($inviteUser && $inviteUser->phone && !intval($inviteUser->faker))
         {
             $userRepository = new UserRepository();
             $userRepository->toggleCoin(false, $this->inviteUserId, $inviteUser->id, 2, 0);
