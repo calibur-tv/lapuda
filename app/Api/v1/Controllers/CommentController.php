@@ -11,7 +11,6 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Counter\Post\PostReplyCounter;
-use App\Api\V1\Services\Counter\Post\PostViewCounter;
 use App\Api\V1\Services\Toggle\Comment\PostCommentLikeService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use Illuminate\Http\Request;
@@ -538,7 +537,7 @@ class CommentController extends Controller
     {
         if ($type === 'post')
         {
-            return new PostLikeService();
+            return new PostCommentLikeService();
         }
         else
         {
