@@ -17,7 +17,7 @@ class Video extends Model
         'part',
         'resource',
         'count_played',
-        'count_comment'
+        'comment_count'
     ];
 
     protected $casts = [
