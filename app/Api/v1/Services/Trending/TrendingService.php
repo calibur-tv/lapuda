@@ -3,6 +3,7 @@
 namespace App\Api\V1\Services\Trending;
 
 use App\Api\V1\Repositories\Repository;
+use Illuminate\Support\Facades\Redis;
 
 /**
  * Created by PhpStorm.
@@ -67,6 +68,13 @@ class TrendingService extends Repository
         $this->ListRemove($this->trendingIdsCacheKey('news'), $id);
         $this->SortRemove($this->trendingIdsCacheKey('active'), $id);
         $this->SortRemove($this->trendingIdsCacheKey('hot'), $id);
+    }
+
+    public function deleteIdsCache()
+    {
+        Redis::DEL($this->trendingIdsCacheKey('hot'));
+        Redis::DEL($this->trendingIdsCacheKey('active'));
+        Redis::DEL($this->trendingIdsCacheKey('news'));
     }
 
     protected function computeNewsIds()

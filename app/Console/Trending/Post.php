@@ -34,9 +34,7 @@ class Post extends Command
     public function handle()
     {
         $postTrendingService = new PostTrendingService();
-        $postTrendingService->computeNewsIds();
-        $postTrendingService->computeActiveIds();
-        $postTrendingService->computeHotIds();
+        $postTrendingService->deleteIdsCache();
 
         return true;
     }
