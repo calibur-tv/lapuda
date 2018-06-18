@@ -13,6 +13,6 @@ class PostCommentService extends CommentService
 {
     public function __construct()
     {
-        parent::__construct('post', 'ASC', true, true);
+        parent::__construct('post', 'ASC', true);
     }
 }

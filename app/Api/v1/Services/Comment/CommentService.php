@@ -47,14 +47,13 @@ class CommentService extends Repository
     protected $modal;
     protected $table;
     protected $order;
-    protected $floor_count;
     protected $author_sort;
     protected $commentTransformer;
     protected $like_table;
     protected $modal_table;
     protected $comment_count_field = 'comment_count';
 
-    public function __construct($modal, $order = 'ASC', $floor_count = false, $author_sort = false)
+    public function __construct($modal, $order = 'ASC', $author_sort = false)
     {
         $this->modal = $modal;
         $this->table = $modal . '_comments';
@@ -62,7 +61,6 @@ class CommentService extends Repository
         $this->modal_table = $modal . 's';
 
         $this->order = $order === 'ASC' ? 'ASC' : 'DESC';
-        $this->floor_count = $floor_count;
         $this->author_sort = $author_sort;
     }
 
@@ -88,7 +86,7 @@ class CommentService extends Repository
             $toUserId = 0;
         }
 
-        if ($modalId && $this->floor_count)
+        if ($modalId)
         {
             $count = DB::table($this->table)
                 ->where('modal_id', $modalId)
@@ -313,40 +311,21 @@ class CommentService extends Repository
                 ->whereNull("$tableName.deleted_at")
                 ->leftJoin('users AS from', 'from.id', '=', "$tableName.user_id")
                 ->leftJoin('users AS to', 'to.id', '=', "$tableName.to_user_id")
-                ->when($this->floor_count, function ($query) use ($tableName)
-                {
-                    return $query->select(
-                        "$tableName.floor_count",
-                        "$tableName.id",
-                        "$tableName.content",
-                        "$tableName.created_at",
-                        "$tableName.modal_id",
-                        "$tableName.to_user_id",
-                        "$tableName.user_id AS from_user_id",
-                        'from.nickname AS from_user_name',
-                        'from.zone AS from_user_zone',
-                        'from.avatar AS from_user_avatar',
-                        'to.nickname AS to_user_name',
-                        'to.avatar AS to_user_avatar',
-                        'to.zone AS to_user_zone'
-                    );
-                }, function ($query) use ($tableName)
-                {
-                    return $query->select(
-                        "$tableName.id",
-                        "$tableName.content",
-                        "$tableName.created_at",
-                        "$tableName.to_user_id",
-                        "$tableName.modal_id",
-                        "$tableName.user_id AS from_user_id",
-                        'from.nickname AS from_user_name',
-                        'from.zone AS from_user_zone',
-                        'from.avatar AS from_user_avatar',
-                        'to.nickname AS to_user_name',
-                        'to.avatar AS to_user_avatar',
-                        'to.zone AS to_user_zone'
-                    );
-                })
+                ->select(
+                    "$tableName.floor_count",
+                    "$tableName.id",
+                    "$tableName.content",
+                    "$tableName.created_at",
+                    "$tableName.modal_id",
+                    "$tableName.to_user_id",
+                    "$tableName.user_id AS from_user_id",
+                    'from.nickname AS from_user_name',
+                    'from.zone AS from_user_zone',
+                    'from.avatar AS from_user_avatar',
+                    'to.nickname AS to_user_name',
+                    'to.avatar AS to_user_avatar',
+                    'to.zone AS to_user_zone'
+                )
                 ->first();
 
             if (is_null($comment))
