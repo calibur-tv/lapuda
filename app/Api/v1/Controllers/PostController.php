@@ -4,18 +4,14 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\PostCommentService;
-use App\Api\V1\Services\Counter\Post\PostReplyCounter;
-use App\Api\V1\Services\Counter\Post\PostViewCounter;
+use App\Api\V1\Services\Counter\PostViewCounter;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
-use App\Api\V1\Services\Toggle\Comment\PostCommentLikeService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Services\Trending\TrendingService;
-use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
-use App\Models\Post;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\PostRepository;
 use Carbon\Carbon;
@@ -147,10 +143,9 @@ class PostController extends Controller
         }
 
         $postCommentService = new PostCommentService();
-        $post['commented'] = $postCommentService->check($userId, $id);
+        $post['commented'] = $postCommentService->checkCommented($userId, $id);
 
-        $replyCounter = new PostReplyCounter();
-        $post['comment_count'] = $replyCounter->get($id);
+        $post['comment_count'] = $postCommentService->getCommentCount($id);
 
         $postLikeService = new PostLikeService();
         $post['liked'] = $postLikeService->check($userId, $id, $post['user_id']);

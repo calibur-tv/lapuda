@@ -88,12 +88,9 @@ class PostRepository extends Repository
 
         $trendingService = new TrendingService('posts');
         $trendingService->update($id);
+
         // 更新番剧帖子列表的缓存
-        $cacheKey = $this->bangumiListCacheKey($post['bangumi_id']);
-        if (Redis::EXISTS($cacheKey))
-        {
-            Redis::ZADD($cacheKey, $now->timestamp, $id);
-        }
+        $this->SortAdd($this->bangumiListCacheKey($post['bangumi_id']), $id);
 
         Redis::pipeline(function ($pipe) use ($id, $newId, $userId)
         {

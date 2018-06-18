@@ -13,8 +13,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\PostCommentService;
-use App\Api\V1\Services\Counter\Post\PostReplyCounter;
-use App\Api\V1\Services\Counter\Post\PostViewCounter;
+use App\Api\V1\Services\Counter\PostViewCounter;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Transformers\PostTransformer;
@@ -33,7 +32,6 @@ class PostTrendingService extends TrendingService
     protected $markService;
     protected $commentService;
 
-    protected $replyCounter;
     protected $viewCounter;
 
     protected $visitorId;
@@ -54,7 +52,6 @@ class PostTrendingService extends TrendingService
         $this->markService = new PostMarkService();
         $this->commentService = new PostCommentService();
 
-        $this->replyCounter = new PostReplyCounter();
         $this->viewCounter = new PostViewCounter();
     }
 
@@ -170,8 +167,8 @@ class PostTrendingService extends TrendingService
         $result = $this->likeService->batchTotal($result, 'like_count');
         $result = $this->markService->batchCheck($result, $this->visitorId, 'marked');
         $result = $this->markService->batchTotal($result, 'mark_count');
-        $result = $this->commentService->batchCheck($result, $this->visitorId, 'commented');
-        $result = $this->replyCounter->batchGet($result, 'comment_count');
+        $result = $this->commentService->batchCheckCommented($result, $this->visitorId);
+        $result = $this->commentService->batchGetCommentCount($result);
         $result = $this->viewCounter->batchGet($result, 'view_count');
 
         return $this->transformer->trending($result);

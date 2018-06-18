@@ -6,10 +6,8 @@
  * Time: 下午3:15
  */
 
-namespace App\Api\V1\Services\Counter\Post;
+namespace App\Api\V1\Services\Counter;
 
-
-use App\Api\V1\Services\Counter\CounterService;
 
 class PostViewCounter extends CounterService
 {
