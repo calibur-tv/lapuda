@@ -41,32 +41,4 @@ class SearchController extends Controller
 
         return $this->resOK(empty($result) ? '' : $result[0]['fields']['url']);
     }
-
-    public function migrate()
-    {
-        $likes = DB::table('post_like')
-            ->get()
-            ->toArray();
-
-        foreach ($likes as $like)
-        {
-            $post = Post::where('id', $like->modal_id)->first();
-            if (!is_null($post))
-            {
-                continue;
-            }
-            $comment = DB::table('post_comments')->where('id', $like->modal_id)->first();
-            if (!is_null($comment))
-            {
-                DB::table('post_comment_like')->insert([
-                    'modal_id' => $like->modal_id,
-                    'user_id' => $like->user_id,
-                    'created_at' => $like->created_at
-                ]);
-            }
-            DB::table('post_like')->where('id', $like->id)->delete();
-        }
-
-        return 'success';
-    }
 }
