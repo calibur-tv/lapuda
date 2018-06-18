@@ -17,7 +17,7 @@ class VideoTransformer extends Transformer
         {
             return [
                 'bangumi_id' => (int)$video['bangumi_id'],
-                'count_comment' => (int)$video['count_comment'],
+                'comment_count' => (int)$video['comment_count'],
                 'count_played' => (int)$video['count_played'],
                 'created_at' => $video['created_at'],
                 'name' => $video['name'],
