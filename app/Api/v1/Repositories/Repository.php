@@ -14,6 +14,11 @@ use Illuminate\Support\Facades\Cache;
 
 class Repository
 {
+    public function applyAddComment($userId, $post, $images, $newComment)
+    {
+
+    }
+
     public function RedisList($key, $func, $start = 0, $count = -1)
     {
         $cache = Redis::LRANGE($key, $start, $count === -1 ? -1 : $count + $start - 1);

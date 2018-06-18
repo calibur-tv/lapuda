@@ -84,8 +84,6 @@ class PostRepository extends Repository
             'updated_at' => $now
         ]);
 
-        Post::where('id', $id)->increment('comment_count');
-
         $trendingService = new TrendingService('posts');
         $trendingService->update($id);
 

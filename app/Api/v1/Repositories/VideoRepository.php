@@ -48,7 +48,6 @@ class VideoRepository extends Repository
         }, 'h');
     }
 
-
     protected function computeVideoSrc($src)
     {
         $t = base_convert(time() + 21600, 10, 16);
