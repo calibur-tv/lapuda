@@ -115,6 +115,7 @@ class CommentController extends Controller
         }
 
         $newComment['liked'] = false;
+        $newComment['like_count'] = 0;
 
         return $this->resCreated($newComment);
     }
