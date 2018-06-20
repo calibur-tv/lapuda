@@ -178,7 +178,8 @@ class ImageController extends Controller
                 'image_count' => 0,
                 'album_id' => $albumId,
                 'created_at' => $now,
-                'updated_at' => $now
+                'updated_at' => $now,
+                'state' => $isCartoon ? 1 : 0
             ]);
 
             ImageTag::create([

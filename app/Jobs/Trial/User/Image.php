@@ -45,29 +45,13 @@ class Image implements ShouldQueue
 
         $imageFilter = new ImageFilter();
         $badImageCount = $imageFilter->exec($url);
-        $needDelete = $badImageCount > 1;
 
-        $state = 0;
-        if ($needDelete || $badImageCount)
-        {
-            $state = 1;
-        }
-
-        if ($state && $needDelete)
+        if ($badImageCount > 0)
         {
             DB::table('users')
                 ->where('id', $this->userId)
                 ->update([
-                    'state' => $state,
-                    $this->type => ''
-                ]);
-        }
-        else if ($state)
-        {
-            DB::table('users')
-                ->where('id', $this->userId)
-                ->update([
-                    'state' => $state
+                    'state' => 1
                 ]);
         }
         else
@@ -83,11 +67,6 @@ class Image implements ShouldQueue
                     'updated_at' => time()
                 ]);
             }
-        }
-
-        if ($needDelete)
-        {
-            Redis::DEL('user'.$this->userId);
         }
     }
 }
