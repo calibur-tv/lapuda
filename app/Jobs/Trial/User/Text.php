@@ -46,17 +46,6 @@ class Text implements ShouldQueue
         {
             User::where('id', $this->userId)
                 ->update([
-                    'state' => 1,
-                    'nickname' => $nameCount ? $user['zone'] : $user['nickname'],
-                    'signature' => $wordCount ? '' : $user['signature']
-                ]);
-
-            Redis::DEL('user'.$this->userId);
-        }
-        else if ($nameCount || $wordCount)
-        {
-            User::where('id', $this->userId)
-                ->update([
                     'state' => 1
                 ]);
         }
