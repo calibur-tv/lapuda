@@ -91,7 +91,8 @@ class ImageRepository extends Repository
                     "size": $(fsize),
                     "key": "$(key)"
                 }
-            }'
+            }',
+            'mimeLimit' => 'image/jpeg;image/png;image/jpg;image/gif'
         ]);
 
         return [
