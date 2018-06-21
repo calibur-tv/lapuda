@@ -16,6 +16,7 @@ class VideoTransformer extends Transformer
         return $this->transformer($video, function ($video)
         {
             return [
+                'user_id' => (int)$video['user_id'],
                 'bangumi_id' => (int)$video['bangumi_id'],
                 'comment_count' => (int)$video['comment_count'],
                 'count_played' => (int)$video['count_played'],
