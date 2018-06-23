@@ -22,7 +22,7 @@ class Search
     protected $format = 'fulljson';
 
     protected $options = [
-        'debug' => true
+        'debug' => false
     ];
 
     protected $client;
@@ -51,5 +51,25 @@ class Search
         $ret = json_decode($this->search->execute($this->params->build())->result, true);
 
         return $ret['result']['items'];
+    }
+
+    public function create()
+    {
+        
+    }
+
+    public function update()
+    {
+        
+    }
+
+    public function retrieve()
+    {
+
+    }
+
+    public function delete()
+    {
+
     }
 }
