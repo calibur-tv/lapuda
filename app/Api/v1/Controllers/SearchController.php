@@ -31,14 +31,18 @@ class SearchController extends Controller
     public function index(Request $request)
     {
         $key = Purifier::clean($request->get('q'));
+
         if (!$key)
         {
             return $this->resOK();
         }
 
-        $search = new Search();
-        $result = $search->index($key);
+        $type = $request->get('type') ?: 0;
+        $page = $request->get('page') ?: 0;
 
-        return $this->resOK(empty($result) ? '' : $result[0]['fields']['url']);
+        $search = new Search();
+        $result = $search->index($key, $type, $page);
+
+        return $this->resOK($result);
     }
 }
