@@ -68,9 +68,6 @@ class UserController extends Controller
 
         User::where('id', $userId)->increment('coin_count', 1);
 
-        $job = (new \App\Jobs\Search\User\Update($userId));
-        dispatch($job);
-
         return $this->resNoContent();
     }
 
@@ -386,12 +383,6 @@ class UserController extends Controller
             'ua' => $request->get('ua'),
             'user_id' => $userId
         ]);
-
-        if ($userId)
-        {
-            $job = (new \App\Jobs\Search\User\Update($userId));
-            dispatch($job);
-        }
 
         return $this->resNoContent();
     }

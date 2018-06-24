@@ -79,7 +79,7 @@ class BangumiTransformer extends Transformer
                 'summary' => $bangumi['summary'],
                 'count_score' => (float)$bangumi['count_score'],
                 'count_like' => (int)$bangumi['count_like'],
-                'alias' => $bangumi['alias'] === 'null' ? '' : json_decode($bangumi['alias'])->search,
+                'alias' => $bangumi['alias'],
                 'followed' => $bangumi['followed'],
                 'tags' => $this->collection($bangumi['tags'], function ($tag)
                 {

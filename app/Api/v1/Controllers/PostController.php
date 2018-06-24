@@ -248,9 +248,6 @@ class PostController extends Controller
         $job = (new \App\Jobs\Notification\Post\Like($likeId));
         dispatch($job);
 
-        $job = (new \App\Jobs\Search\Post\Update($postId, $liked ? -10 : 10));
-        dispatch($job);
-
         return $this->resCreated(true);
     }
 
@@ -290,9 +287,6 @@ class PostController extends Controller
         {
             return $this->resCreated(false);
         }
-
-        $job = (new \App\Jobs\Search\Post\Update($postId, $marked ? -10 : 10));
-        dispatch($job);
 
         return $this->resCreated(true);
     }

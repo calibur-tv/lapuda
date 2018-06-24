@@ -5,6 +5,7 @@ namespace App\Jobs\Trial\Post;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Services\Trending\TrendingService;
 use App\Models\MixinSearch;
+use App\Services\OpenSearch\Search;
 use App\Services\Trial\ImageFilter;
 use App\Services\Trial\WordsFilter;
 use Carbon\Carbon;
@@ -84,17 +85,12 @@ class Create implements ShouldQueue
 
         if (!$badWordsCount && !$badImageCount && !$needDelete)
         {
-            $now = time();
-
-            MixinSearch::create([
-                'title' => $post['title'],
-                'content' => $post['desc'],
-                'type_id' => 3,
-                'modal_id' => $post['id'],
-                'url' => '/post/' . $post['id'],
-                'created_at' => $now,
-                'updated_at' => $now
-            ]);
+            $searchService = new Search();
+            $searchService->create(
+                $post['id'],
+                $post['title'] . ',' . $post['desc'],
+                'post'
+            );
 
             $trendingService = new TrendingService('posts');
             $trendingService->create($post['id']);

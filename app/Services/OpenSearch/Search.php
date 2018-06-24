@@ -18,6 +18,7 @@ use App\Api\V1\Transformers\UserTransformer;
 use App\Services\OpenSearch\Client\OpenSearchClient;
 use App\Services\OpenSearch\Client\SearchClient;
 use App\Services\OpenSearch\Util\SearchParamsBuilder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class Search
@@ -28,6 +29,7 @@ class Search
     protected $appName;
     protected $suggestName;
     protected $format = 'json';
+    protected $table = 'search_v2';
 
     protected $options = [
         'debug' => false
@@ -93,7 +95,7 @@ class Search
             $transformer = $this->getTransformerByType($type);
             foreach ($list as $item)
             {
-                $source = $repository->item($item['id']);
+                $source = $repository->item($item['modal_id']);
                 if (!is_null($source))
                 {
                     $source = $transformer->search($source);
@@ -108,7 +110,7 @@ class Search
             {
                 $typeId = intval($item['type_id']);
                 $repository = $this->getRepositoryByType($typeId);
-                $source = $repository->item($item['id']);
+                $source = $repository->item($item['modal_id']);
                 if (!is_null($source))
                 {
                     $transformer = $this->getTransformerByType($typeId);
@@ -126,7 +128,65 @@ class Search
         ];
     }
 
-    public function getRepositoryByType($type)
+    public function create($id, $content, $modal, $time = null)
+    {
+        $modalId = $this->computeModalIdByStr($modal);
+        if (!$modalId)
+        {
+            return 0;
+        }
+
+        return DB::table($this->table)
+            ->insertGetId([
+                'modal_id' => $modalId,
+                'type_id' => $id,
+                'content' => $content,
+                'created_at' => $time ?: time()
+            ]);
+    }
+
+    public function delete($id, $modal)
+    {
+        $modalId = $this->computeModalIdByStr($modal);
+        if (!$modalId)
+        {
+            return 0;
+        }
+
+        return DB::table($this->table)
+            ->whereRaw('type_id = ? and modal_id = ?', [$id, $modalId])
+            ->delete();
+    }
+
+    public function update($id, $content, $modal)
+    {
+        $modalId = $this->computeModalIdByStr($modal);
+        if (!$modalId)
+        {
+            return 0;
+        }
+
+        return DB::table($this->table)
+            ->whereRaw('type_id = ? and modal_id = ?', [$id, $modalId])
+            ->update([
+                'content' => $content
+            ]);
+    }
+
+    public function weight($id, $modal, $score = 1)
+    {
+        $modalId = $this->computeModalIdByStr($modal);
+        if (!$modalId)
+        {
+            return 0;
+        }
+
+        return DB::table($this->table)
+            ->whereRaw('type_id = ? and modal_id = ?', [$id, $modalId])
+            ->increment('score', $score);
+    }
+
+    protected function getRepositoryByType($type)
     {
         if ($type === 1)
         {
@@ -148,7 +208,7 @@ class Search
         return null;
     }
 
-    public function getTransformerByType($type)
+    protected function getTransformerByType($type)
     {
         if ($type === 1)
         {
@@ -168,5 +228,31 @@ class Search
         }
 
         return null;
+    }
+
+    protected function computeModalIdByStr($modal)
+    {
+        if ($modal === 'user')
+        {
+            return 1;
+        }
+        else if ($modal === 'bangumi')
+        {
+            return 2;
+        }
+        else if ($modal === 'video')
+        {
+            return 3;
+        }
+        else if ($modal === 'post')
+        {
+            return 4;
+        }
+        else if ($modal === 'role')
+        {
+            return 5;
+        }
+
+        return 0;
     }
 }
