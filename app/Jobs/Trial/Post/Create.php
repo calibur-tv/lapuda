@@ -4,7 +4,6 @@ namespace App\Jobs\Trial\Post;
 
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Services\Trending\TrendingService;
-use App\Models\MixinSearch;
 use App\Services\OpenSearch\Search;
 use App\Services\Trial\ImageFilter;
 use App\Services\Trial\WordsFilter;
@@ -61,7 +60,7 @@ class Create implements ShouldQueue
             $badImageCount += $imageFilter->exec($image['url']);
         }
 
-        if ($badWordsCount > 1)
+        if ($badWordsCount + $badImageCount > 2)
         {
             $needDelete = true;
         }
@@ -83,7 +82,7 @@ class Create implements ShouldQueue
                 'deleted_at' => $deletedAt
             ]);
 
-        if (!$badWordsCount && !$badImageCount && !$needDelete)
+        if ($state === 3)
         {
             $searchService = new Search();
             $searchService->create(

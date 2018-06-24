@@ -556,7 +556,7 @@ class UserController extends Controller
         $imageRepository = new ImageRepository();
 
         $ids = Image::whereRaw('user_id = ? and album_id = 0 and image_count <> 1', [$userId])
-            ->whereIn('state', [1, 4])
+            ->whereIn('state', [1, 2])
             ->whereNotIn('images.id', $seen)
             ->take($take)
             ->when($sort === 'new', function ($query)
