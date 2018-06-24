@@ -3,7 +3,6 @@
 namespace App\Jobs\User;
 
 use App\Api\V1\Repositories\UserRepository;
-use App\Models\MixinSearch;
 use App\Models\User;
 use App\Services\Sms\Message;
 use Illuminate\Bus\Queueable;
@@ -47,18 +46,6 @@ class Invite implements ShouldQueue
 
             $sms = new Message();
             $sms->inviteUser($inviteUser->phone, $inviteUser->nickname, $newUser['nickname']);
-
-            $searchId = MixinSearch::whereRaw('type_id = ? and modal_id = ?', [1, $inviteUser->id])
-                ->pluck('id')
-                ->first();
-
-            if (!is_null($searchId))
-            {
-                MixinSearch::where('id', $searchId)->increment('score');
-                MixinSearch::where('id', $searchId)->update([
-                    'updated_at' => time()
-                ]);
-            }
         }
     }
 }

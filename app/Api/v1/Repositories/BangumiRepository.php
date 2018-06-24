@@ -113,6 +113,8 @@ class BangumiRepository extends Repository
                 $bangumi['released_part'] = 0;
             }
 
+            $bangumi['alias'] = $bangumi['alias'] === 'null' ? '' : json_decode($bangumi['alias'])->search;
+
             return $bangumi;
         });
 

@@ -2,9 +2,9 @@
 
 namespace App\Jobs\Search\Post;
 
-use App\Models\MixinSearch;
 use App\Models\PostLike;
 use App\Models\PostMark;
+use App\Services\OpenSearch\Search;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -35,6 +35,7 @@ class Delete implements ShouldQueue
     {
         PostLike::where('modal_id', $this->postId)->delete();
         PostMark::where('modal_id', $this->postId)->delete();
-        MixinSearch::whereRaw('type_id = ? and modal_id = ?', [3, $this->postId])->delete();
+        $searchService = new Search();
+        $searchService->delete($this->postId, 'post');
     }
 }

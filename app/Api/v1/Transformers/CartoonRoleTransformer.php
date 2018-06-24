@@ -121,4 +121,17 @@ class CartoonRoleTransformer extends Transformer
             ];
         });
     }
+
+    public function search($data)
+    {
+        return $this->transformer($data, function ($role)
+        {
+            return [
+                'id' => (int)$role['id'],
+                'name' => $role['name'],
+                'avatar' => $role['avatar'],
+                'intro' => $role['intro']
+            ];
+        });
+    }
 }

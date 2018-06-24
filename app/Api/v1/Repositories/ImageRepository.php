@@ -172,7 +172,7 @@ class ImageRepository extends Repository
             $ids = explode(',', $imageIds);
 
             return Image::whereIn('id', $ids)
-                ->whereIn('state', [1, 4])
+                ->whereIn('state', [1, 2])
                 ->get()
                 ->toArray();
         });

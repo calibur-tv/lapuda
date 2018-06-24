@@ -3,7 +3,7 @@
 namespace App\Jobs\Search\User;
 
 use App\Api\V1\Repositories\UserRepository;
-use App\Models\MixinSearch;
+use App\Services\OpenSearch\Search;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -34,16 +34,12 @@ class Register implements ShouldQueue
     {
         $userRepository = new UserRepository();
         $user = $userRepository->item($this->userId);
-        $now = time();
 
-        MixinSearch::create([
-            'title' => $user['nickname'],
-            'content' => $user['zone'],
-            'type_id' => 1,
-            'modal_id' => $user['id'],
-            'url' => '/user/' . $user['zone'],
-            'created_at' => $now,
-            'updated_at' => $now
-        ]);
+        $searchService = new Search();
+        $searchService->create(
+            $user['id'],
+            $user['nickname'] . ',' . $user['zone'],
+            'user'
+        );
     }
 }

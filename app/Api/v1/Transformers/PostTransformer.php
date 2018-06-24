@@ -237,4 +237,19 @@ class PostTransformer extends Transformer
             ];
         });
     }
+
+    public function search($post)
+    {
+        return $this->transformer($post, function ($post)
+        {
+            return [
+                'id' => (int)$post['id'],
+                'title' => $post['title'],
+                'desc' => $post['desc'],
+                'content' => $post['content'],
+                'images' => $post['images'],
+                'created_at' => $post['created_at']
+            ];
+        });
+    }
 }
