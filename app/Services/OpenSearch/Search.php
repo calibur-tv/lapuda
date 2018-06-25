@@ -30,7 +30,7 @@ class Search
     protected $appName;
     protected $suggestName;
     protected $format = 'json';
-    protected $table = 'search_v2';
+    protected $table = 'search_v3';
 
     protected $options = [
         'debug' => false
@@ -70,14 +70,14 @@ class Search
             return 0;
         }
 
-        // modal_id：数据的 模型名 转成的 int 标记
-        // type_id： 数据的 id，如 post_id，bangumi_id
+        $ts = $time ?: time();
         return DB::table($this->table)
             ->insertGetId([
                 'modal_id' => $modalId,
                 'type_id' => $id,
                 'content' => $content,
-                'created_at' => $time ?: time()
+                'created_at' => $ts,
+                'updated_at' => $ts
             ]);
     }
 
@@ -105,7 +105,8 @@ class Search
         return DB::table($this->table)
             ->whereRaw('type_id = ? and modal_id = ?', [$id, $modalId])
             ->update([
-                'content' => $content
+                'content' => $content,
+                'updated_at' => time()
             ]);
     }
 
@@ -126,7 +127,7 @@ class Search
         }
         $this->params->setStart($page * $count);
         $this->params->setHits($count);
-        $this->params->setAppName($this->appName);
+        $this->params->setAppName('search_v3');
         $this->params->setFormat($this->format);
         $this->params->setQuery(
             $modalId
@@ -147,6 +148,8 @@ class Search
 
         $ret = $res['result'];
         $list = $ret['items'];
+
+        // type_id 其实是 source_id。。。
 
         $result = [];
         if ($modalId)
