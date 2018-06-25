@@ -110,12 +110,12 @@ class Search
             ]);
     }
 
-    public function retrieve($key, $type = 0, $page = 0, $count = 15)
+    public function retrieve($key, $modalId = 0, $page = 0, $count = 15)
     {
         $repository = null;
-        if ($type)
+        if ($modalId)
         {
-            $repository = $this->getRepositoryByType($type);
+            $repository = $this->getRepositoryByType($modalId);
             if (is_null($repository))
             {
                 return [
@@ -130,8 +130,8 @@ class Search
         $this->params->setAppName('search_v3');
         $this->params->setFormat($this->format);
         $this->params->setQuery(
-            $type
-                ? "default:'${key}' AND type_id:'${$type}'"
+            $modalId
+                ? "default:'${key}' AND modal_id:'${$modalId}'"
                 : "default:'${key}'"
         );
 
@@ -150,16 +150,16 @@ class Search
         $list = $ret['items'];
 
         $result = [];
-        if ($type)
+        if ($modalId)
         {
-            $transformer = $this->getTransformerByType($type);
+            $transformer = $this->getTransformerByType($modalId);
             foreach ($list as $item)
             {
                 $source = $repository->item($item['modal_id']);
                 if (!is_null($source))
                 {
                     $source = $transformer->search($source);
-                    $source['type'] = $type;
+                    $source['type'] = $modalId;
                     $result[] = $source;
                 }
             }
