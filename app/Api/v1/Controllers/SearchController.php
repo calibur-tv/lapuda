@@ -85,8 +85,7 @@ class SearchController extends Controller
                 );
             }
         }
-
-        if ($type === 2)
+        else if ($type === 2)
         {
             $bangumis = Bangumi::pluck('id');
             $bangumiRepository = new BangumiRepository();
@@ -101,8 +100,7 @@ class SearchController extends Controller
                 );
             }
         }
-
-        if ($type === 3)
+        else if ($type === 3)
         {
             $videos = Video::where('id', '<=', 10000)->pluck('id');
             $videoRepository = new VideoRepository();
@@ -117,8 +115,7 @@ class SearchController extends Controller
                 );
             }
         }
-
-        if ($type === 4)
+        else if ($type === 4)
         {
             $posts = Post::select('id', 'desc', 'title', 'created_at')->get();
             foreach ($posts as $post)
@@ -131,8 +128,7 @@ class SearchController extends Controller
                 );
             }
         }
-
-        if ($type === 5)
+        else if ($type === 5)
         {
             $roles = CartoonRole::pluck('id');
             $cartoonRoleRepository = new CartoonRoleRepository();

@@ -70,14 +70,14 @@ class Search
             return 0;
         }
 
-        // modal_id：数据的 模型名 转成的 int 标记
-        // type_id： 数据的 id，如 post_id，bangumi_id
+        $ts = $time ?: time();
         return DB::table($this->table)
             ->insertGetId([
                 'modal_id' => $modalId,
                 'type_id' => $id,
                 'content' => $content,
-                'created_at' => $time ?: time()
+                'created_at' => $ts,
+                'updated_at' => $ts
             ]);
     }
 
@@ -105,7 +105,8 @@ class Search
         return DB::table($this->table)
             ->whereRaw('type_id = ? and modal_id = ?', [$id, $modalId])
             ->update([
-                'content' => $content
+                'content' => $content,
+                'updated_at' => time()
             ]);
     }
 
