@@ -30,7 +30,7 @@ class Search
     protected $appName;
     protected $suggestName;
     protected $format = 'json';
-    protected $table = 'search_v2';
+    protected $table = 'search_v3';
 
     protected $options = [
         'debug' => false
@@ -126,11 +126,11 @@ class Search
         }
         $this->params->setStart($page * $count);
         $this->params->setHits($count);
-        $this->params->setAppName($this->appName);
+        $this->params->setAppName('search_v3');
         $this->params->setFormat($this->format);
         $this->params->setQuery(
             $type
-                ? "default:'${key}' AND type:'${$type}'"
+                ? "default:'${key}' AND type_id:'${$type}'"
                 : "default:'${key}'"
         );
 
@@ -154,7 +154,7 @@ class Search
             $transformer = $this->getTransformerByType($type);
             foreach ($list as $item)
             {
-                $source = $repository->item($item['type_id']);
+                $source = $repository->item($item['modal_id']);
                 if (!is_null($source))
                 {
                     $source = $transformer->search($source);
@@ -167,9 +167,9 @@ class Search
         {
             foreach ($list as $item)
             {
-                $typeId = intval($item['modal_id']);
+                $typeId = intval($item['type_id']);
                 $repository = $this->getRepositoryByType($typeId);
-                $source = $repository->item($item['type_id']);
+                $source = $repository->item($item['modal_id']);
                 if (!is_null($source))
                 {
                     $transformer = $this->getTransformerByType($typeId);
