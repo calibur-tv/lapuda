@@ -45,30 +45,4 @@ class SearchController extends Controller
 
         return $this->resOK($result);
     }
-
-    public function migrate(Request $request)
-    {
-        $type = intval($request->get('type')) ?: 0;
-        $search = new Search();
-
-        if ($type === 3)
-        {
-            $videos = Video::where('id', '>', 13512)->pluck('id');
-            $videoRepository = new VideoRepository();
-            foreach ($videos as $videoId)
-            {
-                $video = $videoRepository->item($videoId);
-                $search->create(
-                    $video['id'],
-                    $video['name'],
-                    'video',
-                    strtotime($video['created_at'])
-                );
-            }
-        }
-
-        // TODO image search
-
-        return 'success';
-    }
 }
