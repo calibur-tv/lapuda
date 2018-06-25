@@ -2,8 +2,6 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Api\V1\Repositories\VideoRepository;
-use App\Models\Video;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
 use Mews\Purifier\Facades\Purifier;
@@ -40,5 +38,23 @@ class SearchController extends Controller
         $result = $search->index($request->get('q'));
 
         return $this->resOK(empty($result) ? '' : $result[0]['fields']['url']);
+    }
+
+    public function search(Request $request)
+    {
+        $key = Purifier::clean($request->get('q'));
+
+        if (!$key)
+        {
+            return $this->resOK();
+        }
+
+        $type = $request->get('type') ?: 0;
+        $page = $request->get('page') ?: 0;
+
+        $search = new Search();
+        $result = $search->retrieve($key, $type, $page);
+
+        return $this->resOK($result);
     }
 }

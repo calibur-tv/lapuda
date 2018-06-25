@@ -12,6 +12,8 @@ $api->version(['v1', 'latest'], function ($api)
     $api->group(['prefix' => '/search'], function ($api)
     {
         $api->get('/index', 'App\Api\V1\Controllers\SearchController@index');
+
+        $api->get('/new', 'App\Api\V1\Controllers\SearchController@search');
     });
 
     $api->group(['prefix' => '/door'], function ($api)
