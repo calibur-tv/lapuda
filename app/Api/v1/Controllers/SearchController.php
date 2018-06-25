@@ -2,17 +2,10 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Api\V1\Repositories\BangumiRepository;
-use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\VideoRepository;
-use App\Models\Bangumi;
-use App\Models\CartoonRole;
-use App\Models\Post;
-use App\Models\User;
 use App\Models\Video;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
-use Illuminate\Support\Facades\DB;
 use Mews\Purifier\Facades\Purifier;
 
 /**
@@ -58,39 +51,9 @@ class SearchController extends Controller
         $type = intval($request->get('type')) ?: 0;
         $search = new Search();
 
-        if ($type === 1)
-        {
-            $users = User::select('id', 'nickname', 'zone', 'created_at')->get();
-            foreach ($users as $user)
-            {
-                $search->create(
-                    $user['id'],
-                    $user['nickname'] . ',' . $user['zone'],
-                    'user',
-                    strtotime($user['created_at'])
-                );
-            }
-        }
-
-        if ($type === 2)
-        {
-            $bangumis = Bangumi::pluck('id');
-            $bangumiRepository = new BangumiRepository();
-            foreach ($bangumis as $bangumiId)
-            {
-                $bangumi = $bangumiRepository->item($bangumiId);
-                $search->create(
-                    $bangumi['id'],
-                    $bangumi['name'] . ',' . $bangumi['alias'],
-                    'bangumi',
-                    strtotime($bangumi['created_at'])
-                );
-            }
-        }
-
         if ($type === 3)
         {
-            $videos = Video::pluck('id');
+            $videos = Video::where('id', '>', 13512)->pluck('id');
             $videoRepository = new VideoRepository();
             foreach ($videos as $videoId)
             {
@@ -100,36 +63,6 @@ class SearchController extends Controller
                     $video['name'],
                     'video',
                     strtotime($video['created_at'])
-                );
-            }
-        }
-
-        if ($type === 4)
-        {
-            $posts = Post::select('id', 'desc', 'title', 'created_at')->get();
-            foreach ($posts as $post)
-            {
-                $search->create(
-                    $post['id'],
-                    $post['title'] . ',' . $post['desc'],
-                    'post',
-                    strtotime($post['created_at'])
-                );
-            }
-        }
-
-        if ($type === 5)
-        {
-            $roles = CartoonRole::pluck('id');
-            $cartoonRoleRepository = new CartoonRoleRepository();
-            foreach ($roles as $roleId)
-            {
-                $role = $cartoonRoleRepository->item($roleId);
-                $search->create(
-                    $role['id'],
-                    $role['name'] . ',' . $role['alias'],
-                    'role',
-                    strtotime($role['created_at'])
                 );
             }
         }
