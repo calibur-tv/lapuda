@@ -149,13 +149,15 @@ class Search
         $ret = $res['result'];
         $list = $ret['items'];
 
+        // type_id 其实是 source_id。。。
+
         $result = [];
         if ($modalId)
         {
             $transformer = $this->getTransformerByType($modalId);
             foreach ($list as $item)
             {
-                $source = $repository->item($item['modal_id']);
+                $source = $repository->item($item['type_id']);
                 if (!is_null($source))
                 {
                     $source = $transformer->search($source);
@@ -168,9 +170,9 @@ class Search
         {
             foreach ($list as $item)
             {
-                $typeId = intval($item['type_id']);
+                $typeId = intval($item['modal_id']);
                 $repository = $this->getRepositoryByType($typeId);
-                $source = $repository->item($item['modal_id']);
+                $source = $repository->item($item['type_id']);
                 if (!is_null($source))
                 {
                     $transformer = $this->getTransformerByType($typeId);
