@@ -2,17 +2,8 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Api\V1\Repositories\BangumiRepository;
-use App\Api\V1\Repositories\CartoonRoleRepository;
-use App\Api\V1\Repositories\VideoRepository;
-use App\Models\Bangumi;
-use App\Models\CartoonRole;
-use App\Models\Post;
-use App\Models\User;
-use App\Models\Video;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
-use Illuminate\Support\Facades\DB;
 use Mews\Purifier\Facades\Purifier;
 
 /**
@@ -46,7 +37,7 @@ class SearchController extends Controller
         $search = new Search();
         $result = $search->index($request->get('q'));
 
-        return $this->resOK(empty($result) ? '' : $result[0]['fields']['url']);
+        return $this->resOK(empty($result) ? '' : '/bangumi/' . $result[0]['fields']['type_id']);
     }
 
     public function search(Request $request)
@@ -58,8 +49,8 @@ class SearchController extends Controller
             return $this->resOK();
         }
 
-        $type = $request->get('type') ?: 0;
-        $page = $request->get('page') ?: 0;
+        $type = intval($request->get('type')) ?: 0;
+        $page = intval($request->get('page')) ?: 0;
 
         $search = new Search();
         $result = $search->retrieve($key, $type, $page);

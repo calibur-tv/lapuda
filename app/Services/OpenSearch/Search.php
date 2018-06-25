@@ -57,7 +57,7 @@ class Search
         $this->params->setHits(1);
         $this->params->setAppName($this->appName);
         $this->params->setFormat('fulljson');
-        $this->params->setQuery("default:'${key}' AND type:'2'");
+        $this->params->setQuery("default:'${key}' AND modal_id:'2'");
         $ret = json_decode($this->search->execute($this->params->build())->result, true);
         return $ret['result']['items'];
     }
@@ -127,11 +127,11 @@ class Search
         }
         $this->params->setStart($page * $count);
         $this->params->setHits($count);
-        $this->params->setAppName('search_v3');
+        $this->params->setAppName($this->appName);
         $this->params->setFormat($this->format);
         $this->params->setQuery(
             $modalId
-                ? "default:'${key}' AND modal_id:'${$modalId}'"
+                ? "default:'${key}' AND modal_id:'" . $modalId . "'"
                 : "default:'${key}'"
         );
 
