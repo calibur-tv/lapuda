@@ -30,19 +30,15 @@ class SearchController extends Controller
     // TODO：番剧不要只返回 url，还要返回其它信息
     public function index(Request $request)
     {
-        $key = Purifier::clean($request->get('q'));
-
+        $key = $request->get('q');
         if (!$key)
         {
             return $this->resOK();
         }
 
-        $type = $request->get('type') ?: 0;
-        $page = $request->get('page') ?: 0;
-
         $search = new Search();
-        $result = $search->index($key, $type, $page);
+        $result = $search->index($request->get('q'));
 
-        return $this->resOK($result);
+        return $this->resOK(empty($result) ? '' : $result[0]['fields']['url']);
     }
 }
