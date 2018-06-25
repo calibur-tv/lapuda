@@ -30,4 +30,16 @@ class VideoTransformer extends Transformer
             ];
         });
     }
+
+    public function search($video)
+    {
+        return $this->transformer($video, function ($video)
+        {
+            return [
+                'name' => $video['name'],
+                'id' => (int)$video['id'],
+                'poster' => $video['poster']
+            ];
+        });
+    }
 }

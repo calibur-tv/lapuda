@@ -11,10 +11,12 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
+use App\Api\V1\Transformers\VideoTransformer;
 use App\Services\OpenSearch\Client\OpenSearchClient;
 use App\Services\OpenSearch\Client\SearchClient;
 use App\Services\OpenSearch\Util\SearchParamsBuilder;
@@ -95,7 +97,7 @@ class Search
             $transformer = $this->getTransformerByType($type);
             foreach ($list as $item)
             {
-                $source = $repository->item($item['modal_id']);
+                $source = $repository->item($item['type_id']);
                 if (!is_null($source))
                 {
                     $source = $transformer->search($source);
@@ -108,9 +110,9 @@ class Search
         {
             foreach ($list as $item)
             {
-                $typeId = intval($item['type_id']);
+                $typeId = intval($item['modal_id']);
                 $repository = $this->getRepositoryByType($typeId);
-                $source = $repository->item($item['modal_id']);
+                $source = $repository->item($item['type_id']);
                 if (!is_null($source))
                 {
                     $transformer = $this->getTransformerByType($typeId);
@@ -136,6 +138,8 @@ class Search
             return 0;
         }
 
+        // modal_id：数据的 模型名 转成的 int 标记
+        // type_id： 数据的 id，如 post_id，bangumi_id
         return DB::table($this->table)
             ->insertGetId([
                 'modal_id' => $modalId,
@@ -198,9 +202,13 @@ class Search
         }
         else if ($type === 3)
         {
-            return new PostRepository();
+            return new VideoRepository();
         }
         else if ($type === 4)
+        {
+            return new PostRepository();
+        }
+        else if ($type === 5)
         {
             return new CartoonRoleRepository();
         }
@@ -220,9 +228,13 @@ class Search
         }
         else if ($type === 3)
         {
-            return new PostTransformer();
+            return new VideoTransformer();
         }
         else if ($type === 4)
+        {
+            return new PostTransformer();
+        }
+        else if ($type === 5)
         {
             return new CartoonRoleTransformer();
         }
