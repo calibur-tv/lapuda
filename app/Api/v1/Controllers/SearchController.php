@@ -66,4 +66,85 @@ class SearchController extends Controller
 
         return $this->resOK($result);
     }
+
+    public function migrate(Request $request)
+    {
+        $type = intval($request->get('type')) ?: 0;
+        $search = new Search();
+
+        if ($type === 1)
+        {
+            $videos = Video
+                ::where('id', '<=', 5000)
+                ->where('id', '>', 0)
+                ->pluck('id');
+            $videoRepository = new VideoRepository();
+            foreach ($videos as $videoId)
+            {
+                $video = $videoRepository->item($videoId);
+                $search->create(
+                    $video['id'],
+                    $video['name'],
+                    'video',
+                    strtotime($video['created_at'])
+                );
+            }
+        }
+        else if ($type === 2)
+        {
+            $videos = Video
+                ::where('id', '<=', 10000)
+                ->where('id', '>', 5000)
+                ->pluck('id');
+            $videoRepository = new VideoRepository();
+            foreach ($videos as $videoId)
+            {
+                $video = $videoRepository->item($videoId);
+                $search->create(
+                    $video['id'],
+                    $video['name'],
+                    'video',
+                    strtotime($video['created_at'])
+                );
+            }
+        }
+        else if ($type === 3)
+        {
+            $videos = Video
+                ::where('id', '<=', 15000)
+                ->where('id', '>', 10000)
+                ->pluck('id');
+            $videoRepository = new VideoRepository();
+            foreach ($videos as $videoId)
+            {
+                $video = $videoRepository->item($videoId);
+                $search->create(
+                    $video['id'],
+                    $video['name'],
+                    'video',
+                    strtotime($video['created_at'])
+                );
+            }
+        }
+        else if ($type === 4)
+        {
+            $videos = Video
+                ::where('id', '<=', 20000)
+                ->where('id', '>', 15000)
+                ->pluck('id');
+            $videoRepository = new VideoRepository();
+            foreach ($videos as $videoId)
+            {
+                $video = $videoRepository->item($videoId);
+                $search->create(
+                    $video['id'],
+                    $video['name'],
+                    'video',
+                    strtotime($video['created_at'])
+                );
+            }
+        }
+
+        return 'success';
+    }
 }
