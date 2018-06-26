@@ -126,7 +126,8 @@ class UserTransformer extends Transformer
                 'id' => (int)$user['id'],
                 'zone' => $user['zone'],
                 'avatar' => $user['avatar'],
-                'nickname' => $user['nickname']
+                'nickname' => $user['nickname'],
+                'signature' => $user['signature']
             ];
         });
     }

@@ -246,7 +246,6 @@ class PostTransformer extends Transformer
                 'id' => (int)$post['id'],
                 'title' => $post['title'],
                 'desc' => $post['desc'],
-                'content' => $post['content'],
                 'images' => $post['images'],
                 'created_at' => $post['created_at']
             ];
