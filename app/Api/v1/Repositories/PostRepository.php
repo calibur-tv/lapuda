@@ -144,11 +144,6 @@ class PostRepository extends Repository
                 ->get()
                 ->toArray();
 
-            foreach ($images as $i => $img)
-            {
-                $images[$i]['url'] = config('website.image') . $img['url'];
-            }
-
             $post['images'] = $images;
 
             return $post;
@@ -187,7 +182,6 @@ class PostRepository extends Repository
 
             foreach ($images as $i => $img)
             {
-                $img['url'] = config('website.image') . $img['url'];
                 $images[$i] = json_encode($img);
             }
 

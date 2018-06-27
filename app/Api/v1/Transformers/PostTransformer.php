@@ -28,7 +28,16 @@ class PostTransformer extends Transformer
                 'marked' => $post['marked'],
                 'commented' => $post['commented'],
                 'content' => $post['content'],
-                'images' => $post['images'],
+                'images' => $this->collection($post['images'], function ($image)
+                {
+                    return [
+                        'width' => (int)$image['width'],
+                        'height' => (int)$image['height'],
+                        'size' => (int)$image['size'],
+                        'type' => $image['type'],
+                        'url' => config('website.image'). $image['url']
+                    ];
+                }),
                 'created_at' => $post['created_at'],
                 'updated_at' => $post['updated_at'],
                 'preview_images' => $this->collection($post['preview_images'], function ($image)
@@ -38,7 +47,7 @@ class PostTransformer extends Transformer
                         'height' => (int)$image['height'],
                         'size' => (int)$image['size'],
                         'type' => $image['type'],
-                        'url' => $image['url']
+                        'url' => config('website.image') . $image['url']
                     ];
                 }),
                 'like_users' => $post['like_users']
