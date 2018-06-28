@@ -351,7 +351,7 @@ class DoorController extends Controller
 
     private function accessIsNew($method, $access)
     {
-        return User::where($method, $access)->count() === 0;
+        return User::withTrashed()->where($method, $access)->count() === 0;
     }
 
     private function createUserZone($name)
