@@ -25,7 +25,8 @@ class User extends Authenticatable
         'state',    // 0 正常，1 待审
         'password_change_at', // 密码最后修改时间
         'remember_token',
-        'phone'
+        'phone',
+        'is_admin'
     ];
 
     protected $hidden = [
