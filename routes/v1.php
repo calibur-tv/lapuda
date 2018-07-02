@@ -236,4 +236,14 @@ $api->version(['v1', 'latest'], function ($api)
     {
         $api->get('/cartoon_role', 'App\Api\V1\Controllers\TrendingController@cartoonRole');
     });
+
+    $api->group(['prefix' => '/admin', 'middleware' => ['jwt.admin']], function ($api)
+    {
+        $api->group(['prefix' => '/stats'], function ($api)
+        {
+            $api->get('/realtime', 'App\Api\V1\Controllers\StatsController@realtime');
+
+            $api->get('/timeline', 'App\Api\V1\Controllers\StatsController@timeline');
+        });
+    });
 });
