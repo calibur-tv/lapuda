@@ -253,6 +253,12 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/bangumi'], function ($api)
         {
+            $api->get('/info', 'App\Api\V1\Controllers\BangumiController@getAdminBangumiInfo');
+
+            $api->post('/create', 'App\Api\V1\Controllers\BangumiController@create');
+
+            $api->post('/edit', 'App\Api\V1\Controllers\BangumiController@edit');
+
             $api->post('/release', 'App\Api\V1\Controllers\BangumiController@updateBangumiRelease');
 
             $api->post('/delete', 'App\Api\V1\Controllers\BangumiController@deleteBangumi');

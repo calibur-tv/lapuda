@@ -19,8 +19,11 @@ use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\TagRepository;
 use App\Models\Image;
 use App\Models\Video;
+use App\Services\OpenSearch\Search;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
 /**
@@ -491,5 +494,145 @@ class BangumiController extends Controller
         $bangumiRepository = new BangumiRepository();
 
         return $this->resOK($bangumiRepository->deleteBangumi($request->get('id')));
+    }
+
+    public function getAdminBangumiInfo(Request $request)
+    {
+        $id = $request->get('id');
+
+        $bangumi = Bangumi::find($id);
+        $bangumi['alias'] = $bangumi['alias'] === 'null' ? '' : json_decode($bangumi['alias'])->search;
+        $bangumi['tags'] = $bangumi->tags()->get()->pluck('id');
+        $bangumi['season'] = $bangumi['season'] === 'null' ? '' : $bangumi['season'];
+        $bangumi['published_at'] = $bangumi['published_at'] * 1000;
+        $bangumi['isCollection'] = $bangumi['id'] === $bangumi['collection_id'];
+
+        return $this->resOK($bangumi);
+    }
+
+    public function create(Request $request)
+    {
+        $releasedId = $request->get('released_video_id') ?: 0;
+        $time = Carbon::now();
+        $bangumi_id = Bangumi::insertGetId([
+            'name' => $request->get('name'),
+            'avatar' => $request->get('avatar'),
+            'banner' => $request->get('banner'),
+            'summary' => $request->get('summary'),
+            'released_at' => $request->get('released_at'),
+            'released_video_id' => $releasedId,
+            'season' => $request->get('season') ? $request->get('season') : 'null',
+            'alias' => $request->get('alias') ? json_encode([
+                'search' => $request->get('alias')
+            ]) : 'null',
+            'published_at' => $request->get('published_at') ?: 0,
+            'others_site_video' => $request->get('others_site_video'),
+            'end' => $request->get('end'),
+            'created_at' => $time,
+            'updated_at' => $time,
+            'count_score' => 0
+        ]);
+
+        $tags = [];
+        foreach($request->get('tags') as $i => $tag_id)
+        {
+            array_push($tags, [
+                'bangumi_id' => $bangumi_id,
+                'tag_id' => $tag_id
+            ]);
+        }
+        DB::table('bangumi_tag')->insert($tags);
+
+        if ($releasedId)
+        {
+            Redis::DEL('bangumi_release_list');
+        }
+        Redis::DEL('bangumi_all_list');
+
+        $job = (new \App\Jobs\Push\Baidu('bangumi/' . $bangumi_id));
+        dispatch($job);
+
+        return $this->resCreated($bangumi_id);
+    }
+
+    public function edit(Request $request)
+    {
+        $rollback = false;
+        $bangumi_id = $request->get('id');
+        DB::beginTransaction();
+
+        $result = DB::table('bangumi_tag')
+            ->where('bangumi_id', $bangumi_id)
+            ->delete();
+        if ($result === false)
+        {
+            $rollback = true;
+        }
+
+        $tags = [];
+        foreach($request->get('tags') as $i => $tag_id)
+        {
+            array_push($tags, [
+                'bangumi_id' => $bangumi_id,
+                'tag_id' => $tag_id
+            ]);
+        }
+
+        $result = DB::table('bangumi_tag')->insert($tags);
+        if (!$result)
+        {
+            $rollback = true;
+        }
+
+        $bangumi = Bangumi::withTrashed()->where('id', $bangumi_id)->first();
+        $arr = [
+            'name' => $request->get('name'),
+            'avatar' => $request->get('avatar'),
+            'banner' => $request->get('banner'),
+            'summary' => $request->get('summary'),
+            'released_at' => $request->get('released_at'),
+            'released_video_id' => $request->get('released_video_id'),
+            'season' => $request->get('season') ? $request->get('season') : 'null',
+            'alias' => $request->get('alias') ? json_encode([
+                'search' => $request->get('alias')
+            ]) : 'null',
+            'end' => $request->get('end'),
+            'collection_id' => $request->get('collection_id'),
+            'published_at' => $request->get('published_at'),
+            'others_site_video' => $request->get('others_site_video'),
+            'has_cartoon' => $request->get('has_cartoon'),
+            'has_video' => $request->get('has_video')
+        ];
+
+        $result = $bangumi->update($arr);
+        if ($result === false)
+        {
+            $rollback = true;
+        }
+
+        if ($rollback)
+        {
+            DB::rollBack();
+        }
+        else
+        {
+            DB::commit();
+
+            $searchService = new Search();
+
+            $searchService->update(
+                $bangumi_id,
+                $request->get('name') . ',' . $request->get('alias'),
+                'bangumi'
+            );
+
+            Redis::DEL('bangumi_'.$bangumi_id);
+            Redis::DEL('bangumi_'.$bangumi_id.'_videos');
+
+            $job = (new \App\Jobs\Push\Baidu('bangumi/' . $bangumi_id, 'update'));
+            dispatch($job);
+        }
+
+        return $this->resNoContent();
     }
 }

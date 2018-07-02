@@ -446,7 +446,11 @@ class BangumiRepository extends Repository
     {
         return $this->Cache($this->bangumiAllCacheKey, function ()
         {
-            $bangumis = Bangumi::select('id', 'name', 'alias')->get()->toArray();
+            $bangumis = Bangumi::select('id', 'name', 'alias')
+                ->orderBy('id', 'DESC')
+                ->get()
+                ->toArray();
+
             foreach ($bangumis as $i => $item)
             {
                 $bangumis[$i]['alias'] = $item['alias'] === 'null' ? '' : json_decode($item['alias'])->search;
