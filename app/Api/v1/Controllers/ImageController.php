@@ -930,16 +930,18 @@ class ImageController extends Controller
         if (is_null($banner))
         {
             Banner::withTrashed()->find($id)->restore();
+            $result = true;
         }
         else
         {
             $banner->delete();
+            $result = false;
         }
 
         Redis::DEL('loop_banners');
         Redis::DEL('loop_banners_all');
 
-        return $this->resNoContent();
+        return $this->resOK($result);
     }
 
     public function editIndexBanner(Request $request)
