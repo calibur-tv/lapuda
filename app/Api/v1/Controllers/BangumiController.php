@@ -18,8 +18,10 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\TagRepository;
 use App\Models\Image;
+use App\Models\Video;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redis;
 
 /**
  * @Resource("番剧相关接口")
@@ -457,5 +459,37 @@ class BangumiController extends Controller
             'total' => $idsObj['total'],
             'noMore' => $idsObj['noMore']
         ]);
+    }
+
+    public function updateBangumiRelease(Request $request)
+    {
+        $bangumi_id = $request->get('bangumi_id');
+        $video_id = $request->get('video_id');
+
+        $video = Video::find($video_id);
+        if (is_null($video))
+        {
+            return $this->resErrBad('不存在的视频');
+        }
+
+        Bangumi::where('id', $bangumi_id)->update([
+            'released_time' => time(),
+            'released_video_id' => $video_id
+        ]);
+
+        Redis::DEL('bangumi_release_list');
+        Redis::DEL('bangumi_' . $bangumi_id);
+
+        $job = (new \App\Jobs\Push\Baidu('bangumi/news'));
+        dispatch($job);
+
+        return $this->resNoContent();
+    }
+
+    public function deleteBangumi(Request $request)
+    {
+        $bangumiRepository = new BangumiRepository();
+
+        return $this->resOK($bangumiRepository->deleteBangumi($request->get('id')));
     }
 }

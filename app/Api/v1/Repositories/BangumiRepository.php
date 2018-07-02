@@ -12,6 +12,7 @@ use App\Models\Post;
 use App\Models\Tag;
 use App\Models\User;
 use App\Models\Video;
+use App\Services\OpenSearch\Search;
 use Illuminate\Support\Facades\Redis;
 
 class BangumiRepository extends Repository
@@ -453,5 +454,27 @@ class BangumiRepository extends Repository
 
             return $bangumis;
         });
+    }
+
+    public function deleteBangumi($id)
+    {
+        $bangumi = Bangumi::find($id);
+        if (is_null($bangumi))
+        {
+            return false;
+        }
+
+        $bangumi->delete();
+
+        $searchService = new Search();
+        $searchService->delete($id, 'bangumi');
+
+        $job = (new \App\Jobs\Push\Baidu('bangumi/' . $id, 'del'));
+        dispatch($job);
+
+        Redis::DEL('bangumi_'.$id);
+        Redis::DEL($this->bangumiAllCacheKey);
+
+        return true;
     }
 }

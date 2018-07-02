@@ -251,6 +251,13 @@ $api->version(['v1', 'latest'], function ($api)
             $api->get('/user_by_zone', 'App\Api\V1\Controllers\SearchController@getUserByZone');
         });
 
+        $api->group(['prefix' => '/bangumi'], function ($api)
+        {
+            $api->post('/release', 'App\Api\V1\Controllers\BangumiController@updateBangumiRelease');
+
+            $api->post('/delete', 'App\Api\V1\Controllers\BangumiController@deleteBangumi');
+        });
+
         $api->group(['prefix' => '/banner'], function ($api)
         {
             $api->get('/list', 'App\Api\V1\Controllers\ImageController@getIndexBanners');
