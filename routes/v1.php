@@ -274,5 +274,10 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/edit', 'App\Api\V1\Controllers\ImageController@editIndexBanner');
         });
+
+        $api->group(['prefix' => '/tag'], function ($api)
+        {
+            $api->get('/all', 'App\Api\V1\Controllers\TagController@all');
+        });
     });
 });
