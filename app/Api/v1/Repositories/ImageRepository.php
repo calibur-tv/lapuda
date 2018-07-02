@@ -101,11 +101,17 @@ class ImageRepository extends Repository
         ];
     }
 
-    public function banners()
+    public function banners($withTrashed = false)
     {
-        $list = $this->RedisList('loop_banners', function ()
+        $list = $this->RedisList($withTrashed ? 'loop_banners_all' : 'loop_banners', function () use ($withTrashed)
         {
-            $list =  Banner::select('id', 'url', 'user_id', 'bangumi_id', 'gray')->get()->toArray();
+            $list = $withTrashed
+                ? Banner::withTrashed()
+                    ->select('id', 'url', 'user_id', 'bangumi_id', 'gray', 'deleted_at')
+                    ->orderBy('id', 'DESC')
+                    ->get()
+                    ->toArray()
+                : Banner::select('id', 'url', 'user_id', 'bangumi_id', 'gray')->get()->toArray();
 
             $userRepository = new UserRepository();
             $bangumiRepository = new BangumiRepository();

@@ -173,7 +173,18 @@ class ImageTransformer extends Transformer
     {
         return $this->collection($list, function ($data)
         {
-            return [
+            return array_key_exists('deleted_at', $data) ? [
+                'id' => (int)$data['id'],
+                'url' => $data['url'],
+                'gray' => (int)$data['gray'],
+                'user_id' => (int)$data['user_id'],
+                'user_nickname' => $data['user_nickname'],
+                'user_zone' => $data['user_zone'],
+                'user_avatar' => $data['user_avatar'],
+                'bangumi_id' => (int)$data['bangumi_id'],
+                'bangumi_name' => $data['bangumi_name'],
+                'use' => !$data['deleted_at']
+            ] : [
                 'id' => (int)$data['id'],
                 'url' => $data['url'],
                 'gray' => (int)$data['gray'],

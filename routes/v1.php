@@ -11,9 +11,9 @@ $api->version(['v1', 'latest'], function ($api)
 {
     $api->group(['prefix' => '/search'], function ($api)
     {
-        $api->get('/index', 'App\Api\V1\Controllers\SearchController@index');
-
         $api->get('/new', 'App\Api\V1\Controllers\SearchController@search');
+
+        $api->get('/bangumis', 'App\Api\V1\Controllers\SearchController@bangumis');
     });
 
     $api->group(['prefix' => '/door'], function ($api)
@@ -244,6 +244,22 @@ $api->version(['v1', 'latest'], function ($api)
             $api->get('/realtime', 'App\Api\V1\Controllers\StatsController@realtime');
 
             $api->get('/timeline', 'App\Api\V1\Controllers\StatsController@timeline');
+        });
+
+        $api->group(['prefix' => '/search'], function ($api)
+        {
+            $api->get('/user_by_zone', 'App\Api\V1\Controllers\SearchController@getUserByZone');
+        });
+
+        $api->group(['prefix' => '/banner'], function ($api)
+        {
+            $api->get('/list', 'App\Api\V1\Controllers\ImageController@getIndexBanners');
+
+            $api->post('/upload', 'App\Api\V1\Controllers\ImageController@uploadIndexBanner');
+
+            $api->post('/toggle_use', 'App\Api\V1\Controllers\ImageController@toggleIndexBanner');
+
+            $api->post('/edit', 'App\Api\V1\Controllers\ImageController@editIndexBanner');
         });
     });
 });

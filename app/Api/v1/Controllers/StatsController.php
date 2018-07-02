@@ -8,7 +8,6 @@
 
 namespace App\Api\V1\Controllers;
 
-
 use App\Api\V1\Services\Counter\Stats\TotalCommentCount;
 use App\Api\V1\Services\Counter\Stats\TotalImageCount;
 use App\Api\V1\Services\Counter\Stats\TotalPostCount;

@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Redis;
 
 class BangumiRepository extends Repository
 {
+    protected $bangumiAllCacheKey = 'bangumi_all_list';
+
     public function item($id)
     {
         if (!$id)
@@ -437,5 +439,19 @@ class BangumiRepository extends Repository
 
         $transformer = new BangumiTransformer();
         return $transformer->panel($bangumi);
+    }
+
+    public function searchAll()
+    {
+        return $this->Cache($this->bangumiAllCacheKey, function ()
+        {
+            $bangumis = Bangumi::select('id', 'name', 'alias')->get()->toArray();
+            foreach ($bangumis as $i => $item)
+            {
+                $bangumis[$i]['alias'] = $item['alias'] === 'null' ? '' : json_decode($item['alias'])->search;
+            }
+
+            return $bangumis;
+        });
     }
 }

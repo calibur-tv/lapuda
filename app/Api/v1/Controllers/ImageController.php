@@ -11,6 +11,7 @@ use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Bangumi;
+use App\Models\Banner;
 use App\Models\Image;
 use App\Models\ImageLike;
 use App\Models\ImageTag;
@@ -888,6 +889,84 @@ class ImageController extends Controller
 
         $imageViewCounter = new ImageViewCounter();
         $imageViewCounter->add($request->get('id'));
+
+        return $this->resNoContent();
+    }
+
+    public function getIndexBanners()
+    {
+        $imageRepository = new ImageRepository();
+
+        $list = $imageRepository->banners(true);
+        $transformer = new ImageTransformer();
+
+        return $this->resOK($transformer->indexBanner($list));
+    }
+
+    public function uploadIndexBanner(Request $request)
+    {
+        $now = Carbon::now();
+
+        $id = Banner::insertGetId([
+            'url' => $request->get('url'),
+            'bangumi_id' => $request->get('bangumi_id') ?: 0,
+            'user_id' => $request->get('user_id') ?: 0,
+            'gray' => $request->get('gray') ?: 0,
+            'created_at' => $now,
+            'updated_at' => $now
+        ]);
+
+        Redis::DEL('loop_banners');
+        Redis::DEL('loop_banners_all');
+
+        return $this->resCreated($id);
+    }
+
+    public function toggleIndexBanner(Request $request)
+    {
+        $id = $request->get('id');
+        $banner = Banner::find($id);
+
+        if (is_null($banner))
+        {
+            Banner::withTrashed()->find($id)->restore();
+        }
+        else
+        {
+            $banner->delete();
+        }
+
+        Redis::DEL('loop_banners');
+        Redis::DEL('loop_banners_all');
+
+        return $this->resNoContent();
+    }
+
+    public function editIndexBanner(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer|min:1',
+            'bangumi_id' => 'required|integer|min:0',
+            'user_id' => 'required|integer|min:0'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $id = $request->get('id');
+
+        Banner::withTrashed()
+            ->where('id', $id)
+            ->update([
+                'bangumi_id' => $request->get('bangumi_id'),
+                'user_id' => $request->get('user_id'),
+                'updated_at' => Carbon::now()
+            ]);
+
+        Redis::DEL('loop_banners');
+        Redis::DEL('loop_banners_all');
 
         return $this->resNoContent();
     }
