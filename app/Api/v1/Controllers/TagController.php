@@ -9,8 +9,9 @@
 namespace App\Api\V1\Controllers;
 
 use App\Models\Tag;
-
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redis;
 
 class TagController extends Controller
 {
@@ -25,5 +26,31 @@ class TagController extends Controller
         });
 
         return $this->resOK($result);
+    }
+
+    public function edit(Request $request)
+    {
+        $id = $request->get('id');
+
+        Tag::where('id', $id)
+            ->update([
+                'name' => $request->get('name')
+            ]);
+
+        Redis::DEL('tag_all');
+
+        return $this->resNoContent();
+    }
+
+    public function create(Request $request)
+    {
+        $id = Tag::insertGetId([
+            'name' => $request->get('name'),
+            'model' => $request->get('model')
+        ]);
+
+        Redis::DEL('tag_all');
+
+        return $this->resCreated($id);
     }
 }

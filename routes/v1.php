@@ -278,6 +278,10 @@ $api->version(['v1', 'latest'], function ($api)
         $api->group(['prefix' => '/tag'], function ($api)
         {
             $api->get('/all', 'App\Api\V1\Controllers\TagController@all');
+
+            $api->post('/edit', 'App\Api\V1\Controllers\TagController@edit');
+
+            $api->post('/create', 'App\Api\V1\Controllers\TagController@create');
         });
     });
 });
