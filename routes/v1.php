@@ -294,5 +294,14 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/edit', 'App\Api\V1\Controllers\CartoonController@edit');
         });
+
+        $api->group(['prefix' => '/video'], function ($api)
+        {
+            $api->get('/bangumis', 'App\Api\V1\Controllers\VideoController@bangumis');
+
+            $api->post('/edit', 'App\Api\V1\Controllers\VideoController@edit');
+
+            $api->post('/save', 'App\Api\V1\Controllers\VideoController@save');
+        });
     });
 });
