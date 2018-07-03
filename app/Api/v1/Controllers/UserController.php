@@ -756,4 +756,48 @@ class UserController extends Controller
 
         return $this->resNoContent();
     }
+
+    public function adminUsers()
+    {
+        $users = User::where('is_admin', 1)
+            ->select('id', 'zone', 'nickname')
+            ->get();
+
+        return $this->resOK($users);
+    }
+
+    public function removeAdmin(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $id = $request->get('id');
+
+        if (intval($id) === 1 || $userId !== 1)
+        {
+            return $this->resErrRole();
+        }
+
+        User::whereRaw('id = ? and is_admin = 1', [$id])
+            ->update([
+                'is_admin' => 0
+            ]);
+
+        return $this->resNoContent();
+    }
+
+    public function addAdmin(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+
+        if ($userId !== 1)
+        {
+            return $this->resErrRole();
+        }
+
+        User::whereRaw('id = ? and is_admin = 0', [$request->get('id')])
+            ->update([
+                'is_admin' => 1
+            ]);
+
+        return $this->resNoContent();
+    }
 }

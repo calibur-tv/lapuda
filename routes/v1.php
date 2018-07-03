@@ -341,7 +341,16 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/recover', 'App\Api\V1\Controllers\UserController@recoverUser');
 
-            $api->get('dalao', 'App\Api\V1\Controllers\UserController@coinDescList');
+            $api->get('/dalao', 'App\Api\V1\Controllers\UserController@coinDescList');
+        });
+
+        $api->group(['prefix' => '/console'], function ($api)
+        {
+            $api->get('/list', 'App\Api\V1\Controllers\UserController@adminUsers');
+
+            $api->post('/remove', 'App\Api\V1\Controllers\UserController@removeAdmin');
+
+            $api->post('/add', 'App\Api\V1\Controllers\UserController@addAdmin');
         });
     });
 });
