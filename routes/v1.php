@@ -370,6 +370,15 @@ $api->version(['v1', 'latest'], function ($api)
 
                 $api->get('/text', 'App\Api\V1\Controllers\TrialController@textTest');
             });
+
+            $api->group(['prefix' => '/user'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\UserController@trials');
+
+                $api->post('/delete_info', 'App\Api\V1\Controllers\UserController@deleteUserInfo');
+
+                $api->post('/pass', 'App\Api\V1\Controllers\UserController@passUser');
+            });
         });
     });
 });

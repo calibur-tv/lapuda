@@ -800,4 +800,42 @@ class UserController extends Controller
 
         return $this->resNoContent();
     }
+
+    public function trials()
+    {
+        $users = User::where('state', '<>', 0)
+            ->orderBy('updated_at', 'DESC')
+            ->get();
+
+        return $this->resOK($users);
+    }
+
+    public function deleteUserInfo(Request $request)
+    {
+        $userId = $request->get('id');
+        User::where('id', $userId)
+            ->update([
+                $request->get('key') => $request->get('value') ?: ''
+            ]);
+
+        $user = User::where('id', $userId)->first();
+
+        $searchService = new Search();
+        $searchService->update(
+            $userId,
+            $user->nickname . ',' . $user->zone,
+            'user'
+        );
+
+        return $this->resNoContent();
+    }
+
+    public function passUser(Request $request)
+    {
+        User::where('id', $request->get('id'))->update([
+            'state' => 0
+        ]);
+
+        return $this->resNoContent();
+    }
 }
