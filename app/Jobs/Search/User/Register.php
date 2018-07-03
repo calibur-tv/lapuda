@@ -3,6 +3,7 @@
 namespace App\Jobs\Search\User;
 
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Counter\Stats\TotalUserCount;
 use App\Services\OpenSearch\Search;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
@@ -41,5 +42,8 @@ class Register implements ShouldQueue
             $user['nickname'] . ',' . $user['zone'],
             'user'
         );
+
+        $totalUserCounter = new TotalUserCount();
+        $totalUserCounter->add();
     }
 }

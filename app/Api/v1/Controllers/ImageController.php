@@ -6,6 +6,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Counter\ImageViewCounter;
+use App\Api\V1\Services\Counter\Stats\TotalImageCount;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
@@ -246,6 +247,9 @@ class ImageController extends Controller
         {
             $list[$i]['liked'] = false;
         }
+
+        $totalImageCount = new TotalImageCount();
+        $totalImageCount->add(count($images));
 
         return $this->resCreated($transformer->waterfall($list));
     }

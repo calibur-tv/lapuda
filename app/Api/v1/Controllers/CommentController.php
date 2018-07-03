@@ -14,6 +14,7 @@ use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Comment\VideoCommentService;
+use App\Api\V1\Services\Counter\Stats\TotalCommentCount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -116,6 +117,9 @@ class CommentController extends Controller
 
         $newComment['liked'] = false;
         $newComment['like_count'] = 0;
+
+        $totalCommentCount = new TotalCommentCount();
+        $totalCommentCount->add();
 
         return $this->resCreated($newComment);
     }
@@ -335,6 +339,9 @@ class CommentController extends Controller
         // 更新百度索引
         $job = (new \App\Jobs\Push\Baidu($type . '/' . $comment['modal_id'], 'update'));
         dispatch($job);
+
+        $totalCommentCount = new TotalCommentCount();
+        $totalCommentCount->add();
 
         return $this->resCreated($newComment);
     }
