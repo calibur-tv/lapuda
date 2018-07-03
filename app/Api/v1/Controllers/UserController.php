@@ -12,6 +12,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Services\Counter\Stats\TotalUserCount;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
@@ -668,6 +669,74 @@ class UserController extends Controller
             ]);
 
         Redis::DEL('user_' . $userId);
+
+        return $this->resNoContent();
+    }
+
+    public function coinDescList(Request $request)
+    {
+        $curPage = $request->get('cur_page') ?: 0;
+        $toPage = $request->get('to_page') ?: 1;
+        $take = $request->get('take') ?: 10;
+
+        $list = User::orderBy('coin_count', 'DESC')
+            ->select('nickname', 'id', 'zone', 'coin_count', 'faker')
+            ->take(($toPage - $curPage) * $take)
+            ->skip($curPage * $take)
+            ->get();
+
+        $totalUserCount = new TotalUserCount();
+
+        return $this->resOK([
+            'list' => $list,
+            'total' => $totalUserCount->get()
+        ]);
+    }
+
+    public function addUserToTrial(Request $request)
+    {
+        $userId = $request->get('id');
+
+        $user = User::find($userId);
+
+        if (is_null($user))
+        {
+            $this->resErrNotFound('不存在的用户');
+        }
+
+        User::where('id', $userId)
+            ->update([
+                'state' => 1
+            ]);
+
+        return $this->resNoContent();
+    }
+
+    public function blockUser(Request $request)
+    {
+        $userId = $request->get('id');
+        User::where('id', $userId)->delete();
+        $searchService = new Search();
+        $searchService->delete($userId, 'user');
+
+        Redis::DEL('user_' . $userId);
+
+        return $this->resNoContent();
+    }
+
+    public function recoverUser(Request $request)
+    {
+        $userId = $request->get('id');
+
+        User::withTrashed()->where('id', $userId)->restore();
+        $user = User::withTrashed()->where('id', $userId)->first();
+
+        $searchService = new Search();
+        $searchService->create(
+            $userId,
+            $user->nickname . ',' . $user->zone,
+            'user'
+        );
 
         return $this->resNoContent();
     }

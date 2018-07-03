@@ -76,14 +76,12 @@ class SearchController extends Controller
         }
 
         $userRepository = new UserRepository();
-
-        $userId = $userRepository->getUserIdByZone($zone);
-
+        $userId = $userRepository->getUserIdByZone($zone, true);
         if (!$userId)
         {
             return $this->resOK(null);
         }
 
-        return $this->resOK($userRepository->item($userId));
+        return $this->resOK($userRepository->item($userId, true));
     }
 }

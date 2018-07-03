@@ -33,11 +33,16 @@ use Illuminate\Support\Facades\DB;
 
 class UserRepository extends Repository
 {
-    public function item($id)
+    public function item($id, $force = false)
     {
         if (!$id)
         {
             return null;
+        }
+
+        if ($force)
+        {
+            return User::withTrashed()->find($id);
         }
 
         return $this->RedisHash('user_'.$id, function () use ($id)
@@ -54,9 +59,13 @@ class UserRepository extends Repository
         });
     }
 
-    public function getUserIdByZone($zone)
+    public function getUserIdByZone($zone, $force = false)
     {
         $userId = User::where('zone', $zone)
+            ->when($force, function ($query)
+            {
+                return $query->withTrashed();
+            })
             ->pluck('id')
             ->first();
 

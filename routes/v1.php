@@ -327,6 +327,14 @@ $api->version(['v1', 'latest'], function ($api)
 
                 $api->post('/create', 'App\Api\V1\Controllers\DoorController@createFaker');
             });
+
+            $api->post('/add_to_trial', 'App\Api\V1\Controllers\UserController@addUserToTrial');
+
+            $api->post('/block', 'App\Api\V1\Controllers\UserController@blockUser');
+
+            $api->post('/recover', 'App\Api\V1\Controllers\UserController@recoverUser');
+
+            $api->get('dalao', 'App\Api\V1\Controllers\UserController@coinDescList');
         });
     });
 });
