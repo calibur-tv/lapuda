@@ -352,5 +352,15 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/add', 'App\Api\V1\Controllers\UserController@addAdmin');
         });
+
+        $api->group(['prefix' => '/trial'], function ($api)
+        {
+            $api->group(['prefix' => '/test'], function ($api)
+            {
+                $api->get('/image', 'App\Api\V1\Controllers\TrialController@imageTest');
+
+                $api->get('/text', 'App\Api\V1\Controllers\TrialController@textTest');
+            });
+        });
     });
 });
