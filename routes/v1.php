@@ -328,6 +328,13 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/create', 'App\Api\V1\Controllers\DoorController@createFaker');
             });
 
+            $api->group(['prefix' => '/feedback'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\UserController@feedbackList');
+
+                $api->post('/read', 'App\Api\V1\Controllers\UserController@readFeedback');
+            });
+
             $api->post('/add_to_trial', 'App\Api\V1\Controllers\UserController@addUserToTrial');
 
             $api->post('/block', 'App\Api\V1\Controllers\UserController@blockUser');

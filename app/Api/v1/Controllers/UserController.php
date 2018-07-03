@@ -740,4 +740,20 @@ class UserController extends Controller
 
         return $this->resNoContent();
     }
+
+    public function feedbackList()
+    {
+        $list = Feedback::where('stage', 0)->get();
+
+        return $this->resOK($list);
+    }
+
+    public function readFeedback(Request $request)
+    {
+        Feedback::where('id', $request->get('id'))->update([
+            'stage' => 1
+        ]);
+
+        return $this->resNoContent();
+    }
 }
