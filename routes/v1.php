@@ -299,6 +299,8 @@ $api->version(['v1', 'latest'], function ($api)
         {
             $api->get('/bangumis', 'App\Api\V1\Controllers\VideoController@bangumis');
 
+            $api->get('/trending', 'App\Api\V1\Controllers\VideoController@playTrending');
+
             $api->post('/edit', 'App\Api\V1\Controllers\VideoController@edit');
 
             $api->post('/save', 'App\Api\V1\Controllers\VideoController@save');

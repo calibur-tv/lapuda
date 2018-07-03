@@ -178,4 +178,22 @@ class VideoController extends Controller
 
         return $this->resNoContent();
     }
+
+    public function playTrending(Request $request)
+    {
+        $curPage = $request->get('cur_page') ?: 0;
+        $toPage = $request->get('to_page') ?: 1;
+        $take = $request->get('take') ?: 10;
+
+        $list = Video::orderBy('count_played', 'DESC')
+            ->select('name', 'id', 'bangumi_id', 'count_played')
+            ->take(($toPage - $curPage) * $take)
+            ->skip($curPage * $take)
+            ->get();
+
+        return $this->resOK([
+            'list' => $list,
+            'total' => Video::count()
+        ]);
+    }
 }
