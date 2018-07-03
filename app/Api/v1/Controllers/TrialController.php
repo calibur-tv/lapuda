@@ -11,9 +11,35 @@ namespace App\Api\V1\Controllers;
 use App\Services\Trial\ImageFilter;
 use App\Services\Trial\WordsFilter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redis;
 
 class TrialController extends Controller
 {
+    public function words()
+    {
+        $words = Redis::LRANGE('blackwords', 0, -1);
+
+        return $this->resOK($words);
+    }
+
+    public function deleteWords(Request $request)
+    {
+        $words = $request->get('words');
+        foreach ($words as $item)
+        {
+            Redis::LREM('blackwords', 1, $item);
+        }
+
+        return $this->resNoContent();
+    }
+
+    public function addWords(Request $request)
+    {
+        Redis::LPUSH('blackwords', $request->get('words'));
+
+        return $this->resNoContent();
+    }
+
     public function imageTest(Request $request)
     {
         $imageUrl = $request->get('url');

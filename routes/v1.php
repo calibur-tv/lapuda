@@ -355,6 +355,15 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/trial'], function ($api)
         {
+            $api->group(['prefix' => '/words'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\TrialController@words');
+
+                $api->post('/delete', 'App\Api\V1\Controllers\TrialController@deleteWords');
+
+                $api->post('/add', 'App\Api\V1\Controllers\TrialController@addWords');
+            });
+
             $api->group(['prefix' => '/test'], function ($api)
             {
                 $api->get('/image', 'App\Api\V1\Controllers\TrialController@imageTest');
