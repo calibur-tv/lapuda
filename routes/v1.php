@@ -316,5 +316,17 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/create', 'App\Api\V1\Controllers\CartoonRoleController@create');
         });
+
+        $api->group(['prefix' => '/user'], function ($api)
+        {
+            $api->group(['prefix' => '/faker'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\UserController@fakers');
+
+                $api->post('/reborn', 'App\Api\V1\Controllers\UserController@fakerReborn');
+
+                $api->post('/create', 'App\Api\V1\Controllers\DoorController@createFaker');
+            });
+        });
     });
 });

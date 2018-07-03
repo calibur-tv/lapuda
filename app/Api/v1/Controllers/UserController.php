@@ -24,6 +24,7 @@ use App\Models\User;
 use App\Api\V1\Repositories\UserRepository;
 use App\Models\UserCoin;
 use App\Models\UserSign;
+use App\Services\OpenSearch\Search;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
@@ -637,5 +638,37 @@ class UserController extends Controller
         $transformer = new ImageTransformer();
 
         return $this->resOK($transformer->albums($list));
+    }
+
+    public function fakers()
+    {
+        $users = User::withTrashed()
+            ->where('faker', 1)
+            ->orderBy('id', 'DESC')
+            ->get();
+
+        return $this->resOK($users);
+    }
+
+    public function fakerReborn(Request $request)
+    {
+        $phone = $request->get('phone');
+
+        $count = User::withTrashed()->where('phone', $phone)->count();
+        if ($count)
+        {
+            return $this->resErrBad('手机号已被占用');
+        }
+
+        $userId = $request->get('id');
+        User::where('id', $userId)
+            ->update([
+                'phone' => $phone,
+                'faker' => 0
+            ]);
+
+        Redis::DEL('user_' . $userId);
+
+        return $this->resNoContent();
     }
 }
