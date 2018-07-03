@@ -304,6 +304,17 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/edit', 'App\Api\V1\Controllers\VideoController@edit');
 
             $api->post('/save', 'App\Api\V1\Controllers\VideoController@save');
+
+            $api->post('/delete', 'App\Api\V1\Controllers\VideoController@delete');
+        });
+
+        $api->group(['prefix' => '/cartoon_role'], function ($api)
+        {
+            $api->get('/show', 'App\Api\V1\Controllers\CartoonRoleController@adminShow');
+
+            $api->post('/edit', 'App\Api\V1\Controllers\CartoonRoleController@edit');
+
+            $api->post('/create', 'App\Api\V1\Controllers\CartoonRoleController@create');
         });
     });
 });

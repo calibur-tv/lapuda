@@ -96,8 +96,11 @@ class VideoController extends Controller
         $toPage = $request->get('to_page') ?: 1;
         $take = $request->get('take') ?: 10;
 
-        $total = Video::where('bangumi_id', $bangumiId)->count();
-        $video = Video::where('bangumi_id', $bangumiId)
+        $total = Video::withTrashed()
+            ->where('bangumi_id', $bangumiId)
+            ->count();
+        $video = Video::withTrashed()
+            ->where('bangumi_id', $bangumiId)
             ->orderBy('id', 'DESC')
             ->take(($toPage - $curPage) * $take)
             ->skip($curPage * $take)
@@ -174,6 +177,28 @@ class VideoController extends Controller
                 dispatch($job);
             }
             Redis::DEL('bangumi_'.$video['bangumiId'].'_videos');
+        }
+
+        return $this->resNoContent();
+    }
+
+    public function delete(Request $request)
+    {
+        $videoId = $request->get('id');
+        $video = Video::find($videoId);
+
+        if (is_null($video))
+        {
+            Video::withTrashed()->where('id', $videoId)->restore();
+            $job = (new \App\Jobs\Push\Baidu('video/' . $videoId));
+            dispatch($job);
+        }
+        else
+        {
+            $video->delete();
+            $job = (new \App\Jobs\Push\Baidu('video/' . $videoId, 'del'));
+            dispatch($job);
+            Redis::DEL('video_' . $videoId);
         }
 
         return $this->resNoContent();
