@@ -7,13 +7,14 @@ use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
-use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Bangumi;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
+use App\Services\OpenSearch\Search;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 
@@ -275,5 +276,68 @@ class CartoonRoleController extends Controller
             'list' => $transformer->roleShow($list),
             'type' => $repository->uploadImageTypes()
         ]);
+    }
+
+    public function adminShow(Request $request)
+    {
+        $result = CartoonRole::find($request->get('id'));
+
+        return $this->resOK($result);
+    }
+
+    public function create(Request $request)
+    {
+        $bangumiId = $request->get('bangumi_id');
+        $time = Carbon::now();
+
+        $id =  CartoonRole::insertGetId([
+            'bangumi_id' => $bangumiId,
+            'avatar' => $request->get('avatar'),
+            'name' => $request->get('name'),
+            'intro' => $request->get('intro'),
+            'alias' => $request->get('alias'),
+            'created_at' => $time,
+            'updated_at' => $time
+        ]);
+
+        $searchService = new Search();
+        $searchService->create(
+            $id,
+            $request->get('name') . ',' . $request->get('alias'),
+            'role'
+        );
+
+        Redis::DEL('cartoon_role_trending_ids');
+        Redis::DEL('bangumi_'.$bangumiId.'_cartoon_role_ids');
+
+        $job = (new \App\Jobs\Push\Baidu('role/' . $id));
+        dispatch($job);
+
+        return $this->resCreated($id);
+    }
+
+    public function edit(Request $request)
+    {
+        $id = $request->get('id');
+
+        CartoonRole::where('id', $id)->update([
+            'bangumi_id' => $request->get('bangumi_id'),
+            'avatar' => $request->get('avatar'),
+            'name' => $request->get('name'),
+            'intro' => $request->get('intro'),
+            'alias' => $request->get('alias')
+        ]);
+
+        $searchService = new Search();
+        $searchService->update(
+            $id,
+            $request->get('name') . ',' . $request->get('alias'),
+            'role'
+        );
+
+        $job = (new \App\Jobs\Push\Baidu('role/' . $id, 'update'));
+        dispatch($job);
+
+        return $this->resNoContent();
     }
 }

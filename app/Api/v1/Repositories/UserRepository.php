@@ -33,11 +33,16 @@ use Illuminate\Support\Facades\DB;
 
 class UserRepository extends Repository
 {
-    public function item($id)
+    public function item($id, $force = false)
     {
         if (!$id)
         {
             return null;
+        }
+
+        if ($force)
+        {
+            return User::withTrashed()->find($id);
         }
 
         return $this->RedisHash('user_'.$id, function () use ($id)
@@ -54,9 +59,13 @@ class UserRepository extends Repository
         });
     }
 
-    public function getUserIdByZone($zone)
+    public function getUserIdByZone($zone, $force = false)
     {
         $userId = User::where('zone', $zone)
+            ->when($force, function ($query)
+            {
+                return $query->withTrashed();
+            })
             ->pluck('id')
             ->first();
 
@@ -455,16 +464,15 @@ class UserRepository extends Repository
         $postCount = Post::where('created_at', '<', $createdAt)
             ->count();
         $this->setDayStats('create_post', $yesterday, $postCount);
-        // 帖子的回复数（不包括楼层评论）
-        $postReplyCount = DB::table('post_comments')
-            ->where('created_at', '<', $createdAt)
-            ->where('modal_id', '<>', 0)
+        // 评论数
+        $commentCount = 0;
+        $commentCount += DB::table('post_comments')->where('created_at', '<', $createdAt)
             ->count();
-        $this->setDayStats('create_post_reply', $yesterday, $postReplyCount);
-        // 帖子里的图片数
-        $postImageCount = PostImages::where('created_at', '<', $createdAt)
+        $commentCount += DB::table('video_comments')->where('created_at', '<', $createdAt)
             ->count();
-        $this->setDayStats('create_post_image', $yesterday, $postImageCount);
+        $commentCount += DB::table('image_comments')->where('created_at', '<', $createdAt)
+            ->count();
+        $this->setDayStats('create_comment', $yesterday, $commentCount);
         // imageCount
         $imageCount = Image::where('image_count', 0)
             ->where('created_at', '<', $createdAt)

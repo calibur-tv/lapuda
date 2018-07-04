@@ -3,9 +3,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\CartoonRoleRepository;
-use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
-use App\Api\V1\Transformers\PostTransformer;
 use Illuminate\Http\Request;
 
 /**

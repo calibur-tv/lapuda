@@ -28,6 +28,7 @@ class UserTransformer extends Transformer
                 'daySign' => (boolean)$user['daySign'],
                 'coin' => (int)$user['coin_count'],
                 'faker' => (boolean)$user['faker'],
+                'is_admin' => (boolean)$user['is_admin'],
                 'notification' => $user['notification']
             ];
         });

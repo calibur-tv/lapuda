@@ -2,6 +2,8 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\BangumiRepository;
+use App\Api\V1\Repositories\UserRepository;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
 use Mews\Purifier\Facades\Purifier;
@@ -56,5 +58,35 @@ class SearchController extends Controller
         $result = $search->retrieve($key, $type, $page);
 
         return $this->resOK($result);
+    }
+
+    public function bangumis()
+    {
+        $bangumiRepository = new BangumiRepository();
+
+        return $this->resOK($bangumiRepository->searchAll());
+    }
+
+    public function getUserInfo(Request $request)
+    {
+        $zone = $request->get('zone');
+        $userId = $request->get('id');
+        if (!$zone && !$userId)
+        {
+            return $this->resErrBad();
+        }
+
+        $userRepository = new UserRepository();
+        if (!$userId)
+        {
+            $userId = $userRepository->getUserIdByZone($zone, true);
+        }
+
+        if (!$userId)
+        {
+            return $this->resErrNotFound();
+        }
+
+        return $this->resOK($userRepository->item($userId, true));
     }
 }

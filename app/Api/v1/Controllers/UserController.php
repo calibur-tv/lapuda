@@ -12,6 +12,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Services\Counter\Stats\TotalUserCount;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
@@ -24,6 +25,7 @@ use App\Models\User;
 use App\Api\V1\Repositories\UserRepository;
 use App\Models\UserCoin;
 use App\Models\UserSign;
+use App\Services\OpenSearch\Search;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
@@ -637,5 +639,203 @@ class UserController extends Controller
         $transformer = new ImageTransformer();
 
         return $this->resOK($transformer->albums($list));
+    }
+
+    public function fakers()
+    {
+        $users = User::withTrashed()
+            ->where('faker', 1)
+            ->orderBy('id', 'DESC')
+            ->get();
+
+        return $this->resOK($users);
+    }
+
+    public function fakerReborn(Request $request)
+    {
+        $phone = $request->get('phone');
+
+        $count = User::withTrashed()->where('phone', $phone)->count();
+        if ($count)
+        {
+            return $this->resErrBad('手机号已被占用');
+        }
+
+        $userId = $request->get('id');
+        User::where('id', $userId)
+            ->update([
+                'phone' => $phone,
+                'faker' => 0
+            ]);
+
+        Redis::DEL('user_' . $userId);
+
+        return $this->resNoContent();
+    }
+
+    public function coinDescList(Request $request)
+    {
+        $curPage = $request->get('cur_page') ?: 0;
+        $toPage = $request->get('to_page') ?: 1;
+        $take = $request->get('take') ?: 10;
+
+        $list = User::orderBy('coin_count', 'DESC')
+            ->select('nickname', 'id', 'zone', 'coin_count', 'faker')
+            ->take(($toPage - $curPage) * $take)
+            ->skip($curPage * $take)
+            ->get();
+
+        $totalUserCount = new TotalUserCount();
+
+        return $this->resOK([
+            'list' => $list,
+            'total' => $totalUserCount->get()
+        ]);
+    }
+
+    public function addUserToTrial(Request $request)
+    {
+        $userId = $request->get('id');
+
+        $user = User::find($userId);
+
+        if (is_null($user))
+        {
+            $this->resErrNotFound('不存在的用户');
+        }
+
+        User::where('id', $userId)
+            ->update([
+                'state' => 1
+            ]);
+
+        return $this->resNoContent();
+    }
+
+    public function blockUser(Request $request)
+    {
+        $userId = $request->get('id');
+        User::where('id', $userId)->delete();
+        $searchService = new Search();
+        $searchService->delete($userId, 'user');
+
+        Redis::DEL('user_' . $userId);
+
+        return $this->resNoContent();
+    }
+
+    public function recoverUser(Request $request)
+    {
+        $userId = $request->get('id');
+
+        User::withTrashed()->where('id', $userId)->restore();
+        $user = User::withTrashed()->where('id', $userId)->first();
+
+        $searchService = new Search();
+        $searchService->create(
+            $userId,
+            $user->nickname . ',' . $user->zone,
+            'user'
+        );
+
+        return $this->resNoContent();
+    }
+
+    public function feedbackList()
+    {
+        $list = Feedback::where('stage', 0)->get();
+
+        return $this->resOK($list);
+    }
+
+    public function readFeedback(Request $request)
+    {
+        Feedback::where('id', $request->get('id'))->update([
+            'stage' => 1
+        ]);
+
+        return $this->resNoContent();
+    }
+
+    public function adminUsers()
+    {
+        $users = User::where('is_admin', 1)
+            ->select('id', 'zone', 'nickname')
+            ->get();
+
+        return $this->resOK($users);
+    }
+
+    public function removeAdmin(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $id = $request->get('id');
+
+        if (intval($id) === 1 || $userId !== 1)
+        {
+            return $this->resErrRole();
+        }
+
+        User::whereRaw('id = ? and is_admin = 1', [$id])
+            ->update([
+                'is_admin' => 0
+            ]);
+
+        return $this->resNoContent();
+    }
+
+    public function addAdmin(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+
+        if ($userId !== 1)
+        {
+            return $this->resErrRole();
+        }
+
+        User::whereRaw('id = ? and is_admin = 0', [$request->get('id')])
+            ->update([
+                'is_admin' => 1
+            ]);
+
+        return $this->resNoContent();
+    }
+
+    public function trials()
+    {
+        $users = User::where('state', '<>', 0)
+            ->orderBy('updated_at', 'DESC')
+            ->get();
+
+        return $this->resOK($users);
+    }
+
+    public function deleteUserInfo(Request $request)
+    {
+        $userId = $request->get('id');
+        User::where('id', $userId)
+            ->update([
+                $request->get('key') => $request->get('value') ?: ''
+            ]);
+
+        $user = User::where('id', $userId)->first();
+
+        $searchService = new Search();
+        $searchService->update(
+            $userId,
+            $user->nickname . ',' . $user->zone,
+            'user'
+        );
+
+        return $this->resNoContent();
+    }
+
+    public function passUser(Request $request)
+    {
+        User::where('id', $request->get('id'))->update([
+            'state' => 0
+        ]);
+
+        return $this->resNoContent();
     }
 }

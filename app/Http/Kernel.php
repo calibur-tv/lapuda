@@ -44,6 +44,7 @@ class Kernel extends HttpKernel
         'can' => \Illuminate\Auth\Middleware\Authorize::class,
         'throttle' => \App\Http\Middleware\Throttle::class,
         'jwt.auth' => \App\Http\Middleware\Auth::class,
+        'jwt.admin' => \App\Http\Middleware\Admin::class,
         'jwt.refresh' => \App\Http\Middleware\Refresh::class,
         'geetest' => \App\Http\Middleware\Geetest::class
     ];

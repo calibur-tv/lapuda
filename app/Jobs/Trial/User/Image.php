@@ -43,13 +43,10 @@ class Image implements ShouldQueue
         }
 
         $user = $user->toArray();
-
         $url = $user[$this->type];
 
         $imageFilter = new ImageFilter();
-        $badImageCount = $imageFilter->exec($url);
-
-        if ($badImageCount > 0)
+        if ($imageFilter->bad($url))
         {
             DB::table('users')
                 ->where('id', $this->userId)

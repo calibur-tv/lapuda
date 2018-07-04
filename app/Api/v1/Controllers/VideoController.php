@@ -8,7 +8,10 @@ use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\VideoTransformer;
 use App\Api\V1\Repositories\BangumiRepository;
+use App\Models\Video;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -84,5 +87,138 @@ class VideoController extends Controller
         $videoPlayCounter->add($request->get('id'));
 
         return $this->resNoContent();
+    }
+
+    public function bangumis(Request $request)
+    {
+        $bangumiId = $request->get('id');
+        $curPage = $request->get('cur_page') ?: 0;
+        $toPage = $request->get('to_page') ?: 1;
+        $take = $request->get('take') ?: 10;
+
+        $total = Video::withTrashed()
+            ->where('bangumi_id', $bangumiId)
+            ->count();
+        $video = Video::withTrashed()
+            ->where('bangumi_id', $bangumiId)
+            ->orderBy('id', 'DESC')
+            ->take(($toPage - $curPage) * $take)
+            ->skip($curPage * $take)
+            ->get();
+
+        foreach ($video as $row)
+        {
+            $row['resource'] = $row['resource'] === 'null' ? '' : json_decode($row['resource']);
+        }
+
+        return $this->resOK([
+            'list' => $video,
+            'total' => $total
+        ]);
+    }
+
+    public function edit(Request $request)
+    {
+        $videoId = $request->get('id');
+        Video::withTrashed()->where('id', $videoId)
+            ->update([
+                'name' => $request->get('name'),
+                'bangumi_id' => $request->get('bangumi_id'),
+                'part' => $request->get('part'),
+                'poster' => $request->get('poster'),
+                'url' => $request->get('url') ? $request->get('url') : '',
+                'resource' => json_encode($request->get('resource'))
+            ]);
+
+        Redis::DEL('video_' . $videoId);
+        Redis::DEL('bangumi_' . $request->get('bangumi_id') . '_videos');
+
+        $job = (new \App\Jobs\Push\Baidu('video/' . $videoId, 'update'));
+        dispatch($job);
+
+        return $this->resNoContent();
+    }
+
+    public function save(Request $request)
+    {
+        $data = $request->all();
+        $time = Carbon::now();
+        foreach ($data as $video)
+        {
+            $id = Video::whereRaw('bangumi_id = ? and part = ?', [$video['bangumiId'], $video['part']])->pluck('id')->first();
+            if (is_null($id))
+            {
+                $newId = Video::insertGetId([
+                    'bangumi_id' => $video['bangumiId'],
+                    'part' => $video['part'],
+                    'name' => $video['name'],
+                    'url' => $video['url'] ? $video['url'] : '',
+                    'resource' => $video['resource'] ? json_encode($video['resource']) : '',
+                    'poster' => $video['poster'],
+                    'created_at' => $time,
+                    'updated_at' => $time
+                ]);
+                $job = (new \App\Jobs\Push\Baidu('video/' . $newId));
+                dispatch($job);
+            }
+            else
+            {
+                Video::where('id', $id)->update([
+                    'bangumi_id' => $video['bangumiId'],
+                    'part' => $video['part'],
+                    'name' => $video['name'],
+                    'url' => $video['url'] ? $video['url'] : '',
+                    'resource' => $video['resource'] ? json_encode($video['resource']) : '',
+                    'poster' => $video['poster'],
+                    'updated_at' => $time
+                ]);
+                Redis::DEL('video_' . $id);
+                $job = (new \App\Jobs\Push\Baidu('video/' . $id, 'update'));
+                dispatch($job);
+            }
+            Redis::DEL('bangumi_'.$video['bangumiId'].'_videos');
+        }
+
+        return $this->resNoContent();
+    }
+
+    public function delete(Request $request)
+    {
+        $videoId = $request->get('id');
+        $video = Video::find($videoId);
+
+        if (is_null($video))
+        {
+            Video::withTrashed()->where('id', $videoId)->restore();
+            $job = (new \App\Jobs\Push\Baidu('video/' . $videoId));
+            dispatch($job);
+        }
+        else
+        {
+            $video->delete();
+            $job = (new \App\Jobs\Push\Baidu('video/' . $videoId, 'del'));
+            dispatch($job);
+            Redis::DEL('video_' . $videoId);
+        }
+
+        return $this->resNoContent();
+    }
+
+    public function playTrending(Request $request)
+    {
+        $curPage = $request->get('cur_page') ?: 0;
+        $toPage = $request->get('to_page') ?: 1;
+        $take = $request->get('take') ?: 10;
+
+        $list = Video::orderBy('count_played', 'DESC')
+            ->select('name', 'id', 'bangumi_id', 'count_played', 'comment_count')
+            ->take(($toPage - $curPage) * $take)
+            ->skip($curPage * $take)
+            ->get();
+
+        return $this->resOK([
+            'list' => $list,
+            'total' => Video::count()
+        ]);
     }
 }

@@ -11,9 +11,9 @@ $api->version(['v1', 'latest'], function ($api)
 {
     $api->group(['prefix' => '/search'], function ($api)
     {
-        $api->get('/index', 'App\Api\V1\Controllers\SearchController@index');
-
         $api->get('/new', 'App\Api\V1\Controllers\SearchController@search');
+
+        $api->get('/bangumis', 'App\Api\V1\Controllers\SearchController@bangumis');
     });
 
     $api->group(['prefix' => '/door'], function ($api)
@@ -235,5 +235,181 @@ $api->version(['v1', 'latest'], function ($api)
     $api->group(['prefix' => '/trending'], function ($api)
     {
         $api->get('/cartoon_role', 'App\Api\V1\Controllers\TrendingController@cartoonRole');
+    });
+
+    $api->group(['prefix' => '/admin', 'middleware' => ['jwt.admin']], function ($api)
+    {
+        $api->get('/todo', 'App\Api\V1\Controllers\TrialController@todo');
+
+        $api->group(['prefix' => '/stats'], function ($api)
+        {
+            $api->get('/realtime', 'App\Api\V1\Controllers\StatsController@realtime');
+
+            $api->get('/timeline', 'App\Api\V1\Controllers\StatsController@timeline');
+        });
+
+        $api->group(['prefix' => '/search'], function ($api)
+        {
+            $api->get('/user', 'App\Api\V1\Controllers\SearchController@getUserInfo');
+        });
+
+        $api->group(['prefix' => '/bangumi'], function ($api)
+        {
+            $api->get('/info', 'App\Api\V1\Controllers\BangumiController@getAdminBangumiInfo');
+
+            $api->post('/create', 'App\Api\V1\Controllers\BangumiController@create');
+
+            $api->post('/edit', 'App\Api\V1\Controllers\BangumiController@edit');
+
+            $api->post('/release', 'App\Api\V1\Controllers\BangumiController@updateBangumiRelease');
+
+            $api->post('/delete', 'App\Api\V1\Controllers\BangumiController@deleteBangumi');
+        });
+
+        $api->group(['prefix' => '/banner'], function ($api)
+        {
+            $api->get('/list', 'App\Api\V1\Controllers\ImageController@getIndexBanners');
+
+            $api->post('/upload', 'App\Api\V1\Controllers\ImageController@uploadIndexBanner');
+
+            $api->post('/toggle_use', 'App\Api\V1\Controllers\ImageController@toggleIndexBanner');
+
+            $api->post('/edit', 'App\Api\V1\Controllers\ImageController@editIndexBanner');
+        });
+
+        $api->group(['prefix' => '/tag'], function ($api)
+        {
+            $api->get('/all', 'App\Api\V1\Controllers\TagController@all');
+
+            $api->post('/edit', 'App\Api\V1\Controllers\TagController@edit');
+
+            $api->post('/create', 'App\Api\V1\Controllers\TagController@create');
+        });
+
+        $api->group(['prefix' => '/cartoon'], function ($api)
+        {
+            $api->get('/bangumis', 'App\Api\V1\Controllers\CartoonController@bangumis');
+
+            $api->get('/list_of_bangumi', 'App\Api\V1\Controllers\CartoonController@listOfBangumi');
+
+            $api->post('/sort', 'App\Api\V1\Controllers\CartoonController@sortOfBangumi');
+
+            $api->post('/edit', 'App\Api\V1\Controllers\CartoonController@edit');
+        });
+
+        $api->group(['prefix' => '/video'], function ($api)
+        {
+            $api->get('/bangumis', 'App\Api\V1\Controllers\VideoController@bangumis');
+
+            $api->get('/trending', 'App\Api\V1\Controllers\VideoController@playTrending');
+
+            $api->post('/edit', 'App\Api\V1\Controllers\VideoController@edit');
+
+            $api->post('/save', 'App\Api\V1\Controllers\VideoController@save');
+
+            $api->post('/delete', 'App\Api\V1\Controllers\VideoController@delete');
+        });
+
+        $api->group(['prefix' => '/cartoon_role'], function ($api)
+        {
+            $api->get('/show', 'App\Api\V1\Controllers\CartoonRoleController@adminShow');
+
+            $api->post('/edit', 'App\Api\V1\Controllers\CartoonRoleController@edit');
+
+            $api->post('/create', 'App\Api\V1\Controllers\CartoonRoleController@create');
+        });
+
+        $api->group(['prefix' => '/user'], function ($api)
+        {
+            $api->group(['prefix' => '/faker'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\UserController@fakers');
+
+                $api->post('/reborn', 'App\Api\V1\Controllers\UserController@fakerReborn');
+
+                $api->post('/create', 'App\Api\V1\Controllers\DoorController@createFaker');
+            });
+
+            $api->group(['prefix' => '/feedback'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\UserController@feedbackList');
+
+                $api->post('/read', 'App\Api\V1\Controllers\UserController@readFeedback');
+            });
+
+            $api->post('/add_to_trial', 'App\Api\V1\Controllers\UserController@addUserToTrial');
+
+            $api->post('/block', 'App\Api\V1\Controllers\UserController@blockUser');
+
+            $api->post('/recover', 'App\Api\V1\Controllers\UserController@recoverUser');
+
+            $api->get('/dalao', 'App\Api\V1\Controllers\UserController@coinDescList');
+        });
+
+        $api->group(['prefix' => '/console'], function ($api)
+        {
+            $api->get('/list', 'App\Api\V1\Controllers\UserController@adminUsers');
+
+            $api->post('/remove', 'App\Api\V1\Controllers\UserController@removeAdmin');
+
+            $api->post('/add', 'App\Api\V1\Controllers\UserController@addAdmin');
+        });
+
+        $api->group(['prefix' => '/trial'], function ($api)
+        {
+            $api->group(['prefix' => '/words'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\TrialController@words');
+
+                $api->post('/delete', 'App\Api\V1\Controllers\TrialController@deleteWords');
+
+                $api->post('/add', 'App\Api\V1\Controllers\TrialController@addWords');
+            });
+
+            $api->group(['prefix' => '/test'], function ($api)
+            {
+                $api->get('/image', 'App\Api\V1\Controllers\TrialController@imageTest');
+
+                $api->get('/text', 'App\Api\V1\Controllers\TrialController@textTest');
+            });
+
+            $api->group(['prefix' => '/user'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\UserController@trials');
+
+                $api->post('/delete_info', 'App\Api\V1\Controllers\UserController@deleteUserInfo');
+
+                $api->post('/pass', 'App\Api\V1\Controllers\UserController@passUser');
+            });
+
+            $api->group(['prefix' => '/image'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\ImageController@trialList');
+
+                $api->post('/delete', 'App\Api\V1\Controllers\ImageController@trialDelete');
+
+                $api->post('/pass', 'App\Api\V1\Controllers\ImageController@trialPass');
+            });
+
+            $api->group(['prefix' => '/comment'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\CommentController@trialList');
+
+                $api->post('/delete', 'App\Api\V1\Controllers\CommentController@trialDelete');
+
+                $api->post('/pass', 'App\Api\V1\Controllers\CommentController@trialPass');
+            });
+
+            $api->group(['prefix' => '/post'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\PostController@trials');
+
+                $api->post('/delete_image', 'App\Api\V1\Controllers\PostController@deletePostImage');
+
+                $api->post('/delete', 'App\Api\V1\Controllers\PostController@trialDelete');
+
+                $api->post('/pass', 'App\Api\V1\Controllers\PostController@trialPass');
+            });
+        });
     });
 });
