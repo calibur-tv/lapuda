@@ -379,6 +379,17 @@ $api->version(['v1', 'latest'], function ($api)
 
                 $api->post('/pass', 'App\Api\V1\Controllers\UserController@passUser');
             });
+
+            $api->group(['prefix' => '/post'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\PostController@trials');
+
+                $api->post('/delete_image', 'App\Api\V1\Controllers\PostController@deletePostImage');
+
+                $api->post('/delete', 'App\Api\V1\Controllers\PostController@trialDelete');
+
+                $api->post('/pass', 'App\Api\V1\Controllers\PostController@trialPass');
+            });
         });
     });
 });

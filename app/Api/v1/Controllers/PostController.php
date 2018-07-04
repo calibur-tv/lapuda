@@ -14,6 +14,11 @@ use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\PostRepository;
+use App\Models\Post;
+use App\Models\PostImages;
+use App\Models\User;
+use App\Services\OpenSearch\Search;
+use App\Services\Trial\WordsFilter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -422,5 +427,95 @@ class PostController extends Controller
         $postTrendingService = new PostTrendingService($userId);
 
         return $this->resOK($postTrendingService->hot($seen, $take));
+    }
+
+    public function trials()
+    {
+        $list = Post::withTrashed()->whereIn('state', [4, 5])->get();
+
+        if (empty($list))
+        {
+            return $this->resOK([]);
+        }
+
+        $filter = new WordsFilter();
+        $userRepository = new UserRepository();
+
+        foreach ($list as $i =>$row)
+        {
+            $list[$i]['f_title'] = $filter->filter($row['title']);
+            $list[$i]['f_content'] = $filter->filter($row['content']);
+            $list[$i]['words'] = $filter->filter($row['title'] . $row['content']);
+            $list[$i]['images'] = PostImages::where('post_id', $row['id'])->get();
+            $list[$i]['user'] = $userRepository->item($row['user_id']);
+        }
+
+        return $this->resOK($list);
+    }
+
+    public function deletePostImage(Request $request)
+    {
+        $id = $request->get('id');
+        $postId = PostImages::where('id', $id)->pluck('post_id')->first();
+        PostImages::where('id', $id)
+            ->update([
+                'src' => '',
+                'origin_url' => $request->get('src')
+            ]);
+
+        Redis::DEL('post_'.$postId.'_images');
+
+        return $this->resNoContent();
+    }
+
+    public function trialDelete(Request $request)
+    {
+        $id = $request->get('id');
+        $post = Post::withTrashed()->where('id', $id)->first();
+
+        if (is_null($post))
+        {
+            return $this->resErrNotFound();
+        }
+
+        Redis::DEL('post_'.$id);
+        Redis::ZREM('post_how_ids', $id);
+        Redis::ZREM('post_new_ids', $id);
+        Redis::ZREM('bangumi_'.$post->bangumi_id.'_posts_new_ids', $id);
+
+        $post->update([
+            'state' => 6
+        ]);
+        $post->delete();
+
+        $searchService = new Search();
+        $searchService->delete($id, 'post');
+
+        return $this->resNoContent();
+    }
+
+    public function trialPass(Request $request)
+    {
+        $postId = $request->get('id');
+        Post::withTrashed()
+            ->where('id', $postId)
+            ->update([
+                'state' => 7,
+                'deleted_at' => null
+            ]);
+
+        $post = Post::withTrashed()
+            ->where('id', $postId)
+            ->first();
+
+        $searchService = new Search();
+        $searchService->create(
+            $postId,
+            $post->title . ',' . $post->desc,
+            'post',
+            strtotime($post->created_at)
+        );
+
+        return $this->resNoContent();
     }
 }
