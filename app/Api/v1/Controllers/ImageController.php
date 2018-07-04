@@ -976,4 +976,56 @@ class ImageController extends Controller
 
         return $this->resNoContent();
     }
+
+    public function trialList()
+    {
+        $images = Image::withTrashed()->whereIn('state', [2, 4])->get();
+
+        return $this->resOK($images);
+    }
+
+    public function trialDelete(Request $request)
+    {
+        $id = $request->get('id');
+        $image = Image::withTrashed()
+            ->find($id);
+
+        if (is_null($image))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($image->image_count == 0)
+        {
+            $image->update([
+                'state' => 3
+            ]);
+
+            $image->delete();
+        }
+        else
+        {
+            $image->update([
+                'state' => 1,
+                'url' => ''
+            ]);
+        }
+
+        return $this->resNoContent();
+    }
+
+    public function trialPass(Request $request)
+    {
+        $id = $request->get('id');
+
+        Image::withTrashed()->where('id', $id)
+            ->update([
+                'state' => 1,
+                'deleted_at' => null
+            ]);
+
+        Redis::DEL('user_image_' . $id);
+
+        return $this->resNoContent();
+    }
 }
