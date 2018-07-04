@@ -67,19 +67,24 @@ class SearchController extends Controller
         return $this->resOK($bangumiRepository->searchAll());
     }
 
-    public function getUserByZone(Request $request)
+    public function getUserInfo(Request $request)
     {
         $zone = $request->get('zone');
-        if (!$zone)
+        $userId = $request->get('id');
+        if (!$zone && !$userId)
         {
-            return $this->resOK(null);
+            return $this->resErrBad();
         }
 
         $userRepository = new UserRepository();
-        $userId = $userRepository->getUserIdByZone($zone, true);
         if (!$userId)
         {
-            return $this->resOK(null);
+            $userId = $userRepository->getUserIdByZone($zone, true);
+        }
+
+        if (!$userId)
+        {
+            return $this->resErrNotFound();
         }
 
         return $this->resOK($userRepository->item($userId, true));

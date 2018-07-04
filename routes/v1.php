@@ -248,7 +248,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/search'], function ($api)
         {
-            $api->get('/user_by_zone', 'App\Api\V1\Controllers\SearchController@getUserByZone');
+            $api->get('/user', 'App\Api\V1\Controllers\SearchController@getUserInfo');
         });
 
         $api->group(['prefix' => '/bangumi'], function ($api)
