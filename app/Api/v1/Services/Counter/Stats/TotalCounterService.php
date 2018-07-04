@@ -54,14 +54,15 @@ class TotalCounterService extends Repository
                 foreach ($this->table as $table)
                 {
                     $result += DB::table($table)
-                        ->where('created_at', '>', Carbon::now()->addDays(-1))
+                        ->where('created_at', '>', Carbon::now()->addDays(0))
                         ->count();
                 }
 
                 return $result;
             }
+
             return DB::table($this->table)
-                ->where('created_at', '>', Carbon::now()->addDays(-1))
+                ->where('created_at', '>', Carbon::now()->addDays(0))
                 ->count();
         });
     }
