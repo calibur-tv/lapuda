@@ -489,11 +489,49 @@ class BangumiController extends Controller
         return $this->resNoContent();
     }
 
+    public function trialList(Request $request)
+    {
+        $curPage = $request->get('cur_page') ?: 0;
+        $toPage = $request->get('to_page') ?: 1;
+        $take = $request->get('take') ?: 10;
+
+        $list = Bangumi::withTrashed()
+            ->orderBy('id', 'DESC')
+            ->select('id', 'name', 'deleted_at')
+            ->take(($toPage - $curPage) * $take)
+            ->skip($curPage * $take)
+            ->get();
+
+        return $this->resOK([
+            'list' => $list,
+            'total' => Bangumi::count()
+        ]);
+    }
+
     public function deleteBangumi(Request $request)
     {
-        $bangumiRepository = new BangumiRepository();
+        $id = $request->get('id');
+        $bangumi = Bangumi::withTrashed()->find($id);
 
-        return $this->resOK($bangumiRepository->deleteBangumi($request->get('id')));
+        if (is_null($bangumi))
+        {
+            return $this->resErrNotFound();
+        }
+        if (is_null($bangumi->deleted_at))
+        {
+            $bangumi->delete();
+
+            $job = (new \App\Jobs\Push\Baidu('bangumi/' . $id, 'del'));
+            dispatch($job);
+
+            Redis::DEL('bangumi_'.$id);
+        }
+        else
+        {
+            $bangumi->restore();
+        }
+
+        return $this->resNoContent();
     }
 
     public function getAdminBangumiInfo(Request $request)
