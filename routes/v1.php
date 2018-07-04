@@ -239,6 +239,8 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/admin', 'middleware' => ['jwt.admin']], function ($api)
     {
+        $api->get('/todo', 'App\Api\V1\Controllers\TrialController@todo');
+
         $api->group(['prefix' => '/stats'], function ($api)
         {
             $api->get('/realtime', 'App\Api\V1\Controllers\StatsController@realtime');

@@ -8,13 +8,36 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Models\Feedback;
+use App\Models\Image;
+use App\Models\Post;
+use App\Models\User;
 use App\Services\Trial\ImageFilter;
 use App\Services\Trial\WordsFilter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
 class TrialController extends Controller
 {
+    public function todo()
+    {
+        $comments = 0;
+        $comments = $comments + DB::table('post_comments')->where('state', 2)->count();
+        $comments = $comments + DB::table('image_comments')->where('state', 2)->count();
+        $comments = $comments + DB::table('video_comments')->where('state', 2)->count();
+
+        $result = [
+            'users' => User::where('state', '<>', 0)->count(),
+            'posts' => Post::withTrashed()->whereIn('state', [4, 5])->count(),
+            'images' => Image::withTrashed()->where('state', 2)->count(),
+            'feedback' => Feedback::where('stage', 0)->count(),
+            'comments' => $comments
+        ];
+
+        return $this->resOK($result);
+    }
+
     public function words()
     {
         $words = Redis::LRANGE('blackwords', 0, -1);
