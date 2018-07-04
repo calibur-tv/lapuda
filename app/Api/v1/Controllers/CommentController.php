@@ -15,7 +15,9 @@ use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Comment\VideoCommentService;
 use App\Api\V1\Services\Counter\Stats\TotalCommentCount;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -503,6 +505,72 @@ class CommentController extends Controller
         // TODO：dispatch job to update open search weight
 
         return $this->resCreated((boolean)$result);
+    }
+
+    public function trialList()
+    {
+        $types = ['post', 'video', 'image'];
+        $result = [];
+        foreach ($types as $modal)
+        {
+            $list = DB::table($modal . '_comments')
+                ->where('state', 2)
+                ->select('id', 'user_id', 'content')
+                ->get();
+
+            if (is_null($list))
+            {
+                continue;
+            }
+
+            $list = json_decode(json_encode($list), true);
+            foreach ($list as $i => $item)
+            {
+                $list[$i]['type'] = $modal;
+            }
+
+            if (!is_null($list))
+            {
+                $result = array_merge($result, $list);
+            }
+        }
+
+        return $this->resOK([
+            'comments' => $result,
+            'types' => $types
+        ]);
+    }
+
+    public function trialDelete(Request $request)
+    {
+        $id = $request->get('id');
+        $type = $request->get('type');
+        $userId = $this->getAuthUserId();
+        $now = Carbon::now();
+
+        DB::table($type . '_comments')->where('id', $id)
+            ->update([
+                'state' => '5' . (String)$userId,
+                'updated_at' => $now,
+                'deleted_at' => $now
+            ]);
+
+        return $this->resNoContent();
+    }
+
+    public function trialPass(Request $request)
+    {
+        $id = $request->get('id');
+        $type = $request->get('type');
+
+        DB::table($type . '_comments')->where('id', $id)
+            ->update([
+                'state' => 1,
+                'updated_at' => Carbon::now(),
+                'deleted_at' => null
+            ]);
+
+        return $this->resNoContent();
     }
 
     protected function getCommentServiceByType($type)

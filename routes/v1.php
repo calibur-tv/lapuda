@@ -389,6 +389,15 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/pass', 'App\Api\V1\Controllers\ImageController@trialPass');
             });
 
+            $api->group(['prefix' => '/comment'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\CommentController@trialList');
+
+                $api->post('/delete', 'App\Api\V1\Controllers\CommentController@trialDelete');
+
+                $api->post('/pass', 'App\Api\V1\Controllers\CommentController@trialPass');
+            });
+
             $api->group(['prefix' => '/post'], function ($api)
             {
                 $api->get('/list', 'App\Api\V1\Controllers\PostController@trials');
