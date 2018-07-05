@@ -11,6 +11,8 @@ class Csrf
         'https://m.calibur.tv',
         'https://t-www.calibur.tv',
         'https://t-m.calibur.tv',
+        'http://www.calibur.tv',
+        'http://m.calibur.tv',
         ''
     ];
 
@@ -31,30 +33,25 @@ class Csrf
 
     public function handle($request, Closure $next)
     {
-        if (!in_array($request->headers->get('Origin'), $this->domains))
-        {
-            \Log::info('request domain: ' . $request->headers->get('Origin'));
-        }
-
-        if (config('app.env') === 'local')
-        {
-            return $next($request);
-        }
-
-        if (in_array($request->method(), $this->methods))
-        {
-            return $next($request);
-        }
-
-        if (in_array($request->headers->get('Origin'), $this->domains))
-        {
-            return $next($request);
-        }
-
-        if (in_array($request->url(), $this->except))
-        {
-            return $next($request);
-        }
+//        if (config('app.env') === 'local')
+//        {
+//            return $next($request);
+//        }
+//
+//        if (in_array($request->method(), $this->methods))
+//        {
+//            return $next($request);
+//        }
+//
+//        if (in_array($request->headers->get('Origin'), $this->domains))
+//        {
+//            return $next($request);
+//        }
+//
+//        if (in_array($request->url(), $this->except))
+//        {
+//            return $next($request);
+//        }
 
 //        if (
 //            time() - intval($request->headers->get('X-Auth-Timestamp')) < 60 &&
