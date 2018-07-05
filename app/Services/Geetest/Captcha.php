@@ -237,7 +237,8 @@ class Captcha
      */
     private function post_request($url, $postdata = '')
     {
-        if (!$postdata) {
+        if (!$postdata)
+        {
             return false;
         }
 
@@ -280,8 +281,6 @@ class Captcha
         return $data;
     }
 
-
-    
     /**
      * @param $err
      */
