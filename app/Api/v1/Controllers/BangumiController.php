@@ -195,6 +195,15 @@ class BangumiController extends Controller
         $bangumi['count_like'] = $bangumiFollowService->total($id);
         $bangumi['followers'] = $bangumiFollowService->users($id);
         $bangumi['followed'] = $bangumiFollowService->check($userId, $id);
+        if ($userId)
+        {
+            $bangumiManager = new BangumiManager();
+            $bangumi['is_master'] = $bangumiManager->isOwner($id, $userId);
+        }
+        else
+        {
+            $bangumi['is_master'] = false;
+        }
 
         $transformer = new BangumiTransformer();
 

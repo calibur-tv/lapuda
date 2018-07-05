@@ -2,6 +2,7 @@
 
 namespace App\Api\V1\Repositories;
 
+use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\UserTransformer;
@@ -431,7 +432,9 @@ class BangumiRepository extends Repository
         if ($userId)
         {
             $bangumiFollowService = new BangumiFollowService();
+            $bangumiManager = new BangumiManager();
             $bangumi['followed'] = $bangumiFollowService->check($userId, $bangumiId);
+            $bangumi['is_master'] = $bangumiManager->isOwner($bangumiId, $userId);
         }
         else
         {
