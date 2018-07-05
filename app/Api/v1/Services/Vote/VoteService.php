@@ -72,7 +72,10 @@ class VoteService extends Repository
             if ($this->need_cache_list)
             {
                 $this->SortAdd($this->activeCacheListKey($modalId), $userId);
-                $this->SortAdd($this->hotCacheListKey($modalId), $userId, $score);
+                if (!$this->is_ab_score)
+                {
+                    $this->SortAdd($this->hotsCacheListKey($modalId), $userId, $score);
+                }
             }
         }
         else // 已经投过票了
@@ -86,7 +89,6 @@ class VoteService extends Repository
 
                     if ($this->need_cache_list)
                     {
-                        $this->SortRemove($this->hotCacheListKey($modalId), $userId);
                         $this->SortRemove($this->activeCacheListKey($modalId), $userId);
                     }
 
@@ -97,14 +99,13 @@ class VoteService extends Repository
                     DB::table($this->vote_table)
                         ->where('id', $voteId)
                         ->update([
-                            'created_at' => Carbon::now(),
+                            'updated_at' => Carbon::now(),
                             'score' => $score
                         ]);
 
                     if ($this->need_cache_list)
                     {
                         $this->SortAdd($this->activeCacheListKey($modalId), $userId);
-                        $this->SortAdd($this->hotCacheListKey($modalId), $userId, $score);
                     }
 
                     $this->changeModalScore($modalId, 2 * $score);
@@ -124,12 +125,17 @@ class VoteService extends Repository
                     DB::table($this->vote_table)
                         ->where('id', $voteId)
                         ->increment('score', $score);
+                    DB::table($this->vote_table)
+                        ->where('id', $voteId)
+                        ->update([
+                            'updated_at' => Carbon::now()
+                        ]);
                 }
                 if ($resultScore > 0 && $this->need_cache_list)
                 {
                     // 友善度已经大于 0 了，放入好人排行榜
                     $this->SortAdd($this->activeCacheListKey($modalId), $userId);
-                    $this->SortAdd($this->hotCacheListKey($modalId), $userId, $resultScore);
+                    $this->SortAdd($this->hotsCacheListKey($modalId), $userId, $resultScore);
                 }
 
                 $this->changeModalScore($modalId, $score);
@@ -164,13 +170,12 @@ class VoteService extends Repository
                     DB::table($this->vote_table)
                         ->where('id', $voteId)
                         ->update([
-                            'created_at' => Carbon::now(),
+                            'updated_at' => Carbon::now(),
                             'score' => $score
                         ]);
 
                     if ($this->need_cache_list)
                     {
-                        $this->SortRemove($this->hotCacheListKey($modalId), $userId);
                         $this->SortRemove($this->activeCacheListKey($modalId), $userId);
                     }
 
@@ -191,19 +196,24 @@ class VoteService extends Repository
                     DB::table($this->vote_table)
                         ->where('id', $voteId)
                         ->increment('score', $score);
+                    DB::table($this->vote_table)
+                        ->where('id', $voteId)
+                        ->update([
+                            'updated_at' => Carbon::now()
+                        ]);
                 }
                 if ($this->need_cache_list)
                 {
                     if ($resultScore <= 0)
                     {
                         // 友善度 <= 0 了，从好人排行榜里移除
-                        $this->SortRemove($this->hotCacheListKey($modalId), $userId);
                         $this->SortRemove($this->activeCacheListKey($modalId), $userId);
+                        $this->SortRemove($this->hotsCacheListKey($modalId), $userId);
                     }
                     else
                     {
                         // 友善度仍然大于 0 ，改变友善度的值
-                        $this->SortAdd($this->hotCacheListKey($modalId), $userId, $resultScore);
+                        $this->SortAdd($this->hotsCacheListKey($modalId), $userId, $resultScore);
                     }
                 }
 
@@ -214,7 +224,7 @@ class VoteService extends Repository
         return $voteId;
     }
 
-    public function getUserVoteCount($userId, $modalId)
+    public function userVotes($userId, $modalId)
     {
         if (!$userId || !$modalId)
         {
@@ -226,6 +236,80 @@ class VoteService extends Repository
             ->pluck('score');
     }
 
+    public function voteTotal($modalId)
+    {
+        $counterService = new VoteCountService($this->modal_table, $this->modal_field, $this->vote_table);
+
+        return $counterService->get($modalId);
+    }
+
+    public function hotsUserIds($modalId, $seenIds)
+    {
+        if ($this->is_ab_score)
+        {
+            return [];
+        }
+
+        $ids = $this->RedisSort($this->hotsCacheListKey($modalId), function () use ($modalId)
+        {
+            return DB::table($this->vote_table)
+                ->where('modal_id', $modalId)
+                ->orderBy('score', 'desc')
+                ->pluck('score', 'user_id AS id');
+        }, false, true);
+
+        if (empty($ids))
+        {
+            return [];
+        }
+
+        foreach ($ids as $key => $val)
+        {
+            if (in_array($key, $seenIds))
+            {
+                unset($ids[$key]);
+            }
+        }
+
+        return array_slice($ids, 0, config('website.list_count'), true);
+    }
+
+    public function activeUserIds($modalId, $seenIds)
+    {
+        $ids = $this->RedisSort($this->hotsCacheListKey($modalId), function () use ($modalId)
+        {
+            return DB::table($this->vote_table)
+                ->where('modal_id', $modalId)
+                ->orderBy('updated_at', 'desc')
+                ->pluck('updated_at', 'user_id AS id');
+        }, true, true);
+
+        if (empty($ids))
+        {
+            return [];
+        }
+
+        foreach ($ids as $key => $val)
+        {
+            if (in_array($key, $seenIds))
+            {
+                unset($ids[$key]);
+            }
+        }
+
+        return array_slice($ids, 0, config('website.list_count'), true);
+    }
+
+    public function oldUserIds($modalId, $page, $take)
+    {
+
+    }
+
+    public function trendingModalIds()
+    {
+
+    }
+
     protected function changeModalScore($modalId, $score)
     {
         $counterService = new VoteCountService($this->modal_table, $this->modal_field, $this->vote_table);
@@ -234,12 +318,14 @@ class VoteService extends Repository
 
     protected function firstVoteIt($userId, $modalId, $score)
     {
+        $now = Carbon::now();
         $newId = DB::table($this->vote_table)
             ->insertGetId([
                 'user_id' => $userId,
                 'modal_id' => $modalId,
                 'score' => $score,
-                'created_at' => Carbon::now()
+                'created_at' => $now,
+                'updated_at' => $now
             ]);
 
         $this->changeModalScore($modalId, $score);
@@ -271,8 +357,13 @@ class VoteService extends Repository
         return $this->vote_table . '_' . $modalId . 'news';
     }
 
-    protected function hotCacheListKey($modalId)
+    protected function hotsCacheListKey($modalId)
     {
         return $this->vote_table . '_' . $modalId . 'hots';
+    }
+
+    protected function trendingModalCacheKey()
+    {
+        return $this->modal_table . '_' . $this->modal_field . '_trending_ids';
     }
 }
