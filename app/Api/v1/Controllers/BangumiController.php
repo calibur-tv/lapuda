@@ -6,6 +6,7 @@ use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Counter\PostViewCounter;
+use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
@@ -267,9 +268,12 @@ class BangumiController extends Controller
         ]);
     }
 
-    public function managers(Request $request)
+    public function managers($bangumiId)
     {
+        $bangumiManager = new BangumiManager();
+        $managers = $bangumiManager->getOwners($bangumiId);
 
+        return $this->resOK($managers);
     }
 
     /**
@@ -679,6 +683,70 @@ class BangumiController extends Controller
 
             $job = (new \App\Jobs\Push\Baidu('bangumi/' . $bangumi_id, 'update'));
             dispatch($job);
+        }
+
+        return $this->resNoContent();
+    }
+
+    public function setManager(Request $request)
+    {
+        $userId = $request->get('user_id');
+        $bangumiId = $request->get('bangumi_id');
+
+        $bangumiManager = new BangumiManager();
+        $result = $bangumiManager->set($bangumiId, $userId);
+
+        if (!$result)
+        {
+            return $this->resErrBad();
+        }
+
+        return $this->resNoContent();
+    }
+
+    public function removeManager(Request $request)
+    {
+        $userId = $request->get('user_id');
+        $bangumiId = $request->get('bangumi_id');
+
+        $bangumiManager = new BangumiManager();
+        $result = $bangumiManager->remove($bangumiId, $userId);
+
+        if (!$result)
+        {
+            return $this->resErrBad();
+        }
+
+        return $this->resNoContent();
+    }
+
+    public function upgradeManager(Request $request)
+    {
+        $userId = $request->get('user_id');
+        $bangumiId = $request->get('bangumi_id');
+
+        $bangumiManager = new BangumiManager();
+        $result = $bangumiManager->upgrade($bangumiId, $userId);
+
+        if (!$result)
+        {
+            return $this->resErrBad();
+        }
+
+        return $this->resNoContent();
+    }
+
+    public function downgradeManager(Request $request)
+    {
+        $userId = $request->get('user_id');
+        $bangumiId = $request->get('bangumi_id');
+
+        $bangumiManager = new BangumiManager();
+        $result = $bangumiManager->downgrade($bangumiId, $userId);
+
+        if (!$result)
+        {
+            return $this->resErrBad();
         }
 
         return $this->resNoContent();
