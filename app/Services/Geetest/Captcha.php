@@ -242,41 +242,39 @@ class Captcha
         }
 
         $data = http_build_query($postdata);
-        if (function_exists('curl_exec')) {
+        if (function_exists('curl_exec'))
+        {
             $ch = curl_init();
+
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, self::$connectTimeout);
             curl_setopt($ch, CURLOPT_TIMEOUT, self::$socketTimeout);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 
-            //不可能执行到的代码
-            if (!$postdata) {
-                curl_setopt($ch, CURLOPT_USERAGENT, $_SERVER['HTTP_USER_AGENT']);
-            } else {
-                curl_setopt($ch, CURLOPT_POST, 1);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-            }
             $data = curl_exec($ch);
 
-            if (curl_errno($ch)) {
+            if (curl_errno($ch))
+            {
                 $err = sprintf("curl[%s] error[%s]", $url, curl_errno($ch) . ':' . curl_error($ch));
                 $this->triggerError($err);
             }
 
             curl_close($ch);
-        } else {
-            if ($postdata) {
-                $opts    = array(
-                    'http' => array(
-                        'method'  => 'POST',
-                        'header'  => "Content-type: application/x-www-form-urlencoded\r\n" . "Content-Length: " . strlen($data) . "\r\n",
-                        'content' => $data,
-                        'timeout' => self::$connectTimeout + self::$socketTimeout
-                    )
-                );
-                $context = stream_context_create($opts);
-                $data    = file_get_contents($url, false, $context);
-            }
+        }
+        else
+        {
+            $opts = array(
+                'http' => array(
+                    'method'  => 'POST',
+                    'header'  => "Content-type: application/x-www-form-urlencoded\r\n" . "Content-Length: " . strlen($data) . "\r\n",
+                    'content' => $data,
+                    'timeout' => self::$connectTimeout + self::$socketTimeout
+                )
+            );
+            $context = stream_context_create($opts);
+            $data    = file_get_contents($url, false, $context);
         }
 
         return $data;
