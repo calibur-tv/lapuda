@@ -18,16 +18,18 @@ class ImageFilter
                 'delete' => false,
                 'review' => true,
                 'label' => '未知', // 0 色情，1 性感，2 正常
+                'score' => 0
             ],
             'warn' => [
                 'delete' => false,
                 'review' => true,
-                'label' => '未知' // 0 正常，1 暴恐
+                'label' => '未知', // 0 正常，1 暴恐
+                'score' => 0
             ],
             'daddy' => [
                 'delete' => false,
                 'review' => true,
-                'message' => ''
+                'detail' => 'qpolitician test failed'
             ]
         ];
         // 色情
@@ -40,7 +42,7 @@ class ImageFilter
                 $score = $respSex['result']['score'];
                 $review = $respSex['result']['review'];
                 // 不是色情，但是准确率小于 50%，也进入审核
-                if ($label !== 0 && $score < 0.5)
+                if ($label !== 0 && $score < 0.4)
                 {
                     $review = true;
                 }
@@ -51,7 +53,8 @@ class ImageFilter
                 $result['sex'] = [
                     'label' => $label === 0 ? '色情' : ($label === 1 ? '性感' : '正常'),
                     'delete' => $label === 0 && $score >= 0.9,
-                    'review' => $review
+                    'review' => $review,
+                    'score' => $score
                 ];
             }
         } catch (\Exception $e) {}
@@ -64,7 +67,7 @@ class ImageFilter
                 $label = $respWarn['result']['label'];
                 $score = $respWarn['result']['score'];
                 $review = $respWarn['result']['review'];
-                if ($label === 0 && $score < 0.5)
+                if ($label === 0 && $score < 0.4)
                 {
                     $review = true;
                 }
@@ -75,7 +78,8 @@ class ImageFilter
                 $result['warn'] = [
                     'label' => $label === 0 ? '正常' : '暴恐',
                     'review' => $review,
-                    'delete' => $label === 1 && $score > 0.9
+                    'delete' => $label === 1 && $score > 0.9,
+                    'score' => $score
                 ];
             }
         } catch (\Exception $e) {}
@@ -87,7 +91,7 @@ class ImageFilter
             {
                 $review = $respDaddy['result']['review'];
                 $delete = false;
-                $detections = $respDaddy['result']['detections'][0];
+                $detections = $respDaddy['result']['detections'];
                 if (count($detections) > 0)
                 {
                     $review = true;
@@ -96,7 +100,7 @@ class ImageFilter
                 $result['daddy'] = [
                     'delete' => $delete,
                     'review' => $review,
-                    'label' => $respDaddy['message']
+                    'detail' => $respDaddy['result']['detections']
                 ];
             }
         } catch (\Exception $e) {}
