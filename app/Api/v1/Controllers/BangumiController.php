@@ -267,6 +267,11 @@ class BangumiController extends Controller
         ]);
     }
 
+    public function managers(Request $request)
+    {
+
+    }
+
     /**
      * 番剧的帖子列表
      *
@@ -538,7 +543,12 @@ class BangumiController extends Controller
     {
         $id = $request->get('id');
 
-        $bangumi = Bangumi::find($id);
+        $bangumi = Bangumi::withTrashed()->find($id);
+        if (is_null($bangumi))
+        {
+            return $this->resErrNotFound();
+        }
+
         $bangumi['alias'] = $bangumi['alias'] === 'null' ? '' : json_decode($bangumi['alias'])->search;
         $bangumi['tags'] = $bangumi->tags()->get()->pluck('id');
         $bangumi['season'] = $bangumi['season'] === 'null' ? '' : $bangumi['season'];

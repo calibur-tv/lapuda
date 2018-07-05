@@ -10,7 +10,6 @@ namespace App\Api\V1\Services\Comment;
 
 use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Services\Counter\CommentCounterService;
-use App\Api\V1\Services\Counter\CounterService;
 use App\Api\V1\Services\Toggle\ToggleService;
 use App\Api\V1\Transformers\CommentTransformer;
 use Carbon\Carbon;

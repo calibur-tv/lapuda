@@ -60,6 +60,8 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->get('/followers', 'App\Api\V1\Controllers\BangumiController@followers');
 
+            $api->get('/managers', 'App\Api\V1\Controllers\BangumiController@managers');
+
             $api->get('/roles', 'App\Api\V1\Controllers\CartoonRoleController@listOfBangumi');
 
             $api->group(['prefix' => '/role/{roleId}'], function ($api)
