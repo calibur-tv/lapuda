@@ -105,13 +105,19 @@ class ImageFilter
                 $more = $respDaddy->more;
                 if (count($more) > 0)
                 {
-                    $review = true;
-                    $delete = true;
+                    foreach ($more as $face)
+                    {
+                        if ((isset($face->name)))
+                        {
+                            $review = true;
+                            $delete = true;
+                        }
+                    }
                 }
                 $result['daddy'] = [
                     'delete' => $delete,
                     'review' => $review,
-                    'detail' => $more
+                    'detail' => $review ? $more : ''
                 ];
             }
         }
