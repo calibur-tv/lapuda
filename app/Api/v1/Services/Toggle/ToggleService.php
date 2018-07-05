@@ -70,13 +70,6 @@ class ToggleService extends Repository
         return 0;
     }
 
-    public function doUsersTotal($modalId)
-    {
-        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table);
-
-        return $toggleCountService->get($modalId);
-    }
-
     public function usersDoTotal()
     {
         // 还没有这个表
