@@ -6,7 +6,7 @@
  * Time: 下午5:18
  */
 
-namespace App\Api\V1\Services\Vote;
+namespace App\Api\V1\Services\Owner;
 
 
 use App\Api\V1\Repositories\Repository;
@@ -16,24 +16,22 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
-class ContributionService extends Repository
+class OwnerService extends Repository
 {
     /**
-     * ContributionService 贡献计数服务.
+     * OwnerService 贡献计数服务.
      * 贡献可能是 + 也可能是 -
      * 结果可能是正的，也可能是负的
      * 贡献者可以搞个 leader，只有 1 个 leader
      */
     protected $modal_table;
     protected $stats_table;
-    protected $modal_field;
     protected $max_count;
 
-    public function __construct($modal_table, $stats_table, $modal_field, $max_count = 0)
+    public function __construct($modal_table, $stats_table, $max_count = 0)
     {
         $this->modal_table = $modal_table;
         $this->stats_table = $stats_table;
-        $this->modal_field = $modal_field;
         $this->max_count = $max_count;
     }
 
@@ -46,9 +44,9 @@ class ContributionService extends Repository
 
         if ($this->max_count)
         {
-            $count = DB::table($this->modal_table)
-                ->where('id', $modalId)
-                ->pluck($this->modal_field);
+            $count = DB::table($this->stats_table)
+                ->where('modal_id', $modalId)
+                ->count();
 
             if ($count >= $this->max_count)
             {
@@ -71,6 +69,8 @@ class ContributionService extends Repository
                 'created_at' => $now,
                 'updated_at' => $now
             ]);
+
+        Redis::DEL($this->ownersCacheKey($modalId));
 
         return true;
     }
@@ -96,6 +96,8 @@ class ContributionService extends Repository
                 'is_leader' => time()
             ]);
 
+        Redis::DEL($this->ownersCacheKey($modalId));
+
         return true;
     }
 
@@ -111,6 +113,8 @@ class ContributionService extends Repository
             ->update([
                 'is_leader' => 0
             ]);
+
+        Redis::DEL($this->ownersCacheKey($modalId));
 
         return true;
     }
@@ -136,18 +140,6 @@ class ContributionService extends Repository
             ->count();
     }
 
-    public function ownerIds($modalId, $page, $take = 15)
-    {
-        $ids = $this->RedisList($this->ownerIdsCacheKey($modalId), function () use ($modalId)
-        {
-            return DB::table($this->stats_table)
-                ->where('modal_id', $modalId)
-                ->pluck('user_id');
-        });
-
-        return $this->filterIdsByPage($ids, $page, $take);
-    }
-
     public function remove($modalId, $userId)
     {
         if (!$this->isOwner($modalId, $userId))
@@ -159,44 +151,45 @@ class ContributionService extends Repository
             ->whereRaw('modal_id = ? and user_id = ?', [$modalId, $userId])
             ->delete();
 
-        Redis::DEL($this->ownerIdsCacheKey($modalId));
+        Redis::DEL($this->ownersCacheKey($modalId));
 
         return true;
     }
 
-    public function getOwnersWithScore($modalId, $page, $take)
+    public function getOwners($modalId)
     {
-        $users = DB::table($this->stats_table)
-            ->where('modal_id', $modalId)
-            ->take($take)
-            ->skip(($page - 1) * $take)
-            ->select('user_id', 'score', 'is_leader')
-            ->get();
-
-        if (is_null($users))
+        return $this->Cache($this->ownersCacheKey($modalId), function () use ($modalId)
         {
-            return [];
-        }
+            $users = DB::table($this->stats_table)
+                ->where('modal_id', $modalId)
+                ->select('user_id', 'score', 'is_leader', 'created_at')
+                ->get();
 
-        $users = $users->toArray();
-        $userRepository = new UserRepository();
-        $userTransformer = new UserTransformer();
-
-        foreach ($users as $i => $item)
-        {
-            $user = $userRepository->item($item['user_id']);
-            if (is_null($user))
+            if (is_null($users))
             {
-                continue;
+                return [];
             }
 
-            $users[$i]['score'] = (int)$item['score'];
-            $users[$i]['is_leader'] = (int)$item['is_leader'];
-            $users[$i]['user'] = $userTransformer->item($user);
-            unset($users[$i]['user_id']);
-        }
+            $users = $users->toArray();
+            $userRepository = new UserRepository();
+            $userTransformer = new UserTransformer();
 
-        return $users;
+            foreach ($users as $i => $item)
+            {
+                $user = $userRepository->item($item->user_id);
+                if (is_null($user))
+                {
+                    continue;
+                }
+
+                $users[$i]->score = (int)$item->score;
+                $users[$i]->is_leader = (int)$item->is_leader;
+                $users[$i]->user = $userTransformer->item($user);
+                unset($users[$i]->user_id);
+            }
+
+            return $users;
+        });
     }
 
     public function changeScore($userId, $modalId, $score = 1)
@@ -206,8 +199,8 @@ class ContributionService extends Repository
             ->increment('score', $score);
     }
 
-    protected function ownerIdsCacheKey($modalId)
+    protected function ownersCacheKey($modalId)
     {
-        return $this->stats_table . '_' . $modalId . '_owner_ids';
+        return $this->stats_table . '_' . $modalId . '_owners';
     }
 }

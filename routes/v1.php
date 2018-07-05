@@ -268,6 +268,17 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/release', 'App\Api\V1\Controllers\BangumiController@updateBangumiRelease');
 
             $api->post('/delete', 'App\Api\V1\Controllers\BangumiController@deleteBangumi');
+
+            $api->group(['prefix' => '/manager'], function ($api)
+            {
+                $api->post('/set', 'App\Api\V1\Controllers\BangumiController@setManager');
+
+                $api->post('/remove', 'App\Api\V1\Controllers\BangumiController@removeManager');
+
+                $api->post('/upgrade', 'App\Api\V1\Controllers\BangumiController@upgradeManager');
+
+                $api->post('/downgrade', 'App\Api\V1\Controllers\BangumiController@downgradeManager');
+            });
         });
 
         $api->group(['prefix' => '/banner'], function ($api)
