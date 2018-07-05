@@ -214,6 +214,18 @@ class VoteService extends Repository
         return $voteId;
     }
 
+    public function getUserVoteCount($userId, $modalId)
+    {
+        if (!$userId || !$modalId)
+        {
+            return 0;
+        }
+
+        return (int)DB::table($this->vote_table)
+            ->whereRaw('modal_id = ? and user_id = ?', [$modalId, $userId])
+            ->pluck('score');
+    }
+
     protected function changeModalScore($modalId, $score)
     {
         $counterService = new VoteCountService($this->modal_table, $this->modal_field, $this->vote_table);

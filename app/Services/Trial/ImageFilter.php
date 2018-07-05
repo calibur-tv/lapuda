@@ -9,8 +9,14 @@
 namespace App\Services\Trial;
 
 
+use App\Services\Qiniu\Auth;
+use App\Services\Qiniu\Http\Client;
+
 class ImageFilter
 {
+    protected $errorLine = 0.7;
+    protected $warningLine = 0.3;
+
     public function test($url)
     {
         $result = [
@@ -18,29 +24,43 @@ class ImageFilter
                 'delete' => false,
                 'review' => true,
                 'label' => '未知', // 0 色情，1 性感，2 正常
+                'score' => 0
             ],
             'warn' => [
                 'delete' => false,
                 'review' => true,
-                'label' => '未知' // 0 正常，1 暴恐
+                'label' => '未知', // 0 正常，1 暴恐
+                'score' => 0
             ],
             'daddy' => [
                 'delete' => false,
                 'review' => true,
-                'message' => ''
+                'detail' => 'qpolitician test failed'
             ]
         ];
-        // 色情
-        try
+        $response = $this->validateImage($url);
+        if ($response->statusCode !== 200)
         {
-            $respSex = json_decode(file_get_contents($url . '?qpulp'), true);
-            if (intval($respSex['code']) === 0)
+            return $result;
+        }
+
+        $response = json_decode($response->body);
+        if ($response->code !== 0)
+        {
+            return $result;
+        }
+        $resp = $response->result->details;
+        // 色情
+        foreach ($resp as $item)
+        {
+            if ($item->type === 'pulp')
             {
-                $label = $respSex['result']['label'];
-                $score = $respSex['result']['score'];
-                $review = $respSex['result']['review'];
-                // 不是色情，但是准确率小于 50%，也进入审核
-                if ($label !== 0 && $score < 0.5)
+                $respSex = $item;
+                $label = $respSex->label;
+                $score = $respSex->score;
+                $review = $respSex->review;
+
+                if ($label !== 0 && $score < $this->warningLine)
                 {
                     $review = true;
                 }
@@ -50,21 +70,19 @@ class ImageFilter
                 }
                 $result['sex'] = [
                     'label' => $label === 0 ? '色情' : ($label === 1 ? '性感' : '正常'),
-                    'delete' => $label === 0 && $score >= 0.9,
-                    'review' => $review
+                    'delete' => $label === 0 && $score >= $this->errorLine,
+                    'review' => $review,
+                    'score' => $score
                 ];
             }
-        } catch (\Exception $e) {}
-        // 暴恐
-        try
-        {
-            $respWarn = json_decode(file_get_contents($url . '?qterror'), true);
-            if (intval($respWarn['code']) === 0)
+            else if ($item->type === 'terror')
             {
-                $label = $respWarn['result']['label'];
-                $score = $respWarn['result']['score'];
-                $review = $respWarn['result']['review'];
-                if ($label === 0 && $score < 0.5)
+                // 暴恐
+                $respWarn = $item;
+                $label = $respWarn->label;
+                $score = $respWarn->score;
+                $review = $respWarn->review;
+                if ($label === 0 && $score < $this->warningLine)
                 {
                     $review = true;
                 }
@@ -75,20 +93,17 @@ class ImageFilter
                 $result['warn'] = [
                     'label' => $label === 0 ? '正常' : '暴恐',
                     'review' => $review,
-                    'delete' => $label === 1 && $score > 0.9
+                    'delete' => $label === 1 && $score > $this->errorLine,
+                    'score' => $score
                 ];
             }
-        } catch (\Exception $e) {}
-        // 政治敏感
-        try
-        {
-            $respDaddy = json_decode(file_get_contents($url . '?qpolitician'), true);
-            if (intval($respDaddy['code']) === 0)
+            else if ($item->type === 'politician')
             {
-                $review = $respDaddy['result']['review'];
+                $respDaddy = $item;
+                $review = $respDaddy->review;
                 $delete = false;
-                $detections = $respDaddy['result']['detections'][0];
-                if (count($detections) > 0)
+                $more = $respDaddy->more;
+                if (count($more) > 0)
                 {
                     $review = true;
                     $delete = true;
@@ -96,23 +111,56 @@ class ImageFilter
                 $result['daddy'] = [
                     'delete' => $delete,
                     'review' => $review,
-                    'label' => $respDaddy['message']
+                    'detail' => $more
                 ];
             }
-        } catch (\Exception $e) {}
+        }
 
         return $result;
     }
 
     public function bad($url)
     {
-        $result = $this->test($url);
+        $result = $this->check($url);
 
-        if ($result['sex']['review'] || $result['warn']['review'] || $result['daddy']['review'])
+        return $result['review'];
+    }
+
+    public function check($url)
+    {
+        $defaultResult = [
+            'delete' => false,
+            'review' => true
+        ];
+
+        $response = $this->validateImage($url);
+        if ($response->statusCode !== 200)
         {
-            return true;
+            return $defaultResult;
         }
-        return false;
+
+        $response = json_decode($response->body);
+        if ($response->code !== 0)
+        {
+            return $defaultResult;
+        }
+
+        $resp = $response->result;
+        if ($resp->label === 1 && $resp->score > $this->errorLine)
+        {
+            return [
+                'delete' => true,
+                'review' => true
+            ];
+        }
+        if ($resp->label === 0 && $resp->score < $this->warningLine)
+        {
+            return $defaultResult;
+        }
+        return [
+            'delete' => false,
+            'review' => $resp->label === 1
+        ];
     }
 
     public function exec($url)
@@ -130,5 +178,36 @@ class ImageFilter
         }
 
         return $result;
+    }
+
+    private function validateImage($src)
+    {
+        $host = 'argus.atlab.ai';
+        $request_method = 'POST';
+        $request_url = 'http://argus.atlab.ai/v1/image/censor';
+        $content_type = 'application/json';
+
+        $body = json_encode([
+            'data' => [
+                'uri' => $src
+            ],
+            'params' => [
+                'type' => ['pulp', 'terror', 'politician']
+            ]
+        ]);
+
+        $auth = new Auth();
+        $authHeaderArray = $auth->authorizationV2($request_url, $request_method, $body, $content_type);
+        $authHeader = $authHeaderArray['Authorization'];
+        $contentType = "application/json";
+        $header = array(
+            "Host" => $host ,
+            "Authorization" => $authHeader,
+            "Content-Type" => $contentType,
+        );
+
+        $response = Client::post($request_url, $body, $header);
+
+        return $response;
     }
 }
