@@ -31,13 +31,9 @@ class Csrf
 
     public function handle($request, Closure $next)
     {
-        if (config('app.env') !== 'production')
+        if (!in_array($request->headers->get('Origin'), $this->domains))
         {
-            \Log::info('request url: ' . $request->url());
-            \Log::info('request ip: ' . $request->ip());
-            \Log::info('request ua: ' . $request->header('User-Agent'));
             \Log::info('request domain: ' . $request->headers->get('Origin'));
-            \Log::info('request auth: ' . $request->headers->get('Authorization'));
         }
 
         if (config('app.env') === 'local')
