@@ -623,7 +623,7 @@ class BangumiController extends Controller
 
         $searchService->create(
             $bangumi_id,
-            $request->get('name') . ',' . $request->get('alias'),
+            $request->get('alias'),
             'bangumi'
         );
 
@@ -697,7 +697,7 @@ class BangumiController extends Controller
 
             $searchService->update(
                 $bangumi_id,
-                $request->get('name') . ',' . $request->get('alias'),
+                $request->get('alias'),
                 'bangumi'
             );
 

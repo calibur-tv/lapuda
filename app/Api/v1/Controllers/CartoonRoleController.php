@@ -303,7 +303,7 @@ class CartoonRoleController extends Controller
         $searchService = new Search();
         $searchService->create(
             $id,
-            $request->get('name') . ',' . $request->get('alias'),
+            $request->get('alias'),
             'role'
         );
 
@@ -331,7 +331,7 @@ class CartoonRoleController extends Controller
         $searchService = new Search();
         $searchService->update(
             $id,
-            $request->get('name') . ',' . $request->get('alias'),
+            $request->get('alias'),
             'role'
         );
 
