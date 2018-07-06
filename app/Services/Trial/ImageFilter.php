@@ -192,6 +192,11 @@ class ImageFilter
         $request_method = 'POST';
         $request_url = 'http://argus.atlab.ai/v1/image/censor';
         $content_type = 'application/json';
+        $regex = '/^(http|https):\/\//';
+        if (!preg_match($regex, $src))
+        {
+            $src = config('website.image') . $src;
+        }
 
         $body = json_encode([
             'data' => [
