@@ -513,7 +513,7 @@ class BangumiController extends Controller
         return $this->resNoContent();
     }
 
-    public function trialList(Request $request)
+    public function adminList(Request $request)
     {
         $curPage = $request->get('cur_page') ?: 0;
         $toPage = $request->get('to_page') ?: 1;
@@ -864,5 +864,32 @@ class BangumiController extends Controller
             Redis::DEL('bangumi_' . $id);
             return $this->resNoContent();
         }
+    }
+
+    public function trialList()
+    {
+        $bangumiIds = Bangumi::where('state', '<>', 0)
+            ->pluck('id');
+
+        if (is_null($bangumiIds))
+        {
+            return $this->resOK([]);
+        }
+
+        $bangumiRepository = new BangumiRepository();
+
+        $list = $bangumiRepository->list($bangumiIds);
+
+        return $this->resOK($list);
+    }
+
+    public function trialPass(Request $request)
+    {
+        Bangumi::where('id', $request->get('id'))
+            ->update([
+                'state' => 0
+            ]);
+
+        return $this->resNoContent();
     }
 }

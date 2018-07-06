@@ -8,6 +8,7 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Models\Bangumi;
 use App\Models\Feedback;
 use App\Models\Image;
 use App\Models\Post;
@@ -32,7 +33,8 @@ class TrialController extends Controller
             'posts' => Post::withTrashed()->whereIn('state', [4, 5])->count(),
             'images' => Image::withTrashed()->where('state', 2)->count(),
             'feedback' => Feedback::where('stage', 0)->count(),
-            'comments' => $comments
+            'comments' => $comments,
+            'bangumi' => Bangumi::where('state', '<>', 9)->count()
         ];
 
         return $this->resOK($result);

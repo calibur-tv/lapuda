@@ -259,7 +259,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/bangumi'], function ($api)
         {
-            $api->get('/list', 'App\Api\V1\Controllers\BangumiController@trialList');
+            $api->get('/list', 'App\Api\V1\Controllers\BangumiController@adminList');
 
             $api->get('/info', 'App\Api\V1\Controllers\BangumiController@getAdminBangumiInfo');
 
@@ -415,6 +415,13 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/delete', 'App\Api\V1\Controllers\CommentController@trialDelete');
 
                 $api->post('/pass', 'App\Api\V1\Controllers\CommentController@trialPass');
+            });
+
+            $api->group(['prefix' => '/bangumi'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\BangumiController@trialList');
+
+                $api->post('/pass', 'App\Api\V1\Controllers\BangumiController@trialPass');
             });
 
             $api->group(['prefix' => '/post'], function ($api)
