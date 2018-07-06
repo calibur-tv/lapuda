@@ -34,7 +34,7 @@ class TrialController extends Controller
             'images' => Image::withTrashed()->where('state', 2)->count(),
             'feedback' => Feedback::where('stage', 0)->count(),
             'comments' => $comments,
-            'bangumi' => Bangumi::where('state', '<>', 9)->count()
+            'bangumi' => Bangumi::where('state', '<>', 0)->count()
         ];
 
         return $this->resOK($result);
