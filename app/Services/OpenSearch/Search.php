@@ -131,8 +131,8 @@ class Search
         $this->params->setFormat($this->format);
         $this->params->setQuery(
             $modalId
-                ? "default:'${key}' AND modal_id:'" . $modalId . "'"
-                : "default:'${key}'"
+                ? "default:'${key}' AND modal_id:'" . $modalId . "'&&sort=-(score)"
+                : "default:'${key}'&&sort=-(score)"
         );
 
         $res = json_decode($this->search->execute($this->params->build())->result, true);
