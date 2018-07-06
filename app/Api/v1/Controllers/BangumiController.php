@@ -778,7 +778,6 @@ class BangumiController extends Controller
     public function editBangumiInfo(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|max:35',
             'banner' => 'required|string',
             'avatar' => 'required|string',
             'summary' => 'required|max:200',
@@ -797,13 +796,12 @@ class BangumiController extends Controller
             return $this->resErrRole();
         }
 
-        $name = Purifier::clean($request->get('name'));
         $summary = Purifier::clean($request->get('summary'));
         $avatar = $request->get('avatar');
         $banner = $request->get('banner');
 
         $wordsFilter = new WordsFilter();
-        if ($wordsFilter->count($name . $summary) > 2)
+        if ($wordsFilter->count($summary) > 2)
         {
             return $this->resErrBad('修改文本不合法，请联系管理员查看');
         }
@@ -842,7 +840,6 @@ class BangumiController extends Controller
 
         $result = Bangumi::where('id', $id)
             ->update([
-                'name' => $name,
                 'summary' => $summary,
                 'avatar' => $avatar,
                 'banner' => $banner,
