@@ -195,15 +195,10 @@ class BangumiController extends Controller
         $bangumi['count_like'] = $bangumiFollowService->total($id);
         $bangumi['followers'] = $bangumiFollowService->users($id);
         $bangumi['followed'] = $bangumiFollowService->check($userId, $id);
-        if ($userId)
-        {
-            $bangumiManager = new BangumiManager();
-            $bangumi['is_master'] = $bangumiManager->isOwner($id, $userId);
-        }
-        else
-        {
-            $bangumi['is_master'] = false;
-        }
+
+        $bangumiManager = new BangumiManager();
+        $bangumi['is_master'] = $bangumiManager->isOwner($id, $userId);
+        $bangumi['managers'] = $bangumiManager->getOwners($id);
 
         $transformer = new BangumiTransformer();
 
@@ -247,7 +242,14 @@ class BangumiController extends Controller
      */
     public function toggleFollow($id)
     {
+        $userId = $this->getAuthUserId();
+        $bangumiManager = new BangumiManager();
         $bangumiFollowService = new BangumiFollowService();
+        if ($bangumiManager->isOwner($id, $userId) && $bangumiFollowService->check($userId, $id))
+        {
+            return $this->resErrRole('管理员不能取消关注');
+        }
+
         $result = $bangumiFollowService->toggle($this->getAuthUserId(), $id);
 
         return $this->resCreated((boolean)$result);

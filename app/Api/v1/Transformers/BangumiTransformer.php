@@ -82,6 +82,7 @@ class BangumiTransformer extends Transformer
                 'alias' => $bangumi['alias'],
                 'followed' => $bangumi['followed'],
                 'is_master' => $bangumi['is_master'],
+                'managers' => $bangumi['managers'],
                 'tags' => $this->collection($bangumi['tags'], function ($tag)
                 {
                     return [
