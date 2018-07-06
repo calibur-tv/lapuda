@@ -81,6 +81,8 @@ class BangumiTransformer extends Transformer
                 'count_like' => (int)$bangumi['count_like'],
                 'alias' => $bangumi['alias'],
                 'followed' => $bangumi['followed'],
+                'is_master' => $bangumi['is_master'],
+                'managers' => $bangumi['managers'],
                 'tags' => $this->collection($bangumi['tags'], function ($tag)
                 {
                     return [
@@ -158,7 +160,8 @@ class BangumiTransformer extends Transformer
             'name' => $bangumi['name'],
             'avatar' => $bangumi['avatar'],
             'summary' => $bangumi['summary'],
-            'followed' => (boolean)$bangumi['followed']
+            'followed' => (boolean)$bangumi['followed'],
+            'is_master' => (boolean)$bangumi['is_master']
         ];
     }
 

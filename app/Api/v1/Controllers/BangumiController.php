@@ -21,11 +21,15 @@ use App\Api\V1\Repositories\TagRepository;
 use App\Models\Image;
 use App\Models\Video;
 use App\Services\OpenSearch\Search;
+use App\Services\Trial\ImageFilter;
+use App\Services\Trial\WordsFilter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Validator;
+use Mews\Purifier\Facades\Purifier;
 
 /**
  * @Resource("番剧相关接口")
@@ -196,6 +200,10 @@ class BangumiController extends Controller
         $bangumi['followers'] = $bangumiFollowService->users($id);
         $bangumi['followed'] = $bangumiFollowService->check($userId, $id);
 
+        $bangumiManager = new BangumiManager();
+        $bangumi['is_master'] = $bangumiManager->isOwner($id, $userId);
+        $bangumi['managers'] = $bangumiManager->getOwners($id);
+
         $transformer = new BangumiTransformer();
 
         return $this->resOK($transformer->show($bangumi));
@@ -238,7 +246,14 @@ class BangumiController extends Controller
      */
     public function toggleFollow($id)
     {
+        $userId = $this->getAuthUserId();
+        $bangumiManager = new BangumiManager();
         $bangumiFollowService = new BangumiFollowService();
+        if ($bangumiManager->isOwner($id, $userId) && $bangumiFollowService->check($userId, $id))
+        {
+            return $this->resErrRole('管理员不能取消关注');
+        }
+
         $result = $bangumiFollowService->toggle($this->getAuthUserId(), $id);
 
         return $this->resCreated((boolean)$result);
@@ -604,6 +619,14 @@ class BangumiController extends Controller
         $job = (new \App\Jobs\Push\Baidu('bangumi/' . $bangumi_id));
         dispatch($job);
 
+        $searchService = new Search();
+
+        $searchService->create(
+            $bangumi_id,
+            $request->get('name') . ',' . $request->get('alias'),
+            'bangumi'
+        );
+
         return $this->resCreated($bangumi_id);
     }
 
@@ -750,5 +773,96 @@ class BangumiController extends Controller
         }
 
         return $this->resNoContent();
+    }
+
+    public function editBangumiInfo(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|max:35',
+            'banner' => 'required|string',
+            'avatar' => 'required|string',
+            'summary' => 'required|max:200',
+            'tags' => 'array'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $userId = $this->getAuthUserId();
+        $bangumiManager = new BangumiManager();
+        if (!$bangumiManager->isOwner($id, $userId))
+        {
+            return $this->resErrRole();
+        }
+
+        $name = Purifier::clean($request->get('name'));
+        $summary = Purifier::clean($request->get('summary'));
+        $avatar = $request->get('avatar');
+        $banner = $request->get('banner');
+
+        $wordsFilter = new WordsFilter();
+        if ($wordsFilter->count($name . $summary) > 2)
+        {
+            return $this->resErrBad('修改文本不合法，请联系管理员查看');
+        }
+
+        $imageFilter = new ImageFilter();
+        if ($imageFilter->bad($avatar) || $imageFilter->bad($banner))
+        {
+            return $this->resErrBad('修改图片不合法，请联系管理员查看');
+        }
+
+        DB::beginTransaction();
+        $rollback = false;
+
+        $result = DB::table('bangumi_tag')
+            ->where('bangumi_id', $id)
+            ->delete();
+        if ($result === false)
+        {
+            $rollback = true;
+        }
+
+        $tags = [];
+        foreach($request->get('tags') as $i => $tag_id)
+        {
+            array_push($tags, [
+                'bangumi_id' => $id,
+                'tag_id' => $tag_id
+            ]);
+        }
+        $result = DB::table('bangumi_tag')
+            ->insert($tags);
+        if (!$result)
+        {
+            $rollback = true;
+        }
+
+        $result = Bangumi::where('id', $id)
+            ->update([
+                'name' => $name,
+                'summary' => $summary,
+                'avatar' => $avatar,
+                'banner' => $banner,
+                'state' => $userId
+            ]);
+        if ($result === false)
+        {
+            $rollback = true;
+        }
+
+        if ($rollback)
+        {
+            DB::rollBack();
+            return $this->resErrServiceUnavailable('更新失败');
+        }
+        else
+        {
+            DB::commit();
+            Redis::DEL('bangumi_' . $id);
+            return $this->resNoContent();
+        }
     }
 }

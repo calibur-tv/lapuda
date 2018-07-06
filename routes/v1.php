@@ -64,6 +64,8 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->get('/roles', 'App\Api\V1\Controllers\CartoonRoleController@listOfBangumi');
 
+            $api->post('/edit', 'App\Api\V1\Controllers\BangumiController@editBangumiInfo')->middleware(['jwt.auth']);
+
             $api->group(['prefix' => '/role/{roleId}'], function ($api)
             {
                 $api->get('/fans', 'App\Api\V1\Controllers\CartoonRoleController@fans');

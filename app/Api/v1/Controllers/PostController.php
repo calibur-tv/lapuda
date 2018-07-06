@@ -16,7 +16,6 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Models\Post;
 use App\Models\PostImages;
-use App\Models\User;
 use App\Services\OpenSearch\Search;
 use App\Services\Trial\WordsFilter;
 use Carbon\Carbon;

@@ -121,6 +121,11 @@ class OwnerService extends Repository
 
     public function isOwner($modalId, $userId)
     {
+        if (!$modalId || !$userId)
+        {
+            return false;
+        }
+
         return (boolean)DB::table($this->stats_table)
             ->whereRaw('modal_id = ? and user_id = ?', [$modalId, $userId])
             ->count();
@@ -128,6 +133,11 @@ class OwnerService extends Repository
 
     public function isLeader($modalId, $userId)
     {
+        if (!$modalId || !$userId)
+        {
+            return false;
+        }
+
         return (boolean)DB::table($this->stats_table)
             ->whereRaw('modal_id = ? and user_id = ? and is_leader <> 0', [$modalId, $userId])
             ->count();
@@ -135,6 +145,11 @@ class OwnerService extends Repository
 
     public function hasLeader($modalId)
     {
+        if (!$modalId)
+        {
+            return false;
+        }
+
         return (boolean)DB::table($this->stats_table)
             ->whereRaw('modal_id = ? and is_leader <> 0', [$modalId])
             ->count();
