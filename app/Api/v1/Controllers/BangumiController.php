@@ -862,6 +862,7 @@ class BangumiController extends Controller
         {
             DB::commit();
             Redis::DEL('bangumi_' . $id);
+            Redis::DEL('bangumi_'. $id .'_tags');
             return $this->resNoContent();
         }
     }
