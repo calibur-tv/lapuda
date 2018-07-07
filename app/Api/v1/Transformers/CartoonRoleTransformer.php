@@ -44,6 +44,7 @@ class CartoonRoleTransformer extends Transformer
                 'avatar' => $role['avatar'],
                 'loverId' => (int)$role['loverId'],
                 'intro' => $role['intro'],
+                'alias' => $role['alias'],
                 'star_count' => (int)$role['star_count'],
                 'fans_count' => (int)$role['fans_count'],
                 'loveMe' => (boolean)$role['loveMe'],

@@ -247,7 +247,12 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/cartoon_role'], function ($api)
     {
-        $api->post('/create', 'App\Api\V1\Controllers\CartoonRoleController@create')->middleware(['jwt.auth']);
+        $api->group(['prefix' => '/manager', 'middleware' => ['jwt.auth']], function ($api)
+        {
+            $api->post('/create', 'App\Api\V1\Controllers\CartoonRoleController@create');
+
+            $api->post('/edit', 'App\Api\V1\Controllers\CartoonRoleController@edit');
+        });
 
         $api->group(['prefix' => '/{id}'], function ($api)
         {
