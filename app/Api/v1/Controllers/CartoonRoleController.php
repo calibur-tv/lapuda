@@ -318,7 +318,7 @@ class CartoonRoleController extends Controller
             'bangumi_id' => $bangumiId,
             'avatar' => $request->get('avatar'),
             'name' => $name,
-            'intro' => $request->get('intro'),
+            'intro' => Purifier::clean($request->get('intro')),
             'alias' => $alias,
             'state' => $userId,
             'created_at' => $time,
@@ -342,20 +342,35 @@ class CartoonRoleController extends Controller
 
     public function edit(Request $request)
     {
+        $user = $this->getAuthUser();
+        $userId = $user->id;
+        $bangumiId = $request->get('bangumi_id');
         $id = $request->get('id');
 
+        if (!$user->is_admin)
+        {
+            $bangumiManager = new BangumiManager();
+            if (!$bangumiManager->isOwner($bangumiId, $userId))
+            {
+                return $this->resErrRole();
+            }
+        }
+
+        $alias = Purifier::clean($request->get('alias'));
+
         CartoonRole::where('id', $id)->update([
-            'bangumi_id' => $request->get('bangumi_id'),
+            'bangumi_id' => $bangumiId,
             'avatar' => $request->get('avatar'),
-            'name' => $request->get('name'),
-            'intro' => $request->get('intro'),
-            'alias' => $request->get('alias')
+            'name' => Purifier::clean($request->get('name')),
+            'intro' => Purifier::clean($request->get('intro')),
+            'alias' => $alias,
+            'state' => $userId
         ]);
 
         $searchService = new Search();
         $searchService->update(
             $id,
-            $request->get('alias'),
+            $alias,
             'role'
         );
 
