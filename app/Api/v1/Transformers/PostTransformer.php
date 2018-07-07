@@ -50,7 +50,8 @@ class PostTransformer extends Transformer
                         'url' => config('website.image') . $image['url']
                     ];
                 }),
-                'like_users' => $post['like_users']
+                'like_users' => $post['like_users'],
+                'is_nice' => (boolean)$post['is_nice']
             ];
         });
     }
@@ -123,7 +124,9 @@ class PostTransformer extends Transformer
                }),
                'liked' => $post['liked'],
                'marked' => $post['marked'],
-               'commented' => $post['commented']
+               'commented' => $post['commented'],
+               'is_nice' => (boolean)$post['is_nice'],
+               'top_at' => $post['top_at']
            ];
         });
     }
@@ -162,7 +165,8 @@ class PostTransformer extends Transformer
                 }),
                 'liked' => $post['liked'],
                 'marked' => $post['marked'],
-                'commented' => $post['commented']
+                'commented' => $post['commented'],
+                'is_nice' => (boolean)$post['is_nice']
             ];
         });
     }

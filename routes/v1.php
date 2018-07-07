@@ -50,6 +50,8 @@ $api->version(['v1', 'latest'], function ($api)
             $api->group(['prefix' => '/posts'], function ($api)
             {
                 $api->get('/news', 'App\Api\V1\Controllers\BangumiController@newsPosts');
+
+                $api->get('/top', 'App\Api\V1\Controllers\BangumiController@topPosts');
             });
 
             $api->get('/images', 'App\Api\V1\Controllers\BangumiController@images');
