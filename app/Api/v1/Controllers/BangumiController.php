@@ -360,6 +360,49 @@ class BangumiController extends Controller
         ]);
     }
 
+    public function topPosts(Request $request, $id)
+    {
+        $bangumiRepository = new BangumiRepository();
+        $ids = $bangumiRepository->getTopPostIds($id);
+
+        if (empty($ids))
+        {
+            return $this->resOK([]);
+        }
+
+        $userId = $this->getAuthUserId();
+        $postRepository = new PostRepository();
+        $list = $postRepository->list($ids);
+
+        $postCommentService = new PostCommentService();
+        $postLikeService = new PostLikeService();
+        $postMarkService = new PostMarkService();
+        $postViewCounter = new PostViewCounter();
+        $userRepository = new UserRepository();
+        $bangumiRepository = new BangumiRepository();
+
+        foreach ($list as $i => $item)
+        {
+            $id = $item['id'];
+
+            $authorId = $item['user_id'];
+            $list[$i]['view_count'] = $postViewCounter->get($id);
+
+            $list[$i]['user'] = $userRepository->item($authorId);
+            $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
+        }
+        $list = $postLikeService->batchCheck($list, $userId, 'liked');
+        $list = $postLikeService->batchTotal($list, 'like_count');
+        $list = $postMarkService->batchCheck($list, $userId, 'marked');
+        $list = $postMarkService->batchTotal($list, 'mark_count');
+        $list = $postCommentService->batchCheckCommented($list, $userId);
+        $list = $postCommentService->batchGetCommentCount($list);
+
+        $transformer = new PostTransformer();
+
+        return $this->resOK($transformer->bangumi($list));
+    }
+
     // TODO：trending service
     // TODO：api docs
     public function images(Request $request, $id)

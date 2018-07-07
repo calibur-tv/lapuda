@@ -369,9 +369,21 @@ class BangumiRepository extends Repository
         return $this->RedisSort('bangumi_'.$id.'_posts_'.$type.'_ids', function () use ($id)
         {
             return Post::where('bangumi_id', $id)
+                ->whereNull('top_at')
                 ->orderBy('id', 'DESC')
                 ->pluck('updated_at', 'id');
         }, true);
+    }
+
+    public function getTopPostIds($id)
+    {
+        return $this->RedisList('bangumi_'.$id.'_posts_top_ids', function () use ($id)
+        {
+            return Post::where('bangumi_id', $id)
+                ->whereNotNull('top_at')
+                ->orderBy('top_at', 'DESC')
+                ->pluck('id');
+        });
     }
 
     public function category($tags, $page)
