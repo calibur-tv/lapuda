@@ -192,6 +192,7 @@ class PostTransformer extends Transformer
                         'avatar' => $bangumi['avatar']
                     ];
                 }),
+                'is_nice' => (boolean)$post['is_nice']
             ];
         });
     }
