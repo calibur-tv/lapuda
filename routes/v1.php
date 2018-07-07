@@ -167,6 +167,23 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->get('/hot', 'App\Api\V1\Controllers\PostController@postHot');
         });
+
+        $api->group(['prefix' => '/manager', 'middleware' => ['jwt.auth']], function ($api)
+        {
+            $api->group(['prefix' => '/top'], function ($api)
+            {
+                $api->post('/set', 'App\Api\V1\Controllers\PostController@setTop');
+
+                $api->post('/remove', 'App\Api\V1\Controllers\PostController@removeTop');
+            });
+
+            $api->group(['prefix' => '/nice'], function ($api)
+            {
+                $api->post('/set', 'App\Api\V1\Controllers\PostController@setNice');
+
+                $api->post('/remove', 'App\Api\V1\Controllers\PostController@removeNice');
+            });
+        });
     });
 
     $api->group(['prefix' => '/{type}/comment'], function ($api)
@@ -228,7 +245,7 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/cartoon_role'], function ($api)
     {
-        $api->post('/create', 'App\Api\V1\Controllers\CartoonRoleController@create');
+        $api->post('/create', 'App\Api\V1\Controllers\CartoonRoleController@create')->middleware(['jwt.auth']);
 
         $api->group(['prefix' => '/{id}'], function ($api)
         {
@@ -428,7 +445,7 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->group(['prefix' => '/post'], function ($api)
             {
-                $api->get('/list', 'App\Api\V1\Controllers\PostController@trials');
+                $api->get('/list', 'App\Api\V1\Controllers\PostController@trialList');
 
                 $api->post('/delete_image', 'App\Api\V1\Controllers\PostController@deletePostImage');
 

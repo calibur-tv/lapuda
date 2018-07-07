@@ -15,6 +15,7 @@ use App\Models\Post;
 use App\Models\PostImages;
 use App\Models\PostLike;
 use App\Models\PostMark;
+use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -195,5 +196,27 @@ class PostRepository extends Repository
         }
 
         return $result;
+    }
+
+    public function trialPass($post)
+    {
+        $searchService = new Search();
+        $searchService->create(
+            $post['id'],
+            $post['title'] . ',' . $post['desc'],
+            'post'
+        );
+
+        $trendingService = new TrendingService('posts');
+        $trendingService->create($post['id']);
+
+        $job = (new \App\Jobs\Push\Baidu('post/trending/new', 'update'));
+        dispatch($job);
+
+        $job = (new \App\Jobs\Push\Baidu('post/' . $post['id']));
+        dispatch($job);
+
+        $job = (new \App\Jobs\Push\Baidu('bangumi/' . $post['bangumi_id'], 'update'));
+        dispatch($job);
     }
 }

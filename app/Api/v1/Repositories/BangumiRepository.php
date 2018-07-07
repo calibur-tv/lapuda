@@ -366,10 +366,7 @@ class BangumiRepository extends Repository
 
     public function getPostIds($id, $type)
     {
-        $postRepository = new PostRepository();
-        $cacheKey = $postRepository->bangumiListCacheKey($id, $type);
-
-        return $this->RedisSort($cacheKey, function () use ($id)
+        return $this->RedisSort('bangumi_'.$id.'_posts_'.$type.'_ids', function () use ($id)
         {
             return Post::where('bangumi_id', $id)
                 ->orderBy('id', 'DESC')

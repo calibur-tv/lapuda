@@ -93,7 +93,7 @@ class PostTrendingService extends TrendingService
 
     public function computeNewsIds()
     {
-        return Post::whereIn('state', [3, 7])
+        return Post::where('state', 0)
             ->orderBy('created_at', 'desc')
             ->latest()
             ->take(100)
@@ -102,7 +102,7 @@ class PostTrendingService extends TrendingService
 
     public function computeActiveIds()
     {
-        return Post::whereIn('state', [3, 7])
+        return Post::where('state', 0)
             ->orderBy('updated_at', 'desc')
             ->latest()
             ->take(100)
