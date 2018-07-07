@@ -54,7 +54,7 @@ class TotalCounterService extends Repository
                 foreach ($this->table as $table)
                 {
                     $result += DB::table($table)
-                        ->where('created_at', '>', Carbon::now()->addDays(0))
+                        ->where('created_at', '>', Carbon::now()->today())
                         ->count();
                 }
 
@@ -62,7 +62,7 @@ class TotalCounterService extends Repository
             }
 
             return DB::table($this->table)
-                ->where('created_at', '>', Carbon::now()->addDays(0))
+                ->where('created_at', '>', Carbon::now()->today())
                 ->count();
         });
     }
