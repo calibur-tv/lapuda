@@ -501,17 +501,25 @@ class PostController extends Controller
     public function trialPass(Request $request)
     {
         $postId = $request->get('id');
-        DB::table('posts')
-            ->withTrashed()
-            ->where('id', $postId)
-            ->update([
-                'state' => 0,
-                'deleted_at' => null
-            ]);
 
         $post = Post::withTrashed()
             ->where('id', $postId)
             ->first();
+
+        if (is_null($post))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($post->deleted_at)
+        {
+            $post->restore();
+            $postRepository = new PostRepository();
+            $postRepository->trialPass($post);
+        }
+        $post->update([
+            'state' => 0
+        ]);
 
         $searchService = new Search();
         $searchService->create(
