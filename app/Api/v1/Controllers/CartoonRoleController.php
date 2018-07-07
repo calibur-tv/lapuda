@@ -6,6 +6,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
@@ -17,6 +18,7 @@ use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
+use Mews\Purifier\Facades\Purifier;
 
 /**
  * @Resource("动漫角色相关接口")
@@ -287,9 +289,21 @@ class CartoonRoleController extends Controller
 
     public function create(Request $request)
     {
+        $user = $this->getAuthUser();
+        $userId = $user->id;
         $bangumiId = $request->get('bangumi_id');
-        $userId = $this->getAuthUserId();
-        $name = $request->get('name');
+
+        if (!$user->is_admin)
+        {
+            $bangumiManager = new BangumiManager();
+            if (!$bangumiManager->isOwner($bangumiId, $userId))
+            {
+                return $this->resErrRole();
+            }
+        }
+
+        $name = Purifier::clean($request->get('name'));
+        $alias = Purifier::clean($request->get('alias'));
         $time = Carbon::now();
 
         $count = CartoonRole::whereRaw('bangumi_id = ? and name = ?', [$bangumiId, $name])
@@ -303,9 +317,9 @@ class CartoonRoleController extends Controller
         $id =  CartoonRole::insertGetId([
             'bangumi_id' => $bangumiId,
             'avatar' => $request->get('avatar'),
-            'name' => $request->get('name'),
+            'name' => $name,
             'intro' => $request->get('intro'),
-            'alias' => $request->get('alias'),
+            'alias' => $alias,
             'state' => $userId,
             'created_at' => $time,
             'updated_at' => $time
@@ -314,7 +328,7 @@ class CartoonRoleController extends Controller
         $searchService = new Search();
         $searchService->create(
             $id,
-            $request->get('alias'),
+            $alias,
             'role'
         );
 
@@ -347,6 +361,8 @@ class CartoonRoleController extends Controller
 
         $job = (new \App\Jobs\Push\Baidu('role/' . $id, 'update'));
         dispatch($job);
+
+        Redis::DEL('cartoon_role_' . $id);
 
         return $this->resNoContent();
     }

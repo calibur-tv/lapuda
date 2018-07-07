@@ -31,7 +31,7 @@ class TrialController extends Controller
 
         $result = [
             'users' => User::where('state', '<>', 0)->count(),
-            'posts' => Post::withTrashed()->whereIn('state', [4, 5])->count(),
+            'posts' => Post::withTrashed()->where('state', '<>', 0)->count(),
             'images' => Image::withTrashed()->where('state', 2)->count(),
             'feedback' => Feedback::where('stage', 0)->count(),
             'comments' => $comments,

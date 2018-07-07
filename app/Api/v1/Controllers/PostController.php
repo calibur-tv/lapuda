@@ -5,6 +5,7 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Counter\PostViewCounter;
+use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
@@ -428,9 +429,11 @@ class PostController extends Controller
         return $this->resOK($postTrendingService->hot($seen, $take));
     }
 
-    public function trials()
+    public function trialList()
     {
-        $list = Post::withTrashed()->whereIn('state', [4, 5])->get();
+        $list = Post::withTrashed()
+            ->where('state', '<>', 0)
+            ->get();
 
         if (empty($list))
         {
@@ -470,7 +473,9 @@ class PostController extends Controller
     public function trialDelete(Request $request)
     {
         $id = $request->get('id');
-        $post = Post::withTrashed()->where('id', $id)->first();
+        $post = Post::withTrashed()
+            ->where('id', $id)
+            ->first();
 
         if (is_null($post))
         {
@@ -483,23 +488,24 @@ class PostController extends Controller
         Redis::ZREM('bangumi_'.$post->bangumi_id.'_posts_new_ids', $id);
 
         $post->update([
-            'state' => 6
+            'state' => 0
         ]);
         $post->delete();
 
         $searchService = new Search();
         $searchService->delete($id, 'post');
-
+        // TODO：百度
         return $this->resNoContent();
     }
 
     public function trialPass(Request $request)
     {
         $postId = $request->get('id');
-        Post::withTrashed()
+        DB::table('posts')
+            ->withTrashed()
             ->where('id', $postId)
             ->update([
-                'state' => 7,
+                'state' => 0,
                 'deleted_at' => null
             ]);
 
@@ -514,6 +520,148 @@ class PostController extends Controller
             'post',
             strtotime($post->created_at)
         );
+
+        return $this->resNoContent();
+    }
+
+    public function setNice(Request $request)
+    {
+        $postId = $request->get('id');
+        $userId = $this->getAuthUserId();
+
+        $postRepository = new PostRepository();
+        $post = $postRepository->item($postId);
+
+        if (is_null($post))
+        {
+            return $this->resErrNotFound('不存在的帖子');
+        }
+
+        $bangumiManager = new BangumiManager();
+        if (!$bangumiManager->isOwner($post['bangumi_id'], $userId))
+        {
+            return $this->resErrRole('这个帖子不由你管理');
+        }
+
+        if ($post['is_nice'])
+        {
+            return $this->resErrBad('已经是精品贴了');
+        }
+
+        Post::where('id', $postId)
+            ->update([
+                'is_nice' => $userId,
+                'state' => $userId
+            ]);
+
+        Redis::DEL('post_' . $postId);
+
+        return $this->resNoContent();
+    }
+
+    public function removeNice(Request $request)
+    {
+        $postId = $request->get('id');
+        $userId = $this->getAuthUserId();
+
+        $postRepository = new PostRepository();
+        $post = $postRepository->item($postId);
+
+        if (is_null($post))
+        {
+            return $this->resErrNotFound('不存在的帖子');
+        }
+
+        $bangumiManager = new BangumiManager();
+        if (!$bangumiManager->isOwner($post['bangumi_id'], $userId))
+        {
+            return $this->resErrRole('这个帖子不由你管理');
+        }
+
+        if (!$post['is_nice'])
+        {
+            return $this->resErrBad('不是精品贴');
+        }
+
+        Post::where('id', $postId)
+            ->update([
+                'is_nice' => 0
+            ]);
+
+        Redis::DEL('post_' . $postId);
+
+        return $this->resNoContent();
+    }
+
+    public function setTop(Request $request)
+    {
+        $postId = $request->get('id');
+        $userId = $this->getAuthUserId();
+
+        $postRepository = new PostRepository();
+        $post = $postRepository->item($postId);
+
+        if (is_null($post))
+        {
+            return $this->resErrNotFound('不存在的帖子');
+        }
+
+        $bangumiManager = new BangumiManager();
+        if (!$bangumiManager->isOwner($post['bangumi_id'], $userId))
+        {
+            return $this->resErrRole('这个帖子不由你管理');
+        }
+
+        $topCount = Post::where('bangumi_id', $post['bangumi_id'])
+            ->whereNotNull('top_at')
+            ->count();
+
+        if ($topCount >= 3)
+        {
+            return $this->resErrBad('已经有' . $topCount . '个置顶帖了');
+        }
+
+        Post::where('id', $postId)
+            ->update([
+                'top_at' => Carbon::now(),
+                'state' => $userId
+            ]);
+
+        Redis::DEL('post_' . $postId);
+
+        return $this->resNoContent();
+    }
+
+    public function removeTop(Request $request)
+    {
+        $postId = $request->get('id');
+        $userId = $this->getAuthUserId();
+
+        $postRepository = new PostRepository();
+        $post = $postRepository->item($postId);
+
+        if (is_null($post))
+        {
+            return $this->resErrNotFound('不存在的帖子');
+        }
+
+        $bangumiManager = new BangumiManager();
+        if (!$bangumiManager->isOwner($post['bangumi_id'], $userId))
+        {
+            return $this->resErrRole('这个帖子不由你管理');
+        }
+
+        if (!$post['top_at'])
+        {
+            return $this->resErrBad('不是置顶贴');
+        }
+
+        Post::where('id', $postId)
+            ->update([
+                'top_at' => null
+            ]);
+
+        Redis::DEL('post_' . $postId);
 
         return $this->resNoContent();
     }
