@@ -228,6 +228,8 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/cartoon_role'], function ($api)
     {
+        $api->post('/create', 'App\Api\V1\Controllers\CartoonRoleController@create');
+
         $api->group(['prefix' => '/{id}'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\CartoonRoleController@show');
@@ -433,6 +435,15 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/delete', 'App\Api\V1\Controllers\PostController@trialDelete');
 
                 $api->post('/pass', 'App\Api\V1\Controllers\PostController@trialPass');
+            });
+
+            $api->group(['prefix' => '/cartoon_role'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\CartoonRoleController@trialList');
+
+                $api->post('/ban', 'App\Api\V1\Controllers\CartoonRoleController@trialBan');
+
+                $api->post('/pass', 'App\Api\V1\Controllers\CartoonRoleController@trialPass');
             });
         });
     });

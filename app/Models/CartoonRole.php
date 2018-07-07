@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CartoonRole extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'cartoon_role';
 
     protected $fillable = [

@@ -288,7 +288,17 @@ class CartoonRoleController extends Controller
     public function create(Request $request)
     {
         $bangumiId = $request->get('bangumi_id');
+        $userId = $this->getAuthUserId();
+        $name = $request->get('name');
         $time = Carbon::now();
+
+        $count = CartoonRole::whereRaw('bangumi_id = ? and name = ?', [$bangumiId, $name])
+            ->count();
+
+        if ($count)
+        {
+            return $this->resErrBad('该角色可能已存在');
+        }
 
         $id =  CartoonRole::insertGetId([
             'bangumi_id' => $bangumiId,
@@ -296,6 +306,7 @@ class CartoonRoleController extends Controller
             'name' => $request->get('name'),
             'intro' => $request->get('intro'),
             'alias' => $request->get('alias'),
+            'state' => $userId,
             'created_at' => $time,
             'updated_at' => $time
         ]);
@@ -307,7 +318,6 @@ class CartoonRoleController extends Controller
             'role'
         );
 
-        Redis::DEL('cartoon_role_trending_ids');
         Redis::DEL('bangumi_'.$bangumiId.'_cartoon_role_ids');
 
         $job = (new \App\Jobs\Push\Baidu('role/' . $id));
@@ -337,6 +347,36 @@ class CartoonRoleController extends Controller
 
         $job = (new \App\Jobs\Push\Baidu('role/' . $id, 'update'));
         dispatch($job);
+
+        return $this->resNoContent();
+    }
+
+    public function trialList()
+    {
+        $roles = CartoonRole::where('state', '<>', 0)
+            ->select('id', 'state', 'name', 'bangumi_id')
+            ->get();
+
+        return $this->resOK($roles);
+    }
+
+    public function trialPass(Request $request)
+    {
+        CartoonRole::where('id', $request->get('id'))
+            ->update([
+                'state' => 0
+            ]);
+
+        return $this->resNoContent();
+    }
+
+    public function trialBan(Request $request)
+    {
+        $id = $request->get('id');
+        $bangumiId = $request->get('bangumi_id');
+
+        CartoonRole::where('id', $id)->delete();
+        Redis::DEL('bangumi_'.$bangumiId.'_cartoon_role_ids');
 
         return $this->resNoContent();
     }
