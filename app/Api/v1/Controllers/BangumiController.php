@@ -572,7 +572,6 @@ class BangumiController extends Controller
         $bangumi['tags'] = $bangumi->tags()->get()->pluck('id');
         $bangumi['season'] = $bangumi['season'] === 'null' ? '' : $bangumi['season'];
         $bangumi['published_at'] = $bangumi['published_at'] * 1000;
-        $bangumi['isCollection'] = $bangumi['id'] === $bangumi['collection_id'];
 
         return $this->resOK($bangumi);
     }

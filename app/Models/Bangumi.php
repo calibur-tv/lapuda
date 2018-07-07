@@ -39,8 +39,10 @@ class Bangumi extends Model
         'released_video_id' => 'integer',
         'published_at' => 'integer',
         'collection_id' => 'integer',
-        'others_site_video' => 'integer',
-        'end' => 'boolean'
+        'others_site_video' => 'boolean',
+        'end' => 'boolean',
+        'has_video' => 'boolean',
+        'has_cartoon' => 'boolean',
     ];
 
     public function tags()
