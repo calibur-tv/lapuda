@@ -439,6 +439,7 @@ class BangumiRepository extends Repository
         else
         {
             $bangumi['followed'] = false;
+            $bangumi['is_master'] = false;
         }
 
         $transformer = new BangumiTransformer();
