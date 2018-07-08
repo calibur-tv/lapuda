@@ -721,6 +721,8 @@ class BangumiController extends Controller
         if ($rollback)
         {
             DB::rollBack();
+
+            return $this->resErrBad('更新失败');
         }
         else
         {
@@ -739,9 +741,9 @@ class BangumiController extends Controller
 
             $job = (new \App\Jobs\Push\Baidu('bangumi/' . $bangumi_id, 'update'));
             dispatch($job);
-        }
 
-        return $this->resNoContent();
+            return $this->resNoContent();
+        }
     }
 
     public function setManager(Request $request)
