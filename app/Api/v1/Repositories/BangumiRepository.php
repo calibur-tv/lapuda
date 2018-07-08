@@ -437,7 +437,7 @@ class BangumiRepository extends Repository
     {
         return $this->Cache($this->bangumiAllCacheKey, function ()
         {
-            $bangumis = Bangumi::select('id', 'name', 'alias')
+            $bangumis = Bangumi::select('id', 'name', 'avatar', 'alias')
                 ->orderBy('id', 'DESC')
                 ->get()
                 ->toArray();

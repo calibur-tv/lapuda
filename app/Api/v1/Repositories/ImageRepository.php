@@ -10,12 +10,42 @@ namespace App\Api\V1\Repositories;
 
 use App\Models\Banner;
 use App\Models\Image;
-use App\Models\ImageLike;
 use App\Models\ImageTag;
+use App\Models\ImageV2;
 use App\Models\Tag;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Mews\Purifier\Facades\Purifier;
 
 class ImageRepository extends Repository
 {
+    public function createSingle($params)
+    {
+        $now = Carbon::now();
+
+        $newId = DB::table('images_v2')
+            ->insertGetId([
+                'user_id' => $params['user_id'],
+                'bangumi_id' => $params['bangumi_id'],
+                'is_cartoon' => $params['is_cartoon'],
+                'is_creator' => $params['is_creator'],
+                'is_album' => $params['is_album'],
+                'name' => Purifier::clean($params['name']),
+                'url' => $params['url'],
+                'width' => $params['width'],
+                'height' => $params['height'],
+                'size' => $params['size'],
+                'type' => $params['type'],
+                'part' => $params['part'],
+                'created_at' => $now,
+                'updated_at' => $now
+            ]);
+
+        // TODO: review album process
+
+        return $newId;
+    }
+
     public function item($id)
     {
         if (!$id)
@@ -184,6 +214,19 @@ class ImageRepository extends Repository
         });
     }
 
+    public function itemV2($id)
+    {
+        if (!$id)
+        {
+            return null;
+        }
+
+        return $this->Cache('image_' . $id, function () use ($id)
+        {
+            return ImageV2::find($id);
+        });
+    }
+
     public function getRoleImageIds($roleId, $seen, $take, $size, $tags, $creator, $sort)
     {
         return Image::whereIn('state', [1, 4])
@@ -211,5 +254,14 @@ class ImageRepository extends Repository
                     ->where('tags.tag_id', $tags);
             })
             ->pluck('images.id');
+    }
+
+    public function checkHasPartCartoon($bangumiId, $part)
+    {
+        return (int)ImageV2::where('is_cartoon', 1)
+            ->where('bangumi_id', $bangumiId)
+            ->where('part', $part)
+            ->whereNotNull('image_ids')
+            ->count();
     }
 }

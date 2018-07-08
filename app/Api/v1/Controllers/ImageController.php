@@ -7,18 +7,21 @@ use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Counter\ImageViewCounter;
 use App\Api\V1\Services\Counter\Stats\TotalImageCount;
+use App\Api\V1\Services\Owner\BangumiManager;
+use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
-use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\UserTransformer;
+use App\Models\AlbumImage;
 use App\Models\Bangumi;
 use App\Models\Banner;
 use App\Models\Image;
-use App\Models\ImageLike;
 use App\Models\ImageTag;
+use App\Models\ImageV2;
 use App\Services\Geetest\Captcha;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Mews\Purifier\Facades\Purifier;
@@ -533,6 +536,229 @@ class ImageController extends Controller
         $transformer = new ImageTransformer();
 
         return $this->resCreated($transformer->albums([$image->toArray()])[0]);
+    }
+
+    public function createAlbum_V2(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'bangumi_id' => 'required|integer',
+            'name' => 'string|max:30',
+            'is_cartoon' => 'required|boolean',
+            'is_creator' => 'required|boolean',
+            'url' => 'required|string',
+            'width' => 'required|integer',
+            'height' => 'required|integer',
+            'size' => 'required|integer',
+            'type' => 'required|string',
+            'part' => 'required|integer',
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $user = $this->getAuthUser();
+        $userId = $user->id;
+        $isCartoon = $request->get('is_cartoon');
+        $bangumiId = $request->get('bangumi_id');
+        $part = $request->get('part');
+        $name = $request->get('name');
+        $url = $request->get('url');
+
+        $imageRepository = new ImageRepository();
+
+        if ($isCartoon)
+        {
+            $bangumiManager = new BangumiManager();
+            if (!$user->is_admin && !$bangumiManager->isOwner($bangumiId, $userId))
+            {
+                return $this->resErrRole();
+            }
+
+            if ($imageRepository->checkHasPartCartoon($bangumiId, $part))
+            {
+                return $this->resErrBad('已存在的漫画');
+            }
+        }
+
+        $bangumiFollowService = new BangumiFollowService();
+        if (!$bangumiFollowService->check($userId, $bangumiId))
+        {
+            // 如果没关注番剧，就给他关注
+            $bangumiFollowService->do($userId, $bangumiId);
+        }
+
+        $albumId = $imageRepository->createSingle([
+            'user_id' => $userId,
+            'bangumi_id' => $bangumiId,
+            'is_cartoon' => $isCartoon,
+            'is_creator' => $request->get('is_creator'),
+            'is_album' => true,
+            'name' => $name,
+            'url' => $url,
+            'width' => $request->get('width'),
+            'height' => $request->get('height'),
+            'size' => $request->get('size'),
+            'type' => $request->get('type'),
+            'part' => $part
+        ]);
+
+        $imageTransformer = new ImageTransformer();
+        $album = [
+            'id' => $albumId,
+            'bangumi_id' => $bangumiId,
+            'name' => $name,
+            'url' => $url
+        ];
+
+        return $this->resCreated($imageTransformer->choiceUserAlbum([$album])[0]);
+    }
+
+    public function uploadImage_v2(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'bangumi_id' => 'required|integer',
+            'name' => 'string|max:30',
+            'is_creator' => 'required|boolean',
+            'url' => 'required|string',
+            'width' => 'required|integer',
+            'height' => 'required|integer',
+            'size' => 'required|integer',
+            'type' => 'required|string',
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $userId = $this->getAuthUserId();
+        $bangumiId = $request->get('bangumi_id');
+        $bangumiFollowService = new BangumiFollowService();
+        if (!$bangumiFollowService->check($userId, $bangumiId))
+        {
+            // 如果没关注番剧，就给他关注
+            $bangumiFollowService->do($userId, $bangumiId);
+        }
+
+        $imageRepository = new ImageRepository();
+
+        $newId = $imageRepository->createSingle([
+            'user_id' => $userId,
+            'bangumi_id' => $bangumiId,
+            'is_album' => false,
+            'is_cartoon' => false,
+            'is_creator' => $request->get('is_creator'),
+            'name' => $request->get('name'),
+            'url' => $request->get('url'),
+            'width' => $request->get('width'),
+            'height' => $request->get('height'),
+            'size' => $request->get('size'),
+            'type' => $request->get('type'),
+            'part' => 0
+        ]);
+
+        return $this->resCreated($newId);
+    }
+
+    public function uploadAlbumImage(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'album_id' => 'required|integer',
+            'images' => 'required|array',
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $now = Carbon::now();
+        $userId = $this->getAuthUserId();
+        $images = $request->get('images');
+        $albumId = $request->get('album_id');
+
+        foreach ($images as $i => $image)
+        {
+            $validator = Validator::make($image, [
+                'url' => 'required|string',
+                'width' => 'required|integer',
+                'height' => 'required|integer',
+                'size' => 'required|integer',
+                'type' => 'required|string',
+            ]);
+
+            if ($validator->fails())
+            {
+                return $this->resErrParams($validator);
+            }
+
+            $images[$i]['user_id'] = $userId;
+            $images[$i]['album_id'] = $albumId;
+            $images[$i]['created_at'] = $now;
+            $images[$i]['updated_at'] = $now;
+        }
+
+        $imageRepository = new ImageRepository();
+        $album = $imageRepository->itemV2($albumId);
+
+        if (is_null($album) || $album['user_id'] != $userId)
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($album['is_cartoon'] == 1)
+        {
+            $bangumiManager = new BangumiManager();
+            if (!$bangumiManager->isOwner($album['bangumi_id'], $userId))
+            {
+                return $this->resErrRole();
+            }
+        }
+
+        AlbumImage::insert($images);
+        $nowIds = AlbumImage::where('album_id', $albumId)
+            ->pluck('id')
+            ->toArray();
+
+        if (is_null($album['image_ids']))
+        {
+            ImageV2::where('id', $albumId)
+                ->update([
+                    'image_ids' => implode(',', $nowIds)
+                ]);
+        }
+        else
+        {
+            $oldIds = explode(',', $album['image_ids']);
+            $newIds = array_diff($nowIds, $oldIds);
+
+            ImageV2::where('id', $albumId)
+                ->update([
+                    'image_ids' => $album['image_ids'] . ',' . implode(',', $newIds)
+                ]);
+        }
+
+
+        // TODO：review images process
+
+        return $this->resNoContent();
+    }
+
+    public function userAlbums()
+    {
+        $userId = $this->getAuthUserId();
+
+        $albums = ImageV2::where('user_id', $userId)
+            ->where('is_album', 1)
+            ->select('id', 'name', 'bangumi_id', 'url')
+            ->get()
+            ->toArray();
+
+        $imageTransformer = new ImageTransformer();
+
+        return $this->resOK($imageTransformer->choiceUserAlbum($albums));
     }
 
     /**

@@ -245,6 +245,14 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/deleteImage', 'App\Api\V1\Controllers\ImageController@deleteAlbumImage')->middleware(['jwt.auth']);
         });
+
+        $api->post('/single/upload', 'App\Api\V1\Controllers\ImageController@uploadImage_v2')->middleware(['jwt.auth']);
+
+        $api->post('/album/upload', 'App\Api\V1\Controllers\ImageController@uploadAlbumImage')->middleware(['jwt.auth']);
+
+        $api->post('/album/create', 'App\Api\V1\Controllers\ImageController@createAlbum_V2')->middleware(['jwt.auth']);
+
+        $api->get('/album/users', 'App\Api\V1\Controllers\ImageController@userAlbums')->middleware(['jwt.auth']);
     });
 
     $api->group(['prefix' => '/cartoon_role'], function ($api)
