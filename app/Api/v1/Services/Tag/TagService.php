@@ -5,6 +5,7 @@ namespace App\Api\V1\Services\Tag;
 use App\Api\V1\Repositories\Repository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
+use Mews\Purifier\Facades\Purifier;
 
 /**
  * Created by PhpStorm.
@@ -32,6 +33,7 @@ class TagService extends Repository
         return $this->Cache($this->all_tag_cache_key, function ()
         {
             return DB::table($this->tag_table)
+                ->orderBy('id', 'DESC')
                 ->select('id', 'name')
                 ->get()
                 ->toArray();
@@ -159,27 +161,31 @@ class TagService extends Repository
 
     public function createTag($name)
     {
+        $name = Purifier::clean($name);
+
         $hasTag = DB::table($this->tag_table)
             ->where('name', $name)
             ->count();
 
         if ($hasTag)
         {
-            return false;
+            return 0;
         }
 
-        DB::table($this->tag_table)
-            ->insert([
+        $newId = DB::table($this->tag_table)
+            ->insertGetId([
                 'name' => $name
             ]);
 
         Redis::DEL($this->all_tag_cache_key);
 
-        return true;
+        return $newId;
     }
 
     public function updateTag($tagId, $name)
     {
+        $name = Purifier::clean($name);
+
         $hasTag = DB::table($this->tag_table)
             ->where('name', $name)
             ->count();

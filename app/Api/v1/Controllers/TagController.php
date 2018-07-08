@@ -8,22 +8,20 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Models\Tag;
+use App\Api\V1\Services\Tag\BangumiTagService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Redis;
 
 class TagController extends Controller
 {
-    public function all()
+    public function all(Request $request)
     {
-        $result = Cache::remember('tag_all', 60, function ()
+        $type = $request->get('type');
+        $result = [];
+        if ($type === 'bangumi')
         {
-            return Tag::select('id', 'name', 'model')
-                ->orderBy('id', 'DESC')
-                ->get()
-                ->toArray();
-        });
+            $tagService = new BangumiTagService();
+            $result = $tagService->all();
+        }
 
         return $this->resOK($result);
     }
@@ -31,26 +29,30 @@ class TagController extends Controller
     public function edit(Request $request)
     {
         $id = $request->get('id');
+        $type = $request->get('type');
+        $name = $request->get('name');
 
-        Tag::where('id', $id)
-            ->update([
-                'name' => $request->get('name')
-            ]);
-
-        Redis::DEL('tag_all');
+        if ($type === 'bangumi')
+        {
+            $tagService = new BangumiTagService();
+            $tagService->updateTag($id, $name);
+        }
 
         return $this->resNoContent();
     }
 
     public function create(Request $request)
     {
-        $id = Tag::insertGetId([
-            'name' => $request->get('name'),
-            'model' => $request->get('model')
-        ]);
+        $type = $request->get('type');
+        $name = $request->get('name');
+        $newId = 0;
 
-        Redis::DEL('tag_all');
+        if ($type === 'bangumi')
+        {
+            $tagService = new BangumiTagService();
+            $newId = $tagService->createTag($name);
+        }
 
-        return $this->resCreated($id);
+        return $this->resCreated($newId);
     }
 }
