@@ -110,7 +110,7 @@ class BangumiTransformer extends Transformer
             return [
                 'id' => (int)$bangumi['id'],
                 'name' => $bangumi['name'],
-                'tags' => $bangumi['tags'],
+                'timeline' => $bangumi['timeline'],
                 'avatar' => $bangumi['avatar'],
                 'summary' => $bangumi['summary']
             ];
