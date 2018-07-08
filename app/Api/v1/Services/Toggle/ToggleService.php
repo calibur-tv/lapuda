@@ -201,7 +201,7 @@ class ToggleService extends Repository
         {
             return DB::table($this->table)
                 ->where('modal_id', $modalId)
-                ->orderBy('id', 'DESC')
+                ->orderBy('created_at', 'DESC')
                 ->pluck('created_at', 'user_id AS id');
 
         }, true, true);

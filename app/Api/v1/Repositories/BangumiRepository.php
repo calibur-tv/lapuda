@@ -127,8 +127,6 @@ class BangumiRepository extends Repository
             return null;
         }
 
-        $bangumi['tags'] = $this->tags($bangumi['id']);
-
         return $bangumi;
     }
 
@@ -293,26 +291,6 @@ class BangumiRepository extends Repository
                 'has_season' => $hasSeason,
                 'total' => count($list)
             ];
-        });
-    }
-
-    public function tags($bangumiId)
-    {
-        return $this->Cache('bangumi_'. $bangumiId .'_tags', function () use ($bangumiId)
-        {
-            $ids = BangumiTag::where('bangumi_id', $bangumiId)
-                ->pluck('tag_id')
-                ->toArray();
-
-            if (empty($ids))
-            {
-                return [];
-            }
-
-            return Tag::whereIn('id', $ids)
-                ->select('id', 'name')
-                ->get()
-                ->toArray();
         });
     }
 

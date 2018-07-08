@@ -14,8 +14,6 @@ $api->version(['v1', 'latest'], function ($api)
         $api->get('/new', 'App\Api\V1\Controllers\SearchController@search');
 
         $api->get('/bangumis', 'App\Api\V1\Controllers\SearchController@bangumis');
-
-        $api->get('/migration', 'App\Api\V1\Controllers\SearchController@migration');
     });
 
     $api->group(['prefix' => '/door'], function ($api)
