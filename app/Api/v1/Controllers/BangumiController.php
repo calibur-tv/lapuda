@@ -684,24 +684,9 @@ class BangumiController extends Controller
         $bangumi_id = $request->get('id');
         DB::beginTransaction();
 
-        $result = DB::table('bangumi_tag')
-            ->where('bangumi_id', $bangumi_id)
-            ->delete();
-        if ($result === false)
-        {
-            $rollback = true;
-        }
+        $bangumiTagService = new BangumiTagService();
+        $result = $bangumiTagService->update($bangumi_id, $request->get('tags'));
 
-        $tags = [];
-        foreach($request->get('tags') as $i => $tag_id)
-        {
-            array_push($tags, [
-                'bangumi_id' => $bangumi_id,
-                'tag_id' => $tag_id
-            ]);
-        }
-
-        $result = DB::table('bangumi_tag')->insert($tags);
         if (!$result)
         {
             $rollback = true;
@@ -862,25 +847,8 @@ class BangumiController extends Controller
 
         DB::beginTransaction();
         $rollback = false;
-
-        $result = DB::table('bangumi_tag')
-            ->where('bangumi_id', $id)
-            ->delete();
-        if ($result === false)
-        {
-            $rollback = true;
-        }
-
-        $tags = [];
-        foreach($request->get('tags') as $i => $tag_id)
-        {
-            array_push($tags, [
-                'bangumi_id' => $id,
-                'tag_id' => $tag_id
-            ]);
-        }
-        $result = DB::table('bangumi_tag')
-            ->insert($tags);
+        $bangumiTagService = new BangumiTagService();
+        $result = $bangumiTagService->update($id, $request->get('tags'));
         if (!$result)
         {
             $rollback = true;

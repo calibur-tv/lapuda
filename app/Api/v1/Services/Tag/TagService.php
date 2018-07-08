@@ -229,7 +229,8 @@ class TagService extends Repository
 
         return DB::table($this->relation_table)
             ->where('model_id', $modalId)
-            ->pluck('tag_id');
+            ->pluck('tag_id')
+            ->toArray();
     }
 
     protected function modalTagsCacheKey($modalId)
