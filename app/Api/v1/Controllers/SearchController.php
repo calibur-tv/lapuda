@@ -6,6 +6,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\UserRepository;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
+use Illuminate\Support\Facades\DB;
 use Mews\Purifier\Facades\Purifier;
 
 /**
@@ -88,5 +89,36 @@ class SearchController extends Controller
         }
 
         return $this->resOK($userRepository->item($userId, true));
+    }
+
+    public function migration()
+    {
+        $tags = DB::table('tags')
+            ->where('model', 0)
+            ->pluck('name');
+
+        foreach ($tags as $tag)
+        {
+            DB::table('bangumi_tags')
+                ->insert([
+                    'name' => $tag
+                ]);
+        }
+
+        $relations = DB::table('bangumi_tag')
+            ->select('bangumi_id', 'tag_id')
+            ->get()
+            ->toArray();
+
+        foreach ($relations as $row)
+        {
+            DB::table('bangumi_tag_relations')
+                ->insert([
+                    'model_id' => $row->bangumi_id,
+                    'tag_id' => $row->tag_id
+                ]);
+        }
+
+        return $this->resOK('success');
     }
 }
