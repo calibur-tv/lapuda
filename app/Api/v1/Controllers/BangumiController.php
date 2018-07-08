@@ -7,6 +7,7 @@ use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Counter\PostViewCounter;
 use App\Api\V1\Services\Owner\BangumiManager;
+use App\Api\V1\Services\Tag\BangumiTagService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
@@ -128,9 +129,9 @@ class BangumiController extends Controller
      */
     public function tags()
     {
-        $tagRepository = new TagRepository();
+        $bangumiTagService = new BangumiTagService();
 
-        return $this->resOK($tagRepository->all(0));
+        return $this->resOK($bangumiTagService->all());
     }
 
     /**
@@ -203,6 +204,9 @@ class BangumiController extends Controller
         $bangumiManager = new BangumiManager();
         $bangumi['is_master'] = $bangumiManager->isOwner($id, $userId);
         $bangumi['managers'] = $bangumiManager->getOwners($id);
+
+        $bangumiTagService = new BangumiTagService();
+        $bangumi['tags'] = $bangumiTagService->tags($id);
 
         $transformer = new BangumiTransformer();
 
@@ -611,8 +615,10 @@ class BangumiController extends Controller
             return $this->resErrNotFound();
         }
 
+        $bangumiTagService = new BangumiTagService();
+
         $bangumi['alias'] = $bangumi['alias'] === 'null' ? '' : json_decode($bangumi['alias'])->search;
-        $bangumi['tags'] = $bangumi->tags()->get()->pluck('id');
+        $bangumi['tags'] = $bangumiTagService->tags($id);
         $bangumi['season'] = $bangumi['season'] === 'null' ? '' : $bangumi['season'];
         $bangumi['published_at'] = $bangumi['published_at'] * 1000;
 

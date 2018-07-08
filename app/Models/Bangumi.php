@@ -45,11 +45,6 @@ class Bangumi extends Model
         'has_cartoon' => 'boolean',
     ];
 
-    public function tags()
-    {
-        return $this->belongsToMany(Tag::class);
-    }
-
     public function getAvatarAttribute($avatar)
     {
         return config('website.image').($avatar ? $avatar : 'avatar');

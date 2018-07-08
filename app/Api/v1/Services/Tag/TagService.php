@@ -33,7 +33,8 @@ class TagService extends Repository
         {
             return DB::table($this->tag_table)
                 ->select('id', 'name')
-                ->get();
+                ->get()
+                ->toArray();
         });
     }
 
@@ -51,7 +52,8 @@ class TagService extends Repository
             return DB::table($this->tag_table)
                 ->whereIn('id', $tagIds)
                 ->select('id', 'name')
-                ->get();
+                ->get()
+                ->toArray();
         });
     }
 
