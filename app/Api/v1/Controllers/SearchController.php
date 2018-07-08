@@ -90,4 +90,129 @@ class SearchController extends Controller
 
         return $this->resOK($userRepository->item($userId, true));
     }
+
+    public function migration(Request $request)
+    {
+        $id = $request->get('id');
+
+        if ($id == 1)
+        {
+            $imageTags = DB::table('tags')
+                ->where('model', '<>', 0)
+                ->get()
+                ->toArray();
+
+            foreach ($imageTags as $tag)
+            {
+                DB::table('image_v2_tags')
+                    ->insert([
+                        'id' => $tag->id,
+                        'name' => $tag->name
+                    ]);
+            }
+        }
+
+        if ($id == 2)
+        {
+            $tagRelations = DB::table('image_tags')
+                ->get()
+                ->toArray();
+
+            foreach ($tagRelations as $tag)
+            {
+                DB::table('image_tag_relations')
+                    ->insert([
+                        'model_id' => $tag->image_id,
+                        'tag_id' => $tag->tag_id
+                    ]);
+            }
+        }
+
+        if ($id == 3)
+        {
+            $normalImages = DB::table('images')
+                ->whereRaw('album_id = 0 and image_count = 0', [])
+                ->get()
+                ->toArray();
+
+            foreach ($normalImages as $image)
+            {
+                DB::table('images_v2')
+                    ->insert([
+                        'id' => $image->id,
+                        'user_id' => $image->user_id,
+                        'bangumi_id' => $image->bangumi_id,
+                        'url' => $image->url,
+                        'width' => $image->width,
+                        'height' => $image->height,
+                        'name' => $image->name ?: '',
+                        'created_at' => $image->created_at,
+                        'updated_at' => $image->updated_at,
+                        'deleted_at' => $image->deleted_at,
+                        'is_creator' => $image->creator,
+                        'is_album' => 0,
+                        'is_cartoon' => $image->is_cartoon,
+                        'size' => 0,
+                        'type' => ''
+                    ]);
+            }
+        }
+
+        if ($id == 4)
+        {
+            $albumPosters = DB::table('images')
+                ->whereRaw('album_id = 0 and image_count > 0', [])
+                ->get()
+                ->toArray();
+
+            foreach ($albumPosters as $image)
+            {
+                DB::table('images_v2')
+                    ->insert([
+                        'id' => $image->id,
+                        'user_id' => $image->user_id,
+                        'bangumi_id' => $image->bangumi_id,
+                        'url' => $image->url,
+                        'width' => $image->width,
+                        'height' => $image->height,
+                        'name' => $image->name,
+                        'created_at' => $image->created_at,
+                        'updated_at' => $image->updated_at,
+                        'deleted_at' => $image->deleted_at,
+                        'is_creator' => $image->creator,
+                        'is_album' => 1,
+                        'is_cartoon' => $image->is_cartoon,
+                        'image_ids' => $image->images,
+                        'size' => 0,
+                        'type' => ''
+                    ]);
+            }
+        }
+
+        if ($id == 5)
+        {
+            $albumImages = DB::table('images')
+                ->where('album_id', '<>', 0)
+                ->get()
+                ->toArray();
+
+            foreach ($albumImages as $image)
+            {
+                DB::table('album_images')
+                    ->insert([
+                        'id' => $image->id,
+                        'url' => $image->url,
+                        'width' => $image->width,
+                        'height' => $image->height,
+                        'created_at' => $image->created_at,
+                        'updated_at' => $image->updated_at,
+                        'deleted_at' => $image->deleted_at,
+                        'size' => 0,
+                        'type' => ''
+                    ]);
+            }
+        }
+
+        return $this->resOK('success');
+    }
 }
