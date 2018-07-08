@@ -40,16 +40,16 @@ class TagService extends Repository
         });
     }
 
-    public function tags($modalId)
+    public function tags($modelId)
     {
-        $tagIds = $this->getModalTagIds($modalId);
+        $tagIds = $this->getModalTagIds($modelId);
 
         if (empty($tagIds))
         {
             return [];
         }
 
-        return $this->Cache($this->modalTagsCacheKey($modalId), function () use ($tagIds)
+        return $this->Cache($this->modalTagsCacheKey($modelId), function () use ($tagIds)
         {
             return DB::table($this->tag_table)
                 ->whereIn('id', $tagIds)
@@ -59,14 +59,14 @@ class TagService extends Repository
         });
     }
 
-    public function append($modalId, $tagId)
+    public function append($modelId, $tagId)
     {
-        if (!$modalId || !$tagId)
+        if (!$modelId || !$tagId)
         {
             return '请求参数错误';
         }
 
-        if ($this->contain($modalId, $tagId))
+        if ($this->contain($modelId, $tagId))
         {
             return true;
         }
@@ -76,46 +76,47 @@ class TagService extends Repository
             return '这个标签已被移除了';
         }
 
-        if ($this->max_count && $this->max_count - count($this->getModalTagIds($modalId)) <= 1)
+        if ($this->max_count && $this->max_count - count($this->getModalTagIds($modelId)) <= 1)
         {
             return '最多允许设置' . $this->max_count . '个标签';
         }
 
         DB::table($this->relation_table)
             ->inset([
-                'model_id' => $modalId,
+                'model_id' => $modelId,
                 'tag_id' => $tagId
             ]);
 
-        Redis::DEL($this->modalTagsCacheKey($modalId));
+        Redis::DEL($this->modalTagsCacheKey($modelId));
 
         return true;
     }
 
-    public function remove($modalId, $tagId)
+    public function remove($modelId, $tagId)
     {
-        if (!$modalId || !$tagId)
+        if (!$modelId || !$tagId)
         {
             return false;
         }
 
         DB::table($this->relation_table)
-            ->whereRaw('model_id = ? and tag_id = ?', [$modalId, $tagId])
+            ->whereRaw('model_id = ? and tag_id = ?', [$modelId, $tagId])
             ->delete();
 
-        Redis::DEL($this->modalTagsCacheKey($modalId));
+        Redis::DEL($this->modalTagsCacheKey($modelId));
 
         return true;
     }
 
-    public function update($modalId, $tagIds)
+    public function update($modelId, $tagIds)
     {
-        if (!$modalId)
+        if (!$modelId)
         {
             return false;
         }
 
-        $hasTagIds = $this->getModalTagIds($modalId);
+        $hasTagIds = $this->getModalTagIds($modelId);
+
         if (empty($hasTagIds))
         {
             $appendIds = $tagIds;
@@ -129,23 +130,24 @@ class TagService extends Repository
         else
         {
             $appendIds = array_diff(array_unique(array_merge($hasTagIds, $tagIds)), $hasTagIds);
-            $removeIds = array_intersect($hasTagIds, $tagIds);
+            $removeIds = array_diff($hasTagIds, $tagIds);
         }
 
-        if ($removeIds)
+        if (!empty($removeIds))
         {
             DB::table($this->relation_table)
-                ->whereIn('id', $removeIds)
+                ->where('model_id', $modelId)
+                ->whereIn('tag_id', $removeIds)
                 ->delete();
         }
 
-        if ($appendIds)
+        if (!empty($appendIds))
         {
             $appendTags = [];
             foreach ($appendIds as $tagId)
             {
                 $appendTags[] = [
-                    'model_id' => $modalId,
+                    'model_id' => $modelId,
                     'tag_id' => $tagId
                 ];
             }
@@ -154,7 +156,7 @@ class TagService extends Repository
                 ->insert($appendTags);
         }
 
-        Redis::DEL($this->modalTagsCacheKey($modalId));
+        Redis::DEL($this->modalTagsCacheKey($modelId));
 
         return true;
     }
@@ -213,28 +215,28 @@ class TagService extends Repository
             ->count();
     }
 
-    protected function contain($modalId, $tagId)
+    protected function contain($modelId, $tagId)
     {
         return (int)DB::table($this->relation_table)
-            ->whereRaw('model_id = ? and tag_id = ?', [$modalId, $tagId])
+            ->whereRaw('model_id = ? and tag_id = ?', [$modelId, $tagId])
             ->count();
     }
 
-    protected function getModalTagIds($modalId)
+    protected function getModalTagIds($modelId)
     {
-        if (!$modalId)
+        if (!$modelId)
         {
             return [];
         }
 
         return DB::table($this->relation_table)
-            ->where('model_id', $modalId)
+            ->where('model_id', $modelId)
             ->pluck('tag_id')
             ->toArray();
     }
 
-    protected function modalTagsCacheKey($modalId)
+    protected function modalTagsCacheKey($modelId)
     {
-        return $this->tag_table . '_' . $modalId . '_tags';
+        return $this->tag_table . '_' . $modelId . '_tags';
     }
 }
