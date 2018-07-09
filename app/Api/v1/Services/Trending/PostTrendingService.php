@@ -73,7 +73,9 @@ class PostTrendingService extends TrendingService
         return Post::where('state', 0)
             ->when($this->bangumiId, function ($query)
             {
-                return $query->where('bangumi_id', $this->bangumiId);
+                return $query
+                    ->where('bangumi_id', $this->bangumiId)
+                    ->whereNull('top_at');
             })
             ->orderBy('created_at', 'desc')
             ->latest()
@@ -86,7 +88,9 @@ class PostTrendingService extends TrendingService
         return Post::where('state', 0)
             ->when($this->bangumiId, function ($query)
             {
-                return $query->where('bangumi_id', $this->bangumiId);
+                return $query
+                    ->where('bangumi_id', $this->bangumiId)
+                    ->whereNull('top_at');
             })
             ->orderBy('updated_at', 'desc')
             ->latest()
@@ -99,7 +103,9 @@ class PostTrendingService extends TrendingService
         $ids = Post::where('created_at', '>', Carbon::now()->addDays(-30))
             ->when($this->bangumiId, function ($query)
             {
-                return $query->where('bangumi_id', $this->bangumiId);
+                return $query
+                    ->where('bangumi_id', $this->bangumiId)
+                    ->whereNull('top_at');
             })
             ->pluck('id');
 

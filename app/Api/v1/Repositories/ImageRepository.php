@@ -231,6 +231,19 @@ class ImageRepository extends Repository
         });
     }
 
+    public function getCartoonParts($bangumiId)
+    {
+        return $this->Cache($this->bangumiCartoonPartsCacheKey($bangumiId), function () use ($bangumiId)
+        {
+            return Image::where('bangumi_id', $bangumiId)
+                ->where('is_cartoon', true)
+                ->orderBy('part', 'ASC')
+                ->select('id', 'name', 'part')
+                ->get()
+                ->toArray();
+        });
+    }
+
     public function getRoleImageIds($roleId, $seen, $take, $size, $tags, $creator, $sort)
     {
         return Image::whereIn('state', [1, 4])
@@ -279,6 +292,11 @@ class ImageRepository extends Repository
         });
 
         return $this->filterIdsByPage($ids, $page, $take);
+    }
+
+    public function bangumiCartoonPartsCacheKey($bangumiId)
+    {
+        return 'bangumi_' . $bangumiId . '_cartoon_parts';
     }
 
     public function userImagesCacheKey($userId)

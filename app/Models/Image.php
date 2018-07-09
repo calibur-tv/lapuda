@@ -33,6 +33,10 @@ class Image extends Model
         'state'
     ];
 
+    protected $casts = [
+        'part' => 'integer',
+    ];
+
     public function getUrlAttribute($url)
     {
         return config('website.image') . ($url ? $url : 'avatar');

@@ -49,12 +49,7 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->get('/videos', 'App\Api\V1\Controllers\BangumiController@videos');
 
-            $api->group(['prefix' => '/posts'], function ($api)
-            {
-                $api->get('/news', 'App\Api\V1\Controllers\BangumiController@newsPosts');
-
-                $api->get('/top', 'App\Api\V1\Controllers\BangumiController@topPosts');
-            });
+            $api->get('/posts/top', 'App\Api\V1\Controllers\PostController@bangumiTops');
 
             $api->get('/images', 'App\Api\V1\Controllers\BangumiController@images');
 
@@ -165,11 +160,11 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/trending'], function ($api)
         {
-            $api->get('/news', 'App\Api\V1\Controllers\PostController@postNews');
+            $api->get('/news', 'App\Api\V1\Controllers\PostController@trendingNews');
 
-            $api->get('/active', 'App\Api\V1\Controllers\PostController@postActive');
+            $api->get('/active', 'App\Api\V1\Controllers\PostController@trendingActive');
 
-            $api->get('/hot', 'App\Api\V1\Controllers\PostController@postHot');
+            $api->get('/hot', 'App\Api\V1\Controllers\PostController@trendingHot');
         });
 
         $api->group(['prefix' => '/manager', 'middleware' => ['jwt.auth']], function ($api)
@@ -279,6 +274,12 @@ $api->version(['v1', 'latest'], function ($api)
     $api->group(['prefix' => '/trending'], function ($api)
     {
         $api->get('/cartoon_role', 'App\Api\V1\Controllers\TrendingController@cartoonRole');
+
+        $api->get('/news', 'App\Api\V1\Controllers\TrendingController@news');
+
+        $api->get('/active', 'App\Api\V1\Controllers\TrendingController@active');
+
+        $api->get('/hot', 'App\Api\V1\Controllers\TrendingController@hot');
     });
 
     $api->group(['prefix' => '/admin', 'middleware' => ['jwt.admin']], function ($api)

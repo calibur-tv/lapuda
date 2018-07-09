@@ -224,7 +224,7 @@ class ImageController extends Controller
             'height' => 'required|integer',
             'size' => 'required|integer',
             'type' => 'required|string',
-            'part' => 'required|integer',
+            'part' => 'required|integer|min:0',
         ]);
 
         if ($validator->fails())
@@ -418,6 +418,7 @@ class ImageController extends Controller
         }
 
         // TODO：review images process，先发后审
+        // TODO：删除缓存
 
         return $this->resNoContent();
     }
@@ -466,11 +467,6 @@ class ImageController extends Controller
             'total' => $idsObj['total'],
             'noMore' => $idsObj['noMore']
         ]);
-    }
-
-    public function bangumiActive(Request $request)
-    {
-
     }
 
     /**
@@ -645,6 +641,14 @@ class ImageController extends Controller
         if ($image['is_album'])
         {
             $image['images'] = $imageRepository->albumImages($id);
+        }
+        if ($image['is_cartoon'])
+        {
+            $image['parts'] = $imageRepository->getCartoonParts($image['bangumi_id']);
+        }
+        else
+        {
+            unset($image['part']);
         }
         $userId = $this->getAuthUserId();
 

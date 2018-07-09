@@ -257,6 +257,121 @@ class PostController extends Controller
     }
 
     /**
+     * 番剧的帖子列表
+     *
+     * @Get("/bangumi/`bangumiId`/posts/news")
+     *
+     * @Parameters({
+     *      @Parameter("minId", description="看过的帖子里，最大的一个id", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": {"list": "番剧列表", "total": "总数", "noMore": "没有更多"}})
+     * })
+     */
+    public function bangumiNews(Request $request, $id)
+    {
+        $minId = intval($request->get('minId')) ?: 0;
+        $take = 10;
+
+        $userId = $this->getAuthUserId();
+        $postTrendingService = new PostTrendingService($userId, $id);
+
+        return $this->resOK($postTrendingService->news($minId, $take));
+    }
+
+    /**
+     * 番剧的动态帖子列表
+     *
+     * @Get("/post/trending/active")
+     *
+     * @Parameters({
+     *      @Parameter("seenIds", description="看过的帖子的`ids`, 用','号分割的字符串", type="string", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "total": "总数", "noMore": "没有更多了"}})
+     * })
+     */
+    public function bangumiActive(Request $request, $id)
+    {
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = 10;
+
+        $userId = $this->getAuthUserId();
+        $postTrendingService = new PostTrendingService($userId, $id);
+
+        return $this->resOK($postTrendingService->active($seen, $take));
+    }
+
+    /**
+     * 番剧的热门帖子列表
+     *
+     * @Get("/post/trending/hot")
+     *
+     * @Parameters({
+     *      @Parameter("seenIds", description="看过的帖子的`ids`, 用','号分割的字符串", type="string", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "total": "总数", "noMore": "没有更多了"}})
+     * })
+     */
+    public function bangumiHot(Request $request, $id)
+    {
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = 10;
+
+        $userId = $this->getAuthUserId();
+        $postTrendingService = new PostTrendingService($userId, $id);
+
+        return $this->resOK($postTrendingService->hot($seen, $take));
+    }
+
+    public function bangumiTops(Request $request, $id)
+    {
+        $bangumiRepository = new BangumiRepository();
+        $ids = $bangumiRepository->getTopPostIds($id);
+
+        if (empty($ids))
+        {
+            return $this->resOK([]);
+        }
+
+        $userId = $this->getAuthUserId();
+        $postRepository = new PostRepository();
+        $list = $postRepository->list($ids);
+
+        $postCommentService = new PostCommentService();
+        $postLikeService = new PostLikeService();
+        $postMarkService = new PostMarkService();
+        $postViewCounter = new PostViewCounter();
+        $userRepository = new UserRepository();
+        $bangumiRepository = new BangumiRepository();
+
+        foreach ($list as $i => $item)
+        {
+            $id = $item['id'];
+
+            $authorId = $item['user_id'];
+            $list[$i]['view_count'] = $postViewCounter->get($id);
+
+            $list[$i]['user'] = $userRepository->item($authorId);
+            $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
+        }
+        $list = $postLikeService->batchCheck($list, $userId, 'liked');
+        $list = $postLikeService->batchTotal($list, 'like_count');
+        $list = $postMarkService->batchCheck($list, $userId, 'marked');
+        $list = $postMarkService->batchTotal($list, 'mark_count');
+        $list = $postCommentService->batchCheckCommented($list, $userId);
+        $list = $postCommentService->batchGetCommentCount($list);
+
+        $transformer = new PostTransformer();
+
+        return $this->resOK($transformer->bangumi($list));
+    }
+
+    /**
      * 收藏主题帖或取消收藏
      *
      * @Post("/post/`postId`/toggleMark")
@@ -345,7 +460,7 @@ class PostController extends Controller
             $pipe->ZREM('bangumi_'.$bangumiId.'_posts_new_ids', $postId);
             $pipe->DEL('post_'.$postId);
         });
-        $trendingService = new TrendingService('posts');
+        $trendingService = new PostTrendingService();
         $trendingService->delete($postId);
 
         $job = (new \App\Jobs\Search\Post\Delete($postId));
@@ -355,78 +470,6 @@ class PostController extends Controller
         dispatch($job);
 
         return $this->resNoContent();
-    }
-
-    /**
-     * 最新帖子列表
-     *
-     * @Get("/post/trending/news")
-     *
-     * @Parameters({
-     *      @Parameter("minId", description="看过的帖子里，id 最小的一个", type="integer", required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "total": "总数", "noMore": "没有更多了"}})
-     * })
-     */
-    public function postNews(Request $request)
-    {
-        $minId = intval($request->get('minId')) ?: 0;
-        $take = 10;
-
-        $userId = $this->getAuthUserId();
-        $postTrendingService = new PostTrendingService($userId);
-
-        return $this->resOK($postTrendingService->news($minId, $take));
-    }
-
-    /**
-     * 动态帖子列表
-     *
-     * @Get("/post/trending/active")
-     *
-     * @Parameters({
-     *      @Parameter("seenIds", description="看过的帖子的`ids`, 用','号分割的字符串", type="string", required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "total": "总数", "noMore": "没有更多了"}})
-     * })
-     */
-    public function postActive(Request $request)
-    {
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = 10;
-
-        $userId = $this->getAuthUserId();
-        $postTrendingService = new PostTrendingService($userId);
-
-        return $this->resOK($postTrendingService->active($seen, $take));
-    }
-
-    /**
-     * 热门帖子列表
-     *
-     * @Get("/post/trending/hot")
-     *
-     * @Parameters({
-     *      @Parameter("seenIds", description="看过的帖子的`ids`, 用','号分割的字符串", type="string", required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "total": "总数", "noMore": "没有更多了"}})
-     * })
-     */
-    public function postHot(Request $request)
-    {
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = 10;
-
-        $userId = $this->getAuthUserId();
-        $postTrendingService = new PostTrendingService($userId);
-
-        return $this->resOK($postTrendingService->hot($seen, $take));
     }
 
     public function trialList()

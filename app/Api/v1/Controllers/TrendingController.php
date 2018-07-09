@@ -3,6 +3,8 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\CartoonRoleRepository;
+use App\Api\V1\Services\Trending\ImageTrendingService;
+use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use Illuminate\Http\Request;
 
@@ -45,5 +47,70 @@ class TrendingController extends Controller
         $transformer = new CartoonRoleTransformer();
 
         return $this->resOK($transformer->trending($result));
+    }
+
+    public function news(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $bangumiId = $request->get('bangumiId') ?: 0;
+        $type = $request->get('type');
+        $take = $request->get('take') ?: 10;
+        $trendingService = $this->getTrendingServiceByType($type, $userId, $bangumiId);
+        if (is_null($trendingService))
+        {
+            return $this->resErrBad();
+        }
+
+        $minId = intval($request->get('minId')) ?: 0;
+
+        return $this->resOK($trendingService->news($minId, $take));
+    }
+
+    public function active(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $bangumiId = $request->get('bangumiId') ?: 0;
+        $type = $request->get('type');
+        $take = $request->get('take') ?: 10;
+        $trendingService = $this->getTrendingServiceByType($type, $userId, $bangumiId);
+        if (is_null($trendingService))
+        {
+            return $this->resErrBad();
+        }
+
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+
+        return $this->resOK($trendingService->active($seen, $take));
+    }
+
+    public function hot(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $bangumiId = $request->get('bangumiId') ?: 0;
+        $type = $request->get('type');
+        $take = $request->get('take') ?: 10;
+        $trendingService = $this->getTrendingServiceByType($type, $userId, $bangumiId);
+        if (is_null($trendingService))
+        {
+            return $this->resErrBad();
+        }
+
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+
+        return $this->resOK($trendingService->hot($seen, $take));
+    }
+
+    protected function getTrendingServiceByType($type, $userId, $bangumiId)
+    {
+        if ($type === 'post')
+        {
+            return new PostTrendingService($userId, $bangumiId);
+        }
+        else if ($type === 'image')
+        {
+            return new ImageTrendingService($userId, $bangumiId);
+        }
+
+        return null;
     }
 }
