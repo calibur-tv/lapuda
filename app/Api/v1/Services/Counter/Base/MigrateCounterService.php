@@ -1,27 +1,19 @@
 <?php
+/**
+ * Created by PhpStorm.
+ * User: yuistack
+ * Date: 2018/7/9
+ * Time: 下午2:33
+ */
 
-namespace App\Api\V1\Services\Counter;
+namespace App\Api\V1\Services\Counter\Base;
+
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
-/**
- * Created by PhpStorm.
- * User: yuistack
- * Date: 2018/6/2
- * Time: 上午8:32
- */
-class CounterService
+class MigrateCounterService
 {
-    /**
-     * 如果 cache 被删了，数据可以恢复吗
-     * 像访问数统计，因为没有单独的表，所以无法恢复
-     * 但是像关注数，因为有单独的关注表，所以能恢复
-     *
-     * 什么时候需要恢复？set or get？how？
-     * get 的时候恢复，在外层实现 migrate 方法
-     */
-    protected $id;
     protected $table;
     protected $field;
     protected $timeout = 60;
@@ -30,41 +22,6 @@ class CounterService
     {
         $this->table = $tableName;
         $this->field = $filedName;
-    }
-
-    public function get($id)
-    {
-        $this->id = $id;
-        $cacheKey = $this->cacheKey($id);
-
-        if (Redis::EXISTS($cacheKey))
-        {
-            return Redis::get($cacheKey);
-        }
-
-        $count = $this->migrate($id);
-        if (false === $count)
-        {
-            $count = DB::table($this->table)
-                ->where('id', $id)
-                ->pluck($this->field)
-                ->first();
-        }
-
-        $this->writeCache($cacheKey, $count);
-        $this->writeCache($this->writeKey($id), time());
-
-        return $count;
-    }
-
-    public function batchGet($list, $key)
-    {
-        foreach ($list as $i => $item)
-        {
-            $list[$i][$key] = (int)$this->get($item['id']);
-        }
-
-        return $list;
     }
 
     public function add($id, $num = 1)
@@ -93,17 +50,45 @@ class CounterService
 
             return $result;
         }
-
-        DB::table($this->table)
-            ->where('id', $id)
-            ->increment($this->field, $num);
+        else
+        {
+            DB::table($this->table)
+                ->where('id', $id)
+                ->increment($this->field, $num);
+        }
 
         return $this->get($id);
     }
 
-    public function migrate($id)
+    public function get($id)
     {
-        return false;
+        $this->id = $id;
+        $cacheKey = $this->cacheKey($id);
+
+        if (Redis::EXISTS($cacheKey))
+        {
+            return Redis::get($cacheKey);
+        }
+
+        $count = DB::table($this->table)
+            ->where('id', $id)
+            ->pluck($this->field)
+            ->first();
+
+        $this->writeCache($cacheKey, $count);
+        $this->writeCache($this->writeKey($id), time());
+
+        return $count;
+    }
+
+    public function batchGet($list, $key)
+    {
+        foreach ($list as $i => $item)
+        {
+            $list[$i][$key] = (int)$this->get($item['id']);
+        }
+
+        return $list;
     }
 
     protected function writeCache($key, $value)

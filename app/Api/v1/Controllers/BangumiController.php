@@ -18,7 +18,6 @@ use App\Api\V1\Transformers\PostTransformer;
 use App\Models\Bangumi;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\PostRepository;
-use App\Api\V1\Repositories\TagRepository;
 use App\Models\Image;
 use App\Models\Video;
 use App\Services\OpenSearch\Search;
@@ -705,7 +704,6 @@ class BangumiController extends Controller
                 'search' => $request->get('alias')
             ]) : 'null',
             'end' => $request->get('end'),
-            'collection_id' => $request->get('collection_id'),
             'published_at' => $request->get('published_at'),
             'others_site_video' => $request->get('others_site_video'),
             'has_cartoon' => $request->get('has_cartoon'),

@@ -5,11 +5,12 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Counter\ImageViewCounter;
-use App\Api\V1\Services\Counter\Stats\TotalImageCount;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
+use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\AlbumImage;
@@ -17,14 +18,11 @@ use App\Models\Bangumi;
 use App\Models\Banner;
 use App\Models\Image;
 use App\Models\ImageTag;
-use App\Models\ImageV2;
 use App\Services\Geetest\Captcha;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
-use Mews\Purifier\Facades\Purifier;
 
 /**
  * @Resource("图片相关接口")
@@ -84,246 +82,6 @@ class ImageController extends Controller
         $repository = new ImageRepository();
 
         return $this->resOK($repository->uptoken());
-    }
-
-    /**
-     * 上传相册图片时，可选的 tag s和 size 列表
-     *
-     * @Get("/image/uploadType")
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"size": "可选的图片尺寸分类", "tags": "可选的图片标签分类"}})
-     * })
-     */
-    public function uploadType()
-    {
-        $repository = new ImageRepository();
-
-        return $this->resOK($repository->uploadImageTypes());
-    }
-
-    /**
-     * 上传相册图片
-     *
-     * > 图片对象示例：
-     * 1. `key` 七牛传图后得到的 key，不包含图片地址的 host，如一张图片 image.calibur.tv/user/1/avatar.png，七牛返回的 key 是：user/1/avatar.png，将这个 key 传到后端
-     * 2. `width` 图片的宽度，七牛上传图片后得到
-     * 3. `height` 图片的高度，七牛上传图片后得到
-     * 4. `size` 图片的尺寸，七牛上传图片后得到
-     * 5. `type` 图片的类型，七牛上传图片后得到
-     *
-     * @Post("/image/upload")
-     *
-     * @Parameters({
-     *      @Parameter("bangumiId", description="所选的番剧 id（bangumi.id）", type="integer", required=true),
-     *      @Parameter("creator", description="是否是原创", type="boolean", required=true),
-     *      @Parameter("images", description="图片对象列表", type="array", required=true),
-     *      @Parameter("size", description="所选的尺寸 id（size.id）", type="integer", required=true),
-     *      @Parameter("tags", description="所选的标签 id（tag.id）", type="integer", required=true),
-     *      @Parameter("roleId", description="所选的角色 id（role.id）", type="integer", required=true),
-     *      @Parameter("albumId", description="所选的相册 id（album.id）", type="integer", required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(201, body={"code": 0, "data": "图片对象列表"}),
-     *      @Response(400, body={"code": 40003, "message": "参数错误"})
-     * })
-     */
-    public function upload(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'bangumiId' => 'required|integer',
-            'creator' => 'required|boolean',
-            'images' => 'required|array',
-            'size' => 'required|integer',
-            'tags' => 'required|integer',
-            'roleId' => 'required|integer',
-            'albumId' => 'required|integer'
-        ]);
-
-        if ($validator->fails())
-        {
-            return $this->resErrParams($validator);
-        }
-
-        $userId = $this->getAuthUserId();
-        $albumId = $request->get('albumId');
-        $images = $request->get('images');
-        $bangumiId = $request->get('bangumiId');
-        $roleId = $request->get('roleId');
-        $sizeId = $request->get('size');
-        $creator = $request->get('creator');
-        $tagId = $request->get('tags');
-
-        $isCartoon = false;
-        if ($albumId)
-        {
-            $albumData = Image::where('id', $albumId)->pluck('is_cartoon')->first();
-            if ($albumData)
-            {
-                $isCartoon = true;
-            }
-        }
-
-        $now = Carbon::now();
-        $ids = [];
-
-        foreach ($images as $item)
-        {
-            $id = Image::insertGetId([
-                'user_id' => $userId,
-                'bangumi_id' => $bangumiId,
-                'url' => $item['key'],
-                'width' => $item['width'],
-                'height' => $item['height'],
-                'role_id' => $roleId,
-                'size_id' => $sizeId,
-                'creator' => $creator,
-                'image_count' => 0,
-                'album_id' => $albumId,
-                'created_at' => $now,
-                'updated_at' => $now,
-                'state' => $isCartoon ? 1 : 0
-            ]);
-
-            ImageTag::create([
-                'image_id' => $id,
-                'tag_id' => $tagId
-            ]);
-
-            $ids[] = $id;
-
-            if (!$isCartoon)
-            {
-                // 漫画不进审核
-                $job = (new \App\Jobs\Trial\Image\Create($id));
-                dispatch($job);
-            }
-        }
-
-        $cacheKey = 'user_' . $userId . '_image_ids';
-        if (Redis::EXISTS($cacheKey))
-        {
-            Redis::LPUSH($cacheKey, $ids);
-        }
-
-        if ($albumId)
-        {
-            Image::where('id', $albumId)->increment('image_count', count($ids));
-            $cacheKey = 'user_image_' . $albumId;
-            if (Redis::EXISTS($cacheKey))
-            {
-                Redis::HINCRBYFLOAT($cacheKey, 'image_count', count($ids));
-            }
-
-            $images = Image::where('id', $albumId)->pluck('images')->first();
-            if (is_null($images))
-            {
-                Image::where('id', $albumId)
-                    ->update([
-                        'images' => implode(',', $ids)
-                    ]);
-
-                // 第一次传图
-                $job = (new \App\Jobs\Push\Baidu('album/' . $albumId));
-                dispatch($job);
-            }
-            else
-            {
-                Image::where('id', $albumId)
-                    ->update([
-                        'images' => $images . ',' . implode(',', $ids)
-                    ]);
-
-                // 不是第一次传图
-                $job = (new \App\Jobs\Push\Baidu('album/' . $albumId, 'update'));
-                dispatch($job);
-            }
-            Redis::DEL('image_album_' . $albumId . '_images');
-        }
-
-        $repository = new ImageRepository();
-        $transformer = new ImageTransformer();
-        $list = $repository->list($ids);
-        foreach ($list as $i => $item)
-        {
-            $list[$i]['liked'] = false;
-        }
-
-        $totalImageCount = new TotalImageCount();
-        $totalImageCount->add(count($images));
-
-        return $this->resCreated($transformer->waterfall($list));
-    }
-
-    /**
-     * 编辑图片
-     *
-     * @Post("/image/edit")
-     *
-     * @Parameters({
-     *      @Parameter("id", description="图片的 id", type="integer", required=true),
-     *      @Parameter("bangumiId", description="所选的番剧 id（bangumi.id）", type="integer", required=true),
-     *      @Parameter("size", description="所选的尺寸 id（size.id）", type="integer", required=true),
-     *      @Parameter("tags", description="所选的标签 id（tag.id）", type="integer", required=true),
-     *      @Parameter("roleId", description="所选的角色 id（role.id）", type="integer", required=true),
-     * })
-     *
-     * @Transaction({
-     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(200, body={"code": 0, "data": "新的图片对象"}),
-     *      @Response(400, body={"code": 40003, "message": "参数错误"})
-     * })
-     */
-    public function editImage(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'id' => 'required|integer',
-            'bangumiId' => 'required|integer',
-            'size' => 'required|integer',
-            'tags' => 'required|integer',
-            'roleId' => 'required|integer'
-        ]);
-
-        if ($validator->fails())
-        {
-            return $this->resErrParams($validator);
-        }
-
-        $userId = $this->getAuthUserId();
-        $imageId = $request->get('id');
-
-        $image = Image::whereRaw('id = ? and user_id = ?', [$imageId, $userId])->first();
-
-        if (is_null($image))
-        {
-            return $this->resErrNotFound();
-        }
-
-        $image->update([
-            'bangumi_id' => $request->get('bangumiId'),
-            'role_id' => $request->get('roleId'),
-            'size_id' => $request->get('size')
-        ]);
-
-        ImageTag::where('image_id', $imageId)->delete();
-
-        ImageTag::create([
-            'image_id' => $imageId,
-            'tag_id' => $request->get('tags')
-        ]);
-
-        Redis::DEL('user_image_' . $imageId . '_meta');
-        Redis::DEL('user_image_' . $imageId);
-
-        $imageRepository = new ImageRepository();
-        $transformer = new ImageTransformer();
-
-        $result = $imageRepository->item($imageId);
-        $result['liked'] = false;
-
-        return $this->resOK($transformer->waterfall([$result])[0]);
     }
 
     /**
@@ -454,91 +212,7 @@ class ImageController extends Controller
         return $this->resCreated(true);
     }
 
-    /**
-     * 新建相册
-     *
-     * @Post("/image/createAlbum")
-     *
-     * @Parameters({
-     *      @Parameter("bangumiId", description="所选的番剧 id（bangumi.id）", type="integer", required=true),
-     *      @Parameter("creator", description="是否是原创", type="boolean", required=true),
-     *      @Parameter("isCartoon", description="是不是漫画", type="boolean", required=true),
-     *      @Parameter("name", description="相册名`20字以内`", type="string", required=true),
-     *      @Parameter("url", description="封面图片的 url，不包含`host`", type="string", required=true),
-     *      @Parameter("width", description="封面图片的宽度", type="integer", required=true),
-     *      @Parameter("height", description="封面图片的高度", type="integer", required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(201, body={"code": 0, "data": "相册对象"}),
-     *      @Response(400, body={"code": 40003, "message": "参数错误"})
-     * })
-     */
     public function createAlbum(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'bangumiId' => 'required|integer',
-            'isCartoon' => 'required|boolean',
-            'name' => 'string|max:20',
-            'url' => 'string',
-            'width' => 'required|integer',
-            'height' => 'required|integer',
-            'creator' => 'required|boolean'
-        ]);
-
-        if ($validator->fails())
-        {
-            return $this->resErrParams($validator);
-        }
-
-        $isCartoon = $request->get('isCartoon');
-        $bangumiId = $request->get('bangumiId');
-
-        if ($isCartoon && !$bangumiId)
-        {
-            return $this->resErrBad('漫画必须选择番剧');
-        }
-
-        $name = $request->get('name') ? $request->get('name') : date('y-m-d H:i:s',time());
-        $userId = $this->getAuthUserId();
-
-        $image = Image::create([
-            'user_id' => $userId,
-            'bangumi_id' => $bangumiId,
-            'name' => Purifier::clean($name),
-            'url' => $request->get('url'),
-            'is_cartoon' => $isCartoon,
-            'creator' => $request->get('creator'),
-            'image_count' => 1,
-            'width' => $request->get('width'),
-            'height' => $request->get('height'),
-            'size_id' => 0
-        ]);
-
-        if ($isCartoon)
-        {
-            $cartoonText = Bangumi::where('id', $bangumiId)->pluck('cartoon')->first();
-
-            Bangumi::where('id', $bangumiId)
-                ->update([
-                   'cartoon' => $cartoonText ? $cartoonText . ',' . $image['id'] : (String)$image['id']
-                ]);
-        }
-        else
-        {
-            // 漫画不进审核
-            $job = (new \App\Jobs\Trial\Image\Create($image['id']));
-            dispatch($job);
-        }
-
-        Redis::DEL('user_' . $userId . '_image_albums');
-        $transformer = new ImageTransformer();
-
-        return $this->resCreated($transformer->albums([$image->toArray()])[0]);
-    }
-
-    public function createAlbum_V2(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'bangumi_id' => 'required|integer',
@@ -615,7 +289,7 @@ class ImageController extends Controller
         return $this->resCreated($imageTransformer->choiceUserAlbum([$album])[0]);
     }
 
-    public function uploadImage_v2(Request $request)
+    public function uploadImage(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'bangumi_id' => 'required|integer',
@@ -701,14 +375,14 @@ class ImageController extends Controller
         }
 
         $imageRepository = new ImageRepository();
-        $album = $imageRepository->itemV2($albumId);
+        $album = $imageRepository->item($albumId);
 
         if (is_null($album) || $album['user_id'] != $userId)
         {
             return $this->resErrNotFound();
         }
 
-        if ($album['is_cartoon'] == 1)
+        if ($album['is_cartoon'])
         {
             $bangumiManager = new BangumiManager();
             if (!$bangumiManager->isOwner($album['bangumi_id'], $userId))
@@ -722,26 +396,28 @@ class ImageController extends Controller
             ->pluck('id')
             ->toArray();
 
-        if (is_null($album['image_ids']))
+        if ($album['image_count'])
         {
-            ImageV2::where('id', $albumId)
+            $imageIds = Image::where('id', $albumId)
+                ->pluck('image_ids');
+
+            $oldIds = explode(',', $imageIds);
+            $newIds = array_diff($nowIds, $oldIds);
+
+            Image::where('id', $albumId)
                 ->update([
-                    'image_ids' => implode(',', $nowIds)
+                    'image_ids' => $imageIds . ',' . implode(',', $newIds)
                 ]);
         }
         else
         {
-            $oldIds = explode(',', $album['image_ids']);
-            $newIds = array_diff($nowIds, $oldIds);
-
-            ImageV2::where('id', $albumId)
+            Image::where('id', $albumId)
                 ->update([
-                    'image_ids' => $album['image_ids'] . ',' . implode(',', $newIds)
+                    'image_ids' => implode(',', $nowIds)
                 ]);
         }
 
-
-        // TODO：review images process
+        // TODO：review images process，先发后审
 
         return $this->resNoContent();
     }
@@ -750,7 +426,7 @@ class ImageController extends Controller
     {
         $userId = $this->getAuthUserId();
 
-        $albums = ImageV2::where('user_id', $userId)
+        $albums = Image::where('user_id', $userId)
             ->where('is_album', 1)
             ->select('id', 'name', 'bangumi_id', 'url')
             ->get()
@@ -759,6 +435,42 @@ class ImageController extends Controller
         $imageTransformer = new ImageTransformer();
 
         return $this->resOK($imageTransformer->choiceUserAlbum($albums));
+    }
+
+    public function users(Request $request)
+    {
+        $page = $request->get('page') ?: 0;
+        $zone = $request->get('zone');
+        $take = 12;
+
+        $imageRepository = new ImageRepository();
+        $userId = $imageRepository->getUserIdByZone($zone);
+
+        if (!$userId)
+        {
+            return $this->resErrNotFound();
+        }
+
+        $idsObj = $imageRepository->getUserImageIds($userId, $page, $take);
+        $list = $imageRepository->list($idsObj['ids']);
+        $imageViewCounter = new ImageViewCounter();
+        $imageCommentService = new ImageCommentService();
+        $imageLikeService = new ImageLikeService();
+
+        $list = $imageViewCounter->batchGet($list, 'view_count');
+        $list = $imageCommentService->batchGetCommentCount($list);
+        $list = $imageLikeService->batchTotal($list, 'like_count');
+
+        return $this->resOK([
+            'list' => $list,
+            'total' => $idsObj['total'],
+            'noMore' => $idsObj['noMore']
+        ]);
+    }
+
+    public function bangumiActive(Request $request)
+    {
+
     }
 
     /**
@@ -843,77 +555,6 @@ class ImageController extends Controller
         return $this->resOK($transformer->waterfall([$result])[0]);
     }
 
-    // TODO：trending service
-    // TODO：API Doc
-    public function trendingList(Request $request)
-    {
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = intval($request->get('take')) ?: 12;
-        $size = intval($request->get('size')) ?: 0;
-        $creator = intval($request->get('creator'));
-        $bangumiId = intval($request->get('bangumiId'));
-        $sort = $request->get('sort') ?: 'new';
-        $tags = $request->get('tags') ?: 0;
-
-        $imageRepository = new ImageRepository();
-
-        $ids = Image::whereIn('state', [1, 4])
-            ->whereRaw('album_id = ? and image_count <> ?', [0, 1])
-            ->whereNotIn('images.id', $seen)
-            ->where('is_cartoon', false)
-            ->take($take)
-            ->when($sort === 'new', function ($query)
-            {
-                return $query->latest();
-            }, function ($query)
-            {
-                return $query->orderBy('like_count', 'DESC');
-            })
-            ->when($bangumiId !== -1, function ($query) use ($bangumiId)
-            {
-                return $query->where('bangumi_id', $bangumiId);
-            })
-            ->when($creator !== -1, function ($query) use ($creator)
-            {
-                return $query->where('creator', $creator);
-            })
-            ->when($size, function ($query) use ($size)
-            {
-                return $query->where('size_id', $size);
-            })
-            ->when($tags, function ($query) use ($tags)
-            {
-                return $query->leftJoin('image_tags AS tags', 'images.id', '=', 'tags.image_id')
-                    ->where('tags.tag_id', $tags);
-            })
-            ->pluck('images.id');
-
-        if (empty($ids))
-        {
-            return $this->resOK([
-                'list' => [],
-                'type' => $imageRepository->uploadImageTypes()
-            ]);
-        }
-
-        $transformer = new ImageTransformer();
-
-        $visitorId = $this->getAuthUserId();
-        $list = $imageRepository->list($ids);
-
-        $imageLikeService = new ImageLikeService();
-        foreach ($list as $i => $item)
-        {
-            $list[$i]['liked'] = $imageLikeService->check($visitorId, $item['id'], $item['user_id']);
-            $list[$i]['like_count'] = $imageLikeService->total($item['id']);
-        }
-
-        return $this->resOK([
-            'list' => $transformer->waterfall($list),
-            'type' => $imageRepository->uploadImageTypes()
-        ]);
-    }
-
     /**
      * 相册详情
      *
@@ -991,6 +632,67 @@ class ImageController extends Controller
             'info' => $album,
             'cartoon' => $cartoonList
         ]));
+    }
+
+    public function show($id)
+    {
+        $imageRepository = new ImageRepository();
+        $image = $imageRepository->item($id);
+        if (is_null($image))
+        {
+            return $this->resErrNotFound();
+        }
+        if ($image['is_album'])
+        {
+            $image['images'] = $imageRepository->albumImages($id);
+        }
+        $userId = $this->getAuthUserId();
+
+        $bangumiRepository = new BangumiRepository();
+        $image['bangumi'] = $bangumiRepository->panel($image['bangumi_id'], $userId);
+
+        $imageLikeService = new ImageLikeService();
+        $image['liked'] = $imageLikeService->check($userId, $id, $image['user_id']);
+        $image['like_users'] = $imageLikeService->users($id);
+        $image['like_total'] = $imageLikeService->total($id);
+
+        $imageViewCounter = new ImageViewCounter();
+        $imageViewCounter->add($id);
+
+        return $this->resOK($image);
+    }
+
+    public function trendingNews(Request $request)
+    {
+        $minId = intval($request->get('minId')) ?: 0;
+        $take = 12;
+
+        $userId = $this->getAuthUserId();
+        $imageTrendingService = new ImageTrendingService($userId);
+
+        return $this->resOK($imageTrendingService->news($minId, $take));
+    }
+
+    public function trendingActive(Request $request)
+    {
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = 12;
+
+        $userId = $this->getAuthUserId();
+        $imageTrendingService = new ImageTrendingService($userId);
+
+        return $this->resOK($imageTrendingService->active($seen, $take));
+    }
+
+    public function trendingHot(Request $request)
+    {
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = 12;
+
+        $userId = $this->getAuthUserId();
+        $imageTrendingService = new ImageTrendingService($userId);
+
+        return $this->resOK($imageTrendingService->hot($seen, $take));
     }
 
     /**
@@ -1089,36 +791,6 @@ class ImageController extends Controller
         // 不是第一次传图
         $job = (new \App\Jobs\Push\Baidu('album/' . $id, 'update'));
         dispatch($job);
-
-        return $this->resNoContent();
-    }
-
-    /**
-     * 图片查看大图时的标记
-     *
-     * @Post("/image/viewedMark")
-     *
-     * @Parameters({
-     *      @Parameter("id", description="图片的 id", type="integer", required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Response(204)
-     * })
-     */
-    public function viewedMark(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'id' => 'required|integer|min:1'
-        ]);
-
-        if ($validator->fails())
-        {
-            return $this->resErrParams($validator);
-        }
-
-        $imageViewCounter = new ImageViewCounter();
-        $imageViewCounter->add($request->get('id'));
 
         return $this->resNoContent();
     }

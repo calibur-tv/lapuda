@@ -200,6 +200,7 @@ class VideoController extends Controller
             dispatch($job);
             Redis::DEL('video_' . $videoId);
         }
+        Redis::DEL('bangumi_' . $video['bangumi_id'] . '_videos');
 
         return $this->resNoContent();
     }

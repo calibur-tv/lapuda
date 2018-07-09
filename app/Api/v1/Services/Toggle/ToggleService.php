@@ -3,7 +3,7 @@
 namespace App\Api\V1\Services\Toggle;
 
 use App\Api\V1\Repositories\UserRepository;
-use App\Api\V1\Services\Counter\ToggleCountService;
+use App\Api\V1\Services\Counter\Base\RelationCounterService;
 use App\Api\V1\Transformers\UserTransformer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -19,13 +19,11 @@ class ToggleService extends Repository
 {
     protected $modal;
     protected $table;
-    protected $field;
     protected $needCacheList;
 
-    public function __construct($modalTable, $modalField, $toggleTable, $needCacheList = false)
+    public function __construct($modalTable, $toggleTable, $needCacheList = false)
     {
         $this->modal = $modalTable;
-        $this->field = $modalField;
         $this->table = $toggleTable;
         $this->needCacheList = $needCacheList;
     }
@@ -39,8 +37,8 @@ class ToggleService extends Repository
                 'created_at' => Carbon::now()
             ]);
 
-        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table);
-        $toggleCountService->add($modalId, $count);
+        $relationCounterService = new RelationCounterService($this->table);
+        $relationCounterService->add($modalId, $count);
 
         if ($this->needCacheList)
         {
@@ -58,8 +56,8 @@ class ToggleService extends Repository
             ->where('modal_id', $modalId)
             ->delete();
 
-        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table);
-        $toggleCountService->add($modalId, -1);
+        $relationCounterService = new RelationCounterService($this->table);
+        $relationCounterService->add($modalId, -1);
 
         if ($this->needCacheList)
         {
@@ -124,16 +122,16 @@ class ToggleService extends Repository
 
     public function total($modalId)
     {
-        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table);
+        $relationCounterService = new RelationCounterService($this->table);
 
-        return (int)$toggleCountService->get($modalId);
+        return $relationCounterService->get($modalId);
     }
 
     public function batchTotal($list, $key)
     {
-        $toggleCountService = new ToggleCountService($this->modal, $this->field, $this->table);
+        $relationCounterService = new RelationCounterService($this->table);
 
-        return $toggleCountService->batchGet($list, $key);
+        return $relationCounterService->batchGet($list, $key);
     }
 
     public function users($modalId, $page = 0, $count = 10)
@@ -216,11 +214,11 @@ class ToggleService extends Repository
 
     protected function usersDoCacheKey($userId)
     {
-        return 'user_' . $userId . '_' . $this->table . '_' . $this->field . '_ids';
+        return 'user_' . $userId . '_' . $this->table . '_ids';
     }
 
     protected function doUsersCacheKey($modalId)
     {
-        return $this->table . '_' . $modalId .  '_' . $this->field . '_ids';
+        return $this->table . '_' . $modalId . '_ids';
     }
 }

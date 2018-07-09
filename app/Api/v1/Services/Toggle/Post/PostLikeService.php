@@ -14,6 +14,6 @@ class PostLikeService extends ToggleService
 {
      public function __construct()
      {
-         parent::__construct('posts', 'like_count', 'post_like', true);
+         parent::__construct('posts', 'post_like', true);
      }
 }

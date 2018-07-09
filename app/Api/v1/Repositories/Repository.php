@@ -9,6 +9,7 @@
 namespace App\Api\V1\Repositories;
 
 
+use App\Models\User;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Cache;
 
@@ -280,5 +281,18 @@ class Repository
         }
 
         return $day;
+    }
+
+    public function getUserIdByZone($zone, $force = false)
+    {
+        $userId = User::where('zone', $zone)
+            ->when($force, function ($query)
+            {
+                return $query->withTrashed();
+            })
+            ->pluck('id')
+            ->first();
+
+        return is_null($userId) ? 0 : $userId;
     }
 }

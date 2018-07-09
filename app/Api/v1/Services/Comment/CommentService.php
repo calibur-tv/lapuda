@@ -9,7 +9,7 @@
 namespace App\Api\V1\Services\Comment;
 
 use App\Api\V1\Repositories\Repository;
-use App\Api\V1\Services\Counter\CommentCounterService;
+use App\Api\V1\Services\Counter\Base\RelationCounterService;
 use App\Api\V1\Services\Toggle\ToggleService;
 use App\Api\V1\Transformers\CommentTransformer;
 use Carbon\Carbon;
@@ -416,7 +416,6 @@ class CommentService extends Repository
     {
         $toggleService = new ToggleService(
             $this->table,
-            $this->comment_count_field,
             $this->like_table
         );
 
@@ -561,17 +560,12 @@ class CommentService extends Repository
     {
         return new ToggleService(
             $this->table,
-            $this->comment_count_field,
             $this->like_table
         );
     }
 
     protected function getCommentCounterService()
     {
-        return new CommentCounterService(
-            $this->table,
-            $this->comment_count_field,
-            $this->modal_table
-        );
+        return new RelationCounterService($this->table);
     }
 }

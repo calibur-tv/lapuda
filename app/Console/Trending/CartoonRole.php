@@ -35,5 +35,7 @@ class CartoonRole extends Command
     {
         $repository = new CartoonRoleRepository();
         $repository->trendingIds(true);
+
+        return true;
     }
 }

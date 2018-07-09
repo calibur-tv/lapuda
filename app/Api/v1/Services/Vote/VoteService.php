@@ -2,10 +2,6 @@
 
 namespace App\Api\V1\Services\Vote;
 
-use App\Api\V1\Repositories\UserRepository;
-use App\Api\V1\Services\Counter\ToggleCountService;
-use App\Api\V1\Services\Counter\VoteCountService;
-use App\Api\V1\Transformers\UserTransformer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Api\V1\Repositories\Repository;
@@ -238,9 +234,9 @@ class VoteService extends Repository
 
     public function voteTotal($modalId)
     {
-        $counterService = new VoteCountService($this->modal_table, $this->modal_field, $this->vote_table);
-
-        return $counterService->get($modalId);
+//        $counterService = new VoteCountService($this->modal_table, $this->modal_field, $this->vote_table);
+//
+//        return $counterService->get($modalId);
     }
 
     public function hotsUserIds($modalId, $seenIds)
@@ -312,8 +308,8 @@ class VoteService extends Repository
 
     protected function changeModalScore($modalId, $score)
     {
-        $counterService = new VoteCountService($this->modal_table, $this->modal_field, $this->vote_table);
-        $counterService->add($modalId, $score);
+//        $counterService = new VoteCountService($this->modal_table, $this->modal_field, $this->vote_table);
+//        $counterService->add($modalId, $score);
     }
 
     protected function firstVoteIt($userId, $modalId, $score)

@@ -2,6 +2,8 @@
 
 namespace App\Api\V1\Services\Counter\Stats;
 
+use App\Api\V1\Services\Counter\Base\TotalCounterService;
+
 /**
  * Created by PhpStorm.
  * User: yuistack

@@ -9,7 +9,9 @@
 namespace App\Api\V1\Services\Counter;
 
 
-class VideoPlayCounter extends CounterService
+use App\Api\V1\Services\Counter\Base\MigrateCounterService;
+
+class VideoPlayCounter extends MigrateCounterService
 {
     public function __construct()
     {

@@ -14,6 +14,6 @@ class BangumiFollowService extends ToggleService
 {
     public function __construct()
     {
-        parent::__construct('bangumis', 'count_like', 'bangumi_follows', true);
+        parent::__construct('bangumis', 'bangumi_follows', true);
     }
 }

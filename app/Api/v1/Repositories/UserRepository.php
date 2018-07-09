@@ -22,8 +22,6 @@ use App\Models\CartoonRoleFans;
 use App\Models\Image;
 use App\Models\Notifications;
 use App\Models\Post;
-use App\Models\PostImages;
-use App\Models\PostMark;
 use App\Models\User;
 use App\Models\UserCoin;
 use App\Models\UserSign;
@@ -57,19 +55,6 @@ class UserRepository extends Repository
 
             return $user;
         });
-    }
-
-    public function getUserIdByZone($zone, $force = false)
-    {
-        $userId = User::where('zone', $zone)
-            ->when($force, function ($query)
-            {
-                return $query->withTrashed();
-            })
-            ->pluck('id')
-            ->first();
-
-        return is_null($userId) ? 0 : $userId;
     }
 
     public function list($ids)

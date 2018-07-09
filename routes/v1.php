@@ -211,31 +211,26 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/image'], function ($api)
     {
-        $api->get('/banner', 'App\Api\V1\Controllers\ImageController@banner');
+        $api->group(['prefix' => '/{id}'], function ($api)
+        {
+            $api->get('/show', 'App\Api\V1\Controllers\ImageController@show');
+        });
 
-        $api->get('/uploadType', 'App\Api\V1\Controllers\ImageController@uploadType');
+        $api->get('/banner', 'App\Api\V1\Controllers\ImageController@banner');
 
         $api->get('/captcha', 'App\Api\V1\Controllers\ImageController@captcha');
 
         $api->get('/uptoken', 'App\Api\V1\Controllers\ImageController@uptoken')->middleware(['jwt.auth']);
 
-        $api->post('/upload', 'App\Api\V1\Controllers\ImageController@upload')->middleware(['jwt.auth']);
-
         $api->post('/delete', 'App\Api\V1\Controllers\ImageController@deleteImage')->middleware(['jwt.auth']);
 
         $api->post('/report', 'App\Api\V1\Controllers\ImageController@report');
 
-        $api->post('/edit', 'App\Api\V1\Controllers\ImageController@editImage')->middleware(['jwt.auth']);
-
         $api->post('/toggleLike', 'App\Api\V1\Controllers\ImageController@toggleLike')->middleware(['jwt.auth']);
-
-        $api->post('/createAlbum', 'App\Api\V1\Controllers\ImageController@createAlbum')->middleware(['jwt.auth']);
 
         $api->post('/editAlbum', 'App\Api\V1\Controllers\ImageController@editAlbum')->middleware(['jwt.auth']);
 
-        $api->post('/viewedMark', 'App\Api\V1\Controllers\ImageController@viewedMark');
-
-        $api->get('/trendingList', 'App\Api\V1\Controllers\ImageController@trendingList');
+        $api->get('/users', 'App\Api\V1\Controllers\ImageController@users');
 
         $api->group(['prefix' => '/album/{id}'], function ($api)
         {
@@ -246,11 +241,20 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/deleteImage', 'App\Api\V1\Controllers\ImageController@deleteAlbumImage')->middleware(['jwt.auth']);
         });
 
-        $api->post('/single/upload', 'App\Api\V1\Controllers\ImageController@uploadImage_v2')->middleware(['jwt.auth']);
+        $api->group(['prefix' => '/trending'], function ($api)
+        {
+            $api->get('/news', 'App\Api\V1\Controllers\ImageController@trendingNews');
+
+            $api->get('/active', 'App\Api\V1\Controllers\ImageController@trendingActive');
+
+            $api->get('/hot', 'App\Api\V1\Controllers\ImageController@trendingHot');
+        });
+
+        $api->post('/single/upload', 'App\Api\V1\Controllers\ImageController@uploadImage')->middleware(['jwt.auth']);
 
         $api->post('/album/upload', 'App\Api\V1\Controllers\ImageController@uploadAlbumImage')->middleware(['jwt.auth']);
 
-        $api->post('/album/create', 'App\Api\V1\Controllers\ImageController@createAlbum_V2')->middleware(['jwt.auth']);
+        $api->post('/album/create', 'App\Api\V1\Controllers\ImageController@createAlbum')->middleware(['jwt.auth']);
 
         $api->get('/album/users', 'App\Api\V1\Controllers\ImageController@userAlbums')->middleware(['jwt.auth']);
     });

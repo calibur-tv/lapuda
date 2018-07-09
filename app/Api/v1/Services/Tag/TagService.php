@@ -19,7 +19,9 @@ class TagService extends Repository
     protected $relation_table;
     protected $max_count;
     protected $all_tag_cache_key;
-
+    /**
+     * TODO：支持 Ban-Pick Vote
+     */
     public function __construct($tagTable, $relationTable, $maxCount = 0)
     {
         $this->tag_table = $tagTable;

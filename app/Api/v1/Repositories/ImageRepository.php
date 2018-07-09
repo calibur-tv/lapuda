@@ -8,10 +8,10 @@
 
 namespace App\Api\V1\Repositories;
 
+use App\Api\V1\Transformers\ImageTransformer;
+use App\Models\AlbumImage;
 use App\Models\Banner;
 use App\Models\Image;
-use App\Models\ImageTag;
-use App\Models\ImageV2;
 use App\Models\Tag;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +23,7 @@ class ImageRepository extends Repository
     {
         $now = Carbon::now();
 
-        $newId = DB::table('images_v2')
+        $newId = DB::table('images')
             ->insertGetId([
                 'user_id' => $params['user_id'],
                 'bangumi_id' => $params['bangumi_id'],
@@ -41,70 +41,9 @@ class ImageRepository extends Repository
                 'updated_at' => $now
             ]);
 
-        // TODO: review album process
+        // TODO: review album process，先审后发
 
         return $newId;
-    }
-
-    public function item($id)
-    {
-        if (!$id)
-        {
-            return null;
-        }
-
-        $result = $this->RedisHash('user_image_' . $id, function () use ($id)
-        {
-            $image = Image::where('id', $id)->first();
-            if (is_null($image))
-            {
-                return null;
-            }
-
-            $image = $image->toArray();
-            $image['image_count'] = $image['image_count'] ? ($image['image_count'] - 1) : 0;
-            $image['width'] = $image['width'] ? $image['width'] : 200;
-            $image['height'] = $image['height'] ? $image['height'] : 200;
-
-            return $image;
-        }, 'm');
-
-        if (is_null($result))
-        {
-            return null;
-        }
-
-        $meta = $this->Cache('user_image_' . $id . '_meta', function () use ($result)
-        {
-            $tagIds = ImageTag::where('image_id', $result['id'])->pluck('tag_id');
-
-            $bangumiRepository = new BangumiRepository();
-            $cartoonRoleRepository = new CartoonRoleRepository();
-            $userRepository = new UserRepository();
-
-            return [
-                'user' => $userRepository->item($result['user_id']),
-                'role' => $result['role_id'] ? $cartoonRoleRepository->item($result['role_id']) : null,
-                'bangumi' => $result['bangumi_id'] ? $bangumiRepository->item($result['bangumi_id']) : null,
-                'tags' => Tag::whereIn('id', $tagIds)->select('id', 'name')->get(),
-                'size' => $result['image_count'] ? null : Tag::where('id', $result['size_id'])->select('id', 'name')->first()
-            ];
-        });
-
-        return array_merge($result, $meta);
-    }
-
-    public function list($ids)
-    {
-        $result = [];
-        foreach ($ids as $id)
-        {
-            $item = $this->item($id);
-            if ($item) {
-                $result[] = $item;
-            }
-        }
-        return $result;
     }
 
     public function uptoken()
@@ -201,20 +140,7 @@ class ImageRepository extends Repository
         }, 'm');
     }
 
-    public function albumImages($albumId, $imageIds)
-    {
-        return $this->Cache('image_album_' . $albumId . '_' . $imageIds, function () use ($imageIds)
-        {
-            $ids = explode(',', $imageIds);
-
-            return Image::whereIn('id', $ids)
-                ->whereIn('state', [1, 2])
-                ->get()
-                ->toArray();
-        });
-    }
-
-    public function itemV2($id)
+    public function item($id)
     {
         if (!$id)
         {
@@ -223,7 +149,85 @@ class ImageRepository extends Repository
 
         return $this->Cache('image_' . $id, function () use ($id)
         {
-            return ImageV2::find($id);
+            $image = Image::find($id);
+
+            if (is_null($image))
+            {
+                return null;
+            }
+
+            $image = $image->toArray();
+            $userRepository = new UserRepository();
+            $user = $userRepository->item($image['user_id']);
+
+            if (is_null($user))
+            {
+                return null;
+            }
+            $image['user'] = $user;
+
+            $bangumiRepository = new BangumiRepository();
+            $bangumi = $bangumiRepository->item($image['bangumi_id']);
+
+            if (is_null($bangumi))
+            {
+                return null;
+            }
+            $image['bangumi'] = $bangumi;
+
+            $image['image_count'] = $image['is_album'] == 1
+                ? is_null($image['image_ids']) ? 0 : count(explode(',', $image['image_ids']))
+                : 1;
+
+            $imageTransformer = new ImageTransformer();
+
+            return $imageTransformer->show($image);
+        });
+    }
+
+    public function list($ids)
+    {
+        $result = [];
+        foreach ($ids as $id)
+        {
+            $item = $this->item($id);
+            if ($item)
+            {
+                $result[] = $item;
+            }
+        }
+        return $result;
+    }
+
+    public function albumImages($albumId)
+    {
+        if (!$albumId)
+        {
+            return [];
+        }
+
+        return $this->Cache('album_' . $albumId . '_images', function () use ($albumId)
+        {
+            $imageIds = Image::where('id', $albumId)->pluck('image_ids');
+            if (is_null($imageIds))
+            {
+                return [];
+            }
+
+            $ids = explode(',', $imageIds);
+            $images = AlbumImage::whereIn('id', $ids)
+                ->select('id', 'url', 'width', 'height', 'size', 'type')
+                ->get()
+                ->toArray();
+
+            if (empty($images))
+            {
+                return [];
+            }
+
+            $imageTransformer = new ImageTransformer();
+
+            return $imageTransformer->album($images);
         });
     }
 
@@ -258,10 +262,27 @@ class ImageRepository extends Repository
 
     public function checkHasPartCartoon($bangumiId, $part)
     {
-        return (int)ImageV2::where('is_cartoon', 1)
+        return (int)Image::where('is_cartoon', 1)
             ->where('bangumi_id', $bangumiId)
             ->where('part', $part)
             ->whereNotNull('image_ids')
             ->count();
+    }
+
+    public function getUserImageIds($userId, $page, $take)
+    {
+        $ids = $this->RedisList($this->userImagesCacheKey($userId), function () use ($userId)
+        {
+            return Image::where('user_id', $userId)
+                ->orderBy('created_at', 'DESC')
+                ->pluck('id');
+        });
+
+        return $this->filterIdsByPage($ids, $page, $take);
+    }
+
+    public function userImagesCacheKey($userId)
+    {
+        return 'user_' . $userId . '_image_ids';
     }
 }
