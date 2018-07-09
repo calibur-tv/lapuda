@@ -273,17 +273,4 @@ class ImageTransformer extends Transformer
             ];
         });
     }
-
-    public function choiceUserAlbum($list)
-    {
-        return $this->collection($list, function ($album)
-        {
-            return [
-                'id' => $album['id'],
-                'bangumi_id' => $album['bangumi_id'],
-                'name' => $album['name'],
-                'url' => $album['url']
-            ];
-        });
-    }
 }

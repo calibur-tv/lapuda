@@ -245,9 +245,9 @@ $api->version(['v1', 'latest'], function ($api)
             $api->get('/hot', 'App\Api\V1\Controllers\ImageController@trendingHot');
         });
 
-        $api->post('/single/upload', 'App\Api\V1\Controllers\ImageController@uploadImage')->middleware(['jwt.auth']);
+        $api->post('/single/upload', 'App\Api\V1\Controllers\ImageController@uploadSingleImage')->middleware(['jwt.auth']);
 
-        $api->post('/album/upload', 'App\Api\V1\Controllers\ImageController@uploadAlbumImage')->middleware(['jwt.auth']);
+        $api->post('/album/upload', 'App\Api\V1\Controllers\ImageController@uploadAlbumImages')->middleware(['jwt.auth']);
 
         $api->post('/album/create', 'App\Api\V1\Controllers\ImageController@createAlbum')->middleware(['jwt.auth']);
 

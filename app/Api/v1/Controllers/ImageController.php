@@ -278,18 +278,15 @@ class ImageController extends Controller
             'part' => $part
         ]);
 
-        $imageTransformer = new ImageTransformer();
-        $album = [
-            'id' => $albumId,
-            'bangumi_id' => $bangumiId,
-            'name' => $name,
-            'url' => $url
-        ];
+        if (!$albumId)
+        {
+            return $this->resErrBad('封面图正在审核中，暂时不能使用');
+        }
 
-        return $this->resCreated($imageTransformer->choiceUserAlbum([$album])[0]);
+        return $this->resCreated($imageRepository->item($albumId));
     }
 
-    public function uploadImage(Request $request)
+    public function uploadSingleImage(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'bangumi_id' => 'required|integer',
@@ -333,10 +330,18 @@ class ImageController extends Controller
             'part' => 0
         ]);
 
+        if (!$newId)
+        {
+            return $this->resErrBad('图片正在审核中，暂时不能访问');
+        }
+
+        // TODO：SEO
+        // TODO：search
+
         return $this->resCreated($newId);
     }
 
-    public function uploadAlbumImage(Request $request)
+    public function uploadAlbumImages(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'album_id' => 'required|integer',
@@ -411,14 +416,18 @@ class ImageController extends Controller
         }
         else
         {
+            $newIds = $nowIds;
+
             Image::where('id', $albumId)
                 ->update([
-                    'image_ids' => implode(',', $nowIds)
+                    'image_ids' => implode(',', $newIds)
                 ]);
         }
 
         // TODO：review images process，先发后审
-        // TODO：删除缓存
+        // TODO：SEO
+        Redis::DEL($imageRepository->cacheKeyImageItem($albumId));
+        Redis::DEL($imageRepository->cacheKeyAlbumImages($albumId));
 
         return $this->resNoContent();
     }
@@ -427,15 +436,14 @@ class ImageController extends Controller
     {
         $userId = $this->getAuthUserId();
 
-        $albums = Image::where('user_id', $userId)
+        $albumIds = Image::where('user_id', $userId)
             ->where('is_album', 1)
-            ->select('id', 'name', 'bangumi_id', 'url')
-            ->get()
+            ->pluck('id')
             ->toArray();
 
-        $imageTransformer = new ImageTransformer();
+        $imageRepository = new ImageRepository();
 
-        return $this->resOK($imageTransformer->choiceUserAlbum($albums));
+        return $this->resOK($imageRepository->list($albumIds));
     }
 
     public function users(Request $request)
@@ -551,83 +559,9 @@ class ImageController extends Controller
         return $this->resOK($transformer->waterfall([$result])[0]);
     }
 
-    /**
-     * 相册详情
-     *
-     * @Get("/image/album/`albumId`/show")
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": "相册信息"}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的相册"})
-     * })
-     */
-    public function albumShow($id)
+    public function deleteAlbum()
     {
-        $album = Image::whereRaw('id = ? and album_id = 0 and image_count > 1', [$id])->first();
 
-        if (is_null($album))
-        {
-            return $this->resErrNotFound();
-        }
-
-        $album = $album->toArray();
-        $userId = $this->getAuthUserId();
-
-        $imageRepository = new ImageRepository();
-        $userRepository = new UserRepository();
-
-        $user = $userRepository->item($album['user_id']);
-        $images = $imageRepository->albumImages($id, $album['images']);
-
-        $userTransformer = new UserTransformer();
-
-        $bangumi = null;
-        $bangumiId = $album['bangumi_id'];
-        $cartoonList = [];
-        $bangumiRepository = new BangumiRepository();
-        $bangumi = $bangumiRepository->panel($bangumiId, $userId);
-
-        if (is_null($bangumi))
-        {
-            return null;
-        }
-
-        if ($album['is_cartoon'])
-        {
-            $cartoons = Bangumi::where('id', $bangumiId)->pluck('cartoon')->first();
-
-            $cartoonIds = array_reverse(explode(',', $cartoons));
-            foreach ($cartoonIds as $cartoonId)
-            {
-                $cartoon = Image::where('id', $cartoonId)
-                    ->select('id', 'name')
-                    ->first();
-                if (is_null($cartoon))
-                {
-                    continue;
-                }
-                $cartoonList[] = $cartoon->toArray();
-            }
-        }
-
-        $album['image_count'] = $album['image_count'] - 1;
-
-        $imageLikeService = new ImageLikeService();
-        $album['liked'] = $imageLikeService->check($userId, $id, $album['user_id']);
-        $album['like_count'] = $imageLikeService->total($id);
-        $album['like_users'] = $imageLikeService->users($id);
-
-        $imageViewCounter = new ImageViewCounter();
-        $album['view_count'] = $imageViewCounter->add($id);
-
-        $transformer = new ImageTransformer();
-        return $this->resOK($transformer->albumShow([
-            'user' => $userTransformer->item($user),
-            'bangumi' => $bangumi,
-            'images' => $images,
-            'info' => $album,
-            'cartoon' => $cartoonList
-        ]));
     }
 
     public function show($id)
@@ -666,39 +600,6 @@ class ImageController extends Controller
         return $this->resOK($image);
     }
 
-    public function trendingNews(Request $request)
-    {
-        $minId = intval($request->get('minId')) ?: 0;
-        $take = 12;
-
-        $userId = $this->getAuthUserId();
-        $imageTrendingService = new ImageTrendingService($userId);
-
-        return $this->resOK($imageTrendingService->news($minId, $take));
-    }
-
-    public function trendingActive(Request $request)
-    {
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = 12;
-
-        $userId = $this->getAuthUserId();
-        $imageTrendingService = new ImageTrendingService($userId);
-
-        return $this->resOK($imageTrendingService->active($seen, $take));
-    }
-
-    public function trendingHot(Request $request)
-    {
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = 12;
-
-        $userId = $this->getAuthUserId();
-        $imageTrendingService = new ImageTrendingService($userId);
-
-        return $this->resOK($imageTrendingService->hot($seen, $take));
-    }
-
     /**
      * 相册内图片的排序
      *
@@ -717,19 +618,45 @@ class ImageController extends Controller
      */
     public function albumSort(Request $request, $id)
     {
-        $userId = $this->getAuthUserId();
-        $album = Image::whereRaw('id = ? and album_id = 0 and image_count > 1 and user_id = ?', [$id, $userId])->first();
+        $imageRepository = new ImageRepository();
+        $album = $imageRepository->item($id);
 
         if (is_null($album))
         {
             return $this->resErrNotFound();
         }
 
-        $result = $request->get('result');
-
-        if (!$result)
+        $userId = $this->getAuthUserId();
+        if (!$album['is_cartoon'] && $userId !== $album['user_id'])
         {
+            // 不是漫画且不是创建者
+            return $this->resErrRole();
+        }
+
+        if ($album['is_cartoon'])
+        {
+            $bangumiManager = new BangumiManager();
+            if (!$bangumiManager->isOwner($album['bangumi_id'], $userId))
+            {
+                // 是漫画但不是吧主
+                return $this->resErrRole();
+            }
+        }
+
+        $result = $request->get('result');
+        $newIds = explode(',', $result);
+
+        if (!$result || $album['image_count'] !== count($newIds))
+        {
+            // 排序前后的个数不一致
             return $this->resErrBad();
+        }
+
+        $imageIds = Image::where('id', $id)->pluck('image_ids');
+        if (count(array_diff($newIds, explode(',', $imageIds))))
+        {
+            // 包含了非本相册的图片
+            return $this->resErrRole();
         }
 
         Image::where('id', $id)
@@ -737,7 +664,7 @@ class ImageController extends Controller
                 'images' => $result
             ]);
 
-        Redis::DEL('image_album_' . $id . '_images');
+        Redis::DEL($imageRepository->cacheKeyAlbumImages($id));
 
         return $this->resNoContent();
     }
@@ -760,19 +687,32 @@ class ImageController extends Controller
      */
     public function deleteAlbumImage(Request $request, $id)
     {
-        $userId = $this->getAuthUserId();
-        $album = Image::whereRaw('id = ? and album_id = 0 and image_count > 1 and user_id = ?', [$id, $userId])->first();
-
+        $imageRepository = new ImageRepository();
+        $album = $imageRepository->item($id);
         if (is_null($album))
         {
             return $this->resErrNotFound();
         }
 
-        $result = $request->get('result');
-
-        if (!$result)
+        $userId = $this->getAuthUserId();
+        if ($userId !== $album['user_id'])
         {
-            return $this->resErrBad('至少要保留一张图');
+            return $this->resErrRole();
+        }
+
+        $result = $request->get('result');
+        $newIds = explode(',', $result);
+
+        if (count($newIds) >= $album['image_count'])
+        {
+            return $this->resErrBad();
+        }
+
+        $imageIds = Image::where('id', $id)->pluck('image_ids');
+        if (count(array_diff($newIds, explode(',', $imageIds))))
+        {
+            // 包含了非本相册的图片
+            return $this->resErrRole();
         }
 
         Image::where('id', $id)
@@ -780,21 +720,8 @@ class ImageController extends Controller
                 'images' => $result
             ]);
 
-        Image::where('id', $id)->increment('image_count', -1);
-
-        Image::whereRaw('id = ? and user_id = ?', [$request->get('id'), $userId])->delete();
-
-        Redis::DEL('image_album_' . $id . '_images');
-
-        $cacheKey = 'user_image_' . $id;
-        if (Redis::EXISTS($cacheKey))
-        {
-            Redis::HINCRBYFLOAT($cacheKey, 'image_count', -1);
-        }
-
-        // 不是第一次传图
-        $job = (new \App\Jobs\Push\Baidu('album/' . $id, 'update'));
-        dispatch($job);
+        Redis::DEL($imageRepository->cacheKeyImageItem($id));
+        Redis::DEL($imageRepository->cacheKeyAlbumImages($id));
 
         return $this->resNoContent();
     }

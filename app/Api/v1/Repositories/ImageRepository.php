@@ -13,8 +13,10 @@ use App\Models\AlbumImage;
 use App\Models\Banner;
 use App\Models\Image;
 use App\Models\Tag;
+use App\Services\Trial\ImageFilter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
 class ImageRepository extends Repository
@@ -41,7 +43,33 @@ class ImageRepository extends Repository
                 'updated_at' => $now
             ]);
 
-        // TODO: review album process，先审后发
+        $imageFilter = new ImageFilter();
+        $result = $imageFilter->check($params['url']);
+        if ($result['delete'])
+        {
+            DB::table('images')
+                ->where('id', $newId)
+                ->update([
+                    'state' => $params['user_id'],
+                    'deleted_at' => $now
+                ]);
+
+            return 0;
+        }
+
+        if ($result['review'])
+        {
+            DB::table('images')
+                ->where('id', $newId)
+                ->update([
+                    'state' => $params['user_id']
+                ]);
+        }
+
+        if ($params['is_cartoon'])
+        {
+            Redis::DEL($this->cacheKeyCartoonParts($params['bangumi_id']));
+        }
 
         return $newId;
     }
@@ -147,7 +175,7 @@ class ImageRepository extends Repository
             return null;
         }
 
-        return $this->Cache('image_' . $id, function () use ($id)
+        return $this->Cache($this->cacheKeyImageItem($id), function () use ($id)
         {
             $image = Image::find($id);
 
@@ -206,7 +234,7 @@ class ImageRepository extends Repository
             return [];
         }
 
-        return $this->Cache('album_' . $albumId . '_images', function () use ($albumId)
+        return $this->Cache($this->cacheKeyAlbumImages($albumId), function () use ($albumId)
         {
             $imageIds = Image::where('id', $albumId)->pluck('image_ids');
             if (is_null($imageIds))
@@ -233,7 +261,7 @@ class ImageRepository extends Repository
 
     public function getCartoonParts($bangumiId)
     {
-        return $this->Cache($this->bangumiCartoonPartsCacheKey($bangumiId), function () use ($bangumiId)
+        return $this->Cache($this->cacheKeyCartoonParts($bangumiId), function () use ($bangumiId)
         {
             return Image::where('bangumi_id', $bangumiId)
                 ->where('is_cartoon', true)
@@ -284,7 +312,7 @@ class ImageRepository extends Repository
 
     public function getUserImageIds($userId, $page, $take)
     {
-        $ids = $this->RedisList($this->userImagesCacheKey($userId), function () use ($userId)
+        $ids = $this->RedisList($this->cacheKeyUserImageIds($userId), function () use ($userId)
         {
             return Image::where('user_id', $userId)
                 ->orderBy('created_at', 'DESC')
@@ -294,12 +322,22 @@ class ImageRepository extends Repository
         return $this->filterIdsByPage($ids, $page, $take);
     }
 
-    public function bangumiCartoonPartsCacheKey($bangumiId)
+    public function cacheKeyImageItem($id)
+    {
+        return 'image_' . $id;
+    }
+
+    public function cacheKeyAlbumImages($albumId)
+    {
+        return 'album_' . $albumId . '_images';
+    }
+
+    public function cacheKeyCartoonParts($bangumiId)
     {
         return 'bangumi_' . $bangumiId . '_cartoon_parts';
     }
 
-    public function userImagesCacheKey($userId)
+    public function cacheKeyUserImageIds($userId)
     {
         return 'user_' . $userId . '_image_ids';
     }
