@@ -926,13 +926,21 @@ class ImageController extends Controller
         if ($type === 'image')
         {
             $albumId = AlbumImage::where('id', $id)->pluck('album_id')->first();
-            AlbumImage::where('id', $id)->delete();
+            AlbumImage::withTrashed()->where('id', $id)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => Carbon::now()
+                ]);
             Redis::DEL($imageRepository->cacheKeyAlbumImages($albumId));
         }
         else
         {
-            Image::where('id', $id)->delete();
-            Image::DEL($imageRepository->cacheKeyImageItem($id));
+            Image::withTrashed()->where('id', $id)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => Carbon::now()
+                ]);
+            Redis::DEL($imageRepository->cacheKeyImageItem($id));
         }
 
         return $this->resNoContent();
