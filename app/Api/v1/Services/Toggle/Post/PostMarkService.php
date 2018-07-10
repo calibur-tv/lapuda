@@ -14,6 +14,6 @@ class PostMarkService extends ToggleService
 {
     public function __construct()
     {
-        parent::__construct('posts', 'mark_count', 'post_mark', true);
+        parent::__construct('posts', 'post_mark', true);
     }
 }

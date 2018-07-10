@@ -49,16 +49,11 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->get('/videos', 'App\Api\V1\Controllers\BangumiController@videos');
 
-            $api->group(['prefix' => '/posts'], function ($api)
-            {
-                $api->get('/news', 'App\Api\V1\Controllers\BangumiController@newsPosts');
-
-                $api->get('/top', 'App\Api\V1\Controllers\BangumiController@topPosts');
-            });
+            $api->get('/posts/top', 'App\Api\V1\Controllers\PostController@bangumiTops');
 
             $api->get('/images', 'App\Api\V1\Controllers\BangumiController@images');
 
-            $api->get('/cartoon', 'App\Api\V1\Controllers\BangumiController@cartoon');
+            $api->get('/cartoon', 'App\Api\V1\Controllers\ImageController@cartoon');
 
             $api->post('/toggleFollow', 'App\Api\V1\Controllers\BangumiController@toggleFollow')->middleware(['jwt.auth']);
 
@@ -165,11 +160,11 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/trending'], function ($api)
         {
-            $api->get('/news', 'App\Api\V1\Controllers\PostController@postNews');
+            $api->get('/news', 'App\Api\V1\Controllers\PostController@trendingNews');
 
-            $api->get('/active', 'App\Api\V1\Controllers\PostController@postActive');
+            $api->get('/active', 'App\Api\V1\Controllers\PostController@trendingActive');
 
-            $api->get('/hot', 'App\Api\V1\Controllers\PostController@postHot');
+            $api->get('/hot', 'App\Api\V1\Controllers\PostController@trendingHot');
         });
 
         $api->group(['prefix' => '/manager', 'middleware' => ['jwt.auth']], function ($api)
@@ -211,31 +206,24 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/image'], function ($api)
     {
-        $api->get('/banner', 'App\Api\V1\Controllers\ImageController@banner');
+        $api->group(['prefix' => '/{id}'], function ($api)
+        {
+            $api->get('/show', 'App\Api\V1\Controllers\ImageController@show');
+        });
 
-        $api->get('/uploadType', 'App\Api\V1\Controllers\ImageController@uploadType');
+        $api->get('/banner', 'App\Api\V1\Controllers\ImageController@banner');
 
         $api->get('/captcha', 'App\Api\V1\Controllers\ImageController@captcha');
 
         $api->get('/uptoken', 'App\Api\V1\Controllers\ImageController@uptoken')->middleware(['jwt.auth']);
 
-        $api->post('/upload', 'App\Api\V1\Controllers\ImageController@upload')->middleware(['jwt.auth']);
-
-        $api->post('/delete', 'App\Api\V1\Controllers\ImageController@deleteImage')->middleware(['jwt.auth']);
-
         $api->post('/report', 'App\Api\V1\Controllers\ImageController@report');
-
-        $api->post('/edit', 'App\Api\V1\Controllers\ImageController@editImage')->middleware(['jwt.auth']);
 
         $api->post('/toggleLike', 'App\Api\V1\Controllers\ImageController@toggleLike')->middleware(['jwt.auth']);
 
-        $api->post('/createAlbum', 'App\Api\V1\Controllers\ImageController@createAlbum')->middleware(['jwt.auth']);
-
         $api->post('/editAlbum', 'App\Api\V1\Controllers\ImageController@editAlbum')->middleware(['jwt.auth']);
 
-        $api->post('/viewedMark', 'App\Api\V1\Controllers\ImageController@viewedMark');
-
-        $api->get('/trendingList', 'App\Api\V1\Controllers\ImageController@trendingList');
+        $api->get('/users', 'App\Api\V1\Controllers\ImageController@users');
 
         $api->group(['prefix' => '/album/{id}'], function ($api)
         {
@@ -244,6 +232,26 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/sort', 'App\Api\V1\Controllers\ImageController@albumSort')->middleware(['jwt.auth']);
 
             $api->post('/deleteImage', 'App\Api\V1\Controllers\ImageController@deleteAlbumImage')->middleware(['jwt.auth']);
+        });
+
+        $api->group(['prefix' => '/single', 'middleware' => ['jwt.auth']], function ($api)
+        {
+            $api->post('/upload', 'App\Api\V1\Controllers\ImageController@uploadSingleImage');
+
+            $api->post('/edit', 'App\Api\V1\Controllers\ImageController@editSingleImage');
+        });
+
+        $api->group(['prefix' => '/album', 'middleware' => ['jwt.auth']], function ($api)
+        {
+            $api->post('/upload', 'App\Api\V1\Controllers\ImageController@uploadAlbumImages');
+
+            $api->post('/create', 'App\Api\V1\Controllers\ImageController@createAlbum');
+
+            $api->post('/edit', 'App\Api\V1\Controllers\ImageController@editAlbum');
+
+            $api->post('/delete', 'App\Api\V1\Controllers\ImageController@deleteAlbum');
+
+            $api->get('/users', 'App\Api\V1\Controllers\ImageController@userAlbums');
         });
     });
 
@@ -267,6 +275,12 @@ $api->version(['v1', 'latest'], function ($api)
     $api->group(['prefix' => '/trending'], function ($api)
     {
         $api->get('/cartoon_role', 'App\Api\V1\Controllers\TrendingController@cartoonRole');
+
+        $api->get('/news', 'App\Api\V1\Controllers\TrendingController@news');
+
+        $api->get('/active', 'App\Api\V1\Controllers\TrendingController@active');
+
+        $api->get('/hot', 'App\Api\V1\Controllers\TrendingController@hot');
     });
 
     $api->group(['prefix' => '/admin', 'middleware' => ['jwt.admin']], function ($api)

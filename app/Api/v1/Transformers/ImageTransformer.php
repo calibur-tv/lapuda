@@ -11,6 +11,65 @@ namespace App\Api\V1\Transformers;
 
 class ImageTransformer extends Transformer
 {
+    public function show($data)
+    {
+        return $this->transformer($data, function ($image)
+        {
+            return [
+                'id' => (int)$image['id'],
+                'user_id' => (int)$image['user_id'],
+                'bangumi_id' => (int)$image['bangumi_id'],
+                'name' => $image['name'] ? $image['name'] : '未命名',
+                'part' => (int)$image['part'],
+                'image_count' => (int)$image['image_count'],
+                'user' => $this->transformer($image['user'], function ($user)
+                {
+                    return [
+                        'id' => (int)$user['id'],
+                        'zone' => $user['zone'],
+                        'avatar' => $user['avatar'],
+                        'nickname' => $user['nickname']
+                    ];
+                }),
+                'bangumi' => $this->transformer($image['bangumi'], function ($bangumi)
+                {
+                    return [
+                        'id' => (int)$bangumi['id'],
+                        'name' => $bangumi['name'],
+                        'avatar' => $bangumi['avatar']
+                    ];
+                }),
+                'source' => [
+                    'url' => $image['url'],
+                    'width' => (int)$image['width'],
+                    'height' => (int)$image['height'],
+                    'size' => (int)$image['size'],
+                    'type' => $image['type']
+                ],
+                'is_album' => (boolean)$image['is_album'],
+                'is_cartoon' => (boolean)$image['is_cartoon'],
+                'is_creator' => (boolean)$image['is_creator'],
+                'created_at' => $image['created_at'],
+                'updated_at' => $image['updated_at']
+            ];
+        });
+    }
+
+    public function album($images)
+    {
+        return $this->collection($images, function ($image)
+        {
+            return [
+                'id' => $image['id'],
+                'url' => $image['url'],
+                'width' => (int)$image['width'],
+                'height' => (int)$image['height'],
+                'size' => (int)$image['size'],
+                'type' => $image['type']
+            ];
+        });
+    }
+
     public function waterfall($list)
     {
         return $this->collection($list, function ($image)

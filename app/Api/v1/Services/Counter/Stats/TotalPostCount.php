@@ -8,6 +8,8 @@
 
 namespace App\Api\V1\Services\Counter\Stats;
 
+use App\Api\V1\Services\Counter\Base\TotalCounterService;
+
 
 class TotalPostCount extends TotalCounterService
 {

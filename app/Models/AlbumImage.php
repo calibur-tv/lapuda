@@ -3,7 +3,7 @@
  * Created by PhpStorm.
  * User: yuistack
  * Date: 2018/7/8
- * Time: 下午5:42
+ * Time: 下午9:14
  */
 
 namespace App\Models;
@@ -11,30 +11,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Image extends Model
+
+class AlbumImage extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'images';
+    protected $table = 'album_images';
 
     protected $fillable = [
         'user_id',
-        'bangumi_id',
-        'is_cartoon',
-        'is_creator',
-        'is_album',
-        'name',
+        'album_id',
         'url',
         'width',
         'height',
         'size',
         'type',
-        'part',
         'state'
-    ];
-
-    protected $casts = [
-        'part' => 'integer',
     ];
 
     public function getUrlAttribute($url)

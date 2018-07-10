@@ -18,7 +18,6 @@ use App\Api\V1\Transformers\PostTransformer;
 use App\Models\Bangumi;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\PostRepository;
-use App\Api\V1\Repositories\TagRepository;
 use App\Models\Image;
 use App\Models\Video;
 use App\Services\OpenSearch\Search;
@@ -293,118 +292,6 @@ class BangumiController extends Controller
         $managers = $bangumiManager->getOwners($bangumiId);
 
         return $this->resOK($managers);
-    }
-
-    /**
-     * 番剧的帖子列表
-     *
-     * @Get("/bangumi/`bangumiId`/posts/news")
-     *
-     * @Parameters({
-     *      @Parameter("maxId", description="看过的帖子里，最大的一个id", type="integer", required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"list": "番剧列表", "total": "总数", "noMore": "没有更多"}})
-     * })
-     */
-    public function newsPosts(Request $request, $id)
-    {
-        $maxId = intval($request->get('maxId')) ?: 0;
-        $take = 10;
-
-        $bangumiRepository = new BangumiRepository();
-        $ids = $bangumiRepository->getPostIds($id, 'new');
-
-        if (empty($ids))
-        {
-            return $this->resOK([
-                'list' => [],
-                'total' => 0,
-                'noMore' => true
-            ]);
-        }
-
-        $idsObject = $this->filterIdsByMaxId($ids, $maxId, $take);
-
-        $userId = $this->getAuthUserId();
-        $postRepository = new PostRepository();
-        $list = $postRepository->list($idsObject['ids']);
-
-        $postCommentService = new PostCommentService();
-        $postLikeService = new PostLikeService();
-        $postMarkService = new PostMarkService();
-        $postViewCounter = new PostViewCounter();
-        $userRepository = new UserRepository();
-        $bangumiRepository = new BangumiRepository();
-
-        foreach ($list as $i => $item)
-        {
-            $id = $item['id'];
-
-            $authorId = $item['user_id'];
-            $list[$i]['view_count'] = $postViewCounter->get($id);
-
-            $list[$i]['user'] = $userRepository->item($authorId);
-            $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
-        }
-        $list = $postLikeService->batchCheck($list, $userId, 'liked');
-        $list = $postLikeService->batchTotal($list, 'like_count');
-        $list = $postMarkService->batchCheck($list, $userId, 'marked');
-        $list = $postMarkService->batchTotal($list, 'mark_count');
-        $list = $postCommentService->batchCheckCommented($list, $userId);
-        $list = $postCommentService->batchGetCommentCount($list);
-
-        $transformer = new PostTransformer();
-
-        return $this->resOK([
-            'list' => $transformer->bangumi($list),
-            'total' => $idsObject['total'],
-            'noMore' => $idsObject['noMore']
-        ]);
-    }
-
-    public function topPosts(Request $request, $id)
-    {
-        $bangumiRepository = new BangumiRepository();
-        $ids = $bangumiRepository->getTopPostIds($id);
-
-        if (empty($ids))
-        {
-            return $this->resOK([]);
-        }
-
-        $userId = $this->getAuthUserId();
-        $postRepository = new PostRepository();
-        $list = $postRepository->list($ids);
-
-        $postCommentService = new PostCommentService();
-        $postLikeService = new PostLikeService();
-        $postMarkService = new PostMarkService();
-        $postViewCounter = new PostViewCounter();
-        $userRepository = new UserRepository();
-        $bangumiRepository = new BangumiRepository();
-
-        foreach ($list as $i => $item)
-        {
-            $id = $item['id'];
-
-            $authorId = $item['user_id'];
-            $list[$i]['view_count'] = $postViewCounter->get($id);
-
-            $list[$i]['user'] = $userRepository->item($authorId);
-            $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
-        }
-        $list = $postLikeService->batchCheck($list, $userId, 'liked');
-        $list = $postLikeService->batchTotal($list, 'like_count');
-        $list = $postMarkService->batchCheck($list, $userId, 'marked');
-        $list = $postMarkService->batchTotal($list, 'mark_count');
-        $list = $postCommentService->batchCheckCommented($list, $userId);
-        $list = $postCommentService->batchGetCommentCount($list);
-
-        $transformer = new PostTransformer();
-
-        return $this->resOK($transformer->bangumi($list));
     }
 
     // TODO：trending service
@@ -705,7 +592,6 @@ class BangumiController extends Controller
                 'search' => $request->get('alias')
             ]) : 'null',
             'end' => $request->get('end'),
-            'collection_id' => $request->get('collection_id'),
             'published_at' => $request->get('published_at'),
             'others_site_video' => $request->get('others_site_video'),
             'has_cartoon' => $request->get('has_cartoon'),

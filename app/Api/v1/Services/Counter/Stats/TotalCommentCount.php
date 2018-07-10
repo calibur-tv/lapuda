@@ -9,6 +9,8 @@
 namespace App\Api\V1\Services\Counter\Stats;
 
 
+use App\Api\V1\Services\Counter\Base\TotalCounterService;
+
 class TotalCommentCount extends TotalCounterService
 {
     public function __construct()

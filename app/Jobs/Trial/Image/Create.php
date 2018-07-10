@@ -2,27 +2,29 @@
 
 namespace App\Jobs\Trial\Image;
 
-use App\Models\Image;
+use App\Models\AlbumImage;
 use App\Services\Trial\ImageFilter;
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Support\Facades\DB;
 
 class Create implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $imageId;
+    protected $ids;
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($id)
+    public function __construct($newIdsArr)
     {
-        $this->imageId = $id;
+        $this->ids = $newIdsArr;
     }
 
     /**
@@ -32,20 +34,32 @@ class Create implements ShouldQueue
      */
     public function handle()
     {
-        $url = Image::where('id', $this->imageId)->pluck('url')->first();
+        $images = AlbumImage::whereIn('id', $this->ids)
+            ->select('id', 'url', 'album_id', 'user_id')
+            ->get()
+            ->toArray();
 
         $imageFilter = new ImageFilter();
-        $badImageCount = $imageFilter->exec($url);
-
-        $state = 1;
-        if ($badImageCount > 0)
+        foreach ($images as $image)
         {
-            $state = 2;
+            $result = $imageFilter->check($image['url']);
+            if ($result['delete'])
+            {
+                DB::table('album_images')
+                    ->where('id', $image['id'])
+                    ->update([
+                        'state' => $image['user_id'],
+                        'url' => ''
+                    ]);
+            }
+            if ($result['review'])
+            {
+                DB::table('album_images')
+                    ->where('id', $image['id'])
+                    ->update([
+                        'state' => $image['user_id']
+                    ]);
+            }
         }
-
-        Image::where('id', $this->imageId)
-            ->update([
-                'state' => $state
-            ]);
     }
 }

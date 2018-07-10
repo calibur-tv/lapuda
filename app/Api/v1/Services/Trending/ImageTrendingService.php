@@ -2,31 +2,29 @@
 /**
  * Created by PhpStorm.
  * User: yuistack
- * Date: 2018/6/10
- * Time: 上午9:52
+ * Date: 2018/7/9
+ * Time: 上午7:48
  */
 
 namespace App\Api\V1\Services\Trending;
 
 use App\Api\V1\Repositories\BangumiRepository;
-use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
-use App\Api\V1\Services\Comment\PostCommentService;
-use App\Api\V1\Services\Counter\PostViewCounter;
-use App\Api\V1\Services\Toggle\Post\PostLikeService;
-use App\Api\V1\Services\Toggle\Post\PostMarkService;
-use App\Api\V1\Transformers\PostTransformer;
-use App\Models\Post;
+use App\Api\V1\Services\Comment\ImageCommentService;
+use App\Api\V1\Services\Counter\ImageViewCounter;
+use App\Api\V1\Services\Toggle\Image\ImageLikeService;
+use App\Models\Image;
 use Carbon\Carbon;
 
-class PostTrendingService extends TrendingService
+class ImageTrendingService extends TrendingService
 {
     protected $visitorId;
     protected $bangumiId;
 
     public function __construct($visitorId = 0, $bangumiId = 0)
     {
-        parent::__construct('posts', $bangumiId);
+        parent::__construct('images', $bangumiId);
 
         $this->visitorId = $visitorId;
         $this->bangumiId = $bangumiId;
@@ -35,7 +33,7 @@ class PostTrendingService extends TrendingService
     public function news($minId, $take)
     {
         $idsObject = $this->getNewsIds($minId, $take);
-        $list = $this->getPostsByIds($idsObject['ids']);
+        $list = $this->getImagesByIds($idsObject['ids']);
 
         return [
             'list' => $list,
@@ -47,7 +45,7 @@ class PostTrendingService extends TrendingService
     public function active($seenIds, $take)
     {
         $idsObject = $this->getActiveIds($seenIds, $take);
-        $list = $this->getPostsByIds($idsObject['ids']);
+        $list = $this->getImagesByIds($idsObject['ids']);
 
         return [
             'list' => $list,
@@ -59,7 +57,7 @@ class PostTrendingService extends TrendingService
     public function hot($seenIds, $take)
     {
         $idsObject = $this->getHotIds($seenIds, $take);
-        $list = $this->getPostsByIds($idsObject['ids']);
+        $list = $this->getImagesByIds($idsObject['ids']);
 
         return [
             'list' => $list,
@@ -70,14 +68,16 @@ class PostTrendingService extends TrendingService
 
     public function computeNewsIds()
     {
-        return Post::where('state', 0)
+        return Image::where('state', 0)
             ->when($this->bangumiId, function ($query)
             {
-                return $query
-                    ->where('bangumi_id', $this->bangumiId)
-                    ->whereNull('top_at');
+                return $query->where('bangumi_id', $this->bangumiId);
             })
-            ->orderBy('created_at', 'desc')
+            ->where('is_album', 0)
+            ->orWhere([
+                ['image_ids', '<>', null],
+                ['is_cartoon', 0]
+            ])
             ->latest()
             ->take(100)
             ->pluck('id');
@@ -85,14 +85,16 @@ class PostTrendingService extends TrendingService
 
     public function computeActiveIds()
     {
-        return Post::where('state', 0)
+        return Image::where('state', 0)
             ->when($this->bangumiId, function ($query)
             {
-                return $query
-                    ->where('bangumi_id', $this->bangumiId)
-                    ->whereNull('top_at');
+                return $query->where('bangumi_id', $this->bangumiId);
             })
-            ->orderBy('updated_at', 'desc')
+            ->where('is_album', 0)
+            ->orWhere([
+                ['image_ids', '<>', null],
+                ['is_cartoon', 0]
+            ])
             ->latest()
             ->take(100)
             ->pluck('updated_at', 'id');
@@ -100,21 +102,24 @@ class PostTrendingService extends TrendingService
 
     public function computeHotIds()
     {
-        $ids = Post::where('created_at', '>', Carbon::now()->addDays(-30))
+        $ids = Image::where('created_at', '>', Carbon::now()->addDays(-30))
             ->when($this->bangumiId, function ($query)
             {
-                return $query
-                    ->where('bangumi_id', $this->bangumiId)
-                    ->whereNull('top_at');
+                return $query->where('bangumi_id', $this->bangumiId);
             })
+            ->where('is_album', 0)
+            ->orWhere([
+                ['image_ids', '<>', null],
+                ['is_cartoon', 0]
+            ])
             ->pluck('id');
 
-        $postRepository = new PostRepository();
-        $postLikeService = new PostLikeService();
-        $postViewCounter = new PostViewCounter();
-        $postCommentService = new PostCommentService();
+        $imageRepository = new ImageRepository();
+        $imageLikeService = new ImageLikeService();
+        $imageViewCounter = new ImageViewCounter();
+        $imageCommentService = new ImageCommentService();
 
-        $list = $postRepository->list($ids);
+        $list = $imageRepository->list($ids);
 
         $result = [];
         // https://segmentfault.com/a/1190000004253816
@@ -126,9 +131,9 @@ class PostTrendingService extends TrendingService
             }
 
             $postId = $item['id'];
-            $likeCount = $postLikeService->total($postId);
-            $viewCount = $postViewCounter->get($postId);
-            $commentCount = $postCommentService->getCommentCount($postId);
+            $likeCount = $imageLikeService->total($postId);
+            $viewCount = $imageViewCounter->get($postId);
+            $commentCount = $imageCommentService->getCommentCount($postId);
 
             $result[$postId] = (
                     $likeCount +
@@ -140,16 +145,19 @@ class PostTrendingService extends TrendingService
         return $result;
     }
 
-    protected function getPostsByIds($ids)
+    protected function getImagesByIds($ids)
     {
-        $postRepository = new PostRepository();
+        $imageRepository = new ImageRepository();
+        $imageCommentService = new ImageCommentService();
+        $imageLikeService = new ImageLikeService();
+        $imageViewService = new ImageViewCounter();
         $userRepository = new UserRepository();
         $bangumiRepository = new BangumiRepository();
 
-        $posts = $postRepository->list($ids);
+        $images = $imageRepository->list($ids);
         $result = [];
 
-        foreach ($posts as $item)
+        foreach ($images as $item)
         {
             if (is_null($item))
             {
@@ -168,12 +176,6 @@ class PostTrendingService extends TrendingService
                 continue;
             }
 
-            $item['user'] = $user;
-            $item['bangumi'] = $bangumi;
-            $item['liked'] = false;
-            $item['commented'] = false;
-            $item['marked'] = false;
-
             $result[] = $item;
         }
 
@@ -182,20 +184,10 @@ class PostTrendingService extends TrendingService
             return [];
         }
 
-        $postLikeService = new PostLikeService();
-        $postViewCounter = new PostViewCounter();
-        $postCommentService = new PostCommentService();
-        $postMarkService = new PostMarkService();
-        $postTransformer = new PostTransformer();
+        $images = $imageCommentService->batchGetCommentCount($images);
+        $images = $imageLikeService->batchTotal($images, 'like_count');
+        $images = $imageViewService->batchGet($images, 'view_count');
 
-//        $result = $postLikeService->batchCheck($result, $this->visitorId, 'liked');
-        $result = $postLikeService->batchTotal($result, 'like_count');
-//        $result = $postMarkService->batchCheck($result, $this->visitorId, 'marked');
-        $result = $postMarkService->batchTotal($result, 'mark_count');
-//        $result = $postCommentService->batchCheckCommented($result, $this->visitorId);
-        $result = $postCommentService->batchGetCommentCount($result);
-        $result = $postViewCounter->batchGet($result, 'view_count');
-
-        return $postTransformer->trending($result);
+        return $images;
     }
 }

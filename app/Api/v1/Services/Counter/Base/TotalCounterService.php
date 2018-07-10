@@ -6,7 +6,7 @@
  * Time: 上午6:31
  */
 
-namespace App\Api\V1\Services\Counter\Stats;
+namespace App\Api\V1\Services\Counter\Base;
 
 use App\Api\V1\Repositories\Repository;
 use Illuminate\Support\Carbon;

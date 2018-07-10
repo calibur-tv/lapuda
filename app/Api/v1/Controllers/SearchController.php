@@ -201,6 +201,8 @@ class SearchController extends Controller
                 DB::table('album_images')
                     ->insert([
                         'id' => $image->id,
+                        'user_id' => $image->user_id,
+                        'album_id' => $image->album_id,
                         'url' => $image->url,
                         'width' => $image->width,
                         'height' => $image->height,

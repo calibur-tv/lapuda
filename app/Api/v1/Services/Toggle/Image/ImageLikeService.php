@@ -14,6 +14,6 @@ class ImageLikeService extends ToggleService
 {
     public function __construct()
     {
-        parent::__construct('images', 'like_count', 'image_likes', true);
+        parent::__construct('images', 'image_likes', true);
     }
 }

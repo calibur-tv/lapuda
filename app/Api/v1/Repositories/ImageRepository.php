@@ -8,73 +8,68 @@
 
 namespace App\Api\V1\Repositories;
 
+use App\Api\V1\Services\Trending\ImageTrendingService;
+use App\Api\V1\Transformers\ImageTransformer;
+use App\Models\AlbumImage;
 use App\Models\Banner;
 use App\Models\Image;
-use App\Models\ImageLike;
-use App\Models\ImageTag;
 use App\Models\Tag;
+use App\Services\Trial\ImageFilter;
+use App\Services\Trial\WordsFilter;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
+use Mews\Purifier\Facades\Purifier;
 
 class ImageRepository extends Repository
 {
-    public function item($id)
+    public function createSingle($params)
     {
-        if (!$id)
+        $imageFilter = new ImageFilter();
+        $result = $imageFilter->check($params['url']);
+        if ($result['delete'])
         {
-            return null;
+            return 0;
         }
 
-        $result = $this->RedisHash('user_image_' . $id, function () use ($id)
+        $wordsFilter = new WordsFilter();
+        $badWordsCount = $wordsFilter->count($params['name']);
+        $state = 0;
+        if ($result['review'] || $badWordsCount > 0)
         {
-            $image = Image::where('id', $id)->first();
-            if (is_null($image))
-            {
-                return null;
-            }
-
-            $image = $image->toArray();
-            $image['image_count'] = $image['image_count'] ? ($image['image_count'] - 1) : 0;
-            $image['width'] = $image['width'] ? $image['width'] : 200;
-            $image['height'] = $image['height'] ? $image['height'] : 200;
-
-            return $image;
-        }, 'm');
-
-        if (is_null($result))
-        {
-            return null;
+            $state = $params['user_id'];
         }
 
-        $meta = $this->Cache('user_image_' . $id . '_meta', function () use ($result)
+
+        $now = Carbon::now();
+
+        $newId = DB::table('images')
+            ->insertGetId([
+                'user_id' => $params['user_id'],
+                'bangumi_id' => $params['bangumi_id'],
+                'is_cartoon' => $params['is_cartoon'],
+                'is_creator' => $params['is_creator'],
+                'is_album' => $params['is_album'],
+                'name' => Purifier::clean($params['name']),
+                'url' => $params['url'],
+                'width' => $params['width'],
+                'height' => $params['height'],
+                'size' => $params['size'],
+                'type' => $params['type'],
+                'part' => $params['part'],
+                'state' => $state,
+                'created_at' => $now,
+                'updated_at' => $now
+            ]);
+
+        if ($params['is_cartoon'])
         {
-            $tagIds = ImageTag::where('image_id', $result['id'])->pluck('tag_id');
-
-            $bangumiRepository = new BangumiRepository();
-            $cartoonRoleRepository = new CartoonRoleRepository();
-            $userRepository = new UserRepository();
-
-            return [
-                'user' => $userRepository->item($result['user_id']),
-                'role' => $result['role_id'] ? $cartoonRoleRepository->item($result['role_id']) : null,
-                'bangumi' => $result['bangumi_id'] ? $bangumiRepository->item($result['bangumi_id']) : null,
-                'tags' => Tag::whereIn('id', $tagIds)->select('id', 'name')->get(),
-                'size' => $result['image_count'] ? null : Tag::where('id', $result['size_id'])->select('id', 'name')->first()
-            ];
-        });
-
-        return array_merge($result, $meta);
-    }
-
-    public function list($ids)
-    {
-        $result = [];
-        foreach ($ids as $id)
-        {
-            $item = $this->item($id);
-            if ($item) {
-                $result[] = $item;
-            }
+            Redis::DEL($this->cacheKeyCartoonParts($params['bangumi_id']));
         }
-        return $result;
+
+        $this->imageCreateSuccessProcess($newId, $params['user_id'], $params['bangumi_id']);
+
+        return $newId;
     }
 
     public function uptoken()
@@ -171,17 +166,141 @@ class ImageRepository extends Repository
         }, 'm');
     }
 
-    public function albumImages($albumId, $imageIds)
+    public function item($id)
     {
-        return $this->Cache('image_album_' . $albumId . '_' . $imageIds, function () use ($imageIds)
+        if (!$id)
         {
-            $ids = explode(',', $imageIds);
+            return null;
+        }
 
-            return Image::whereIn('id', $ids)
-                ->whereIn('state', [1, 2])
+        return $this->Cache($this->cacheKeyImageItem($id), function () use ($id)
+        {
+            $image = Image::find($id);
+
+            if (is_null($image))
+            {
+                return null;
+            }
+
+            $image = $image->toArray();
+            $userRepository = new UserRepository();
+            $user = $userRepository->item($image['user_id']);
+
+            if (is_null($user))
+            {
+                return null;
+            }
+            $image['user'] = $user;
+
+            $bangumiRepository = new BangumiRepository();
+            $bangumi = $bangumiRepository->item($image['bangumi_id']);
+
+            if (is_null($bangumi))
+            {
+                return null;
+            }
+            $image['bangumi'] = $bangumi;
+
+            $image['image_count'] = $image['is_album'] == 1
+                ? is_null($image['image_ids']) ? 0 : count(explode(',', $image['image_ids']))
+                : 1;
+
+            $imageTransformer = new ImageTransformer();
+
+            return $imageTransformer->show($image);
+        });
+    }
+
+    public function list($ids)
+    {
+        $result = [];
+        foreach ($ids as $id)
+        {
+            $item = $this->item($id);
+            if ($item)
+            {
+                $result[] = $item;
+            }
+        }
+        return $result;
+    }
+
+    public function albumImages($albumId)
+    {
+        if (!$albumId)
+        {
+            return [];
+        }
+
+        return $this->Cache($this->cacheKeyAlbumImages($albumId), function () use ($albumId)
+        {
+            $imageIds = Image::where('id', $albumId)
+                ->pluck('image_ids')
+                ->first();
+
+            if (is_null($imageIds))
+            {
+                return [];
+            }
+
+            $ids = explode(',', $imageIds);
+            $images = [];
+            foreach ($ids as $id)
+            {
+                $image = AlbumImage::where('id', $id)
+                    ->select('id', 'url', 'width', 'height', 'size', 'type')
+                    ->first();
+
+                if (is_null($image))
+                {
+                    continue;
+                }
+                $images[] = $image->toArray();
+            }
+
+            if (empty($images))
+            {
+                return [];
+            }
+
+            $imageTransformer = new ImageTransformer();
+
+            return $imageTransformer->album($images);
+        });
+    }
+
+    public function getCartoonParts($bangumiId)
+    {
+        return $this->Cache($this->cacheKeyCartoonParts($bangumiId), function () use ($bangumiId)
+        {
+            return Image::where('bangumi_id', $bangumiId)
+                ->where('is_cartoon', true)
+                ->orderBy('part', 'ASC')
+                ->select('id', 'name', 'part')
                 ->get()
                 ->toArray();
         });
+    }
+
+    public function getBangumiCartoonIds($bangumiId, $page, $take, $sort = 'desc')
+    {
+        $parts = $this->getCartoonParts($bangumiId);
+        if (empty($parts))
+        {
+            return null;
+        }
+
+        $ids = array_map(function ($item)
+        {
+            return $item['id'];
+        }, $parts);
+
+        if ($sort === 'desc')
+        {
+            $ids = array_reverse($ids);
+        }
+
+        return $this->filterIdsByPage($ids, $page, $take);
     }
 
     public function getRoleImageIds($roleId, $seen, $take, $size, $tags, $creator, $sort)
@@ -211,5 +330,55 @@ class ImageRepository extends Repository
                     ->where('tags.tag_id', $tags);
             })
             ->pluck('images.id');
+    }
+
+    public function checkHasPartCartoon($bangumiId, $part)
+    {
+        return (int)Image::where('is_cartoon', 1)
+            ->where('bangumi_id', $bangumiId)
+            ->where('part', $part)
+            ->whereNotNull('image_ids')
+            ->count();
+    }
+
+    public function imageCreateSuccessProcess($imageId, $userId, $bangumiId)
+    {
+        $this->ListInsertBefore($this->cacheKeyUserImageIds($userId), $imageId);
+        $imageTrendingService = new ImageTrendingService(0, $bangumiId);
+        $imageTrendingService->create($imageId);
+        // TODO：SEO
+        // TODO：search
+    }
+
+    public function getUserImageIds($userId, $page, $take)
+    {
+        $ids = $this->RedisList($this->cacheKeyUserImageIds($userId), function () use ($userId)
+        {
+            return Image::where('user_id', $userId)
+                ->orderBy('created_at', 'DESC')
+                ->pluck('id');
+        });
+
+        return $this->filterIdsByPage($ids, $page, $take);
+    }
+
+    public function cacheKeyImageItem($id)
+    {
+        return 'image_' . $id;
+    }
+
+    public function cacheKeyAlbumImages($albumId)
+    {
+        return 'album_' . $albumId . '_images';
+    }
+
+    public function cacheKeyCartoonParts($bangumiId)
+    {
+        return 'bangumi_' . $bangumiId . '_cartoon_parts';
+    }
+
+    public function cacheKeyUserImageIds($userId)
+    {
+        return 'user_' . $userId . '_image_ids';
     }
 }
