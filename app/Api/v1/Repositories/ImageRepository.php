@@ -291,6 +291,27 @@ class ImageRepository extends Repository
         });
     }
 
+    public function getBangumiCartoonIds($bangumiId, $page, $take, $sort = 'desc')
+    {
+        $parts = $this->getCartoonParts($bangumiId);
+        if (empty($parts))
+        {
+            return null;
+        }
+
+        $ids = array_map(function ($item)
+        {
+            return $item['id'];
+        }, $parts);
+
+        if ($sort === 'desc')
+        {
+            $ids = array_reverse($ids);
+        }
+
+        return $this->filterIdsByPage($ids, $page, $take);
+    }
+
     public function getRoleImageIds($roleId, $seen, $take, $size, $tags, $creator, $sort)
     {
         return Image::whereIn('state', [1, 4])

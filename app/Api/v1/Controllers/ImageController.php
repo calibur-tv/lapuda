@@ -637,6 +637,40 @@ class ImageController extends Controller
         return $this->resOK($image);
     }
 
+    public function cartoon(Request $request, $id)
+    {
+        $page = $request->get('page') ?: 0;
+        $take = $request->get('take') ?: 12;
+        $sort = $request->get('sort') ?: 'desc';
+        $sort = $sort === 'desc' ? 'desc' : ($sort === 'asc' ? 'asc' : 'desc');
+
+        $imageRepository = new ImageRepository();
+        $idsObj = $imageRepository->getBangumiCartoonIds($id, $page, $take, $sort);
+        if (is_null($idsObj))
+        {
+            return [
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ];
+        }
+
+        $list = $imageRepository->list($idsObj['ids']);
+        $imageViewCounter = new ImageViewCounter();
+        $imageCommentService = new ImageCommentService();
+        $imageLikeService = new ImageLikeService();
+
+        $list = $imageViewCounter->batchGet($list, 'view_count');
+        $list = $imageCommentService->batchGetCommentCount($list);
+        $list = $imageLikeService->batchTotal($list, 'like_count');
+
+        return $this->resOK([
+            'list' => $list,
+            'total' => $idsObj['total'],
+            'noMore' => $idsObj['noMore']
+        ]);
+    }
+
     /**
      * 相册内图片的排序
      *

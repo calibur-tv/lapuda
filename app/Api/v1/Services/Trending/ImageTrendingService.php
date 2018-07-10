@@ -73,9 +73,11 @@ class ImageTrendingService extends TrendingService
             {
                 return $query->where('bangumi_id', $this->bangumiId);
             })
-            ->orderBy('created_at', 'desc')
             ->where('is_album', 0)
-            ->orWhere('image_ids', '<>', null)
+            ->orWhere([
+                ['image_ids', '<>', null],
+                ['is_cartoon', 0]
+            ])
             ->latest()
             ->take(100)
             ->pluck('id');
@@ -88,9 +90,11 @@ class ImageTrendingService extends TrendingService
             {
                 return $query->where('bangumi_id', $this->bangumiId);
             })
-            ->orderBy('updated_at', 'desc')
             ->where('is_album', 0)
-            ->orWhere('image_ids', '<>', null)
+            ->orWhere([
+                ['image_ids', '<>', null],
+                ['is_cartoon', 0]
+            ])
             ->latest()
             ->take(100)
             ->pluck('updated_at', 'id');
@@ -104,7 +108,10 @@ class ImageTrendingService extends TrendingService
                 return $query->where('bangumi_id', $this->bangumiId);
             })
             ->where('is_album', 0)
-            ->orWhere('image_ids', '<>', null)
+            ->orWhere([
+                ['image_ids', '<>', null],
+                ['is_cartoon', 0]
+            ])
             ->pluck('id');
 
         $imageRepository = new ImageRepository();
