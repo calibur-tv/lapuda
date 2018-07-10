@@ -25,6 +25,22 @@ class ImageRepository extends Repository
 {
     public function createSingle($params)
     {
+        $imageFilter = new ImageFilter();
+        $result = $imageFilter->check($params['url']);
+        if ($result['delete'])
+        {
+            return 0;
+        }
+
+        $wordsFilter = new WordsFilter();
+        $badWordsCount = $wordsFilter->count($params['name']);
+        $state = 0;
+        if ($result['review'] || $badWordsCount > 0)
+        {
+            $state = $params['user_id'];
+        }
+
+
         $now = Carbon::now();
 
         $newId = DB::table('images')
@@ -41,35 +57,10 @@ class ImageRepository extends Repository
                 'size' => $params['size'],
                 'type' => $params['type'],
                 'part' => $params['part'],
+                'state' => $state,
                 'created_at' => $now,
                 'updated_at' => $now
             ]);
-
-        $imageFilter = new ImageFilter();
-        $result = $imageFilter->check($params['url']);
-        if ($result['delete'])
-        {
-            DB::table('images')
-                ->where('id', $newId)
-                ->update([
-                    'state' => $params['user_id'],
-                    'deleted_at' => $now
-                ]);
-
-            return 0;
-        }
-
-        $wordsFilter = new WordsFilter();
-        $badWordsCount = $wordsFilter->count($params['name']);
-
-        if ($result['review'] || $badWordsCount > 0)
-        {
-            DB::table('images')
-                ->where('id', $newId)
-                ->update([
-                    'state' => $params['user_id']
-                ]);
-        }
 
         if ($params['is_cartoon'])
         {

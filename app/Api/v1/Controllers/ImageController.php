@@ -238,7 +238,7 @@ class ImageController extends Controller
 
         if (!$albumId)
         {
-            return $this->resErrBad('封面图正在审核中，暂时不能使用');
+            return $this->resErrBad('图片中可能含有违规信息');
         }
 
         return $this->resCreated($imageRepository->item($albumId));
@@ -377,7 +377,7 @@ class ImageController extends Controller
 
         if (!$newId)
         {
-            return $this->resErrBad('图片正在审核中，暂时不能访问');
+            return $this->resErrBad('图片中可能含有违规信息');
         }
 
         return $this->resCreated($newId);
@@ -504,8 +504,9 @@ class ImageController extends Controller
                 ]);
         }
 
-        // TODO：review images process，先发后审
-        // TODO：SEO
+        $job = (new \App\Jobs\Trial\Image\Create($newIds));
+        dispatch($job);
+
         Redis::DEL($imageRepository->cacheKeyImageItem($albumId));
         Redis::DEL($imageRepository->cacheKeyAlbumImages($albumId));
 
@@ -904,36 +905,34 @@ class ImageController extends Controller
 
     public function trialList()
     {
-        $images = Image::withTrashed()->whereIn('state', [2, 4])->get();
+        $albums = Image::withTrashed()
+            ->where('state', '<>', 0)
+            ->get()
+            ->toArray();
+        $images = AlbumImage::withTrashed()
+            ->where('state', '<>', 0)
+            ->get()
+            ->toArray();
 
-        return $this->resOK($images);
+        return $this->resOK(array_merge($albums, $images));
     }
 
     public function trialDelete(Request $request)
     {
         $id = $request->get('id');
-        $image = Image::withTrashed()
-            ->find($id);
+        $type = $request->get('type');
+        $imageRepository = new ImageRepository();
 
-        if (is_null($image))
+        if ($type === 'image')
         {
-            return $this->resErrNotFound();
-        }
-
-        if ($image->image_count == 0)
-        {
-            $image->update([
-                'state' => 3
-            ]);
-
-            $image->delete();
+            $albumId = AlbumImage::where('id', $id)->pluck('album_id')->first();
+            AlbumImage::where('id', $id)->delete();
+            Redis::DEL($imageRepository->cacheKeyAlbumImages($albumId));
         }
         else
         {
-            $image->update([
-                'state' => 1,
-                'url' => ''
-            ]);
+            Image::where('id', $id)->delete();
+            Image::DEL($imageRepository->cacheKeyImageItem($id));
         }
 
         return $this->resNoContent();
@@ -942,14 +941,22 @@ class ImageController extends Controller
     public function trialPass(Request $request)
     {
         $id = $request->get('id');
+        $type = $request->get('type');
 
-        Image::withTrashed()->where('id', $id)
-            ->update([
-                'state' => 1,
-                'deleted_at' => null
-            ]);
-
-        Redis::DEL('user_image_' . $id);
+        if ($type === 'album')
+        {
+            Image::withTrashed()->where('id', $id)
+                ->update([
+                    'state' => 0
+                ]);
+        }
+        else
+        {
+            AlbumImage::withTrashed()->where('id', $id)
+                ->update([
+                    'state' => 0
+                ]);
+        }
 
         return $this->resNoContent();
     }

@@ -8,6 +8,7 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Models\AlbumImage;
 use App\Models\Bangumi;
 use App\Models\CartoonRole;
 use App\Models\Feedback;
@@ -29,10 +30,12 @@ class TrialController extends Controller
         $comments = $comments + DB::table('image_comments')->where('state', 2)->count();
         $comments = $comments + DB::table('video_comments')->where('state', 2)->count();
 
+        $images = Image::withTrashed()->where('state', '<>', 0)->count() + AlbumImage::withTrashed()->where('state', '<>', 0)->count();
+
         $result = [
             'users' => User::where('state', '<>', 0)->count(),
             'posts' => Post::withTrashed()->where('state', '<>', 0)->count(),
-            'images' => Image::withTrashed()->where('state', 2)->count(),
+            'images' => $images,
             'feedback' => Feedback::where('stage', 0)->count(),
             'comments' => $comments,
             'bangumi' => Bangumi::where('state', '<>', 0)->count(),
