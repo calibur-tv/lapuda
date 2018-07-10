@@ -217,8 +217,6 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/uptoken', 'App\Api\V1\Controllers\ImageController@uptoken')->middleware(['jwt.auth']);
 
-        $api->post('/delete', 'App\Api\V1\Controllers\ImageController@deleteImage')->middleware(['jwt.auth']);
-
         $api->post('/report', 'App\Api\V1\Controllers\ImageController@report');
 
         $api->post('/toggleLike', 'App\Api\V1\Controllers\ImageController@toggleLike')->middleware(['jwt.auth']);
@@ -236,22 +234,25 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/deleteImage', 'App\Api\V1\Controllers\ImageController@deleteAlbumImage')->middleware(['jwt.auth']);
         });
 
-        $api->group(['prefix' => '/trending'], function ($api)
+        $api->group(['prefix' => '/single', 'middleware' => ['jwt.auth']], function ($api)
         {
-            $api->get('/news', 'App\Api\V1\Controllers\ImageController@trendingNews');
+            $api->post('/upload', 'App\Api\V1\Controllers\ImageController@uploadSingleImage');
 
-            $api->get('/active', 'App\Api\V1\Controllers\ImageController@trendingActive');
-
-            $api->get('/hot', 'App\Api\V1\Controllers\ImageController@trendingHot');
+            $api->post('/edit', 'App\Api\V1\Controllers\ImageController@editSingleImage');
         });
 
-        $api->post('/single/upload', 'App\Api\V1\Controllers\ImageController@uploadSingleImage')->middleware(['jwt.auth']);
+        $api->group(['prefix' => '/album', 'middleware' => ['jwt.auth']], function ($api)
+        {
+            $api->post('/upload', 'App\Api\V1\Controllers\ImageController@uploadAlbumImages');
 
-        $api->post('/album/upload', 'App\Api\V1\Controllers\ImageController@uploadAlbumImages')->middleware(['jwt.auth']);
+            $api->post('/create', 'App\Api\V1\Controllers\ImageController@createAlbum');
 
-        $api->post('/album/create', 'App\Api\V1\Controllers\ImageController@createAlbum')->middleware(['jwt.auth']);
+            $api->post('/edit', 'App\Api\V1\Controllers\ImageController@editAlbum');
 
-        $api->get('/album/users', 'App\Api\V1\Controllers\ImageController@userAlbums')->middleware(['jwt.auth']);
+            $api->post('/delete', 'App\Api\V1\Controllers\ImageController@deleteAlbum');
+
+            $api->get('/users', 'App\Api\V1\Controllers\ImageController@userAlbums');
+        });
     });
 
     $api->group(['prefix' => '/cartoon_role'], function ($api)

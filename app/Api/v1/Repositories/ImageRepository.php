@@ -8,12 +8,14 @@
 
 namespace App\Api\V1\Repositories;
 
+use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\AlbumImage;
 use App\Models\Banner;
 use App\Models\Image;
 use App\Models\Tag;
 use App\Services\Trial\ImageFilter;
+use App\Services\Trial\WordsFilter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -57,7 +59,10 @@ class ImageRepository extends Repository
             return 0;
         }
 
-        if ($result['review'])
+        $wordsFilter = new WordsFilter();
+        $badWordsCount = $wordsFilter->count($params['name']);
+
+        if ($result['review'] || $badWordsCount > 0)
         {
             DB::table('images')
                 ->where('id', $newId)
@@ -70,6 +75,8 @@ class ImageRepository extends Repository
         {
             Redis::DEL($this->cacheKeyCartoonParts($params['bangumi_id']));
         }
+
+        $this->imageCreateSuccessProcess($newId, $params['user_id'], $params['bangumi_id']);
 
         return $newId;
     }
@@ -236,17 +243,29 @@ class ImageRepository extends Repository
 
         return $this->Cache($this->cacheKeyAlbumImages($albumId), function () use ($albumId)
         {
-            $imageIds = Image::where('id', $albumId)->pluck('image_ids');
+            $imageIds = Image::where('id', $albumId)
+                ->pluck('image_ids')
+                ->first();
+
             if (is_null($imageIds))
             {
                 return [];
             }
 
             $ids = explode(',', $imageIds);
-            $images = AlbumImage::whereIn('id', $ids)
-                ->select('id', 'url', 'width', 'height', 'size', 'type')
-                ->get()
-                ->toArray();
+            $images = [];
+            foreach ($ids as $id)
+            {
+                $image = AlbumImage::where('id', $id)
+                    ->select('id', 'url', 'width', 'height', 'size', 'type')
+                    ->first();
+
+                if (is_null($image))
+                {
+                    continue;
+                }
+                $images[] = $image->toArray();
+            }
 
             if (empty($images))
             {
@@ -308,6 +327,15 @@ class ImageRepository extends Repository
             ->where('part', $part)
             ->whereNotNull('image_ids')
             ->count();
+    }
+
+    public function imageCreateSuccessProcess($imageId, $userId, $bangumiId)
+    {
+        $this->ListInsertBefore($this->cacheKeyUserImageIds($userId), $imageId);
+        $imageTrendingService = new ImageTrendingService(0, $bangumiId);
+        $imageTrendingService->create($imageId);
+        // TODO：SEO
+        // TODO：search
     }
 
     public function getUserImageIds($userId, $page, $take)
