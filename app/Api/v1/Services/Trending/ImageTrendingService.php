@@ -16,6 +16,7 @@ use App\Api\V1\Services\Counter\ImageViewCounter;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Models\Image;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class ImageTrendingService extends TrendingService
 {
@@ -74,7 +75,11 @@ class ImageTrendingService extends TrendingService
                 return $query->where('bangumi_id', $this->bangumiId);
             })
             ->where('is_album', 0)
-            ->orWhere([
+            ->orWhere($this->bangumiId ? [
+                ['image_ids', '<>', null],
+                ['is_cartoon', 0],
+                ['bangumi_id', $this->bangumiId]
+            ] : [
                 ['image_ids', '<>', null],
                 ['is_cartoon', 0]
             ])
@@ -91,7 +96,11 @@ class ImageTrendingService extends TrendingService
                 return $query->where('bangumi_id', $this->bangumiId);
             })
             ->where('is_album', 0)
-            ->orWhere([
+            ->orWhere($this->bangumiId ? [
+                ['image_ids', '<>', null],
+                ['is_cartoon', 0],
+                ['bangumi_id', $this->bangumiId]
+            ] : [
                 ['image_ids', '<>', null],
                 ['is_cartoon', 0]
             ])
@@ -108,7 +117,11 @@ class ImageTrendingService extends TrendingService
                 return $query->where('bangumi_id', $this->bangumiId);
             })
             ->where('is_album', 0)
-            ->orWhere([
+            ->orWhere($this->bangumiId ? [
+                ['image_ids', '<>', null],
+                ['is_cartoon', 0],
+                ['bangumi_id', $this->bangumiId]
+            ] : [
                 ['image_ids', '<>', null],
                 ['is_cartoon', 0]
             ])
