@@ -535,15 +535,8 @@ class BangumiController extends Controller
             'count_score' => 0
         ]);
 
-        $tags = [];
-        foreach($request->get('tags') as $i => $tag_id)
-        {
-            array_push($tags, [
-                'bangumi_id' => $bangumi_id,
-                'tag_id' => $tag_id
-            ]);
-        }
-        DB::table('bangumi_tag')->insert($tags);
+        $bangumiTagService = new BangumiTagService();
+        $bangumiTagService->update($bangumi_id, $request->get('tags'));
 
         if ($releasedId)
         {

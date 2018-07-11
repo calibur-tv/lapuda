@@ -8,12 +8,11 @@ use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Bangumi;
 use App\Models\BangumiFollow;
-use App\Models\BangumiTag;
 use App\Models\Post;
-use App\Models\Tag;
 use App\Models\User;
 use App\Models\Video;
 use App\Services\OpenSearch\Search;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
 class BangumiRepository extends Repository
@@ -380,9 +379,10 @@ class BangumiRepository extends Repository
             // C 命中 1, 3
             // 我们要拿的是 B，而 ids 是：[A, B, B, B, C, C]
             $temp = array_count_values(
-                BangumiTag::whereIn('tag_id', $tags)
+                DB::table('bangumi_tag_relations')
+                    ->whereIn('tag_id', $tags)
                     ->orderBy('id')
-                    ->pluck('bangumi_id')
+                    ->pluck('model_id')
                     ->toArray()
             );
 
