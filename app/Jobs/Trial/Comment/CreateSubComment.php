@@ -15,7 +15,7 @@ class CreateSubComment implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $table;
+    protected $model;
 
     protected $id;
     /**
@@ -23,9 +23,9 @@ class CreateSubComment implements ShouldQueue
      *
      * @return void
      */
-    public function __construct($table, $id)
+    public function __construct($model, $id)
     {
-        $this->table = $table;
+        $this->model = $model;
 
         $this->id = $id;
     }
@@ -37,29 +37,16 @@ class CreateSubComment implements ShouldQueue
      */
     public function handle()
     {
-        $service = new CommentService($this->table);
+        $service = new CommentService($this->model);
         $comment = $service->getSubCommentItem($this->id);
         $content = $comment['content'];
-
-        if (config('app.env') === 'local')
-        {
-            $service->update($this->id, [
-                'state' => 1
-            ]);
-            return;
-        }
 
         $filter = new WordsFilter();
         $badWordsCount = $filter->count($content);
 
         if ($badWordsCount > 0)
         {
-            $service->deleteSubComment($this->id, $comment['parent_id'], true);
-            return;
+            $service->changeCommentState($this->id, $comment['user_id']);
         }
-
-        $service->update($this->id, [
-            'state' => 1
-        ]);
     }
 }

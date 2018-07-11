@@ -515,7 +515,7 @@ class CommentController extends Controller
         foreach ($types as $modal)
         {
             $list = DB::table($modal . '_comments')
-                ->where('state', 2)
+                ->where('state', '<>', 0)
                 ->select('id', 'user_id', 'content')
                 ->get();
 
@@ -546,13 +546,11 @@ class CommentController extends Controller
     {
         $id = $request->get('id');
         $type = $request->get('type');
-        $userId = $this->getAuthUserId();
         $now = Carbon::now();
 
         DB::table($type . '_comments')->where('id', $id)
             ->update([
-                'state' => '5' . (String)$userId,
-                'updated_at' => $now,
+                'state' => 0,
                 'deleted_at' => $now
             ]);
 
@@ -566,8 +564,7 @@ class CommentController extends Controller
 
         DB::table($type . '_comments')->where('id', $id)
             ->update([
-                'state' => 1,
-                'updated_at' => Carbon::now(),
+                'state' => 0,
                 'deleted_at' => null
             ]);
 

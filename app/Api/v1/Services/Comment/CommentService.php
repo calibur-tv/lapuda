@@ -142,6 +142,15 @@ class CommentService extends Repository
         // TODO
     }
 
+    public function changeCommentState($id, $state)
+    {
+        DB::table($this->table)
+            ->where('id', $id)
+            ->update([
+                'state' => $state
+            ]);
+    }
+
     public function subCommentList($ids)
     {
         if (empty($ids))
@@ -178,24 +187,24 @@ class CommentService extends Repository
         return $result;
     }
 
-    public function deleteSubComment($id, $parentId, $isRobot = false)
+    public function deleteSubComment($id, $parentId)
     {
         DB::table($this->table)
             ->where('id', $id)
             ->update([
-                'state' => $isRobot ? 2 : 4,
+                'state' => 0,
                 'deleted_at' => Carbon::now()
             ]);
 
         $this->changeSubCommentCount($parentId, $id, false);
     }
 
-    public function deleteMainComment($id, $modalId, $userId = 0, $isMaster = false, $isRobot = false)
+    public function deleteMainComment($id, $modalId, $userId = 0, $isMaster = false)
     {
         DB::table($this->table)
             ->where('id', $id)
             ->update([
-                'state' => $isRobot ? 2 : 4,
+                'state' => 0,
                 'deleted_at' => Carbon::now()
             ]);
 

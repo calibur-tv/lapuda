@@ -459,14 +459,13 @@ class UserRepository extends Repository
             ->count();
         $this->setDayStats('create_comment', $yesterday, $commentCount);
         // imageCount
-        $imageCount = Image::where('image_count', 0)
+        $imageCount = Image::where('is_album', 0)
             ->where('created_at', '<', $createdAt)
             ->count();
         $this->setDayStats('create_image', $yesterday, $imageCount);
         // album_count
         $albumCount = Image::where('created_at', '<', $createdAt)
-            ->where('album_id', 0)
-            ->where('image_count', '>', 1)
+            ->where('is_album', 1)
             ->count();
         $this->setDayStats('create_image_album', $yesterday, $albumCount);
         // bangumiCount
