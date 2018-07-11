@@ -170,15 +170,6 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/deleteComment', 'App\Api\V1\Controllers\PostController@deleteComment')->middleware(['jwt.auth']);
         });
 
-        $api->group(['prefix' => '/trending'], function ($api)
-        {
-            $api->get('/news', 'App\Api\V1\Controllers\PostController@trendingNews');
-
-            $api->get('/active', 'App\Api\V1\Controllers\PostController@trendingActive');
-
-            $api->get('/hot', 'App\Api\V1\Controllers\PostController@trendingHot');
-        });
-
         $api->group(['prefix' => '/manager', 'middleware' => ['jwt.auth']], function ($api)
         {
             $api->group(['prefix' => '/top'], function ($api)

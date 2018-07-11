@@ -10,6 +10,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Support\Facades\DB;
 
 class CreateMainComment implements ShouldQueue
 {
@@ -40,31 +41,37 @@ class CreateMainComment implements ShouldQueue
         $service = new CommentService($this->modal);
         $comment = $service->getMainCommentItem($this->id);
 
-        if (config('app.env') === 'local')
+        $content = $comment['content'];
+        $images = $comment['images'];
+
+        $badCount = 0;
+        $needDelete = false;
+        $imageFilter = new ImageFilter();
+
+        foreach ($images as $image)
         {
-            $service->update($this->id, [
-                'state' => 1
-            ]);
+            $result = $imageFilter->check($image['url']);
+            if ($result['delete'])
+            {
+                $needDelete = true;
+            }
+            if ($result['review'])
+            {
+                $badCount++;
+            }
+        }
+        if ($needDelete)
+        {
+            $service->deleteMainComment($this->id, 0, 0, false);
             return;
         }
 
-        $content = $comment['content'];
-        $images = $comment['images'];
-        $badCount = 0;
-
         $wordsFilter = new WordsFilter();
-        $imageFilter = new ImageFilter();
         $badCount += $wordsFilter->count($content);
-        $badCount += $imageFilter->list($images);
 
         if ($badCount > 0)
         {
-            $service->deleteMainComment($this->id, 0, 0, false, true);
-            return;
+            $service->changeCommentState($this->id, $comment['user_id']);
         }
-
-        $service->update($this->id, [
-            'state' => 1
-        ]);
     }
 }

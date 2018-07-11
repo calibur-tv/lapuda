@@ -8,6 +8,7 @@
 
 namespace App\Api\V1\Controllers;
 
+use Illuminate\Http\Request;
 
 class ScoreController extends Controller
 {
@@ -16,9 +17,9 @@ class ScoreController extends Controller
 
     }
 
-    public function bangumis()
+    public function bangumis(Request $request)
     {
-
+        $bangumiId = $request->get('id');
     }
 
     public function users()
