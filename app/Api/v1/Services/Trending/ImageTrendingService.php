@@ -31,42 +31,6 @@ class ImageTrendingService extends TrendingService
         $this->bangumiId = $bangumiId;
     }
 
-    public function news($minId, $take)
-    {
-        $idsObject = $this->getNewsIds($minId, $take);
-        $list = $this->getImagesByIds($idsObject['ids']);
-
-        return [
-            'list' => $list,
-            'noMore' => $idsObject['noMore'],
-            'total' => $idsObject['total']
-        ];
-    }
-
-    public function active($seenIds, $take)
-    {
-        $idsObject = $this->getActiveIds($seenIds, $take);
-        $list = $this->getImagesByIds($idsObject['ids']);
-
-        return [
-            'list' => $list,
-            'noMore' => $idsObject['noMore'],
-            'total' => $idsObject['total']
-        ];
-    }
-
-    public function hot($seenIds, $take)
-    {
-        $idsObject = $this->getHotIds($seenIds, $take);
-        $list = $this->getImagesByIds($idsObject['ids']);
-
-        return [
-            'list' => $list,
-            'noMore' => $idsObject['noMore'],
-            'total' => $idsObject['total']
-        ];
-    }
-
     public function computeNewsIds()
     {
         return Image::where('state', 0)
@@ -158,7 +122,7 @@ class ImageTrendingService extends TrendingService
         return $result;
     }
 
-    protected function getImagesByIds($ids)
+    protected function getListByIds($ids)
     {
         $imageRepository = new ImageRepository();
         $imageCommentService = new ImageCommentService();

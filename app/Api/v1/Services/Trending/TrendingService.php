@@ -23,6 +23,42 @@ class TrendingService extends Repository
         $this->bangumiId = $bangumiId;
     }
 
+    public function news($minId, $take)
+    {
+        $idsObject = $this->getNewsIds($minId, $take);
+        $list = $this->getListByIds($idsObject['ids']);
+
+        return [
+            'list' => $list,
+            'noMore' => $idsObject['noMore'],
+            'total' => $idsObject['total']
+        ];
+    }
+
+    public function active($seenIds, $take)
+    {
+        $idsObject = $this->getActiveIds($seenIds, $take);
+        $list = $this->getListByIds($idsObject['ids']);
+
+        return [
+            'list' => $list,
+            'noMore' => $idsObject['noMore'],
+            'total' => $idsObject['total']
+        ];
+    }
+
+    public function hot($seenIds, $take)
+    {
+        $idsObject = $this->getHotIds($seenIds, $take);
+        $list = $this->getListByIds($idsObject['ids']);
+
+        return [
+            'list' => $list,
+            'noMore' => $idsObject['noMore'],
+            'total' => $idsObject['total']
+        ];
+    }
+
     public function getNewsIds($maxId, $take)
     {
         $this->deleteCacheIfTimeout('news');
@@ -87,6 +123,11 @@ class TrendingService extends Repository
         $this->ListRemove($this->trendingIdsCacheKey('news'), $id);
         $this->SortRemove($this->trendingIdsCacheKey('active'), $id);
         $this->SortRemove($this->trendingIdsCacheKey('hot'), $id);
+    }
+
+    protected function getListByIds($ids)
+    {
+        return [];
     }
 
     protected function computeNewsIds()

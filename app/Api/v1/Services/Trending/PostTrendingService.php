@@ -32,42 +32,6 @@ class PostTrendingService extends TrendingService
         $this->bangumiId = $bangumiId;
     }
 
-    public function news($minId, $take)
-    {
-        $idsObject = $this->getNewsIds($minId, $take);
-        $list = $this->getPostsByIds($idsObject['ids']);
-
-        return [
-            'list' => $list,
-            'noMore' => $idsObject['noMore'],
-            'total' => $idsObject['total']
-        ];
-    }
-
-    public function active($seenIds, $take)
-    {
-        $idsObject = $this->getActiveIds($seenIds, $take);
-        $list = $this->getPostsByIds($idsObject['ids']);
-
-        return [
-            'list' => $list,
-            'noMore' => $idsObject['noMore'],
-            'total' => $idsObject['total']
-        ];
-    }
-
-    public function hot($seenIds, $take)
-    {
-        $idsObject = $this->getHotIds($seenIds, $take);
-        $list = $this->getPostsByIds($idsObject['ids']);
-
-        return [
-            'list' => $list,
-            'noMore' => $idsObject['noMore'],
-            'total' => $idsObject['total']
-        ];
-    }
-
     public function computeNewsIds()
     {
         return Post::where('state', 0)
@@ -140,7 +104,7 @@ class PostTrendingService extends TrendingService
         return $result;
     }
 
-    protected function getPostsByIds($ids)
+    protected function getListByIds($ids)
     {
         $postRepository = new PostRepository();
         $userRepository = new UserRepository();

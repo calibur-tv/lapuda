@@ -39,13 +39,7 @@ class MigrateCounterService
                 time() - Redis::get($writeKey) > $this->timeout
             )
             {
-                DB::table($this->table)
-                    ->where('id', $id)
-                    ->update([
-                        $this->field => $result
-                    ]);
-
-                $this->writeCache($writeKey, time());
+                $this->set($id, $result);
             }
 
             return $result;
@@ -60,6 +54,17 @@ class MigrateCounterService
         return $this->get($id);
     }
 
+    public function set($id, $result)
+    {
+        DB::table($this->table)
+            ->where('id', $id)
+            ->update([
+                $this->field => $result
+            ]);
+
+        $this->writeCache($this->writeKey($id), time());
+    }
+
     public function get($id)
     {
         $this->id = $id;
@@ -70,10 +75,7 @@ class MigrateCounterService
             return Redis::get($cacheKey);
         }
 
-        $count = DB::table($this->table)
-            ->where('id', $id)
-            ->pluck($this->field)
-            ->first();
+        $count = $this->migration($id);
 
         $this->writeCache($cacheKey, $count);
         $this->writeCache($this->writeKey($id), time());
@@ -89,6 +91,14 @@ class MigrateCounterService
         }
 
         return $list;
+    }
+
+    protected function migration($id)
+    {
+        return DB::table($this->table)
+            ->where('id', $id)
+            ->pluck($this->field)
+            ->first();
     }
 
     protected function writeCache($key, $value)

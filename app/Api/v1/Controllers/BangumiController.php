@@ -3,22 +3,16 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\ImageRepository;
-use App\Api\V1\Repositories\UserRepository;
-use App\Api\V1\Services\Comment\PostCommentService;
-use App\Api\V1\Services\Counter\PostViewCounter;
+use App\Api\V1\Services\Counter\BangumiScoreCounter;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Tag\BangumiTagService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
-use App\Api\V1\Services\Toggle\Post\PostLikeService;
-use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
-use App\Api\V1\Transformers\PostTransformer;
 use App\Models\Bangumi;
 use App\Api\V1\Repositories\BangumiRepository;
-use App\Api\V1\Repositories\PostRepository;
 use App\Models\Image;
 use App\Models\Video;
 use App\Services\OpenSearch\Search;
@@ -211,6 +205,9 @@ class BangumiController extends Controller
 
         $bangumiTagService = new BangumiTagService();
         $bangumi['tags'] = $bangumiTagService->tags($id);
+
+        $bangumiScoreCounter = new BangumiScoreCounter();
+        $bangumi['score'] = $bangumiScoreCounter->get($id);
 
         $transformer = new BangumiTransformer();
 
