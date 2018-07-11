@@ -13,6 +13,7 @@ use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Comment\PostCommentService;
+use App\Api\V1\Services\Comment\ScoreCommentService;
 use App\Api\V1\Services\Comment\VideoCommentService;
 use App\Api\V1\Services\Counter\Stats\TotalCommentCount;
 use Carbon\Carbon;
@@ -509,7 +510,7 @@ class CommentController extends Controller
 
     public function trialList()
     {
-        $types = ['post', 'video', 'image'];
+        $types = ['post', 'video', 'image', 'score'];
         $result = [];
         foreach ($types as $modal)
         {
@@ -586,6 +587,10 @@ class CommentController extends Controller
         else if ($type === 'image')
         {
             return new ImageCommentService();
+        }
+        else if ($type === 'score')
+        {
+            return new ScoreCommentService();
         }
         else
         {

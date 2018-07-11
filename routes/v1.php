@@ -14,8 +14,6 @@ $api->version(['v1', 'latest'], function ($api)
         $api->get('/new', 'App\Api\V1\Controllers\SearchController@search');
 
         $api->get('/bangumis', 'App\Api\V1\Controllers\SearchController@bangumis');
-
-        $api->get('/migration', 'App\Api\V1\Controllers\SearchController@migration');
     });
 
     $api->group(['prefix' => '/door'], function ($api)
@@ -82,6 +80,20 @@ $api->version(['v1', 'latest'], function ($api)
         });
 
         $api->post('/playing', 'App\Api\V1\Controllers\VideoController@playing');
+    });
+
+    $api->group(['prefix' => '/score'], function ($api)
+    {
+        $api->group(['prefix' => '/{id}'], function ($api)
+        {
+            $api->get('/show', 'App\Api\V1\Controllers\ScoreController@show');
+        });
+
+        $api->get('/bangumis', 'App\Api\V1\Controllers\ScoreController@bangumis');
+
+        $api->get('/users', 'App\Api\V1\Controllers\ScoreController@users');
+
+        $api->post('/create', 'App\Api\V1\Controllers\ScoreController@create')->middleware(['jwt.auth']);
     });
 
     $api->group(['prefix' => '/user'], function ($api)

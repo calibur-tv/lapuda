@@ -10,14 +10,12 @@ namespace App\Api\V1\Repositories;
 
 
 use App\Api\V1\Services\Comment\PostCommentService;
+use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Services\Trending\TrendingService;
 use App\Models\Post;
 use App\Models\PostImages;
-use App\Models\PostLike;
-use App\Models\PostMark;
 use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
 class PostRepository extends Repository
@@ -85,7 +83,7 @@ class PostRepository extends Repository
             'updated_at' => $now
         ]);
 
-        $trendingService = new TrendingService('posts');
+        $trendingService = new PostTrendingService();
         $trendingService->update($id);
 
         // 更新番剧帖子列表的缓存
@@ -207,7 +205,7 @@ class PostRepository extends Repository
             'post'
         );
 
-        $trendingService = new TrendingService('posts');
+        $trendingService = new PostTrendingService();
         $trendingService->create($post['id']);
 
         $job = (new \App\Jobs\Push\Baidu('post/trending/new', 'update'));

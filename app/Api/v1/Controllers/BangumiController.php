@@ -9,6 +9,7 @@ use App\Api\V1\Services\Counter\PostViewCounter;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Tag\BangumiTagService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
+use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
@@ -194,11 +195,15 @@ class BangumiController extends Controller
         }
 
         $userId = $this->getAuthUserId();
-        $bangumiFollowService = new BangumiFollowService();
 
+        $bangumiFollowService = new BangumiFollowService();
         $bangumi['count_like'] = $bangumiFollowService->total($id);
         $bangumi['followers'] = $bangumiFollowService->users($id);
         $bangumi['followed'] = $bangumiFollowService->check($userId, $id);
+
+        $bangumiScoreService = new BangumiScoreService();
+        $bangumi['count_score'] = $bangumiScoreService->total($id);
+        $bangumi['scored'] = $bangumiScoreService->check($userId, $id);
 
         $bangumiManager = new BangumiManager();
         $bangumi['is_master'] = $bangumiManager->isOwner($id, $userId);
@@ -531,8 +536,7 @@ class BangumiController extends Controller
             'others_site_video' => $request->get('others_site_video'),
             'end' => $request->get('end'),
             'created_at' => $time,
-            'updated_at' => $time,
-            'count_score' => 0
+            'updated_at' => $time
         ]);
 
         $bangumiTagService = new BangumiTagService();

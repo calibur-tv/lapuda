@@ -25,9 +25,9 @@ class Bangumi extends Model
         'released_video_id',
         'published_at',
         'count_like',
-        'count_score',
         'others_site_video',
         'end',
+        'score',
         'has_cartoon',
         'has_video',
         'cartoon'   // 漫画的 ids

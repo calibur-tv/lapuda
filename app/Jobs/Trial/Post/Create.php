@@ -4,8 +4,6 @@ namespace App\Jobs\Trial\Post;
 
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Services\Counter\Stats\TotalPostCount;
-use App\Api\V1\Services\Trending\TrendingService;
-use App\Services\OpenSearch\Search;
 use App\Services\Trial\ImageFilter;
 use App\Services\Trial\WordsFilter;
 use Carbon\Carbon;
