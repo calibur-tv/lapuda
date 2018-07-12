@@ -93,6 +93,8 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/users', 'App\Api\V1\Controllers\ScoreController@users');
 
+        $api->post('/delete', 'App\Api\V1\Controllers\ScoreController@delete')->middleware(['jwt.auth']);
+
         $api->post('/create', 'App\Api\V1\Controllers\ScoreController@create')->middleware(['jwt.auth', 'geetest']);
     });
 
@@ -282,6 +284,17 @@ $api->version(['v1', 'latest'], function ($api)
         $api->get('/active', 'App\Api\V1\Controllers\TrendingController@active');
 
         $api->get('/hot', 'App\Api\V1\Controllers\TrendingController@hot');
+    });
+
+    $api->group(['prefix' => '/toggle', 'middleware' => ['jwt.auth']], function ($api)
+    {
+        $api->post('/like', 'App\Api\V1\Controllers\ToggleController@like');
+
+        $api->post('/mark', 'App\Api\V1\Controllers\ToggleController@mark');
+
+        $api->post('/follow', 'App\Api\V1\Controllers\ToggleController@follow');
+
+        $api->post('/reward', 'App\Api\V1\Controllers\ToggleController@reward');
     });
 
     $api->group(['prefix' => '/admin', 'middleware' => ['jwt.admin']], function ($api)

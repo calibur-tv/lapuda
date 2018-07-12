@@ -10,6 +10,7 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Comment\PostCommentService;
@@ -608,6 +609,10 @@ class CommentController extends Controller
         else if ($type === 'image')
         {
             return new ImageRepository();
+        }
+        else if ($type === 'score')
+        {
+            return new ScoreRepository();
         }
         else
         {
