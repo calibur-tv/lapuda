@@ -34,6 +34,33 @@ class ScoreTransformer extends Transformer
                         'avatar' => $bangumi['avatar']
                     ];
                 }),
+                'liked' => (boolean)$score['liked'],
+                'commented' => (boolean)$score['commented'],
+                'like_count' => (int)$score['like_count'],
+                'comment_count' => (int)$score['comment_count'],
+                'intro' => $score['intro'],
+                'total' => (int)$score['total'],
+                'created_at' => $score['created_at']
+            ];
+        });
+    }
+
+    public function users($list)
+    {
+        return $this->collection($list, function ($score)
+        {
+            return [
+                'id' => (int)$score['id'],
+                'bangumi' => $this->transformer($score['bangumi'], function ($bangumi)
+                {
+                    return [
+                        'id' => (int)$bangumi['id'],
+                        'name' => $bangumi['name'],
+                        'avatar' => $bangumi['avatar']
+                    ];
+                }),
+                'like_count' => (int)$score['like_count'],
+                'comment_count' => (int)$score['comment_count'],
                 'intro' => $score['intro'],
                 'total' => (int)$score['total'],
                 'created_at' => $score['created_at']

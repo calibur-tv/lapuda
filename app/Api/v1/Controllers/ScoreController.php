@@ -10,9 +10,13 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ScoreRepository;
+use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Comment\ScoreCommentService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
+use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
+use App\Api\V1\Transformers\ScoreTransformer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -43,9 +47,51 @@ class ScoreController extends Controller
         return $this->resOK($score);
     }
 
-    public function users()
+    public function users(Request $request)
     {
+        $userId = $request->get('user_id');
+        $page = $request->get('page') ?: 0;
+        $take = $request->get('take') ?: 10;
 
+        $userRepository = new UserRepository();
+        $user = $userRepository->item($userId);
+        if (is_null($user))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $scoreRepository = new ScoreRepository();
+
+        $idsObj = $scoreRepository->userScoreIds($userId, $page, $take);
+
+        $list = $scoreRepository->list($idsObj['ids']);
+
+        $bangumiRepository = new BangumiRepository();
+        $result = [];
+        foreach ($list as $score)
+        {
+            $bangumi = $bangumiRepository->item($score['bangumi_id']);
+            if (is_null($bangumi))
+            {
+                continue;
+            }
+            $score['bangumi'] = $bangumi;
+            $result[] = $score;
+        }
+
+        $scoreLikeService = new ScoreLikeService();
+        $result = $scoreLikeService->batchTotal($result, 'like_count');
+
+        $scoreCommentService = new ScoreCommentService();
+        $result = $scoreCommentService->batchGetCommentCount($result);
+
+        $scoreTransformer = new ScoreTransformer();
+
+        return $this->resOK([
+            'list' => $scoreTransformer->users($result),
+            'noMore' => $idsObj['noMore'],
+            'total' => $idsObj['total']
+        ]);
     }
 
     public function create(Request $request)
@@ -112,7 +158,7 @@ class ScoreController extends Controller
         $newId = DB::table('scores')
             ->insertGetId([
                 'user_id' => $userId,
-                'user_age' => 18,
+                'user_age' => $this->computeBirthday($user->birthday),
                 'user_sex' => $user->sex,
                 'bangumi_id' => $bangumiId,
                 'lol' => $lol,
@@ -160,5 +206,22 @@ class ScoreController extends Controller
     public function trialBan()
     {
 
+    }
+
+    protected function computeBirthday($birthday)
+    {
+        $age = strtotime($birthday);
+        if ($age === false)
+        {
+            return 0;
+        }
+        list($y1,$m1,$d1) = explode("-",date("Y-m-d",$age));
+        $now = strtotime("now");
+        list($y2,$m2,$d2) = explode("-",date("Y-m-d",$now));
+        $age = $y2 - $y1;
+        if ((int)($m2.$d2) < (int)($m1.$d1))
+            $age -= 1;
+
+        return $age;
     }
 }
