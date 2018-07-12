@@ -146,6 +146,24 @@ class ScoreRepository extends Repository
         }, 1);
     }
 
+    public function userScoreIds($userId, $page, $take)
+    {
+        $ids = $this->Cache($this->cacheKeyUserScoreIds($userId), function () use ($userId)
+        {
+            return Score::where('user_id', $userId)
+                ->orderBy('created_at', 'DESC')
+                ->pluck('id')
+                ->toArray();
+        }, 'm');
+
+        return $this->filterIdsByPage($ids, $page, $take);
+    }
+
+    public function cacheKeyUserScoreIds($userId)
+    {
+        return 'user_' . $userId . '_score';
+    }
+
     public function cacheKeyBangumiScore($bangumiId)
     {
         return 'bangumi_' . $bangumiId . '_score';

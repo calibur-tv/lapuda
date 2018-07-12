@@ -442,7 +442,6 @@ class PostController extends Controller
         DB::table('posts')
             ->where('id', $postId)
             ->update([
-                'state' => 1,
                 'deleted_at' => Carbon::now()
             ]);
         /*
