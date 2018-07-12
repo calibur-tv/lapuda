@@ -93,7 +93,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/users', 'App\Api\V1\Controllers\ScoreController@users');
 
-        $api->post('/create', 'App\Api\V1\Controllers\ScoreController@create')->middleware(['jwt.auth']);
+        $api->post('/create', 'App\Api\V1\Controllers\ScoreController@create')->middleware(['jwt.auth', 'geetest']);
     });
 
     $api->group(['prefix' => '/user'], function ($api)
@@ -166,8 +166,6 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/toggleMark', 'App\Api\V1\Controllers\PostController@toggleMark')->middleware(['jwt.auth']);
 
             $api->post('/deletePost', 'App\Api\V1\Controllers\PostController@deletePost')->middleware(['jwt.auth']);
-
-            $api->post('/deleteComment', 'App\Api\V1\Controllers\PostController@deleteComment')->middleware(['jwt.auth']);
         });
 
         $api->group(['prefix' => '/manager', 'middleware' => ['jwt.auth']], function ($api)

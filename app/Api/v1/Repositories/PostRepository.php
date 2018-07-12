@@ -11,7 +11,6 @@ namespace App\Api\V1\Repositories;
 
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Trending\PostTrendingService;
-use App\Api\V1\Services\Trending\TrendingService;
 use App\Models\Post;
 use App\Models\PostImages;
 use App\Services\OpenSearch\Search;

@@ -151,7 +151,8 @@ class UserController extends Controller
             'sex' => 'required',
             'signature' => 'string|min:0|max:150',
             'nickname' => 'required|min:1|max:14',
-            'birthday' => 'required'
+            'birth_secret' => 'required|boolean',
+            'sex_secret' => 'required|boolean'
         ]);
 
         if ($validator->fails())
@@ -165,7 +166,9 @@ class UserController extends Controller
             'nickname' => Purifier::clean($request->get('nickname')),
             'signature' => Purifier::clean($request->get('signature')),
             'sex' => $request->get('sex'),
-            'birthday' => $request->get('birthday')
+            'sex_secret' => $request->get('sex_secret'),
+            'birthday' => $request->get('birthday'),
+            'birth_secret' => $request->get('birth_secret')
         ]);
 
         Redis::DEL('user_'.$userId);
