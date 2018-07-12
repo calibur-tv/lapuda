@@ -5,6 +5,7 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Services\Trending\PostTrendingService;
+use App\Api\V1\Services\Trending\ScoreTrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use Illuminate\Http\Request;
 
@@ -109,6 +110,10 @@ class TrendingController extends Controller
         else if ($type === 'image')
         {
             return new ImageTrendingService($userId, $bangumiId);
+        }
+        else if ($type === 'score')
+        {
+            return new ScoreTrendingService($userId, $bangumiId);
         }
 
         return null;

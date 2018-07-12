@@ -23,6 +23,7 @@ class Score extends Model
         'user_age',
         'user_sex',
         'content',
+        'intro',
         'total',
         'lol',
         'cry',
@@ -33,7 +34,8 @@ class Score extends Model
         'role',
         'story',
         'express',
-        'style'
+        'style',
+        'state'
     ];
 
     protected $casts = [

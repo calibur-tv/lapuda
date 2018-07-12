@@ -82,6 +82,7 @@ class BangumiTransformer extends Transformer
                 'count_like' => (int)$bangumi['count_like'],
                 'alias' => $bangumi['alias'],
                 'followed' => $bangumi['followed'],
+                'scored' => $bangumi['scored'],
                 'is_master' => $bangumi['is_master'],
                 'managers' => $bangumi['managers'],
                 'tags' => $bangumi['tags'],
