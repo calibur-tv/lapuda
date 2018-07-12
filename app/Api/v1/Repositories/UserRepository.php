@@ -87,11 +87,14 @@ class UserRepository extends Repository
             case 2:
                 $res = '女';
                 break;
-            case 3:     // 男,保密
-                $res = '保密';
+            case 3:
+                $res = '伪娘';
                 break;
-            case 4:     // 女,保密
-                $res = '保密';
+            case 4:
+                $res = '药娘';
+                break;
+            case 5:
+                $res = '扶她';
                 break;
             default:
                 $res = '未知';

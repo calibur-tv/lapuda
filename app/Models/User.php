@@ -21,6 +21,8 @@ class User extends Authenticatable
         'signature',
         'sex',
         'birthday',
+        'birth_secret',
+        'sex_secret',
         'coin_count',
         'state',    // 0 正常，1 待审
         'password_change_at', // 密码最后修改时间
@@ -35,7 +37,6 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'birthday' => 'integer',
         'sex' => 'integer'
     ];
 
