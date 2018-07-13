@@ -12,8 +12,12 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Services\Comment\PostCommentService;
+use App\Api\V1\Services\Counter\PostViewCounter;
 use App\Api\V1\Services\Counter\Stats\TotalUserCount;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
+use App\Api\V1\Services\Toggle\Post\PostLikeService;
+use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\PostTransformer;
@@ -248,6 +252,16 @@ class UserController extends Controller
         {
             $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
         }
+
+        $ViewCounter = new PostViewCounter();
+        $commentService = new PostCommentService();
+        $likeService = new PostLikeService();
+        $markService = new PostMarkService();
+
+        $list = $likeService->batchTotal($list, 'like_count');
+        $list = $markService->batchTotal($list, 'mark_count');
+        $list = $commentService->batchGetCommentCount($list);
+        $list = $ViewCounter->batchGet($list, 'view_count');
 
         return $this->resOK([
             'list' => $postTransformer->usersMine($list),

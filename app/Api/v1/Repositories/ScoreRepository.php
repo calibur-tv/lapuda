@@ -9,7 +9,11 @@
 namespace App\Api\V1\Repositories;
 
 
+use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
+use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
+use App\Api\V1\Services\Trending\ScoreTrendingService;
 use App\Models\Score;
+use Illuminate\Support\Facades\Redis;
 
 class ScoreRepository extends Repository
 {
@@ -23,7 +27,10 @@ class ScoreRepository extends Repository
                 return null;
             }
 
-            return $score->toArray();
+            $score = $score->toArray();
+            $score['content'] = json_decode($score['content']);
+
+            return $score;
         });
     }
 
@@ -46,6 +53,7 @@ class ScoreRepository extends Repository
         {
             $data =  Score::where('bangumi_id', $bangumiId)
                 ->select('total', 'lol', 'cry', 'fight', 'moe', 'sound', 'vision', 'role', 'story', 'express', 'style')
+                ->whereNotNull('published_at')
                 ->get()
                 ->toArray();
 
@@ -83,25 +91,30 @@ class ScoreRepository extends Repository
             }
 
             $fiveStar = Score::where('bangumi_id', $bangumiId)
+                ->whereNotNull('published_at')
                 ->where('total', '>=', 80)
                 ->count();
 
             $fourStar = Score::where('bangumi_id', $bangumiId)
+                ->whereNotNull('published_at')
                 ->where('total', '>=', 60)
                 ->where('total', '<', 80)
                 ->count();
 
             $threeStar = Score::where('bangumi_id', $bangumiId)
+                ->whereNotNull('published_at')
                 ->where('total', '>=', 40)
                 ->where('total', '<', 60)
                 ->count();
 
             $twoStar = Score::where('bangumi_id', $bangumiId)
-                    ->where('total', '>=', 20)
+                ->whereNotNull('published_at')
+                ->where('total', '>=', 20)
                     ->where('total', '<', 40)
                     ->count();
 
             $oneStar = Score::where('bangumi_id', $bangumiId)
+                ->whereNotNull('published_at')
                 ->where('total', '<', 20)
                 ->count();
 
@@ -157,6 +170,27 @@ class ScoreRepository extends Repository
         }, 'm');
 
         return $this->filterIdsByPage($ids, $page, $take);
+    }
+
+    public function doPublish($userId, $scoreId, $bangumiId)
+    {
+        $bangumiScoreService = new BangumiScoreService();
+        $bangumiScoreService->do($userId, $bangumiId);
+        Redis::DEL($this->cacheKeyBangumiScore($bangumiId));
+
+        $scoreTrendingService = new ScoreTrendingService(0, $bangumiId);
+        $scoreTrendingService->create($scoreId);
+
+        $bangumiFollowService = new BangumiFollowService();
+        if (!$bangumiFollowService->check($userId, $bangumiId))
+        {
+            // 如果没有关注，就给他关注
+            $bangumiFollowService->do($userId, $bangumiId);
+        }
+
+        // TODO：trial
+        // TODO：SEO
+        // TODO：SEARCH
     }
 
     public function cacheKeyUserScoreIds($userId)

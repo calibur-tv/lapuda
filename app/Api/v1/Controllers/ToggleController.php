@@ -15,6 +15,21 @@ use Illuminate\Http\Request;
 
 class ToggleController extends Controller
 {
+    public function check(Request $request)
+    {
+        $id = $request->get('id');
+        $type = $request->get('type');
+        $userId = $this->getAuthUserId();
+
+        $likeService = $this->getLikeServiceByType($type);
+        if (is_null($likeService))
+        {
+            return $this->resErrBad();
+        }
+
+        return $this->resOK($likeService->checkGetId($userId, $id));
+    }
+
     public function like(Request $request)
     {
         $id = $request->get('id');

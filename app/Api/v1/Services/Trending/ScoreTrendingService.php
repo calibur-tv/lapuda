@@ -38,6 +38,7 @@ class ScoreTrendingService extends TrendingService
                 return $query->where('bangumi_id', $this->bangumiId);
             })
             ->orderBy('created_at', 'desc')
+            ->whereNotNull('published_at')
             ->latest()
             ->take(100)
             ->pluck('id');
@@ -51,6 +52,7 @@ class ScoreTrendingService extends TrendingService
                 return $query->where('bangumi_id', $this->bangumiId);
             })
             ->orderBy('updated_at', 'desc')
+            ->whereNotNull('published_at')
             ->latest()
             ->take(100)
             ->pluck('updated_at', 'id');
