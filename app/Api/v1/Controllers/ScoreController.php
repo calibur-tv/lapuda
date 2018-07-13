@@ -12,10 +12,8 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\ScoreCommentService;
-use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
-use App\Api\V1\Services\Trending\ScoreTrendingService;
 use App\Api\V1\Transformers\ScoreTransformer;
 use App\Models\Score;
 use Carbon\Carbon;
@@ -31,7 +29,7 @@ class ScoreController extends Controller
     {
         $scoreRepository = new ScoreRepository();
         $score = $scoreRepository->item($id);
-        if (is_null($score))
+        if (is_null($score) || !$score['published_at'])
         {
             return $this->resErrNotFound();
         }
@@ -132,12 +130,30 @@ class ScoreController extends Controller
         ]);
     }
 
+    public function check(Request $request)
+    {
+        $bangumiId = $request->get('id');
+        $userId = $this->getAuthUserId();
+
+        $likeService = new BangumiScoreService();
+        if (!$likeService->check($userId, $bangumiId))
+        {
+            return $this->resOK(0);
+        }
+
+        $createdId = (int)Score::whereRaw('user_id = ? and bangumi_id = ?', [$userId, $bangumiId])
+            ->pluck('id')
+            ->first();
+
+        return $this->resOK($createdId);
+    }
+
     public function create(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'bangumi_id' => 'required|integer',
             'intro' => 'required|max:120',
-            'content' => 'required|string',
+            'content' => 'required|Array',
             'lol' => 'required|integer|min:0|max:10',
             'cry' => 'required|integer|min:0|max:10',
             'fight' => 'required|integer|min:0|max:10',
@@ -147,7 +163,8 @@ class ScoreController extends Controller
             'role' => 'required|integer|min:0|max:10',
             'story' => 'required|integer|min:0|max:10',
             'express' => 'required|integer|min:0|max:10',
-            'style' => 'required|integer|min:0|max:10'
+            'style' => 'required|integer|min:0|max:10',
+            'do_publish' => 'required|boolean'
         ]);
 
         if ($validator->fails())
@@ -165,17 +182,11 @@ class ScoreController extends Controller
 
         $user = $this->getAuthUser();
         $userId = $user->id;
+        $doPublished = $request->get('do_publish');
         $bangumiScoreService = new BangumiScoreService();
-        if ($bangumiScoreService->check($userId, $bangumiId))
+        if ($doPublished && $bangumiScoreService->check($userId, $bangumiId))
         {
-            return $this->resErrBad('不能重复评分');
-        }
-
-        $bangumiFollowService = new BangumiFollowService();
-        if (!$bangumiFollowService->check($userId, $bangumiId))
-        {
-            // 如果没有关注，就给他关注
-            $bangumiFollowService->do($userId, $bangumiId);
+            return $this->resErrBad('同一番剧不能重复评分');
         }
 
         $lol = $request->get('lol');
@@ -189,7 +200,7 @@ class ScoreController extends Controller
         $express = $request->get('express');
         $style = $request->get('style');
         $total = $lol + $cry + $fight + $moe + $sound + $vision + $role + $story + $express + $style;
-        $content = Purifier::clean($request->get('content'));
+        $content = Purifier::clean(json_encode($request->get('content')));
         $intro = $request->get('intro');
         $now = Carbon::now();
 
@@ -213,28 +224,107 @@ class ScoreController extends Controller
                 'content' => $content,
                 'intro' => $intro,
                 'created_at' => $now,
-                'updated_at' => $now
+                'updated_at' => $now,
+                'published_at' => $doPublished ? $now : null
             ]);
 
-        $bangumiScoreService->do($userId, $bangumiId);
 
         $scoreRepository = new ScoreRepository();
-        Redis::DEL($scoreRepository->cacheKeyBangumiScore($bangumiId));
+        if ($doPublished)
+        {
+            $scoreRepository->doPublish($userId, $newId, $bangumiId);;
+        }
         Redis::DEL($scoreRepository->cacheKeyUserScoreIds($userId));
-
-        $scoreTrendingService = new ScoreTrendingService(0, $bangumiId);
-        $scoreTrendingService->create($newId);
-
-        // TODO：trial
-        // TODO：SEO
-        // TODO：SEARCH
 
         return $this->resOK($newId);
     }
 
-    public function update()
+    public function update(Request $request)
     {
-        // TODO
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer',
+            'bangumi_id' => 'required|integer',
+            'intro' => 'required|max:120',
+            'content' => 'required|Array',
+            'lol' => 'required|integer|min:0|max:10',
+            'cry' => 'required|integer|min:0|max:10',
+            'fight' => 'required|integer|min:0|max:10',
+            'moe' => 'required|integer|min:0|max:10',
+            'sound' => 'required|integer|min:0|max:10',
+            'vision' => 'required|integer|min:0|max:10',
+            'role' => 'required|integer|min:0|max:10',
+            'story' => 'required|integer|min:0|max:10',
+            'express' => 'required|integer|min:0|max:10',
+            'style' => 'required|integer|min:0|max:10',
+            'do_publish' => 'required|boolean'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $bangumiId = $request->get('bangumi_id');
+        $bangumiRepository = new BangumiRepository();
+        $bangumi = $bangumiRepository->item($bangumiId);
+        if (is_null($bangumi))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $user = $this->getAuthUser();
+        $userId = $user->id;
+        $doPublished = $request->get('do_publish');
+        $bangumiScoreService = new BangumiScoreService();
+        if ($doPublished && $bangumiScoreService->check($userId, $bangumiId))
+        {
+            return $this->resErrBad('同一番剧不能重复评分');
+        }
+
+        $lol = $request->get('lol');
+        $cry = $request->get('cry');
+        $fight = $request->get('fight');
+        $moe = $request->get('moe');
+        $sound = $request->get('sound');
+        $vision = $request->get('vision');
+        $role = $request->get('role');
+        $story = $request->get('story');
+        $express = $request->get('express');
+        $style = $request->get('style');
+        $total = $lol + $cry + $fight + $moe + $sound + $vision + $role + $story + $express + $style;
+        $content = Purifier::clean(json_encode($request->get('content')));
+        $intro = $request->get('intro');
+        $now = Carbon::now();
+        $newId = $request->get('id');
+
+        Score::where('id', $newId)
+            ->update([
+                'user_age' => $this->computeBirthday($user->birthday),
+                'user_sex' => $user->sex,
+                'lol' => $lol,
+                'cry' => $cry,
+                'fight' => $fight,
+                'moe' => $moe,
+                'sound' => $sound,
+                'vision' => $vision,
+                'role' => $role,
+                'story' => $story,
+                'express' => $express,
+                'style' => $style,
+                'total' => $total,
+                'content' => $content,
+                'intro' => $intro,
+                'published_at' => $doPublished ? $now : null
+            ]);
+
+        $scoreRepository = new ScoreRepository();
+        if ($doPublished)
+        {
+            $scoreRepository->doPublish($userId, $newId, $bangumiId);;
+        }
+        Redis::DEL($scoreRepository->cacheKeyUserScoreIds($userId));
+
+        return $this->resNoContent();
     }
 
     public function delete(Request $request)

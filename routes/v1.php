@@ -93,7 +93,11 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/users', 'App\Api\V1\Controllers\ScoreController@users');
 
+        $api->get('/check', 'App\Api\V1\Controllers\ScoreController@check')->middleware(['jwt.auth']);
+
         $api->post('/delete', 'App\Api\V1\Controllers\ScoreController@delete')->middleware(['jwt.auth']);
+
+        $api->post('/update', 'App\Api\V1\Controllers\ScoreController@update')->middleware(['jwt.auth']);
 
         $api->post('/create', 'App\Api\V1\Controllers\ScoreController@create')->middleware(['jwt.auth', 'geetest']);
     });
@@ -295,6 +299,8 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/follow', 'App\Api\V1\Controllers\ToggleController@follow');
 
         $api->post('/reward', 'App\Api\V1\Controllers\ToggleController@reward');
+
+        $api->get('/check', 'App\Api\V1\Controllers\ToggleController@check');
     });
 
     $api->group(['prefix' => '/admin', 'middleware' => ['jwt.admin']], function ($api)
