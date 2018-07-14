@@ -14,6 +14,7 @@ use App\Models\CartoonRole;
 use App\Models\Feedback;
 use App\Models\Image;
 use App\Models\Post;
+use App\Models\Score;
 use App\Models\User;
 use App\Services\Trial\ImageFilter;
 use App\Services\Trial\WordsFilter;
@@ -33,13 +34,14 @@ class TrialController extends Controller
         $images = Image::withTrashed()->where('state', '<>', 0)->count() + AlbumImage::withTrashed()->where('state', '<>', 0)->count();
 
         $result = [
-            'users' => User::where('state', '<>', 0)->count(),
+            'feedback' => Feedback::where('stage', 0)->count(),
+            'users' => User::withTrashed()->where('state', '<>', 0)->count(),
             'posts' => Post::withTrashed()->where('state', '<>', 0)->count(),
             'images' => $images,
-            'feedback' => Feedback::where('stage', 0)->count(),
             'comments' => $comments,
-            'bangumi' => Bangumi::where('state', '<>', 0)->count(),
-            'role' => CartoonRole::where('state', '<>', 0)->count()
+            'bangumi' => Bangumi::withTrashed()->where('state', '<>', 0)->count(),
+            'role' => CartoonRole::withTrashed()->where('state', '<>', 0)->count(),
+            'score' => Score::withTrashed()->where('state', '<>', 0)->count()
         ];
 
         return $this->resOK($result);
