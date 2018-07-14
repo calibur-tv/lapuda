@@ -420,17 +420,46 @@ class ScoreController extends Controller
 
     public function trials()
     {
+        $ids = Score::withTrashed()
+            ->where('state', '<>', 0)
+            ->pluck('id')
+            ->toArray();
 
+        if (empty($ids))
+        {
+            return $this->resOK([]);
+        }
+
+        $scoreRepository = new ScoreRepository();
+        $list = $scoreRepository->list($ids);
+
+        return $this->resOK($list);
     }
 
-    public function pass()
+    public function pass(Request $request)
     {
+        $id = $request->get('id');
+        DB::table('scores')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
 
+        return $this->resNoContent();
     }
 
-    public function ban()
+    public function ban(Request $request)
     {
+        $id = $request->get('id');
+        DB::table('scores')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => Carbon::now()
+            ]);
 
+        return $this->resNoContent();
     }
 
     protected function computeBirthday($birthday)
