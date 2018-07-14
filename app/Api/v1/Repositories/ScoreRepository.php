@@ -29,6 +29,17 @@ class ScoreRepository extends Repository
 
             $score = $score->toArray();
             $score['content'] = json_decode($score['content']);
+            $score['total'] = $score['total'] / 10;
+            $score['lol'] = $score['lol'] / 2;
+            $score['cry'] = $score['cry'] / 2;
+            $score['fight'] = $score['fight'] / 2;
+            $score['moe'] = $score['moe'] / 2;
+            $score['sound'] = $score['sound'] / 2;
+            $score['vision'] = $score['vision'] / 2;
+            $score['role'] = $score['role'] / 2;
+            $score['story'] = $score['story'] / 2;
+            $score['express'] = $score['express'] / 2;
+            $score['style'] = $score['style'] / 2;
 
             return $score;
         });
@@ -164,6 +175,7 @@ class ScoreRepository extends Repository
         $ids = $this->Cache($this->cacheKeyUserScoreIds($userId), function () use ($userId)
         {
             return Score::where('user_id', $userId)
+                ->whereNotNull('published_at')
                 ->orderBy('created_at', 'DESC')
                 ->pluck('id')
                 ->toArray();
