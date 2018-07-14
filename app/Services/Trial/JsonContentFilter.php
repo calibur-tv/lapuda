@@ -21,6 +21,7 @@ class JsonContentFilter
         ];
         $badWordsCount = 0;
         $badImageCount = 0;
+        $content =  json_decode(json_encode($content), true);
         foreach ($content as $row)
         {
             if ($row['type'] == 'txt')
