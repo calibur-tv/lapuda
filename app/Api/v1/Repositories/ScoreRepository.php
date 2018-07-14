@@ -200,7 +200,7 @@ class ScoreRepository extends Repository
             $bangumiFollowService->do($userId, $bangumiId);
         }
 
-        $job = (new \App\Jobs\Trial\JsonContent\Score($scoreId));
+        $job = (new \App\Jobs\Trial\JsonContent\TrialScore($scoreId));
         dispatch($job);
         // TODO：SEO
         // TODO：SEARCH
