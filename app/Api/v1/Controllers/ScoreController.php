@@ -14,6 +14,7 @@ use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\ScoreCommentService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
+use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\ScoreTransformer;
 use App\Models\Score;
 use Carbon\Carbon;
@@ -65,6 +66,23 @@ class ScoreController extends Controller
 
         $transformer = new ScoreTransformer();
         return $this->resOK($transformer->show($score));
+    }
+
+    public function edit($id)
+    {
+        $scoreRepository = new ScoreRepository();
+        $score = $scoreRepository->item($id);
+        if (is_null($score))
+        {
+            return $this->resErrNotFound();
+        }
+        $userId = $this->getAuthUserId();
+        if ($score['user_id'] != $userId)
+        {
+            return $this->resErrRole();
+        }
+
+        return $this->resOK($score);
     }
 
     public function bangumis(Request $request)
@@ -128,6 +146,42 @@ class ScoreController extends Controller
             'noMore' => $idsObj['noMore'],
             'total' => $idsObj['total']
         ]);
+    }
+
+    public function drafts()
+    {
+        $userId = $this->getAuthUserId();
+        $ids = Score::where('user_id', $userId)
+            ->whereNull('published_at')
+            ->orderBy('updated_at', 'DESC')
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($ids))
+        {
+            return $this->resOK([]);
+        }
+
+        $scoreRepository = new ScoreRepository();
+        $bangumiRepository = new BangumiRepository();
+        $bangumiTransformer = new BangumiTransformer();
+        $list = $scoreRepository->list($ids);
+
+        $result = [];
+        foreach ($list as $item)
+        {
+            $bangumi = $bangumiRepository->item($item['bangumi_id']);
+            if (is_null($bangumi))
+            {
+                continue;
+            }
+            $item['bangumi'] = $bangumiTransformer->item($bangumi);
+            $result[] = $item;
+        }
+
+        $scoreTransformer = new ScoreTransformer();
+
+        return $this->resOK($scoreTransformer->drafts($result));
     }
 
     public function check(Request $request)
@@ -274,11 +328,26 @@ class ScoreController extends Controller
 
         $user = $this->getAuthUser();
         $userId = $user->id;
+        $newId = $request->get('id');
+        $scoreRepository = new ScoreRepository();
+        $score = $scoreRepository->item($newId);
+        if ($score['user_id'] != $userId)
+        {
+            return $this->resErrRole();
+        }
+
         $doPublished = $request->get('do_publish');
         $bangumiScoreService = new BangumiScoreService();
         if ($doPublished && $bangumiScoreService->check($userId, $bangumiId))
         {
-            return $this->resErrBad('同一番剧不能重复评分');
+            $oldId = (int)Score::whereRaw('user_id = ? and bangumi_id = ?', [$userId, $bangumiId])
+                ->pluck('id')
+                ->first();
+
+            if ($oldId && $oldId !== $newId)
+            {
+                return $this->resErrBad('同一番剧不能重复评分');
+            }
         }
 
         $lol = $request->get('lol');
@@ -294,8 +363,6 @@ class ScoreController extends Controller
         $total = $lol + $cry + $fight + $moe + $sound + $vision + $role + $story + $express + $style;
         $content = Purifier::clean(json_encode($request->get('content')));
         $intro = $request->get('intro');
-        $now = Carbon::now();
-        $newId = $request->get('id');
 
         Score::where('id', $newId)
             ->update([
@@ -314,15 +381,15 @@ class ScoreController extends Controller
                 'total' => $total,
                 'content' => $content,
                 'intro' => $intro,
-                'published_at' => $doPublished ? $now : null
+                'published_at' => $score['published_at'] ? $score['published_at'] : ($doPublished ? Carbon::now() : null)
             ]);
 
-        $scoreRepository = new ScoreRepository();
         if ($doPublished)
         {
             $scoreRepository->doPublish($userId, $newId, $bangumiId);;
         }
         Redis::DEL($scoreRepository->cacheKeyUserScoreIds($userId));
+        Redis::DEL($scoreRepository->cacheKeyScoreItem($newId));
 
         return $this->resNoContent();
     }
@@ -351,19 +418,48 @@ class ScoreController extends Controller
         return $this->resNoContent();
     }
 
-    public function trialList()
+    public function trials()
     {
+        $ids = Score::withTrashed()
+            ->where('state', '<>', 0)
+            ->pluck('id')
+            ->toArray();
 
+        if (empty($ids))
+        {
+            return $this->resOK([]);
+        }
+
+        $scoreRepository = new ScoreRepository();
+        $list = $scoreRepository->list($ids);
+
+        return $this->resOK($list);
     }
 
-    public function trialPass()
+    public function pass(Request $request)
     {
+        $id = $request->get('id');
+        DB::table('scores')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
 
+        return $this->resNoContent();
     }
 
-    public function trialBan()
+    public function ban(Request $request)
     {
+        $id = $request->get('id');
+        DB::table('scores')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => Carbon::now()
+            ]);
 
+        return $this->resNoContent();
     }
 
     protected function computeBirthday($birthday)

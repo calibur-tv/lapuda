@@ -820,7 +820,9 @@ class UserController extends Controller
 
     public function trials()
     {
-        $users = User::where('state', '<>', 0)
+        $users = User
+            ::withTrashed()
+            ->where('state', '<>', 0)
             ->orderBy('updated_at', 'DESC')
             ->get();
 

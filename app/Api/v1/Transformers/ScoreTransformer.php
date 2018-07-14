@@ -22,25 +22,27 @@ class ScoreTransformer extends Transformer
                 'avatar' => $score['user']['avatar']
             ],
             'bangumi' => $score['bangumi'],
-            'total' => (int)$score['total'] / 10,
-            'lol' => (int)$score['lol'] / 2,
-            'cry' => (int)$score['cry'] / 2,
-            'fight' => (int)$score['fight'] / 2,
-            'moe' => (int)$score['moe'] / 2,
-            'sound' => (int)$score['sound'] / 2,
-            'vision' => (int)$score['vision'] / 2,
-            'role' => (int)$score['role'] / 2,
-            'story' => (int)$score['story'] / 2,
-            'express' => (int)$score['express'] / 2,
-            'style' => (int)$score['style'] / 2,
+            'total' => $score['total'],
+            'lol' => $score['lol'],
+            'cry' => $score['cry'],
+            'fight' => $score['fight'],
+            'moe' => $score['moe'],
+            'sound' => $score['sound'],
+            'vision' => $score['vision'],
+            'role' => $score['role'],
+            'story' => $score['story'],
+            'express' => $score['express'],
+            'style' => $score['style'],
             'intro' => $score['intro'],
             'content' => $score['content'],
-            'created_at' => $score['created_at'],
             'commented' => (int)$score['commented'],
             'comment_count' => (int)$score['comment_count'],
             'liked' => (int)$score['liked'],
             'like_count' => (int)$score['like_count'],
-            'like_users' => $score['like_users']
+            'like_users' => $score['like_users'],
+            'created_at' => $score['created_at'],
+            'updated_at' => $score['updated_at'],
+            'published_at' => $score['published_at']
         ];
     }
 
@@ -97,6 +99,18 @@ class ScoreTransformer extends Transformer
                 'intro' => $score['intro'],
                 'total' => (int)$score['total'],
                 'created_at' => $score['created_at']
+            ];
+        });
+    }
+
+    public function drafts($list)
+    {
+        return $this->collection($list, function ($score)
+        {
+            return [
+                'id' => (int)$score['id'],
+                'bangumi' => $score['bangumi'],
+                'intro' => $score['intro']
             ];
         });
     }

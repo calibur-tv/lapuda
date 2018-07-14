@@ -87,11 +87,15 @@ $api->version(['v1', 'latest'], function ($api)
         $api->group(['prefix' => '/{id}'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\ScoreController@show');
+
+            $api->get('/edit', 'App\Api\V1\Controllers\ScoreController@edit')->middleware(['jwt.auth']);
         });
 
         $api->get('/bangumis', 'App\Api\V1\Controllers\ScoreController@bangumis');
 
         $api->get('/users', 'App\Api\V1\Controllers\ScoreController@users');
+
+        $api->get('/drafts', 'App\Api\V1\Controllers\ScoreController@drafts');
 
         $api->get('/check', 'App\Api\V1\Controllers\ScoreController@check')->middleware(['jwt.auth']);
 
@@ -495,6 +499,15 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/delete', 'App\Api\V1\Controllers\PostController@trialDelete');
 
                 $api->post('/pass', 'App\Api\V1\Controllers\PostController@trialPass');
+            });
+
+            $api->group(['prefix' => '/score'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\ScoreController@trials');
+
+                $api->post('/delete', 'App\Api\V1\Controllers\ScoreController@ban');
+
+                $api->post('/pass', 'App\Api\V1\Controllers\ScoreController@pass');
             });
 
             $api->group(['prefix' => '/cartoon_role'], function ($api)

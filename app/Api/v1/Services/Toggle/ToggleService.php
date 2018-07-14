@@ -81,11 +81,6 @@ class ToggleService extends Repository
             return false;
         }
 
-        if ($userId === $modalCreatorId)
-        {
-            return false;
-        }
-
         return (boolean)
             DB::table($this->table)
             ->whereRaw('user_id = ? and modal_id = ?', [$userId, $modalId])
