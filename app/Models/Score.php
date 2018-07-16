@@ -36,7 +36,8 @@ class Score extends Model
         'express',
         'style',
         'state',
-        'published_at'
+        'published_at',
+        'title'
     ];
 
     protected $casts = [

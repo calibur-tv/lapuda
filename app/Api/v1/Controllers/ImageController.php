@@ -7,6 +7,8 @@ use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Counter\ImageViewCounter;
+use App\Api\V1\Services\Counter\Stats\TotalImageAlbumCount;
+use App\Api\V1\Services\Counter\Stats\TotalImageCount;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
@@ -241,6 +243,9 @@ class ImageController extends Controller
             return $this->resErrBad('图片中可能含有违规信息');
         }
 
+        $totalImageAlbumCount = new TotalImageAlbumCount();
+        $totalImageAlbumCount->add();
+
         return $this->resCreated($imageRepository->item($albumId));
     }
 
@@ -379,6 +384,9 @@ class ImageController extends Controller
         {
             return $this->resErrBad('图片中可能含有违规信息');
         }
+
+        $totalImageCount = new TotalImageCount();
+        $totalImageCount->add();
 
         return $this->resCreated($newId);
     }
@@ -597,11 +605,17 @@ class ImageController extends Controller
             {
                 Redis::DEL($imageRepository->cacheKeyCartoonParts($album['bangumi_id']));
             }
+            else
+            {
+                $totalImageAlbumCount = new TotalImageAlbumCount();
+                $totalImageAlbumCount->add(-1);
+                $totalImageCount = new TotalImageCount();
+                $totalImageCount->add(-count(explode(',', $album['image_ids'])));
+            }
         }
 
         // TODO：SEO
         // TODO：search
-
         return $this->resNoContent();
     }
 
@@ -819,6 +833,9 @@ class ImageController extends Controller
 
         Redis::DEL($imageRepository->cacheKeyImageItem($id));
         Redis::DEL($imageRepository->cacheKeyAlbumImages($id));
+
+        $totalImageCount = new TotalImageCount();
+        $totalImageCount->add(-1);
 
         return $this->resNoContent();
     }

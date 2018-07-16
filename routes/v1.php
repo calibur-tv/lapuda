@@ -9,6 +9,8 @@ $api = app('Dingo\Api\Routing\Router');
 
 $api->version(['v1', 'latest'], function ($api)
 {
+    $api->get('/migration', 'App\Api\V1\Controllers\SearchController@migration');
+
     $api->group(['prefix' => '/search'], function ($api)
     {
         $api->get('/new', 'App\Api\V1\Controllers\SearchController@search');
@@ -292,6 +294,8 @@ $api->version(['v1', 'latest'], function ($api)
         $api->get('/active', 'App\Api\V1\Controllers\TrendingController@active');
 
         $api->get('/hot', 'App\Api\V1\Controllers\TrendingController@hot');
+
+        $api->get('/meta', 'App\Api\V1\Controllers\TrendingController@meta');
     });
 
     $api->group(['prefix' => '/toggle', 'middleware' => ['jwt.auth']], function ($api)

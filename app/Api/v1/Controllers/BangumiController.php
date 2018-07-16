@@ -4,6 +4,7 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Services\Counter\BangumiScoreCounter;
+use App\Api\V1\Services\Counter\Stats\TotalBangumiCount;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Tag\BangumiTagService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
@@ -555,6 +556,9 @@ class BangumiController extends Controller
             $request->get('alias'),
             'bangumi'
         );
+
+        $totalBangumiCount = new TotalBangumiCount();
+        $totalBangumiCount->add();
 
         return $this->resCreated($bangumi_id);
     }

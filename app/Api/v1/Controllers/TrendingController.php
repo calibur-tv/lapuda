@@ -3,6 +3,11 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\CartoonRoleRepository;
+use App\Api\V1\Services\Counter\Stats\TotalBangumiCount;
+use App\Api\V1\Services\Counter\Stats\TotalImageAlbumCount;
+use App\Api\V1\Services\Counter\Stats\TotalImageCount;
+use App\Api\V1\Services\Counter\Stats\TotalPostCount;
+use App\Api\V1\Services\Counter\Stats\TotalScoreCount;
 use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
@@ -99,6 +104,35 @@ class TrendingController extends Controller
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
 
         return $this->resOK($trendingService->hot($seen, $take));
+    }
+
+    public function meta(Request $request)
+    {
+        $type = $request->get('type');
+        if ($type === 'post')
+        {
+            $collectionCount = new TotalBangumiCount();
+            $totalCount = new TotalPostCount();
+        }
+        else if ($type === 'image')
+        {
+            $collectionCount = new TotalImageAlbumCount();
+            $totalCount = new TotalImageCount();
+        }
+        else if ($type === 'score')
+        {
+            $collectionCount = new TotalBangumiCount();
+            $totalCount = new TotalScoreCount();
+        }
+        else
+        {
+            return $this->resErrBad();
+        }
+
+        return $this->resOK([
+            'collection' => $collectionCount->get(),
+            'total' => $totalCount->get()
+        ]);
     }
 
     protected function getTrendingServiceByType($type, $userId, $bangumiId)

@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Trial\Image;
 
+use App\Api\V1\Services\Counter\Stats\TotalImageCount;
 use App\Models\AlbumImage;
 use App\Services\Trial\ImageFilter;
 use Carbon\Carbon;
@@ -39,6 +40,7 @@ class Create implements ShouldQueue
             ->get()
             ->toArray();
 
+        $total = count($images);
         $imageFilter = new ImageFilter();
         foreach ($images as $image)
         {
@@ -51,6 +53,7 @@ class Create implements ShouldQueue
                         'state' => $image['user_id'],
                         'url' => ''
                     ]);
+                $total--;
             }
             if ($result['review'])
             {
@@ -61,5 +64,8 @@ class Create implements ShouldQueue
                     ]);
             }
         }
+
+        $totalImageCount = new TotalImageCount();
+        $totalImageCount->add($total);
     }
 }

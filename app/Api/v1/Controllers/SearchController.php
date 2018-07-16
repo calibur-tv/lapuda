@@ -4,6 +4,8 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Models\Bangumi;
+use App\Models\Score;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
 use Illuminate\Support\Facades\DB;
@@ -89,5 +91,21 @@ class SearchController extends Controller
         }
 
         return $this->resOK($userRepository->item($userId, true));
+    }
+
+    public function migration()
+    {
+        $ids = Score::select('id', 'bangumi_id')->get()->toArray();
+
+        foreach ($ids as $item)
+        {
+            $name = Bangumi::where('id', $item['bangumi_id'])->pluck('name')->first();
+            Score::where('id', $item['id'])
+                ->update([
+                    'title' => '写给《' . $name . '》的漫评'
+                ]);
+        }
+
+        return $this->resOK('success');
     }
 }

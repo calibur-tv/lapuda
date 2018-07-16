@@ -12,7 +12,6 @@ use App\Api\V1\Services\Counter\Stats\TotalCommentCount;
 use App\Api\V1\Services\Counter\Stats\TotalImageCount;
 use App\Api\V1\Services\Counter\Stats\TotalPostCount;
 use App\Api\V1\Services\Counter\Stats\TotalUserCount;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;

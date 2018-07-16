@@ -35,12 +35,12 @@ class TotalCounterService extends Repository
                 $result = 0;
                 foreach ($this->table as $table)
                 {
-                    $result += DB::table($table)->count();
+                    $result += $this->computeTotal($table);
                 }
 
                 return $result;
             }
-            return DB::table($this->table)->count();
+            return $this->computeTotal($this->table);
         });
     }
 
@@ -53,17 +53,13 @@ class TotalCounterService extends Repository
                 $result = 0;
                 foreach ($this->table as $table)
                 {
-                    $result += DB::table($table)
-                        ->where('created_at', '>', Carbon::now()->today())
-                        ->count();
+                    $result += $this->computeToday($table);
                 }
 
                 return $result;
             }
 
-            return DB::table($this->table)
-                ->where('created_at', '>', Carbon::now()->today())
-                ->count();
+            return $this->computeToday($this->table);
         });
     }
 
@@ -79,8 +75,15 @@ class TotalCounterService extends Repository
         }
     }
 
-    public function remove()
+    protected function computeTotal($table)
     {
-        $this->add(-1);
+        return DB::table($table)->count();
+    }
+
+    protected function computeToday($table)
+    {
+        return DB::table($table)
+            ->where('created_at', '>', Carbon::now()->today())
+            ->count();
     }
 }

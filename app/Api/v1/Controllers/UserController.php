@@ -30,7 +30,9 @@ use App\Api\V1\Repositories\UserRepository;
 use App\Models\UserCoin;
 use App\Models\UserSign;
 use App\Services\OpenSearch\Search;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Mews\Purifier\Facades\Purifier;
@@ -732,7 +734,13 @@ class UserController extends Controller
     public function blockUser(Request $request)
     {
         $userId = $request->get('id');
-        User::where('id', $userId)->delete();
+        DB::table('users')
+            ->where('id', $userId)
+            ->update([
+                'state' => 0,
+                'deleted_at' => Carbon::now()
+            ]);
+
         $searchService = new Search();
         $searchService->delete($userId, 'user');
 

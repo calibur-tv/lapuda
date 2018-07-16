@@ -5,6 +5,7 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Counter\PostViewCounter;
+use App\Api\V1\Services\Counter\Stats\TotalPostCount;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
@@ -466,6 +467,9 @@ class PostController extends Controller
 
         $job = (new \App\Jobs\Push\Baidu('post/' . $postId, 'del'));
         dispatch($job);
+
+        $totalPostCount = new TotalPostCount();
+        $totalPostCount->add(-1);
 
         return $this->resNoContent();
     }
