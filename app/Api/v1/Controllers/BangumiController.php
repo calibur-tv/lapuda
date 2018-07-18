@@ -2,19 +2,15 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Services\Counter\BangumiScoreCounter;
 use App\Api\V1\Services\Counter\Stats\TotalBangumiCount;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Tag\BangumiTagService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
-use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Transformers\BangumiTransformer;
-use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\Bangumi;
 use App\Api\V1\Repositories\BangumiRepository;
-use App\Models\Image;
 use App\Models\Video;
 use App\Services\OpenSearch\Search;
 use App\Services\Trial\ImageFilter;
@@ -56,12 +52,13 @@ class BangumiController extends Controller
             return $this->resErrBad();
         }
 
-        $repository = new BangumiRepository();
+        $bangumiRepository = new BangumiRepository();
         $list = [];
-        $minYear = intval($repository->timelineMinYear());
+        $minYear = intval($bangumiRepository->timelineMinYear());
 
-        for ($i = 0; $i < $take; $i++) {
-            $list = array_merge($list, $repository->timeline($year - $i));
+        for ($i = 0; $i < $take; $i++)
+        {
+            $list = array_merge($list, $bangumiRepository->timeline($year - $i));
         }
 
         return $this->resOK([
@@ -101,10 +98,10 @@ class BangumiController extends Controller
                 $result[0][] = $item;
             }
 
-            $transformer = new BangumiTransformer();
+            $bangumiTransformer = new BangumiTransformer();
             foreach ($result as $i => $arr)
             {
-                $result[$i] = $transformer->released($arr);
+                $result[$i] = $bangumiTransformer->released($arr);
             }
 
             return $result;
@@ -197,8 +194,10 @@ class BangumiController extends Controller
         $bangumi['followed'] = $bangumiFollowService->check($userId, $id);
 
         $bangumiScoreService = new BangumiScoreService();
+        $bangumiScoreCounter = new BangumiScoreCounter();
         $bangumi['count_score'] = $bangumiScoreService->total($id);
         $bangumi['scored'] = $bangumiScoreService->check($userId, $id);
+        $bangumi['score'] = $bangumiScoreCounter->get($id);
 
         $bangumiManager = new BangumiManager();
         $bangumi['is_master'] = $bangumiManager->isOwner($id, $userId);
@@ -207,12 +206,9 @@ class BangumiController extends Controller
         $bangumiTagService = new BangumiTagService();
         $bangumi['tags'] = $bangumiTagService->tags($id);
 
-        $bangumiScoreCounter = new BangumiScoreCounter();
-        $bangumi['score'] = $bangumiScoreCounter->get($id);
+        $bangumiTransformer = new BangumiTransformer();
 
-        $transformer = new BangumiTransformer();
-
-        return $this->resOK($transformer->show($bangumi));
+        return $this->resOK($bangumiTransformer->show($bangumi));
     }
 
     /**

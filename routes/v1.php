@@ -51,8 +51,6 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->get('/posts/top', 'App\Api\V1\Controllers\PostController@bangumiTops');
 
-            $api->get('/images', 'App\Api\V1\Controllers\BangumiController@images');
-
             $api->get('/cartoon', 'App\Api\V1\Controllers\ImageController@cartoon');
 
             $api->post('/toggleFollow', 'App\Api\V1\Controllers\BangumiController@toggleFollow')->middleware(['jwt.auth']);
