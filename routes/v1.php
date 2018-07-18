@@ -143,11 +143,6 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->get('/role', 'App\Api\V1\Controllers\UserController@followedRoles');
             });
 
-            $api->group(['prefix' => '/images'], function ($api)
-            {
-                $api->get('/list', 'App\Api\V1\Controllers\UserController@imageList');
-            });
-
             $api->group(['prefix' => '/posts'], function ($api)
             {
                 $api->get('/mine', 'App\Api\V1\Controllers\UserController@postsOfMine');
@@ -159,8 +154,6 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->get('/mark', 'App\Api\V1\Controllers\UserController@postsOfMarked');
             });
         });
-
-        $api->get('/images/albums', 'App\Api\V1\Controllers\UserController@imageAlbums')->middleware(['jwt.auth']);
     });
 
     $api->group(['prefix' => '/post'], function ($api)

@@ -472,4 +472,21 @@ class BangumiRepository extends Repository
 
         return true;
     }
+
+    public function appendBangumiToList($list)
+    {
+        $result = [];
+        foreach ($list as $item)
+        {
+            $bangumi = $this->item($item['bangumi_id']);
+            if (is_null($bangumi))
+            {
+                continue;
+            }
+            $item['bangumi'] = $bangumi;
+            $result[] = $item;
+        }
+
+        return $result;
+    }
 }

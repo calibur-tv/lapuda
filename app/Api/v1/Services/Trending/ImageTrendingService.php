@@ -14,6 +14,7 @@ use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Counter\ImageViewCounter;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
+use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\Image;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -128,43 +129,15 @@ class ImageTrendingService extends TrendingService
         $imageCommentService = new ImageCommentService();
         $imageLikeService = new ImageLikeService();
         $imageViewService = new ImageViewCounter();
-        $userRepository = new UserRepository();
-        $bangumiRepository = new BangumiRepository();
 
-        $images = $imageRepository->list($ids);
-        $result = [];
-
-        foreach ($images as $item)
-        {
-            if (is_null($item))
-            {
-                continue;
-            }
-
-            $user = $userRepository->item($item['user_id']);
-            if (is_null($user))
-            {
-                continue;
-            }
-
-            $bangumi = $bangumiRepository->item($item['bangumi_id']);
-            if (is_null($bangumi))
-            {
-                continue;
-            }
-
-            $result[] = $item;
-        }
-
-        if (empty($result))
-        {
-            return [];
-        }
+        $images = $imageRepository->trendingFlow($ids);
 
         $images = $imageCommentService->batchGetCommentCount($images);
         $images = $imageLikeService->batchTotal($images, 'like_count');
         $images = $imageViewService->batchGet($images, 'view_count');
 
-        return $images;
+        $imageTransformer = new ImageTransformer();
+
+        return $imageTransformer->trendingFlow($images);
     }
 }

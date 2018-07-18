@@ -41,13 +41,13 @@ class ImageController extends Controller
      */
     public function banner()
     {
-        $repository = new ImageRepository();
-        $transformer = new ImageTransformer();
+        $imageRepository = new ImageRepository();
+        $imageTransformer = new ImageTransformer();
 
-        $list = $repository->banners();
+        $list = $imageRepository->banners();
         shuffle($list);
 
-        return $this->resOK($transformer->indexBanner($list));
+        return $this->resOK($imageTransformer->indexBanner($list));
     }
 
     /**
@@ -246,7 +246,10 @@ class ImageController extends Controller
         $totalImageAlbumCount = new TotalImageAlbumCount();
         $totalImageAlbumCount->add();
 
-        return $this->resCreated($imageRepository->item($albumId));
+        $newAlbum = $imageRepository->item($albumId);
+        $imageTransformer = new ImageTransformer();
+
+        return $this->resCreated($imageTransformer->userAlbums([$newAlbum])[0]);
     }
 
     public function editAlbum(Request $request)
@@ -396,16 +399,19 @@ class ImageController extends Controller
         $imageId = $request->get('id');
         $imageRepository = new ImageRepository();
         $image = $imageRepository->item($imageId);
-        if (is_null($image)) {
+        if (is_null($image))
+        {
             return $this->resErrNotFound();
         }
 
-        if ($image['is_album']) {
+        if ($image['is_album'])
+        {
             return $this->resErrBad();
         }
 
         $userId = $this->getAuthUserId();
-        if ($image['user_id'] !== $userId) {
+        if ($image['user_id'] !== $userId)
+        {
             return $this->resErrRole();
         }
 
@@ -530,9 +536,16 @@ class ImageController extends Controller
             ->pluck('id')
             ->toArray();
 
+        if (empty($albumIds))
+        {
+            return $this->resOK([]);
+        }
         $imageRepository = new ImageRepository();
 
-        return $this->resOK($imageRepository->list($albumIds));
+        $list = $imageRepository->bangumiFlow($albumIds);
+        $imageTransformer = new ImageTransformer();
+
+        return $this->resOK($imageTransformer->userAlbums($list));
     }
 
     public function users(Request $request)
@@ -550,7 +563,18 @@ class ImageController extends Controller
         }
 
         $idsObj = $imageRepository->getUserImageIds($userId, $page, $take);
-        $list = $imageRepository->list($idsObj['ids']);
+
+        $list = $imageRepository->userFlow($idsObj['ids']);
+
+        if (empty($list))
+        {
+            return [
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ];
+        }
+
         $imageViewCounter = new ImageViewCounter();
         $imageCommentService = new ImageCommentService();
         $imageLikeService = new ImageLikeService();
@@ -559,8 +583,10 @@ class ImageController extends Controller
         $list = $imageCommentService->batchGetCommentCount($list);
         $list = $imageLikeService->batchTotal($list, 'like_count');
 
+        $imageTransformer = new ImageTransformer();
+
         return $this->resOK([
-            'list' => $list,
+            'list' => $imageTransformer->userFlow($list),
             'total' => $idsObj['total'],
             'noMore' => $idsObj['noMore']
         ]);
@@ -627,19 +653,26 @@ class ImageController extends Controller
         {
             return $this->resErrNotFound();
         }
-        if ($image['is_album'])
+
+        $userRepository = new UserRepository();
+        $user = $userRepository->item($image['user_id']);
+        if (is_null($user))
         {
-            $image['images'] = $imageRepository->albumImages($id);
-        }
-        if ($image['is_cartoon'])
-        {
-            $image['parts'] = $imageRepository->getCartoonParts($image['bangumi_id']);
+            return $this->resErrNotFound();
         }
 
         $userId = $this->getAuthUserId();
-
         $bangumiRepository = new BangumiRepository();
-        $image['bangumi'] = $bangumiRepository->panel($image['bangumi_id'], $userId);
+        $bangumi = $bangumiRepository->panel($image['bangumi_id'], $userId);
+        if (is_null($bangumi))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $image['bangumi'] = $bangumi;
+        $image['user'] = $user;
+        $image['images'] = $image['is_album'] ? $imageRepository->albumImages($id) : [];
+        $image['parts'] = $image['is_cartoon'] ? $imageRepository->getCartoonParts($image['bangumi_id']) : [];
 
         $imageLikeService = new ImageLikeService();
         $image['liked'] = $imageLikeService->check($userId, $id, $image['user_id']);
@@ -649,7 +682,9 @@ class ImageController extends Controller
         $imageViewCounter = new ImageViewCounter();
         $imageViewCounter->add($id);
 
-        return $this->resOK($image);
+        $imageTransformer = new ImageTransformer();
+
+        return $this->resOK($imageTransformer->show($image));
     }
 
     public function cartoon(Request $request, $id)
@@ -670,7 +705,7 @@ class ImageController extends Controller
             ];
         }
 
-        $list = $imageRepository->list($idsObj['ids']);
+        $list = $imageRepository->userFlow($idsObj['ids']);
         $imageViewCounter = new ImageViewCounter();
         $imageCommentService = new ImageCommentService();
         $imageLikeService = new ImageLikeService();
@@ -679,8 +714,10 @@ class ImageController extends Controller
         $list = $imageCommentService->batchGetCommentCount($list);
         $list = $imageLikeService->batchTotal($list, 'like_count');
 
+        $imageTransformer = new ImageTransformer();
+
         return $this->resOK([
-            'list' => $list,
+            'list' => $imageTransformer->userFlow($list),
             'total' => $idsObj['total'],
             'noMore' => $idsObj['noMore']
         ]);

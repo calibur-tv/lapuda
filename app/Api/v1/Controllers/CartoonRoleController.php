@@ -263,7 +263,7 @@ class CartoonRoleController extends Controller
             ]);
         }
 
-        $transformer = new ImageTransformer();
+        $imageTransformer = new ImageTransformer();
 
         $visitorId = $this->getAuthUserId();
         $list = $repository->list($ids);
@@ -275,7 +275,7 @@ class CartoonRoleController extends Controller
         }
 
         return $this->resOK([
-            'list' => $transformer->roleShow($list),
+            'list' => $imageTransformer->roleShow($list),
             'type' => $repository->uploadImageTypes()
         ]);
     }
