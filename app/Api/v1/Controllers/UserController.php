@@ -30,7 +30,9 @@ use App\Api\V1\Repositories\UserRepository;
 use App\Models\UserCoin;
 use App\Models\UserSign;
 use App\Services\OpenSearch\Search;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Mews\Purifier\Facades\Purifier;
@@ -555,109 +557,6 @@ class UserController extends Controller
         ]);
     }
 
-    // TODO：trending service
-    // TODO：API Doc
-    public function imageList(Request $request, $zone)
-    {
-        $userId = User::where('zone', $zone)->pluck('id')->first();
-        if (is_null($userId))
-        {
-            return $this->resErrNotFound('该用户不存在');
-        }
-
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = intval($request->get('take')) ?: 12;
-        $tags = $request->get('tags') ?: 0;
-        $size = $request->get('size') ?: 0;
-        $bangumiId = intval($request->get('bangumiId'));
-        $creator = intval($request->get('creator'));
-        $sort = $request->get('sort') ?: 'new';
-        $imageRepository = new ImageRepository();
-
-        $ids = Image::whereRaw('user_id = ? and album_id = 0 and image_count <> 1', [$userId])
-            ->whereIn('state', [1, 2])
-            ->whereNotIn('images.id', $seen)
-            ->take($take)
-            ->when($sort === 'new', function ($query)
-            {
-                return $query->latest();
-            }, function ($query)
-            {
-                return $query->orderBy('like_count', 'DESC');
-            })
-            ->when($size, function ($query) use ($size)
-            {
-                return $query->where('size_id', $size);
-            })
-            ->when($bangumiId !== -1, function ($query) use ($bangumiId)
-            {
-                return $query->where('bangumi_id', $bangumiId);
-            })
-            ->when($creator !== -1, function ($query) use ($creator)
-            {
-                return $query->where('creator', $creator);
-            })
-            ->when($tags, function ($query) use ($tags)
-            {
-                return $query->leftJoin('image_tags AS tags', 'images.id', '=', 'tags.image_id')
-                    ->where('tags.tag_id', $tags);
-            })
-            ->pluck('images.id');
-
-        if (empty($ids))
-        {
-            return $this->resOK([
-                'list' => [],
-                'type' => $imageRepository->uploadImageTypes()
-            ]);
-        }
-
-        $transformer = new ImageTransformer();
-
-        $list = $imageRepository->list($ids);
-        $visitorId = $this->getAuthUserId();
-
-        $imageLikeService = new ImageLikeService();
-        foreach ($list as $i => $item)
-        {
-            $list[$i]['liked'] = $imageLikeService->check($visitorId, $item['id'], $item['user_id']);
-            $list[$i]['like_count'] = $imageLikeService->total($item['id']);
-        }
-
-        return $this->resOK([
-            'list' => $transformer->waterfall($list),
-            'type' => $imageRepository->uploadImageTypes()
-        ]);
-    }
-
-    /**
-     * 用户的图片相册列表
-     *
-     * @Get("/user/images/albums")
-     *
-     * @Transaction({
-     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(200, body={"code": 0, "data": "相册列表"})
-     * })
-     */
-    public function imageAlbums()
-    {
-        $userId = $this->getAuthUserId();
-
-        $repository = new UserRepository();
-
-        $list = $repository->imageAlbums($userId);
-
-        if (empty($list))
-        {
-            return $this->resOK([]);
-        }
-
-        $transformer = new ImageTransformer();
-
-        return $this->resOK($transformer->albums($list));
-    }
-
     public function fakers()
     {
         $users = User::withTrashed()
@@ -732,7 +631,13 @@ class UserController extends Controller
     public function blockUser(Request $request)
     {
         $userId = $request->get('id');
-        User::where('id', $userId)->delete();
+        DB::table('users')
+            ->where('id', $userId)
+            ->update([
+                'state' => 0,
+                'deleted_at' => Carbon::now()
+            ]);
+
         $searchService = new Search();
         $searchService->delete($userId, 'user');
 

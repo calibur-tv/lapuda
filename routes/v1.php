@@ -9,6 +9,8 @@ $api = app('Dingo\Api\Routing\Router');
 
 $api->version(['v1', 'latest'], function ($api)
 {
+    $api->get('/migration', 'App\Api\V1\Controllers\SearchController@migration');
+
     $api->group(['prefix' => '/search'], function ($api)
     {
         $api->get('/new', 'App\Api\V1\Controllers\SearchController@search');
@@ -48,8 +50,6 @@ $api->version(['v1', 'latest'], function ($api)
             $api->get('/videos', 'App\Api\V1\Controllers\BangumiController@videos');
 
             $api->get('/posts/top', 'App\Api\V1\Controllers\PostController@bangumiTops');
-
-            $api->get('/images', 'App\Api\V1\Controllers\BangumiController@images');
 
             $api->get('/cartoon', 'App\Api\V1\Controllers\ImageController@cartoon');
 
@@ -141,11 +141,6 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->get('/role', 'App\Api\V1\Controllers\UserController@followedRoles');
             });
 
-            $api->group(['prefix' => '/images'], function ($api)
-            {
-                $api->get('/list', 'App\Api\V1\Controllers\UserController@imageList');
-            });
-
             $api->group(['prefix' => '/posts'], function ($api)
             {
                 $api->get('/mine', 'App\Api\V1\Controllers\UserController@postsOfMine');
@@ -157,8 +152,6 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->get('/mark', 'App\Api\V1\Controllers\UserController@postsOfMarked');
             });
         });
-
-        $api->get('/images/albums', 'App\Api\V1\Controllers\UserController@imageAlbums')->middleware(['jwt.auth']);
     });
 
     $api->group(['prefix' => '/post'], function ($api)
@@ -292,6 +285,8 @@ $api->version(['v1', 'latest'], function ($api)
         $api->get('/active', 'App\Api\V1\Controllers\TrendingController@active');
 
         $api->get('/hot', 'App\Api\V1\Controllers\TrendingController@hot');
+
+        $api->get('/meta', 'App\Api\V1\Controllers\TrendingController@meta');
     });
 
     $api->group(['prefix' => '/toggle', 'middleware' => ['jwt.auth']], function ($api)

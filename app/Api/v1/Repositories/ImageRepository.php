@@ -183,31 +183,12 @@ class ImageRepository extends Repository
             }
 
             $image = $image->toArray();
-            $userRepository = new UserRepository();
-            $user = $userRepository->item($image['user_id']);
-
-            if (is_null($user))
-            {
-                return null;
-            }
-            $image['user'] = $user;
-
-            $bangumiRepository = new BangumiRepository();
-            $bangumi = $bangumiRepository->item($image['bangumi_id']);
-
-            if (is_null($bangumi))
-            {
-                return null;
-            }
-            $image['bangumi'] = $bangumi;
 
             $image['image_count'] = $image['is_album'] == 1
                 ? is_null($image['image_ids']) ? 0 : count(explode(',', $image['image_ids']))
                 : 1;
 
-            $imageTransformer = new ImageTransformer();
-
-            return $imageTransformer->show($image);
+            return $image;
         });
     }
 
@@ -265,7 +246,7 @@ class ImageRepository extends Repository
 
             $imageTransformer = new ImageTransformer();
 
-            return $imageTransformer->album($images);
+            return $imageTransformer->albumImages($images);
         });
     }
 

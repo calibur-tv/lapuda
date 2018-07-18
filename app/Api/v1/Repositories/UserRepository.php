@@ -439,6 +439,23 @@ class UserRepository extends Repository
         return $bangumiTransformer->userFollowedList($bangumis);
     }
 
+    public function appendUserToList($list)
+    {
+        $result = [];
+        foreach ($list as $item)
+        {
+            $bangumi = $this->item($item['user_id']);
+            if (is_null($bangumi))
+            {
+                continue;
+            }
+            $item['user'] = $bangumi;
+            $result[] = $item;
+        }
+
+        return $result;
+    }
+
     public function statsByDate($nowTime)
     {
         $today = strtotime(date('Y-m-d', $nowTime));

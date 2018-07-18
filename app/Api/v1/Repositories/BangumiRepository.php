@@ -152,9 +152,9 @@ class BangumiRepository extends Repository
                 ->latest('published_at')
                 ->pluck('id');
 
-            $repository = new BangumiRepository();
-            $transformer = new BangumiTransformer();
-            $list = $repository->list($ids);
+            $bangumiRepository = new BangumiRepository();
+            $bangumiTransformer = new BangumiTransformer();
+            $list = $bangumiRepository->list($ids);
 
             $result = [];
             foreach ($list as $item)
@@ -172,7 +172,7 @@ class BangumiRepository extends Repository
             {
                 $cache[$i] = [
                     'date' => $keys[$i],
-                    'list' => $transformer->timeline($values[$i])
+                    'list' => $bangumiTransformer->timeline($values[$i])
                 ];
             }
 
@@ -262,15 +262,19 @@ class BangumiRepository extends Repository
             $hasSeason = $season !== '' && isset($season->part) && isset($season->name);
             if ($hasSeason)
             {
-                usort($list, function($prev, $next) {
+                usort($list, function($prev, $next)
+                {
                     return $prev['part'] - $next['part'];
                 });
+
                 $part = $season->part;
                 $time = $season->time;
                 $name = $season->name;
+
                 $videos = [];
                 $resetPart = isset($season->re);
-                for ($i=0, $j=1; $j < count($part); $i++, $j++) {
+                for ($i=0, $j=1; $j < count($part); $i++, $j++)
+                {
                     $begin = $part[$i];
                     $length = $part[$j] - $begin;
                     $reset = $resetPart ? (gettype($season->re) === 'array' ? $season->re[$i] : $season->re) : false;
@@ -281,7 +285,9 @@ class BangumiRepository extends Repository
                         'data' => $length > 0 ? array_slice($list, $begin, $length) : array_slice($list, $begin)
                     ]);
                 }
-            } else {
+            }
+            else
+            {
                 $videos = $list;
             }
 
@@ -471,5 +477,22 @@ class BangumiRepository extends Repository
         Redis::DEL($this->bangumiAllCacheKey);
 
         return true;
+    }
+
+    public function appendBangumiToList($list)
+    {
+        $result = [];
+        foreach ($list as $item)
+        {
+            $bangumi = $this->item($item['bangumi_id']);
+            if (is_null($bangumi))
+            {
+                continue;
+            }
+            $item['bangumi'] = $bangumi;
+            $result[] = $item;
+        }
+
+        return $result;
     }
 }

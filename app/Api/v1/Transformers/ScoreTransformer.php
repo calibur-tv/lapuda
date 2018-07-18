@@ -21,6 +21,7 @@ class ScoreTransformer extends Transformer
                 'nickname' => $score['user']['nickname'],
                 'avatar' => $score['user']['avatar']
             ],
+            'title' => $score['title'],
             'bangumi' => $score['bangumi'],
             'total' => $score['total'],
             'lol' => $score['lol'],
@@ -69,6 +70,7 @@ class ScoreTransformer extends Transformer
                         'avatar' => $bangumi['avatar']
                     ];
                 }),
+                'title' => $score['title'],
                 'liked' => (boolean)$score['liked'],
                 'commented' => (boolean)$score['commented'],
                 'like_count' => (int)$score['like_count'],
@@ -94,6 +96,7 @@ class ScoreTransformer extends Transformer
                         'avatar' => $bangumi['avatar']
                     ];
                 }),
+                'title' => $score['title'],
                 'like_count' => (int)$score['like_count'],
                 'comment_count' => (int)$score['comment_count'],
                 'intro' => $score['intro'],
@@ -110,6 +113,7 @@ class ScoreTransformer extends Transformer
             return [
                 'id' => (int)$score['id'],
                 'bangumi' => $score['bangumi'],
+                'title' => $score['title'],
                 'intro' => $score['intro']
             ];
         });

@@ -12,6 +12,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\ScoreCommentService;
+use App\Api\V1\Services\Counter\Stats\TotalScoreCount;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
 use App\Api\V1\Transformers\BangumiTransformer;
@@ -207,6 +208,7 @@ class ScoreController extends Controller
         $validator = Validator::make($request->all(), [
             'bangumi_id' => 'required|integer',
             'intro' => 'required|max:120',
+            'title' => 'required|string|max:30',
             'content' => 'required|Array',
             'lol' => 'required|integer|min:0|max:10',
             'cry' => 'required|integer|min:0|max:10',
@@ -255,6 +257,7 @@ class ScoreController extends Controller
         $style = $request->get('style');
         $total = $lol + $cry + $fight + $moe + $sound + $vision + $role + $story + $express + $style;
         $content = Purifier::clean(json_encode($request->get('content')));
+        $title = Purifier::clean($request->get('title'));
         $intro = $request->get('intro');
         $now = Carbon::now();
 
@@ -275,13 +278,13 @@ class ScoreController extends Controller
                 'express' => $express,
                 'style' => $style,
                 'total' => $total,
+                'title' => $title,
                 'content' => $content,
                 'intro' => $intro,
                 'created_at' => $now,
                 'updated_at' => $now,
                 'published_at' => $doPublished ? $now : null
             ]);
-
 
         $scoreRepository = new ScoreRepository();
         if ($doPublished)
@@ -297,6 +300,7 @@ class ScoreController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'id' => 'required|integer',
+            'title' => 'required|string|max:30',
             'bangumi_id' => 'required|integer',
             'intro' => 'required|max:120',
             'content' => 'required|Array',
@@ -363,6 +367,7 @@ class ScoreController extends Controller
         $total = $lol + $cry + $fight + $moe + $sound + $vision + $role + $story + $express + $style;
         $content = Purifier::clean(json_encode($request->get('content')));
         $intro = $request->get('intro');
+        $title = Purifier::clean($request->get('title'));
 
         Score::where('id', $newId)
             ->update([
@@ -379,6 +384,7 @@ class ScoreController extends Controller
                 'express' => $express,
                 'style' => $style,
                 'total' => $total,
+                'title' => $title,
                 'content' => $content,
                 'intro' => $intro,
                 'published_at' => $score['published_at'] ? $score['published_at'] : ($doPublished ? Carbon::now() : null)
@@ -414,6 +420,9 @@ class ScoreController extends Controller
         Redis::DEL($scoreRepository->cacheKeyUserScoreIds($userId));
         Redis::DEL($scoreRepository->cacheKeyScoreItem($id));
         Redis::DEL($scoreRepository->cacheKeyBangumiScore($score['bangumi_id']));
+
+        $totalScoreCount = new TotalScoreCount();
+        $totalScoreCount->add(-1);
 
         return $this->resNoContent();
     }

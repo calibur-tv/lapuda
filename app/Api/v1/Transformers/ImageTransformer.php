@@ -21,6 +21,8 @@ class ImageTransformer extends Transformer
                 'bangumi_id' => (int)$image['bangumi_id'],
                 'name' => $image['name'] ? $image['name'] : '未命名',
                 'part' => (int)$image['part'],
+                'parts' => $image['parts'],
+                'images' => $image['images'],
                 'image_count' => (int)$image['image_count'],
                 'user' => $this->transformer($image['user'], function ($user)
                 {
@@ -29,6 +31,124 @@ class ImageTransformer extends Transformer
                         'zone' => $user['zone'],
                         'avatar' => $user['avatar'],
                         'nickname' => $user['nickname']
+                    ];
+                }),
+                'bangumi' => $image['bangumi'],
+                'source' => [
+                    'url' => $image['url'],
+                    'width' => (int)$image['width'],
+                    'height' => (int)$image['height'],
+                    'size' => (int)$image['size'],
+                    'type' => $image['type']
+                ],
+                'is_album' => (boolean)$image['is_album'],
+                'is_cartoon' => (boolean)$image['is_cartoon'],
+                'is_creator' => (boolean)$image['is_creator'],
+                'created_at' => $image['created_at'],
+                'updated_at' => $image['updated_at']
+            ];
+        });
+    }
+
+    public function userAlbums($list)
+    {
+        return $this->collection($list, function ($album)
+        {
+            return [
+                'id' => (int)$album['id'],
+                'name' => $album['name'],
+                'is_cartoon' => $album['is_cartoon'],
+                'is_creator' => $album['is_creator'],
+                'image_count' => $album['image_count'],
+                'poster' => $album['url']
+            ];
+        });
+    }
+
+    public function userFlow($list)
+    {
+        return $this->collection($list, function ($image)
+        {
+            return [
+                'id' => (int)$image['id'],
+                'user_id' => (int)$image['user_id'],
+                'bangumi_id' => (int)$image['bangumi_id'],
+                'name' => $image['name'] ? $image['name'] : '未命名',
+                'image_count' => (int)$image['image_count'],
+                'bangumi' => $this->transformer($image['bangumi'], function ($bangumi)
+                {
+                    return [
+                        'id' => (int)$bangumi['id'],
+                        'name' => $bangumi['name'],
+                        'avatar' => $bangumi['avatar']
+                    ];
+                }),
+                'source' => [
+                    'url' => $image['url'],
+                    'width' => (int)$image['width'],
+                    'height' => (int)$image['height'],
+                    'size' => (int)$image['size'],
+                    'type' => $image['type']
+                ],
+                'is_album' => (boolean)$image['is_album'],
+                'is_creator' => (boolean)$image['is_creator'],
+                'created_at' => $image['created_at'],
+                'updated_at' => $image['updated_at']
+            ];
+        });
+    }
+
+    public function bangumiFlow($list)
+    {
+        return $this->collection($list, function ($image)
+        {
+            return [
+                'id' => (int)$image['id'],
+                'user_id' => (int)$image['user_id'],
+                'bangumi_id' => (int)$image['bangumi_id'],
+                'name' => $image['name'] ? $image['name'] : '未命名',
+                'image_count' => (int)$image['image_count'],
+                'user' => $this->transformer($image['user'], function ($user)
+                {
+                    return [
+                        'id' => (int)$user['id'],
+                        'nickname' => $user['nickname'],
+                        'avatar' => $user['avatar'],
+                        'zone' => $user['zone']
+                    ];
+                }),
+                'source' => [
+                    'url' => $image['url'],
+                    'width' => (int)$image['width'],
+                    'height' => (int)$image['height'],
+                    'size' => (int)$image['size'],
+                    'type' => $image['type']
+                ],
+                'is_album' => (boolean)$image['is_album'],
+                'is_creator' => (boolean)$image['is_creator'],
+                'created_at' => $image['created_at'],
+                'updated_at' => $image['updated_at']
+            ];
+        });
+    }
+
+    public function trendingFlow($list)
+    {
+        return $this->collection($list, function ($image)
+        {
+            return [
+                'id' => (int)$image['id'],
+                'user_id' => (int)$image['user_id'],
+                'bangumi_id' => (int)$image['bangumi_id'],
+                'name' => $image['name'] ? $image['name'] : '未命名',
+                'image_count' => (int)$image['image_count'],
+                'user' => $this->transformer($image['user'], function ($user)
+                {
+                    return [
+                        'id' => (int)$user['id'],
+                        'nickname' => $user['nickname'],
+                        'avatar' => $user['avatar'],
+                        'zone' => $user['zone']
                     ];
                 }),
                 'bangumi' => $this->transformer($image['bangumi'], function ($bangumi)
@@ -47,75 +167,9 @@ class ImageTransformer extends Transformer
                     'type' => $image['type']
                 ],
                 'is_album' => (boolean)$image['is_album'],
-                'is_cartoon' => (boolean)$image['is_cartoon'],
                 'is_creator' => (boolean)$image['is_creator'],
                 'created_at' => $image['created_at'],
                 'updated_at' => $image['updated_at']
-            ];
-        });
-    }
-
-    public function album($images)
-    {
-        return $this->collection($images, function ($image)
-        {
-            return [
-                'id' => $image['id'],
-                'url' => $image['url'],
-                'width' => (int)$image['width'],
-                'height' => (int)$image['height'],
-                'size' => (int)$image['size'],
-                'type' => $image['type']
-            ];
-        });
-    }
-
-    public function waterfall($list)
-    {
-        return $this->collection($list, function ($image)
-        {
-            return [
-                'id' => (int)$image['id'],
-                'width' => (int)$image['width'],
-                'height' => (int)$image['height'],
-                'url' => $image['url'],
-                'name' => $image['name'] ?: '',
-                'user_id' => (int)$image['user_id'],
-                'album_id' => (int)$image['album_id'],
-                'bangumi_id' => (int)$image['bangumi_id'],
-                'role_id' => (int)$image['role_id'],
-                'size' => $image['size'],
-                'tags' => $image['tags'],
-                'creator' => (boolean)$image['creator'],
-                'is_cartoon' => (boolean)$image['is_cartoon'],
-                'liked' => (boolean)$image['liked'],
-                'like_count' => (int)$image['like_count'],
-                'image_count' => (int)$image['image_count'],
-                'user' => $image['user'] ? $this->transformer($image['user'], function ($user)
-                {
-                    return [
-                        'id' => (int)$user['id'],
-                        'zone' => $user['zone'],
-                        'nickname' => $user['nickname'],
-                        'avatar' => $user['avatar']
-                    ];
-                }) : null,
-                'role' => $image['role'] ? $this->transformer($image['role'], function ($role)
-                {
-                    return [
-                        'id' => (int)$role['id'],
-                        'name' => $role['name']
-                    ];
-                }) : null,
-                'bangumi' => $image['bangumi_id'] ? $this->transformer($image['bangumi'], function ($bangumi)
-                {
-                    return [
-                        'id' => (int)$bangumi['id'],
-                        'name' => $bangumi['name'],
-                        'avatar' => $bangumi['avatar']
-                    ];
-                }) : null,
-                'created_at' => $image['created_at']
             ];
         });
     }
@@ -126,24 +180,44 @@ class ImageTransformer extends Transformer
         {
             return [
                 'id' => (int)$image['id'],
-                'width' => (int)$image['width'],
-                'height' => (int)$image['height'],
-                'url' => $image['url'],
-                'name' => $image['name'],
-                'album_id' => (int)$image['album_id'],
-                'liked' => (boolean)$image['liked'],
-                'like_count' => (int)$image['like_count'],
+                'user_id' => (int)$image['user_id'],
+                'bangumi_id' => (int)$image['bangumi_id'],
+                'name' => $image['name'] ? $image['name'] : '未命名',
+                'part' => (int)$image['part'],
                 'image_count' => (int)$image['image_count'],
-                'user' => $image['user'] ? $this->transformer($image['user'], function ($user)
+                'bangumi' => $this->transformer($image['bangumi'], function ($bangumi)
                 {
                     return [
-                        'id' => (int)$user['id'],
-                        'zone' => $user['zone'],
-                        'nickname' => $user['nickname'],
-                        'avatar' => $user['avatar']
+                        'id' => (int)$bangumi['id'],
+                        'name' => $bangumi['name'],
+                        'avatar' => $bangumi['avatar']
                     ];
-                }) : null,
-                'created_at' => $image['created_at']
+                }),
+                'source' => [
+                    'url' => $image['url'],
+                    'width' => (int)$image['width'],
+                    'height' => (int)$image['height'],
+                    'size' => (int)$image['size'],
+                    'type' => $image['type']
+                ],
+                'is_creator' => (boolean)$image['is_creator'],
+                'created_at' => $image['created_at'],
+                'updated_at' => $image['updated_at']
+            ];
+        });
+    }
+
+    public function albumImages($images)
+    {
+        return $this->collection($images, function ($image)
+        {
+            return [
+                'id' => $image['id'],
+                'url' => $image['url'],
+                'width' => (int)$image['width'],
+                'height' => (int)$image['height'],
+                'size' => (int)$image['size'],
+                'type' => $image['type']
             ];
         });
     }
@@ -190,44 +264,6 @@ class ImageTransformer extends Transformer
         });
     }
 
-    public function albumShow($data)
-    {
-         return $this->transformer($data, function ($album)
-         {
-            return [
-                'user' => $album['user'],
-                'bangumi' => $album['bangumi'],
-                'images' => $this->collection($album['images'], function ($image)
-                 {
-                     return [
-                         'id' => (int)$image['id'],
-                         'url' => $image['url'],
-                         'width' => (int)$image['width'],
-                         'height' => (int)$image['height']
-                     ];
-                 }),
-                'info' => $this->transformer($album['info'], function ($info)
-                {
-                    return [
-                        'liked' => $info['liked'],
-                        'name' => $info['name'],
-                        'poster' => $info['url'],
-                        'images' => $info['images'],
-                        'is_cartoon' => (boolean)$info['is_cartoon'],
-                        'is_creator' => (boolean)$info['creator'],
-                        'like_count' => (int)$info['like_count'],
-                        'image_count' => (int)$info['image_count'],
-                        'view_count' => (int)$info['view_count'],
-                        'like_users' => $info['like_users'],
-                        'created_at' => $info['created_at'],
-                        'updated_at' => $info['updated_at']
-                    ];
-                }),
-                'cartoon' => $album['cartoon']
-            ];
-         });
-    }
-
     public function indexBanner($list)
     {
         return $this->collection($list, function ($data)
@@ -253,23 +289,6 @@ class ImageTransformer extends Transformer
                 'user_avatar' => $data['user_avatar'],
                 'bangumi_id' => (int)$data['bangumi_id'],
                 'bangumi_name' => $data['bangumi_name']
-            ];
-        });
-    }
-
-    public function albums($list)
-    {
-        return $this->collection($list, function ($item)
-        {
-            return [
-                'id' => (int)$item['id'],
-                'name' => $item['name'],
-                'image_count' => (int)$item['image_count'],
-                'bangumi_id' => (int)$item['bangumi_id'],
-                'is_cartoon' => (boolean)$item['is_cartoon'],
-                'url' => $item['url'],
-                'width' => (int)$item['width'],
-                'height' => (int)$item['height'],
             ];
         });
     }

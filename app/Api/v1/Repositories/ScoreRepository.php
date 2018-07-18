@@ -9,6 +9,7 @@
 namespace App\Api\V1\Repositories;
 
 
+use App\Api\V1\Services\Counter\Stats\TotalScoreCount;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
@@ -202,6 +203,9 @@ class ScoreRepository extends Repository
 
         $job = (new \App\Jobs\Trial\JsonContent\TrialScore($scoreId));
         dispatch($job);
+
+        $totalScoreCount = new TotalScoreCount();
+        $totalScoreCount->add();
         // TODO：SEO
         // TODO：SEARCH
     }

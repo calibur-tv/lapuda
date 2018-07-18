@@ -4,6 +4,7 @@ namespace App\Jobs\Trial\JsonContent;
 
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Services\Trial\JsonContentFilter;
+use App\Services\Trial\WordsFilter;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
@@ -39,6 +40,11 @@ class TrialScore implements ShouldQueue
 
         $filter = new JsonContentFilter();
         $result = $filter->exec($score['content']);
+        $wordsFilter = new WordsFilter();
+        if ($wordsFilter->count($score['title']) > 1)
+        {
+            $result['delete'] = true;
+        }
 
         if ($result['delete'])
         {

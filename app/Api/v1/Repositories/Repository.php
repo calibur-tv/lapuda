@@ -295,4 +295,32 @@ class Repository
 
         return is_null($userId) ? 0 : $userId;
     }
+
+    public function userFlow($ids)
+    {
+        $list = $this->list($ids);
+        $bangumiRepository = new BangumiRepository();
+
+        return $bangumiRepository->appendBangumiToList($list);
+    }
+
+    public function bangumiFlow($ids)
+    {
+        $list = $this->list($ids);
+        $userRepository = new UserRepository();
+
+        return $userRepository->appendUserToList($list);
+    }
+
+    public function trendingFlow($ids)
+    {
+        $list = $this->list($ids);
+        $userRepository = new UserRepository();
+        $bangumiRepository = new BangumiRepository();
+
+        $list = $userRepository->appendUserToList($list);
+        $list = $bangumiRepository->appendBangumiToList($list);
+
+        return $list;
+    }
 }
