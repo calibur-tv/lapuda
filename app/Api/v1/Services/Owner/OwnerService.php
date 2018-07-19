@@ -25,13 +25,15 @@ class OwnerService extends Repository
      * 贡献者可以搞个 leader，只有 1 个 leader
      */
     protected $modal_table;
-    protected $stats_table;
+    protected $owner_table;
+    protected $log_table;
     protected $max_count;
 
-    public function __construct($modal_table, $stats_table, $max_count = 0)
+    public function __construct($modal_table, $owner_table, $max_count = 0)
     {
         $this->modal_table = $modal_table;
-        $this->stats_table = $stats_table;
+        $this->owner_table = $owner_table;
+        $this->log_table = $owner_table . '_log';
         $this->max_count = $max_count;
     }
 
@@ -44,7 +46,7 @@ class OwnerService extends Repository
 
         if ($this->max_count)
         {
-            $count = DB::table($this->stats_table)
+            $count = DB::table($this->owner_table)
                 ->where('modal_id', $modalId)
                 ->count();
 
@@ -60,7 +62,7 @@ class OwnerService extends Repository
         }
 
         $now = Carbon::now();
-        DB::table($this->stats_table)
+        DB::table($this->owner_table)
             ->insert([
                 'modal_id' => $modalId,
                 'user_id' => $userId,
@@ -90,7 +92,7 @@ class OwnerService extends Repository
             return false;
         }
 
-        DB::table($this->stats_table)
+        DB::table($this->owner_table)
             ->whereRaw('modal_id = ? and user_id = ?', [$modalId, $userId])
             ->update([
                 'is_leader' => time()
@@ -108,7 +110,7 @@ class OwnerService extends Repository
             return false;
         }
 
-        DB::table($this->stats_table)
+        DB::table($this->owner_table)
             ->whereRaw('modal_id = ? and user_id = ?', [$modalId, $userId])
             ->update([
                 'is_leader' => 0
@@ -126,7 +128,7 @@ class OwnerService extends Repository
             return false;
         }
 
-        return (boolean)DB::table($this->stats_table)
+        return (boolean)DB::table($this->owner_table)
             ->whereRaw('modal_id = ? and user_id = ?', [$modalId, $userId])
             ->count();
     }
@@ -138,7 +140,7 @@ class OwnerService extends Repository
             return false;
         }
 
-        return (boolean)DB::table($this->stats_table)
+        return (boolean)DB::table($this->owner_table)
             ->whereRaw('modal_id = ? and user_id = ? and is_leader <> 0', [$modalId, $userId])
             ->count();
     }
@@ -150,7 +152,7 @@ class OwnerService extends Repository
             return false;
         }
 
-        return (boolean)DB::table($this->stats_table)
+        return (boolean)DB::table($this->owner_table)
             ->whereRaw('modal_id = ? and is_leader <> 0', [$modalId])
             ->count();
     }
@@ -162,7 +164,7 @@ class OwnerService extends Repository
             return false;
         }
 
-        DB::table($this->stats_table)
+        DB::table($this->owner_table)
             ->whereRaw('modal_id = ? and user_id = ?', [$modalId, $userId])
             ->delete();
 
@@ -175,7 +177,7 @@ class OwnerService extends Repository
     {
         return $this->Cache($this->ownersCacheKey($modalId), function () use ($modalId)
         {
-            $users = DB::table($this->stats_table)
+            $users = DB::table($this->owner_table)
                 ->where('modal_id', $modalId)
                 ->select('user_id', 'score', 'is_leader', 'created_at')
                 ->get();
@@ -209,13 +211,108 @@ class OwnerService extends Repository
 
     public function changeScore($userId, $modalId, $score = 1)
     {
-        DB::table($this->stats_table)
+        DB::table($this->owner_table)
             ->whereRaw('modal_id = ? and user_id = ?', [$modalId, $userId])
             ->increment('score', $score);
     }
 
+    public function setLog($userId, $modalId ,$content, $type)
+    {
+        if (!$this->isOwner($modalId, $userId))
+        {
+            $this->set($modalId, $userId, !$this->hasLeader($modalId));
+        }
+
+        $now = Carbon::now();
+
+        $newId = DB::table($this->log_table)
+            ->insertGetId([
+                'user_id' => $userId,
+                'modal_id' => $modalId,
+                'content' => $content,
+                'type' => $type,
+                'created_at' => $now,
+                'updated_at' => $now
+            ]);
+
+        Redis::DEL($this->logsCacheKey($modalId));
+
+        return $newId;
+    }
+
+    public function getLogs($modalId)
+    {
+        return $this->Cache($this->logsCacheKey($modalId), function () use ($modalId)
+        {
+            return DB::table($this->log_table)
+                ->where('modal_id', $modalId)
+                ->orderBy('created_at', 'DESC')
+                ->get()
+                ->toArray();
+        });
+    }
+
+    public function deleteLog($userId, $logId)
+    {
+        $modalId = DB::table($this->log_table)
+            ->where('id', $logId)
+            ->where('user_id', $userId)
+            ->pluck('modal_id')
+            ->first();
+
+        if (!$modalId)
+        {
+            return '不存在的记录';
+        }
+
+        $count = DB::table($this->log_table)
+            ->where('modal_id', $modalId)
+            ->count();
+
+        if ($count <= 1)
+        {
+            return '至少要保留一条记录';
+        }
+
+        $firstId = DB::table($this->log_table)
+            ->orderBy('id', 'ASC')
+            ->where('modal_id', $modalId)
+            ->pluck('id')
+            ->first();
+
+        if ($firstId == $modalId)
+        {
+            return '不能删除最初的记录';
+        }
+
+        DB::table($this->log_table)
+            ->where('id', $logId)
+            ->update([
+                'deleted_at' => Carbon::now()
+            ]);
+
+        $userLogCount = DB::table($this->log_table)
+            ->where('modal_id', $modalId)
+            ->where('user_id', $userId)
+            ->count();
+
+        if (!$userLogCount)
+        {
+            $this->remove($modalId, $userId);
+        }
+
+        Redis::DEL($this->logsCacheKey($modalId));
+
+        return '';
+    }
+
+    protected function logsCacheKey($modalId)
+    {
+        return $this->log_table . '_' . $modalId . '_logs';
+    }
+
     protected function ownersCacheKey($modalId)
     {
-        return $this->stats_table . '_' . $modalId . '_owners';
+        return $this->owner_table . '_' . $modalId . '_owners';
     }
 }

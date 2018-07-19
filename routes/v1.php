@@ -500,7 +500,7 @@ $api->version(['v1', 'latest'], function ($api)
             {
                 $api->get('/list', 'App\Api\V1\Controllers\ScoreController@trials');
 
-                $api->post('/delete', 'App\Api\V1\Controllers\ScoreController@ban');
+                $api->post('/ban', 'App\Api\V1\Controllers\ScoreController@ban');
 
                 $api->post('/pass', 'App\Api\V1\Controllers\ScoreController@pass');
             });
