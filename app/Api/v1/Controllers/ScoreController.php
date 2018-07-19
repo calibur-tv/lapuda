@@ -415,7 +415,12 @@ class ScoreController extends Controller
             return $this->resErrRole();
         }
 
-        Score::where('id', $id)->delete();
+        DB::table('scores')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => Carbon::now()
+            ]);
 
         Redis::DEL($scoreRepository->cacheKeyUserScoreIds($userId));
         Redis::DEL($scoreRepository->cacheKeyScoreItem($id));

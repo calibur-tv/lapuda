@@ -32,12 +32,12 @@ class VideoRepository extends Repository
             $video = $video->toArray();
             $resource = $video['resource'] === 'null' ? null : json_decode($video['resource'], true);
 
-            if (isset($resource['video'][720]) && isset($resource['video'][720]['src']))
+            if (isset($resource['video'][720]) && isset($resource['video'][720]['src']) && $resource['video'][720]['src'])
             {
                 $resource['video'][720]['src'] = $this->computeVideoSrc($resource['video'][720]['src']);
             }
 
-            if (isset($resource['video'][1080]) && isset($resource['video'][1080]['src']))
+            if (isset($resource['video'][1080]) && isset($resource['video'][1080]['src']) && $resource['video'][1080]['src'])
             {
                 $resource['video'][1080]['src'] = $this->computeVideoSrc($resource['video'][1080]['src']);
             }
