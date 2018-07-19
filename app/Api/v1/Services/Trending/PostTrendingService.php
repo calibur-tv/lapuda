@@ -15,6 +15,7 @@ use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Counter\PostViewCounter;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
+use App\Api\V1\Services\Trending\Base\TrendingService;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Models\Post;
 use Carbon\Carbon;

@@ -10,10 +10,12 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Comment\PostCommentService;
+use App\Api\V1\Services\Comment\QuestionCommentService;
 use App\Api\V1\Services\Comment\ScoreCommentService;
 use App\Api\V1\Services\Comment\VideoCommentService;
 use App\Api\V1\Services\Counter\Stats\TotalCommentCount;
@@ -614,6 +616,10 @@ class CommentController extends Controller
         {
             return new ScoreCommentService();
         }
+        else if ($type === 'question')
+        {
+            return new QuestionCommentService();
+        }
         else
         {
             return null;
@@ -637,6 +643,10 @@ class CommentController extends Controller
         else if ($type === 'score')
         {
             return new ScoreRepository();
+        }
+        else if ($type === 'question')
+        {
+            return new QuestionRepository();
         }
         else
         {
