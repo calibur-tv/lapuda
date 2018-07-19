@@ -9,6 +9,8 @@
 namespace App\Api\V1\Services\Owner;
 
 
+use App\Api\V1\Services\Owner\Base\OwnerService;
+
 class BangumiManager extends OwnerService
 {
     public function __construct()

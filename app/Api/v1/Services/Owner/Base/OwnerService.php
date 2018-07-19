@@ -6,7 +6,7 @@
  * Time: 下午5:18
  */
 
-namespace App\Api\V1\Services\Owner;
+namespace App\Api\V1\Services\Owner\Base;
 
 
 use App\Api\V1\Repositories\Repository;
