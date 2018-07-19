@@ -18,7 +18,9 @@ class TotalCounterService extends Repository
     protected $cacheKey;
     protected $table;
     protected $todayCacheKey;
-
+    /**
+     * 使用场景：实时数据统计，不需要回写数据库，需要实时更新历史数据和今日数据
+     */
     public function __construct($table, $modal)
     {
         $this->table = $table;

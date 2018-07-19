@@ -6,7 +6,7 @@
  * Time: 下午5:14
  */
 
-namespace App\Api\V1\Services\Vote;
+namespace App\Api\V1\Services\Vote\Base;
 
 
 class IncrementService

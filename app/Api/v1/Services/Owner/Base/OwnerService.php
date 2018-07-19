@@ -6,7 +6,7 @@
  * Time: 下午5:18
  */
 
-namespace App\Api\V1\Services\Owner;
+namespace App\Api\V1\Services\Owner\Base;
 
 
 use App\Api\V1\Repositories\Repository;
@@ -24,14 +24,12 @@ class OwnerService extends Repository
      * 结果可能是正的，也可能是负的
      * 贡献者可以搞个 leader，只有 1 个 leader
      */
-    protected $modal_table;
     protected $owner_table;
     protected $log_table;
     protected $max_count;
 
-    public function __construct($modal_table, $owner_table, $max_count = 0)
+    public function __construct($owner_table, $max_count = 0)
     {
-        $this->modal_table = $modal_table;
         $this->owner_table = $owner_table;
         $this->log_table = $owner_table . '_log';
         $this->max_count = $max_count;
@@ -67,7 +65,6 @@ class OwnerService extends Repository
                 'modal_id' => $modalId,
                 'user_id' => $userId,
                 'is_leader' => $isLeader ? time() : 0,
-                'score' => 0,
                 'created_at' => $now,
                 'updated_at' => $now
             ]);
@@ -179,7 +176,7 @@ class OwnerService extends Repository
         {
             $users = DB::table($this->owner_table)
                 ->where('modal_id', $modalId)
-                ->select('user_id', 'score', 'is_leader', 'created_at')
+                ->select('user_id', 'is_leader', 'created_at')
                 ->get();
 
             if (is_null($users))
@@ -199,7 +196,6 @@ class OwnerService extends Repository
                     continue;
                 }
 
-                $users[$i]->score = (int)$item->score;
                 $users[$i]->is_leader = (int)$item->is_leader;
                 $users[$i]->user = $userTransformer->item($user);
                 unset($users[$i]->user_id);
@@ -207,13 +203,6 @@ class OwnerService extends Repository
 
             return $users;
         });
-    }
-
-    public function changeScore($userId, $modalId, $score = 1)
-    {
-        DB::table($this->owner_table)
-            ->whereRaw('modal_id = ? and user_id = ?', [$modalId, $userId])
-            ->increment('score', $score);
     }
 
     public function setLog($userId, $modalId ,$content, $type)

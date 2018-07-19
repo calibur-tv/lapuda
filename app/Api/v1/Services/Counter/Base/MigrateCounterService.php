@@ -17,7 +17,9 @@ class MigrateCounterService
     protected $table;
     protected $field;
     protected $timeout = 60;
-
+    /**
+     * 使用场景：访问统计，需要定期将数据回写数据，没有关联表
+     */
     public function __construct($tableName, $filedName)
     {
         $this->table = $tableName;
@@ -46,23 +48,16 @@ class MigrateCounterService
         }
         else
         {
+            $count = $this->migration($id);
+            $arr = [];
+            $arr[$this->field] = $count + $num;
+
             DB::table($this->table)
                 ->where('id', $id)
-                ->increment($this->field, $num);
+                ->update($arr);
         }
 
         return $this->get($id);
-    }
-
-    public function set($id, $result)
-    {
-        DB::table($this->table)
-            ->where('id', $id)
-            ->update([
-                $this->field => $result
-            ]);
-
-        $this->writeCache($this->writeKey($id), time());
     }
 
     public function get($id)
@@ -91,6 +86,17 @@ class MigrateCounterService
         }
 
         return $list;
+    }
+
+    protected function set($id, $result)
+    {
+        DB::table($this->table)
+            ->where('id', $id)
+            ->update([
+                $this->field => $result
+            ]);
+
+        $this->writeCache($this->writeKey($id), time());
     }
 
     protected function migration($id)

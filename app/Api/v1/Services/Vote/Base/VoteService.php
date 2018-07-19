@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Api\V1\Services\Vote;
+namespace App\Api\V1\Services\Vote\Base;
 
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;

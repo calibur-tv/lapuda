@@ -17,7 +17,9 @@ class RelationCounterService extends Repository
 {
     protected $table;
     protected $field;
-
+    /**
+     * 使用场景：关注统计，不需要回写数据到表里，缓存失效后重新通过关联表算出来再写到缓存里
+     */
     public function __construct($stateTable, $fieldName = 'modal_id')
     {
         $this->table = $stateTable;
@@ -41,9 +43,7 @@ class RelationCounterService extends Repository
     {
         return (int)$this->RedisItem($this->cacheKey($id), function () use ($id)
         {
-           $count = DB::table($this->table)
-               ->where($this->field, $id)
-               ->count();
+           $count = $this->migration($id);
 
            return $count ? $count : null;
         });
@@ -59,8 +59,15 @@ class RelationCounterService extends Repository
         return $list;
     }
 
+    protected function migration($id)
+    {
+        return DB::table($this->table)
+            ->where($this->field, $id)
+            ->count();
+    }
+
     protected function cacheKey($id)
     {
-        return $this->table . '_' . $id . '_total';
+        return $this->table . '_' . $id . '_' . $this->field  .'_total';
     }
 }

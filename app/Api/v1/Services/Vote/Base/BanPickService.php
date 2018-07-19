@@ -6,8 +6,10 @@
  * Time: 下午5:13
  */
 
-namespace App\Api\V1\Services\Vote;
+namespace App\Api\V1\Services\Vote\Base;
 
+use App\Api\V1\Services\Counter\BanPickReallyCounter;
+use App\Api\V1\Services\Counter\BanPickShowCounter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -19,15 +21,11 @@ class BanPickService
      * 但是显示的时候，只显示加的分数总和，不显示真实分数，因此需要两个 field
      */
     protected $table;
-    protected $show_field;
-    protected $really_field;
     protected $score;
 
-    public function __construct($table, $showField, $reallyField, $score = 1)
+    public function __construct($table, $score = 1)
     {
         $this->table = $table;
-        $this->show_field = $showField;
-        $this->really_field = $reallyField;
         $this->score = $score;
     }
 
@@ -117,7 +115,7 @@ class BanPickService
             ->first();
     }
 
-    public function batchCheck($list, $userId, $key = 'vote_result')
+    public function batchCheck($list, $userId, $key = 'voted')
     {
         $ids = array_map(function ($item)
         {
@@ -149,6 +147,13 @@ class BanPickService
         return $list;
     }
 
+    public function batchVote($list, $key = 'vote_count')
+    {
+        $banPickShowCount = new BanPickShowCounter($this->table);
+
+        return $banPickShowCount->batchGet($list, $key);
+    }
+
     protected function firstVoteIt($userId, $modalId, $score)
     {
         $now = Carbon::now();
@@ -168,7 +173,13 @@ class BanPickService
 
     protected function changeModalScore($modalId, $score)
     {
-
+        if ($score > 0)
+        {
+            $banPickShowCounter = new BanPickShowCounter($this->table);
+            $banPickShowCounter->add($modalId, $score);
+        }
+        $banPickReallyCounter = new BanPickReallyCounter($this->table);
+        $banPickReallyCounter->add($modalId, $score);
     }
 
     protected function getVotedScore($id)
