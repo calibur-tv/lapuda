@@ -11,10 +11,10 @@ namespace App\Api\V1\Services\Tag;
 
 use App\Api\V1\Services\Tag\Base\TagService;
 
-class BangumiTagService extends TagService
+class QuestionTagService extends TagService
 {
     public function __construct()
     {
-        parent::__construct('bangumi_tags', 'bangumi_tag_relations', 10);
+        parent::__construct('bangumis', 'question_tag_relations', 5);
     }
 }

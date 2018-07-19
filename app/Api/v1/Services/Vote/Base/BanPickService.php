@@ -8,12 +8,13 @@
 
 namespace App\Api\V1\Services\Vote\Base;
 
+use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Services\Counter\BanPickReallyCounter;
 use App\Api\V1\Services\Counter\BanPickShowCounter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
-class BanPickService
+class BanPickService extends Repository
 {
     /**
      * BanPickService 非ban即选服务，如知乎的点赞.
@@ -29,7 +30,7 @@ class BanPickService
         $this->score = $score;
     }
 
-    public function like($userId, $modalId)
+    public function toggleLike($userId, $modalId)
     {
         $voteId = $this->getVotedId($userId, $modalId);
 
@@ -38,7 +39,7 @@ class BanPickService
             // 第一次点了赞同
             $voteId = $this->firstVoteIt($userId, $modalId, $this->score);
 
-            $this->SortAdd($this->newsCacheListKey($modalId), $userId);
+            $this->ListInsertBefore($this->newsCacheListKey($modalId), $userId);
         }
         else // 已经投过票了
         {
@@ -47,7 +48,7 @@ class BanPickService
             {
                 DB::table($this->table)->delete($voteId);
 
-                $this->SortRemove($this->newsCacheListKey($modalId), $userId);
+                $this->ListRemove($this->newsCacheListKey($modalId), $userId);
                 $this->changeModalScore($modalId, -$this->score);
             }
             else  // 先点反对，再点赞同
@@ -55,11 +56,11 @@ class BanPickService
                 DB::table($this->table)
                     ->where('id', $voteId)
                     ->update([
-                        'updated_at' => Carbon::now(),
-                        'score' => $this->score
+                        'score' => $this->score,
+                        'created_at' => Carbon::now()
                     ]);
 
-                $this->SortAdd($this->newsCacheListKey($modalId), $userId);
+                $this->ListInsertBefore($this->newsCacheListKey($modalId), $userId);
                 $this->changeModalScore($modalId, 2 * $this->score);
             }
         }
@@ -67,7 +68,7 @@ class BanPickService
         return $voteId;
     }
 
-    public function dislike($userId, $modalId)
+    public function toggleDislike($userId, $modalId)
     {
         $voteId = $this->getVotedId($userId, $modalId);
 
@@ -90,11 +91,11 @@ class BanPickService
                 DB::table($this->table)
                     ->where('id', $voteId)
                     ->update([
-                        'updated_at' => Carbon::now(),
-                        'score' => -$this->score
+                        'score' => -$this->score,
+                        'created_at' => Carbon::now()
                     ]);
 
-                $this->SortRemove($this->newsCacheListKey($modalId), $userId);
+                $this->ListRemove($this->newsCacheListKey($modalId), $userId);
                 $this->changeModalScore($modalId, -2 * $this->score);
             }
         }
@@ -154,16 +155,27 @@ class BanPickService
         return $banPickShowCount->batchGet($list, $key);
     }
 
+    public function votedUserIds($modalId, $page = 0, $count = 10)
+    {
+        $ids = $this->RedisList($this->hotsCacheListKey($modalId), function () use ($modalId)
+        {
+            return DB::table($this->table)
+                ->where('modal_id', $modalId)
+                ->orderBy('created_at', 'desc')
+                ->pluck('id');
+        });
+
+        return $this->filterIdsByPage($ids, $page, $count);
+    }
+
     protected function firstVoteIt($userId, $modalId, $score)
     {
-        $now = Carbon::now();
         $newId = DB::table($this->table)
             ->insertGetId([
                 'user_id' => $userId,
                 'modal_id' => $modalId,
                 'score' => $score,
-                'created_at' => $now,
-                'updated_at' => $now
+                'created_at' => Carbon::now()
             ]);
 
         $this->changeModalScore($modalId, $score);

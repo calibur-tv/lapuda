@@ -482,6 +482,30 @@ class CommentController extends Controller
         return $this->resCreated((boolean)$result);
     }
 
+    public function toggleDislikeMainComment($type, $id)
+    {
+        $commentService = $this->getCommentServiceByType($type);
+        if (is_null($commentService))
+        {
+            return $this->resErrBad('错误的类型');
+        }
+
+        $result = $commentService->toggleDislike($this->getAuthUserId(), $id);
+
+        if ($result)
+        {
+            if ($type === 'post')
+            {
+                $job = (new \App\Jobs\Notification\Post\Agree($result));
+                dispatch($job);
+            }
+        }
+
+        // TODO：dispatch job to update open search weight
+
+        return $this->resCreated((boolean)$result);
+    }
+
     /**
      * <喜欢/取消喜欢>子评论
      *

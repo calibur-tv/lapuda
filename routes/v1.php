@@ -206,6 +206,8 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/sub/toggleLike/{id}', 'App\Api\V1\Controllers\CommentController@toggleLikeSubComment')->middleware(['jwt.auth']);
 
         $api->post('/main/toggleLike/{id}', 'App\Api\V1\Controllers\CommentController@toggleLikeMainComment')->middleware(['jwt.auth']);
+
+        $api->post('/main/toggleDislike/{id}', 'App\Api\V1\Controllers\CommentController@toggleDislikeMainComment')->middleware(['jwt.auth']);
     });
 
     $api->group(['prefix' => '/image'], function ($api)
