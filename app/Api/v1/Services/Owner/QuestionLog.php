@@ -2,8 +2,8 @@
 /**
  * Created by PhpStorm.
  * User: yuistack
- * Date: 2018/7/5
- * Time: 下午6:53
+ * Date: 2018/7/19
+ * Time: 下午1:10
  */
 
 namespace App\Api\V1\Services\Owner;
@@ -11,10 +11,10 @@ namespace App\Api\V1\Services\Owner;
 
 use App\Api\V1\Services\Owner\Base\OwnerService;
 
-class BangumiManager extends OwnerService
+class QuestionLog extends OwnerService
 {
     public function __construct()
     {
-        parent::__construct('bangumi_managers', 5);
+        parent::__construct('questions_changes');
     }
 }
