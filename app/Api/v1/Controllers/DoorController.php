@@ -149,7 +149,7 @@ class DoorController extends Controller
             return $this->resErrParams($validator);
         }
 
-        if (!preg_match('/^([a-zA-Z]+|[0-9]+|[\x{4e00}-\x{9fa5}]+)$/u', $request->get('nickname')))
+        if (!preg_match('/^([a-zA-Z]+|[0-9]+|[\x{4e00}-\x{9fa5}]+)*$/u', $request->get('nickname')))
         {
             return $this->resErrBad('昵称只能包含汉字、数字和字母');
         }
