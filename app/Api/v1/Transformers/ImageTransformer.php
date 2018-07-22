@@ -185,12 +185,13 @@ class ImageTransformer extends Transformer
                 'name' => $image['name'] ? $image['name'] : '未命名',
                 'part' => (int)$image['part'],
                 'image_count' => (int)$image['image_count'],
-                'bangumi' => $this->transformer($image['bangumi'], function ($bangumi)
+                'user' => $this->transformer($image['user'], function ($user)
                 {
                     return [
-                        'id' => (int)$bangumi['id'],
-                        'name' => $bangumi['name'],
-                        'avatar' => $bangumi['avatar']
+                        'id' => (int)$user['id'],
+                        'nickname' => $user['nickname'],
+                        'zone' => $user['zone'],
+                        'avatar' => $user['avatar']
                     ];
                 }),
                 'source' => [
