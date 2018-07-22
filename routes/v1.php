@@ -106,6 +106,14 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/create', 'App\Api\V1\Controllers\ScoreController@create')->middleware(['jwt.auth', 'geetest']);
     });
 
+    $api->group(['prefix' => '/question'], function ($api)
+    {
+        $api->group(['prefix' => '/create'], function ($api)
+        {
+            $api->post('/q', 'App\Api\V1\Controllers\QuestionController@createQuestion')->middleware(['geetest']);
+        });
+    });
+
     $api->group(['prefix' => '/user'], function ($api)
     {
         $api->group(['prefix' => '/setting'], function ($api)
@@ -206,6 +214,8 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/sub/toggleLike/{id}', 'App\Api\V1\Controllers\CommentController@toggleLikeSubComment')->middleware(['jwt.auth']);
 
         $api->post('/main/toggleLike/{id}', 'App\Api\V1\Controllers\CommentController@toggleLikeMainComment')->middleware(['jwt.auth']);
+
+        $api->post('/main/toggleDislike/{id}', 'App\Api\V1\Controllers\CommentController@toggleDislikeMainComment')->middleware(['jwt.auth']);
     });
 
     $api->group(['prefix' => '/image'], function ($api)

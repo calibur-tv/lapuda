@@ -8,16 +8,14 @@
 
 namespace App\Api\V1\Services\Trending;
 
-use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ImageRepository;
-use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Counter\ImageViewCounter;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
+use App\Api\V1\Services\Trending\Base\TrendingService;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\Image;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
 
 class ImageTrendingService extends TrendingService
 {

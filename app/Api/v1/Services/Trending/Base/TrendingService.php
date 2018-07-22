@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Api\V1\Services\Trending;
+namespace App\Api\V1\Services\Trending\Base;
 
 use App\Api\V1\Repositories\Repository;
 use Illuminate\Support\Facades\Redis;

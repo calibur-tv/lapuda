@@ -705,7 +705,7 @@ class ImageController extends Controller
             ];
         }
 
-        $list = $imageRepository->userFlow($idsObj['ids']);
+        $list = $imageRepository->bangumiFlow($idsObj['ids']);
         $imageViewCounter = new ImageViewCounter();
         $imageCommentService = new ImageCommentService();
         $imageLikeService = new ImageLikeService();
@@ -717,7 +717,7 @@ class ImageController extends Controller
         $imageTransformer = new ImageTransformer();
 
         return $this->resOK([
-            'list' => $imageTransformer->userFlow($list),
+            'list' => $imageTransformer->cartoon($list),
             'total' => $idsObj['total'],
             'noMore' => $idsObj['noMore']
         ]);

@@ -14,6 +14,7 @@ use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\ScoreCommentService;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
+use App\Api\V1\Services\Trending\Base\TrendingService;
 use App\Api\V1\Transformers\ScoreTransformer;
 use App\Models\Score;
 
