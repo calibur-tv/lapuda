@@ -8,6 +8,8 @@
 
 namespace App\Api\V1\Controllers;
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class QuestionController extends Controller
 {
@@ -16,9 +18,22 @@ class QuestionController extends Controller
 
     }
 
-    public function create()
+    public function createQuestion(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'tags' => 'required|Array',
+            'title' => 'required|string|max:30',
+            'images' => 'required|Array',
+            'intro' => 'required|max:120',
+            'content' => 'required|string|max:1000'
+        ]);
 
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        return $this->resOK('success');
     }
 
     public function update()

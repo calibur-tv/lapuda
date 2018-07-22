@@ -106,6 +106,14 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/create', 'App\Api\V1\Controllers\ScoreController@create')->middleware(['jwt.auth', 'geetest']);
     });
 
+    $api->group(['prefix' => '/question'], function ($api)
+    {
+        $api->group(['prefix' => '/create'], function ($api)
+        {
+            $api->post('/q', 'App\Api\V1\Controllers\QuestionController@createQuestion')->middleware(['geetest']);
+        });
+    });
+
     $api->group(['prefix' => '/user'], function ($api)
     {
         $api->group(['prefix' => '/setting'], function ($api)
