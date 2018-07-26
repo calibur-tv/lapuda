@@ -698,11 +698,11 @@ class ImageController extends Controller
         $idsObj = $imageRepository->getBangumiCartoonIds($id, $page, $take, $sort);
         if (is_null($idsObj))
         {
-            return [
+            return $this->resOK([
                 'list' => [],
                 'total' => 0,
                 'noMore' => true
-            ];
+            ]);
         }
 
         $list = $imageRepository->bangumiFlow($idsObj['ids']);
