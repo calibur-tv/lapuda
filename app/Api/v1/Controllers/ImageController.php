@@ -568,11 +568,11 @@ class ImageController extends Controller
 
         if (empty($list))
         {
-            return [
+            return $this->resOK([
                 'list' => [],
                 'total' => 0,
                 'noMore' => true
-            ];
+            ]);
         }
 
         $imageViewCounter = new ImageViewCounter();
