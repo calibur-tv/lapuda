@@ -763,4 +763,98 @@ class UserController extends Controller
 
         return $this->resNoContent();
     }
+
+    public function getUserCoinTransactions(Request $request)
+    {
+        $curPage = $request->get('cur_page') ?: 0;
+        $toPage = $request->get('to_page') ?: 1;
+        $take = $request->get('take') ?: 10;
+        $userId = $request->get('id');
+
+        $list = DB::table('user_coin')
+            ->where('user_id', $userId)
+            ->orWhere('from_user_id', $userId)
+            ->select('id', 'created_at', 'from_user_id', 'user_id', 'type', 'type_id', 'id')
+            ->orderBy('id', 'DESC')
+            ->take(($toPage - $curPage) * $take)
+            ->skip($curPage * $take)
+            ->get();
+
+        $userRepository = new UserRepository();
+        $result = [];
+        foreach ($list as $item)
+        {
+            $transaction = [
+                'id' => $item->id,
+                'type' => '',
+                'action' => '',
+                'action_id' => $item->type_id,
+                'created_at' => $item->created_at,
+                'about_user_id' => '无',
+                'about_user_phone' => '无',
+                'about_user_sign_at' => '无'
+            ];
+            if ($item->type == 0)
+            {
+                $transaction['type'] = '收入';
+                $transaction['action'] = '每日签到';
+            }
+            else if ($item->type == 1)
+            {
+                $transaction['action'] = '打赏帖子';
+                if ($item->from_user_id == $userId)
+                {
+                    $transaction['type'] = '支出';
+                }
+                else
+                {
+                    $transaction['type'] = '收入';
+                }
+            }
+            else if ($item->type == 2)
+            {
+                $transaction['action'] = '邀请注册';
+                $transaction['type'] = '收入';
+            }
+            else if ($item->type == 3)
+            {
+                $transaction['action'] = '偶像应援';
+                $transaction['type'] = '支出';
+            }
+            else if ($item->type == 4)
+            {
+                $transaction['action'] = '打赏图片';
+                if ($item->from_user_id == $userId)
+                {
+                    $transaction['type'] = '支出';
+                }
+                else
+                {
+                    $transaction['type'] = '收入';
+                }
+            }
+
+            if ($transaction['type'] === '收入' && $item->from_user_id != 0 && $item->from_user_id != $userId)
+            {
+                $user = $userRepository->item($item->from_user_id);
+                $transaction['about_user_id'] = $item->user_id;
+                $transaction['about_user_phone'] = $user['phone'];
+                $transaction['about_user_sign_at'] = $user['created_at'];
+            }
+            if ($transaction['type'] === '支出' && $item->user_id != 0)
+            {
+                $user = $userRepository->item($item->user_id);
+                $transaction['about_user_id'] = $item->user_id;
+                $transaction['about_user_phone'] = $user['phone'];
+                $transaction['about_user_sign_at'] = $user['created_at'];
+            }
+
+            $result[] = $transaction;
+        }
+
+        return $this->resOK([
+            'list' => $result,
+            'total' => UserCoin::where('user_id', $userId)->orWhere('from_user_id', $userId)->count()
+        ]);
+    }
 }

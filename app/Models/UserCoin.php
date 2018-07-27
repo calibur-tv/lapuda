@@ -26,4 +26,12 @@ class UserCoin extends Model
      * 3：为偶像应援
      * 4：为图片点赞
      */
+
+    protected $casts = [
+        'id' => 'integer',
+        'user_id' => 'integer',
+        'from_user_id' => 'integer',
+        'type_id' => 'integer',
+        'type' => 'integer'
+    ];
 }
