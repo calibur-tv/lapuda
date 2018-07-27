@@ -837,14 +837,14 @@ class UserController extends Controller
             if ($transaction['type'] === '收入' && $item->from_user_id != 0 && $item->from_user_id != $userId)
             {
                 $user = $userRepository->item($item->from_user_id);
-                $transaction['about_user_id'] = $item->user_id;
+                $transaction['about_user_id'] = $user['user_id'];
                 $transaction['about_user_phone'] = $user['phone'];
                 $transaction['about_user_sign_at'] = $user['created_at'];
             }
             if ($transaction['type'] === '支出' && $item->user_id != 0)
             {
                 $user = $userRepository->item($item->user_id);
-                $transaction['about_user_id'] = $item->user_id;
+                $transaction['about_user_id'] = $user['user_id'];
                 $transaction['about_user_phone'] = $user['phone'];
                 $transaction['about_user_sign_at'] = $user['created_at'];
             }
