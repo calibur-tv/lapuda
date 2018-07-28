@@ -181,6 +181,8 @@ class DoorController extends Controller
         }
         catch (\Exception $e)
         {
+            app('sentry')->captureException($e);
+
             return $this->resErrBad('昵称暂不可用，请尝试其它昵称');
         }
 
