@@ -775,7 +775,7 @@ class UserController extends Controller
             ->where('user_id', $userId)
             ->orWhere('from_user_id', $userId)
             ->select('id', 'created_at', 'from_user_id', 'user_id', 'type', 'type_id', 'id', 'count')
-            ->orderBy('id', 'DESC')
+            ->orderBy('created_at', 'DESC')
             ->take(($toPage - $curPage) * $take)
             ->skip($curPage * $take)
             ->get();
