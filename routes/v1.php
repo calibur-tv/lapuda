@@ -433,6 +433,8 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/transactions', 'App\Api\V1\Controllers\UserController@getUserCoinTransactions');
 
+            $api->post('/withdrawal', 'App\Api\V1\Controllers\UserController@withdrawal');
+
             $api->get('/dalao', 'App\Api\V1\Controllers\UserController@coinDescList');
         });
 

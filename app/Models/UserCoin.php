@@ -15,7 +15,8 @@ class UserCoin extends Model
         'user_id',
         'from_user_id',
         'type',
-        'type_id'
+        'type_id',
+        'count'
     ];
 
     /**
@@ -25,6 +26,7 @@ class UserCoin extends Model
      * 2：邀请用户注册
      * 3：为偶像应援
      * 4：为图片点赞
+     * 5：提现
      */
 
     protected $casts = [

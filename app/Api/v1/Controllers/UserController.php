@@ -774,7 +774,7 @@ class UserController extends Controller
         $list = DB::table('user_coin')
             ->where('user_id', $userId)
             ->orWhere('from_user_id', $userId)
-            ->select('id', 'created_at', 'from_user_id', 'user_id', 'type', 'type_id', 'id')
+            ->select('id', 'created_at', 'from_user_id', 'user_id', 'type', 'type_id', 'id', 'count')
             ->orderBy('id', 'DESC')
             ->take(($toPage - $curPage) * $take)
             ->skip($curPage * $take)
@@ -788,6 +788,7 @@ class UserController extends Controller
                 'id' => $item->id,
                 'type' => '',
                 'action' => '',
+                'count' => $item->count,
                 'action_id' => $item->type_id,
                 'created_at' => $item->created_at,
                 'about_user_id' => '无',
@@ -833,6 +834,11 @@ class UserController extends Controller
                     $transaction['type'] = '收入';
                 }
             }
+            else if ($item->type == 5)
+            {
+                $transaction['action'] = '提现';
+                $transaction['type'] = '支出';
+            }
 
             if ($transaction['type'] === '收入' && $item->from_user_id != 0 && $item->from_user_id != $userId)
             {
@@ -856,5 +862,40 @@ class UserController extends Controller
             'list' => $result,
             'total' => UserCoin::where('user_id', $userId)->orWhere('from_user_id', $userId)->count()
         ]);
+    }
+
+    public function withdrawal(Request $request)
+    {
+        $adminId = $this->getAuthUserId();
+        if ($adminId !== 1)
+        {
+            return $this->resErrRole();
+        }
+
+        $userId = $request->get('id');
+        $coinCount = User::where('id', $userId)
+            ->pluck('coin_count')
+            ->first();
+
+        if ($coinCount < 100)
+        {
+            return $this->resErrBad('未满100金币');
+        }
+
+        $money = $request->get('money');
+        if ($money > $coinCount)
+        {
+            return $this->resErrBad('超出拥有金额');
+        }
+
+        User::where('id', $userId)->increment('coin_count', -$money);
+        UserCoin::create([
+            'from_user_id' => 0,
+            'user_id' => $userId,
+            'type' => 5,
+            'count' => $money
+        ]);
+
+        return $this->resNoContent();
     }
 }
