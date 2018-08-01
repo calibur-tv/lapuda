@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>calibur.tv - 天下漫友是一家</title>
+    <meta name="description" content="Just playing around">
+    <link rel="icon" href="https://static.calibur.tv/favicon.ico">
+    
+    <link rel="preload" href="/Laputa/assets/css/0.styles.c4c0b6bf.css" as="style"><link rel="preload" href="/Laputa/assets/js/app.733a7fd1.js" as="script"><link rel="preload" href="/Laputa/assets/js/11.0b4a8022.js" as="script"><link rel="prefetch" href="/Laputa/assets/js/5.fd858ef1.js"><link rel="prefetch" href="/Laputa/assets/js/2.cda51ec0.js"><link rel="prefetch" href="/Laputa/assets/js/3.d09b8012.js"><link rel="prefetch" href="/Laputa/assets/js/4.8a60e004.js"><link rel="prefetch" href="/Laputa/assets/js/6.a928bdff.js"><link rel="prefetch" href="/Laputa/assets/js/7.01e00b56.js"><link rel="prefetch" href="/Laputa/assets/js/8.9d0e33c2.js"><link rel="prefetch" href="/Laputa/assets/js/9.a7f46f06.js"><link rel="prefetch" href="/Laputa/assets/js/10.0e1f29d7.js"><link rel="prefetch" href="/Laputa/assets/js/12.7b022ff1.js">
+    <link rel="stylesheet" href="/Laputa/assets/css/0.styles.c4c0b6bf.css">
+  </head>
+  <body>
+    <div id="app" data-server-rendered="true"><div class="theme-container no-sidebar"><header class="navbar"><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/Laputa/" class="home-link router-link-active"><!----> <span class="site-name">calibur.tv - 天下漫友是一家</span></a> <div class="links"><div class="search-box"><input aria-label="Search" autocomplete="off" spellcheck="false" value=""> <!----></div> <!----></div></header> <div class="sidebar-mask"></div> <div class="sidebar"><!---->  <!----> </div> <div class="page"> <div class="content"><p>FORMAT: 1A</p> <h1 id="calibur-tv-api-docs"><a href="#calibur-tv-api-docs" aria-hidden="true" class="header-anchor">#</a> calibur.tv API docs</h1> <h1 id="搜索相关接口"><a href="#搜索相关接口" aria-hidden="true" class="header-anchor">#</a> 搜索相关接口</h1> <h2 id="根据关键字搜索番剧-get-search-index"><a href="#根据关键字搜索番剧-get-search-index" aria-hidden="true" class="header-anchor">#</a> 根据关键字搜索番剧 [GET /search/index]</h2> <ul><li><p>Parameters</p> <ul><li>q: (string, required) - 关键字</li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;番剧的 url&quot;
+  }
+</code></pre></li></ul></li></ul> <h1 id="用户认证相关接口"><a href="#用户认证相关接口" aria-hidden="true" class="header-anchor">#</a> 用户认证相关接口</h1> <h2 id="发送手机验证码-post-door-message"><a href="#发送手机验证码-post-door-message" aria-hidden="true" class="header-anchor">#</a> 发送手机验证码 [POST /door/message]</h2> <blockquote><p>一个通用的接口，通过 <code>type</code> 和 <code>phone_number</code> 发送手机验证码.
+目前支持 <code>type</code> 为：</p></blockquote> <ol><li><code>sign_up</code>，注册时调用</li> <li><code>forgot_password</code>，找回密码时使用</li></ol> <blockquote><p>目前返回的数字验证码是<code>6位</code></p></blockquote> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - 上面的某种type</li> <li>phone_number: (number, required) - 只支持<code>11位</code>的手机号</li> <li>geetest: (object, required) - Geetest认证对象</li></ul></li> <li><p>Response 201 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;短信已发送&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40001,
+      &quot;message&quot;: &quot;未经过图形验证码认证&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 401 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40100,
+      &quot;message&quot;: &quot;图形验证码认证失败&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;各种错误&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 503 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 50310,
+      &quot;message&quot;: &quot;短信服务暂不可用或请求过于频繁&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="用户注册-post-door-register"><a href="#用户注册-post-door-register" aria-hidden="true" class="header-anchor">#</a> 用户注册 [POST /door/register]</h2> <p>目前仅支持使用手机号注册</p> <ul><li><p>Parameters</p> <ul><li>access: (number, required) - 手机号</li> <li>secret: (string, required) - <code>6至16位</code>的密码</li> <li>nickname: (string, required) - 昵称，只能包含<code>汉字、数字和字母，2~14个字符组成，1个汉字占2个字符</code></li> <li>authCode: (number, required) - 6位数字的短信验证码</li></ul></li> <li><p>Response 201 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;JWT-Token&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;各种错误&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="用户登录-post-door-login"><a href="#用户登录-post-door-login" aria-hidden="true" class="header-anchor">#</a> 用户登录 [POST /door/login]</h2> <p>目前仅支持手机号和密码登录</p> <ul><li><p>Parameters</p> <ul><li>access: (number, required) - 手机号</li> <li>secret: (string, required) - 6至16位的密码</li> <li>geetest: (object, required) - Geetest认证对象</li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;JWT-Token&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40001,
+      &quot;message&quot;: &quot;未经过图形验证码认证&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 401 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40100,
+      &quot;message&quot;: &quot;图形验证码认证失败&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;各种错误&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="用户登出-post-door-logout"><a href="#用户登出-post-door-logout" aria-hidden="true" class="header-anchor">#</a> 用户登出 [POST /door/logout]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 204 (application/json)</p></li></ul> <h2 id="获取用户信息-post-door-user"><a href="#获取用户信息-post-door-user" aria-hidden="true" class="header-anchor">#</a> 获取用户信息 [POST /door/user]</h2> <p>每次<code>启动应用</code>、<code>登录</code>、<code>注册</code>成功后调用</p> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;用户对象&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 401 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40104,
+      &quot;message&quot;: &quot;未登录的用户&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="重置密码-post-door-reset"><a href="#重置密码-post-door-reset" aria-hidden="true" class="header-anchor">#</a> 重置密码 [POST /door/reset]</h2> <ul><li><p>Parameters</p> <ul><li>access: (number, required) - 手机号</li> <li>secret: (string, required) - 6至16位的密码</li> <li>authCode: (number, required) - 6位数字的短信验证码</li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;密码重置成功&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40001,
+      &quot;message&quot;: &quot;未经过图形验证码认证&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 401 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40100,
+      &quot;message&quot;: &quot;图形验证码认证失败&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;各种错误&quot;
+  }
+</code></pre></li></ul></li></ul> <h1 id="番剧相关接口"><a href="#番剧相关接口" aria-hidden="true" class="header-anchor">#</a> 番剧相关接口</h1> <h2 id="番剧时间轴-get-bangumi-timeline"><a href="#番剧时间轴-get-bangumi-timeline" aria-hidden="true" class="header-anchor">#</a> 番剧时间轴 [GET /bangumi/timeline]</h2> <ul><li><p>Parameters</p> <ul><li>year: (integer, required) - 从哪一年开始获取</li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: {
+          &quot;list&quot;: &quot;番剧列表&quot;,
+          &quot;noMore&quot;: &quot;没有更多了&quot;
+      }
+  }
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;参数错误&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="新番列表（周）-get-bangumi-released"><a href="#新番列表（周）-get-bangumi-released" aria-hidden="true" class="header-anchor">#</a> 新番列表（周） [GET /bangumi/released]</h2> <ul><li>Response 200 (application/json)
+<ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;番剧列表&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="所有的番剧标签-get-bangumi-tags"><a href="#所有的番剧标签-get-bangumi-tags" aria-hidden="true" class="header-anchor">#</a> 所有的番剧标签 [GET /bangumi/tags]</h2> <ul><li>Response 200 (application/json)
+<ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;标签列表&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="根据标签获取番剧列表-get-bangumi-category"><a href="#根据标签获取番剧列表-get-bangumi-category" aria-hidden="true" class="header-anchor">#</a> 根据标签获取番剧列表 [GET /bangumi/category]</h2> <ul><li><p>Parameters</p> <ul><li>id: (string, required) - 选中的标签id，<code>用 - 链接的字符串</code></li> <li>page: (integer, required) - 页码
+<ul><li>Default: 0</li></ul></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: {
+          &quot;list&quot;: &quot;番剧列表&quot;,
+          &quot;total&quot;: &quot;该标签下番剧的总数&quot;,
+          &quot;noMore&quot;: &quot;是否没有更多了&quot;
+      }
+  }
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;请求参数错误&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="番剧详情-get-bangumi-bangumiid-show"><a href="#番剧详情-get-bangumi-bangumiid-show" aria-hidden="true" class="header-anchor">#</a> 番剧详情 [GET /bangumi/<code>bangumiId</code>/show]</h2> <ul><li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;番剧信息&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;不存在的番剧&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="番剧视频-get-bangumi-bangumiid-videos"><a href="#番剧视频-get-bangumi-bangumiid-videos" aria-hidden="true" class="header-anchor">#</a> 番剧视频 [GET /bangumi/<code>bangumiId</code>/videos]</h2> <ul><li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: {
+          &quot;videos&quot;: &quot;视频列表&quot;,
+          &quot;has_season&quot;: &quot;是否有多个季度&quot;,
+          &quot;total&quot;: &quot;视频总数&quot;
+      }
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;不存在的番剧&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="关注或取消关注番剧-post-bangumi-bangumiid-togglefollow"><a href="#关注或取消关注番剧-post-bangumi-bangumiid-togglefollow" aria-hidden="true" class="header-anchor">#</a> 关注或取消关注番剧 [POST /bangumi/<code>bangumiId</code>/toggleFollow]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 201 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;是否已关注&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 401 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40104,
+      &quot;message&quot;: &quot;用户认证失败&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="关注番剧的用户列表-get-bangumi-bangumiid-followers"><a href="#关注番剧的用户列表-get-bangumi-bangumiid-followers" aria-hidden="true" class="header-anchor">#</a> 关注番剧的用户列表 [GET /bangumi/<code>bangumiId</code>/followers]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;seenIds&quot;: &quot;看过的userIds，用','隔开的字符串&quot;,
+      &quot;take&quot;: &quot;获取数量&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: {
+          &quot;list&quot;: &quot;用户列表&quot;,
+          &quot;noMore&quot;: &quot;没有更多&quot;
+      }
+  }
+</code></pre></li></ul></li></ul> <h1 id="帖子相关接口"><a href="#帖子相关接口" aria-hidden="true" class="header-anchor">#</a> 帖子相关接口</h1> <h2 id="新建帖子-post-post-create"><a href="#新建帖子-post-post-create" aria-hidden="true" class="header-anchor">#</a> 新建帖子 [POST /post/create]</h2> <blockquote><p>图片对象示例：</p></blockquote> <ol><li><code>key</code> 七牛传图后得到的 key，不包含图片地址的 host，如一张图片 image.calibur.tv/user/1/avatar.png，七牛返回的 key 是：user/1/avatar.png，将这个 key 传到后端</li> <li><code>width</code> 图片的宽度，七牛上传图片后得到</li> <li><code>height</code> 图片的高度，七牛上传图片后得到</li> <li><code>size</code> 图片的尺寸，七牛上传图片后得到</li> <li><code>type</code> 图片的类型，七牛上传图片后得到</li></ol> <ul><li><p>Parameters</p> <ul><li>bangumiId: (integer, required) - 所选的番剧 id</li> <li>title: (string, required) - 标题<code>40字以内</code></li> <li>desc: (string, required) - content可能是富文本，desc是<code>120字以内的纯文本</code></li> <li>content: (string, required) - 内容，<code>1000字以内</code></li> <li>images: (array, required) - 图片对象数组</li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 201 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;帖子id&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;请求参数错误&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="帖子详情-get-post-postid-show"><a href="#帖子详情-get-post-postid-show" aria-hidden="true" class="header-anchor">#</a> 帖子详情 [GET /post/<code>postId</code>/show]</h2> <ul><li><p>Parameters</p> <ul><li>only: (integer, optional) - 是否只看楼主
+<ul><li>Default: 0</li></ul></li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: {
+          &quot;bangumi&quot;: &quot;番剧信息&quot;,
+          &quot;user&quot;: &quot;作者信息&quot;,
+          &quot;post&quot;: &quot;帖子信息&quot;
+      }
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;帖子不存在/番剧不存在/作者不存在&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="获取给帖子点赞的用户列表-post-post-postid-likeusers"><a href="#获取给帖子点赞的用户列表-post-post-postid-likeusers" aria-hidden="true" class="header-anchor">#</a> 获取给帖子点赞的用户列表 [POST /post/${postId}/likeUsers]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;seenIds&quot;: &quot;看过的userIds, 用','分割的字符串&quot;,
+      &quot;take&quot;: &quot;获取的数量&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;用户列表&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;不存在的帖子&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="给帖子点赞或取消点赞-post-post-postid-togglelike"><a href="#给帖子点赞或取消点赞-post-post-postid-togglelike" aria-hidden="true" class="header-anchor">#</a> 给帖子点赞或取消点赞 [POST /post/<code>postId</code>/toggleLike]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 201 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;是否已赞&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 401 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40104,
+      &quot;message&quot;: &quot;未登录的用户&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 403 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40301,
+      &quot;message&quot;: &quot;不能给自己点赞/金币不足/请求错误&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;内容已删除&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="番剧的帖子列表-get-bangumi-bangumiid-posts-news"><a href="#番剧的帖子列表-get-bangumi-bangumiid-posts-news" aria-hidden="true" class="header-anchor">#</a> 番剧的帖子列表 [GET /bangumi/<code>bangumiId</code>/posts/news]</h2> <ul><li><p>Parameters</p> <ul><li>minId: (integer, required) - 看过的帖子里，最大的一个id</li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: {
+          &quot;list&quot;: &quot;番剧列表&quot;,
+          &quot;total&quot;: &quot;总数&quot;,
+          &quot;noMore&quot;: &quot;没有更多&quot;
+      }
+  }
+</code></pre></li></ul></li></ul> <h2 id="番剧的动态帖子列表-get-post-trending-active"><a href="#番剧的动态帖子列表-get-post-trending-active" aria-hidden="true" class="header-anchor">#</a> 番剧的动态帖子列表 [GET /post/trending/active]</h2> <ul><li><p>Parameters</p> <ul><li>seenIds: (string, required) - 看过的帖子的<code>ids</code>, 用','号分割的字符串</li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: {
+          &quot;list&quot;: &quot;帖子列表&quot;,
+          &quot;total&quot;: &quot;总数&quot;,
+          &quot;noMore&quot;: &quot;没有更多了&quot;
+      }
+  }
+</code></pre></li></ul></li></ul> <h2 id="番剧的热门帖子列表-get-post-trending-hot"><a href="#番剧的热门帖子列表-get-post-trending-hot" aria-hidden="true" class="header-anchor">#</a> 番剧的热门帖子列表 [GET /post/trending/hot]</h2> <ul><li><p>Parameters</p> <ul><li>seenIds: (string, required) - 看过的帖子的<code>ids</code>, 用','号分割的字符串</li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: {
+          &quot;list&quot;: &quot;帖子列表&quot;,
+          &quot;total&quot;: &quot;总数&quot;,
+          &quot;noMore&quot;: &quot;没有更多了&quot;
+      }
+  }
+</code></pre></li></ul></li></ul> <h2 id="收藏主题帖或取消收藏-post-post-postid-togglemark"><a href="#收藏主题帖或取消收藏-post-post-postid-togglemark" aria-hidden="true" class="header-anchor">#</a> 收藏主题帖或取消收藏 [POST /post/<code>postId</code>/toggleMark]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 201 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;是否已收藏&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 401 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40104,
+      &quot;message&quot;: &quot;未登录的用户&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 403 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40301,
+      &quot;message&quot;: &quot;不能收藏自己的帖子&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;不存在的帖子&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="删除帖子-post-post-postid-deletepost"><a href="#删除帖子-post-post-postid-deletepost" aria-hidden="true" class="header-anchor">#</a> 删除帖子 [POST /post/<code>postId</code>/deletePost]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 204 (application/json)</p></li> <li><p>Response 401 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40104,
+      &quot;message&quot;: &quot;未登录的用户&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 403 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40301,
+      &quot;message&quot;: &quot;权限不足&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;不存在的帖子&quot;
+  }
+</code></pre></li></ul></li></ul> <h1 id="图片相关接口"><a href="#图片相关接口" aria-hidden="true" class="header-anchor">#</a> 图片相关接口</h1> <h2 id="获取首页banner图-get-image-banner"><a href="#获取首页banner图-get-image-banner" aria-hidden="true" class="header-anchor">#</a> 获取首页banner图 [GET /image/banner]</h2> <ul><li>Response 200 (application/json)
+<ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;图片列表&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="获取-geetest-验证码-get-image-captcha"><a href="#获取-geetest-验证码-get-image-captcha" aria-hidden="true" class="header-anchor">#</a> 获取 Geetest 验证码 [GET /image/captcha]</h2> <ul><li>Response 200 (application/json)
+<ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: {
+          &quot;success&quot;: &quot;数字0或1&quot;,
+          &quot;gt&quot;: &quot;Geetest.gt&quot;,
+          &quot;challenge&quot;: &quot;Geetest.challenge&quot;,
+          &quot;payload&quot;: &quot;字符串荷载&quot;
+      }
+  }
+</code></pre></li></ul></li></ul> <h2 id="获取图片上传token-get-image-uptoken"><a href="#获取图片上传token-get-image-uptoken" aria-hidden="true" class="header-anchor">#</a> 获取图片上传token [GET /image/uptoken]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: {
+          &quot;upToken&quot;: &quot;上传图片的token&quot;,
+          &quot;expiredAt&quot;: &quot;token过期时的时间戳，单位为s&quot;
+      }
+  }
+</code></pre></li></ul></li> <li><p>Response 401 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40104,
+      &quot;message&quot;: &quot;未登录的用户&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="举报图片-post-image-report"><a href="#举报图片-post-image-report" aria-hidden="true" class="header-anchor">#</a> 举报图片 [POST /image/report]</h2> <ul><li><p>Parameters</p> <ul><li>id: (integer, required) - 图片的 id</li></ul></li> <li><p>Response 204 (application/json)</p></li></ul> <h2 id="喜欢或取消喜欢图片-post-image-togglelike"><a href="#喜欢或取消喜欢图片-post-image-togglelike" aria-hidden="true" class="header-anchor">#</a> 喜欢或取消喜欢图片 [POST /image/toggleLike]</h2> <ul><li><p>Parameters</p> <ul><li>id: (integer, required) - 图片的 id</li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 201 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;是否已点赞&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40104,
+      &quot;message&quot;: &quot;未登录的用户&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 403 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;不能为自己的图片点赞|`原创图片`金币不足&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;不存在的图片&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="相册内图片的排序-post-image-album-albumid-sort"><a href="#相册内图片的排序-post-image-album-albumid-sort" aria-hidden="true" class="header-anchor">#</a> 相册内图片的排序 [POST /image/album/<code>albumId</code>/sort]</h2> <ul><li><p>Parameters</p> <ul><li>result: (string, required) - 相册内图片排序后的<code>ids</code>，用<code>,</code>拼接的字符串</li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 204 (application/json)</p></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;data&quot;: &quot;参数错误&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;不存在的相册&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="删除相册里的图片-post-image-album-albumid-deleteimage"><a href="#删除相册里的图片-post-image-album-albumid-deleteimage" aria-hidden="true" class="header-anchor">#</a> 删除相册里的图片 [POST /image/album/<code>albumId</code>/deleteImage]</h2> <ul><li><p>Parameters</p> <ul><li>result: (string, required) - 相册内图片排序后的<code>ids</code>，用<code>,</code>拼接的字符串</li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 204 (application/json)</p></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;data&quot;: &quot;至少要保留一张图&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;不存在的相册&quot;
+  }
+</code></pre></li></ul></li></ul> <h1 id="动漫角色相关接口"><a href="#动漫角色相关接口" aria-hidden="true" class="header-anchor">#</a> 动漫角色相关接口</h1> <h2 id="番剧角色列表-get-bangumi-bangumiid-roles"><a href="#番剧角色列表-get-bangumi-bangumiid-roles" aria-hidden="true" class="header-anchor">#</a> 番剧角色列表 [GET /bangumi/<code>bangumiId</code>/roles]</h2> <ul><li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;角色列表&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;不存在的番剧&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="给角色应援-post-bangumi-bangumiid-role-roleid-star"><a href="#给角色应援-post-bangumi-bangumiid-role-roleid-star" aria-hidden="true" class="header-anchor">#</a> 给角色应援 [POST /bangumi/<code>bangumiId</code>/role/<code>roleId</code>/star]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 204 (application/json)</p></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;不存在的角色&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 403 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40301,
+      &quot;message&quot;: &quot;没有足够的金币&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="角色详情-get-cartoon-role-roleid-show"><a href="#角色详情-get-cartoon-role-roleid-show" aria-hidden="true" class="header-anchor">#</a> 角色详情 [GET /cartoon_role/<code>roleId</code>/show]</h2> <ul><li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: {
+          &quot;bangumi&quot;: &quot;番剧简介&quot;,
+          &quot;data&quot;: &quot;角色信息&quot;
+      }
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;不存在的角色&quot;
+  }
+</code></pre></li></ul></li></ul> <h1 id="视频相关接口"><a href="#视频相关接口" aria-hidden="true" class="header-anchor">#</a> 视频相关接口</h1> <h2 id="获取视频资源-get-video-videoid-show"><a href="#获取视频资源-get-video-videoid-show" aria-hidden="true" class="header-anchor">#</a> 获取视频资源 [GET /video/${videoId}/show]</h2> <ul><li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: {
+          &quot;info&quot;: &quot;视频对象&quot;,
+          &quot;bangumi&quot;: &quot;番剧信息&quot;,
+          &quot;list&quot;: {
+              &quot;total&quot;: &quot;视频总数&quot;,
+              &quot;repeat&quot;: &quot;是否重排&quot;,
+              &quot;videos&quot;: &quot;视频列表&quot;
+          }
+      }
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;不存在的视频资源&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="记录视频播放信息-get-video-videoid-playing"><a href="#记录视频播放信息-get-video-videoid-playing" aria-hidden="true" class="header-anchor">#</a> 记录视频播放信息 [GET /video/${videoId}/playing]</h2> <ul><li>Request (application/json)
+<ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li></ul> <h1 id="用户相关接口"><a href="#用户相关接口" aria-hidden="true" class="header-anchor">#</a> 用户相关接口</h1> <h2 id="用户每日签到-post-user-daysign"><a href="#用户每日签到-post-user-daysign" aria-hidden="true" class="header-anchor">#</a> 用户每日签到 [POST /user/daySign]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 204 (application/json)</p></li> <li><p>Response 401 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40104,
+      &quot;message&quot;: &quot;未登录的用户&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 403 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40301,
+      &quot;message&quot;: &quot;今日已签到&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="更新用户资料中的图片-post-user-setting-image"><a href="#更新用户资料中的图片-post-user-setting-image" aria-hidden="true" class="header-anchor">#</a> 更新用户资料中的图片 [POST /user/setting/image]</h2> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - <code>avatar</code>或<code>banner</code></li> <li>url: (string, required) - 图片地址，不带<code>host</code></li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 204 (application/json)</p></li></ul> <h2 id="用户详情-get-user-zone-show"><a href="#用户详情-get-user-zone-show" aria-hidden="true" class="header-anchor">#</a> 用户详情 [GET /user/<code>zone</code>/show]</h2> <ul><li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;用户信息对象&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;该用户不存在&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="用户关注的番剧列表-get-user-zone-followed-bangumi"><a href="#用户关注的番剧列表-get-user-zone-followed-bangumi" aria-hidden="true" class="header-anchor">#</a> 用户关注的番剧列表 [GET /user/<code>zone</code>/followed/bangumi]</h2> <ul><li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;番剧列表&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;该用户不存在&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="用户发布的帖子列表-get-user-zone-posts-mine"><a href="#用户发布的帖子列表-get-user-zone-posts-mine" aria-hidden="true" class="header-anchor">#</a> 用户发布的帖子列表 [GET /user/<code>zone</code>/posts/mine]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;minId&quot;: &quot;看过的帖子列表里，id 最小的那个帖子的 id&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;帖子列表&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;找不到用户&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="用户回复的帖子列表-get-user-zone-posts-reply"><a href="#用户回复的帖子列表-get-user-zone-posts-reply" aria-hidden="true" class="header-anchor">#</a> 用户回复的帖子列表 [GET /user/<code>zone</code>/posts/reply]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;minId&quot;: &quot;看过的帖子列表里，id 最小的那个帖子的 id&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;帖子列表&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;找不到用户&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="用户喜欢的帖子列表-get-user-zone-posts-like"><a href="#用户喜欢的帖子列表-get-user-zone-posts-like" aria-hidden="true" class="header-anchor">#</a> 用户喜欢的帖子列表 [GET /user/<code>zone</code>/posts/like]</h2> <ul><li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;帖子列表&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;找不到用户&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="用户收藏的帖子列表-get-user-zone-posts-mark"><a href="#用户收藏的帖子列表-get-user-zone-posts-mark" aria-hidden="true" class="header-anchor">#</a> 用户收藏的帖子列表 [GET /user/<code>zone</code>/posts/mark]</h2> <ul><li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;帖子列表&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;找不到用户&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="用户反馈-post-user-feedback"><a href="#用户反馈-post-user-feedback" aria-hidden="true" class="header-anchor">#</a> 用户反馈 [POST /user/feedback]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;type&quot;: &quot;反馈的类型&quot;,
+      &quot;desc&quot;: &quot;反馈内容，最多120字&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 204 (application/json)</p></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;请求参数错误&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="用户消息列表-get-user-notifications-list"><a href="#用户消息列表-get-user-notifications-list" aria-hidden="true" class="header-anchor">#</a> 用户消息列表 [GET /user/notifications/list]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;minId&quot;: &quot;看过的最小id&quot;
+  }
+</code></pre></li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;消息列表&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 401 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40104,
+      &quot;message&quot;: &quot;未登录的用户&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="用户未读消息个数-get-user-notifications-count"><a href="#用户未读消息个数-get-user-notifications-count" aria-hidden="true" class="header-anchor">#</a> 用户未读消息个数 [GET /user/notifications/count]</h2> <ul><li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;未读个数&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 401 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40104,
+      &quot;message&quot;: &quot;未登录的用户&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="读取某条消息-post-user-notifications-read"><a href="#读取某条消息-post-user-notifications-read" aria-hidden="true" class="header-anchor">#</a> 读取某条消息 [POST /user/notifications/read]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;id&quot;: &quot;消息id&quot;
+  }
+</code></pre></li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 204 (application/json)</p></li></ul> <h2 id="清空未读消息-post-user-notifications-clear"><a href="#清空未读消息-post-user-notifications-clear" aria-hidden="true" class="header-anchor">#</a> 清空未读消息 [POST /user/notifications/clear]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 204 (application/json)</p></li></ul> <h2 id="用户应援的角色列表-get-user-zone-followed-role"><a href="#用户应援的角色列表-get-user-zone-followed-role" aria-hidden="true" class="header-anchor">#</a> 用户应援的角色列表 [GET /user/<code>zone</code>/followed/role]</h2> <ul><li><p>Parameters</p> <ul><li>page: (integer, required) - 页码
+<ul><li>Default: 0</li></ul></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: {
+          &quot;list&quot;: &quot;角色列表&quot;,
+          &quot;total&quot;: &quot;总数&quot;,
+          &quot;noMore&quot;: &quot;没有更多&quot;
+      }
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;该用户不存在&quot;
+  }
+</code></pre></li></ul></li></ul> <h1 id="评论相关接口"><a href="#评论相关接口" aria-hidden="true" class="header-anchor">#</a> 评论相关接口</h1> <h2 id="新建主评论-post-type-comment-type-id-create"><a href="#新建主评论-post-type-comment-type-id-create" aria-hidden="true" class="header-anchor">#</a> 新建主评论 [POST /<code>type</code>/comment/<code>type_id</code>/create]</h2> <ul><li><p>Parameters</p> <ul><li>content: (string, required) - 内容，<code>1000字以内</code></li> <li>images: (array, required) - 图片对象数组</li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 201 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;主评论对象&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;请求参数错误&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="获取主评论列表-get-type-comment-type-id-main-list"><a href="#获取主评论列表-get-type-comment-type-id-main-list" aria-hidden="true" class="header-anchor">#</a> 获取主评论列表 [GET /<code>type</code>/comment/<code>type_id</code>/main/list]</h2> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - 上面的某种 type</li> <li>type_id: (integer, required) - 如果是帖子，则是帖子id</li> <li>fetchId: (integer, required) - 你通过这个接口获取的评论列表里最后的那个id
+<ul><li>Default: 0</li></ul></li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: {
+          &quot;list&quot;: &quot;主评论列表&quot;,
+          &quot;total&quot;: &quot;总数&quot;,
+          &quot;noMore&quot;: &quot;没有更多了&quot;
+      }
+  }
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;请求参数错误&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="子评论列表-get-type-comment-commentid-sub-list"><a href="#子评论列表-get-type-comment-commentid-sub-list" aria-hidden="true" class="header-anchor">#</a> 子评论列表 [GET /<code>type</code>/comment/<code>commentId</code>/sub/list]</h2> <blockquote><p>一个通用的接口，通过 <code>type</code> 和 <code>commentId</code> 来获取子评论列表.
+目前支持 <code>type</code> 为：</p></blockquote> <ol><li><code>post</code>，帖子</li></ol> <blockquote><p><code>commentId</code>是父评论的 id：</p></blockquote> <ol><li><code>父评论</code> 一部视频下的评论列表，列表中的每一个就是一个父评论</li> <li><code>子评论</code> 每个父评论都有回复列表，这个回复列表中的每一个就是子评论</li></ol> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - 上面的某种 type</li> <li>commentId: (integer, required) - 父评论 id</li> <li>maxId: (integer, required) - 该父评论下看过的最大的子评论 id
+<ul><li>Default: 0</li></ul></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: {
+          &quot;list&quot;: &quot;评论列表&quot;,
+          &quot;total&quot;: &quot;评论总数&quot;,
+          &quot;noMore&quot;: &quot;没有更多了&quot;
+      }
+  }
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;请求参数错误&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;不存在的父评论&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="回复评论-post-type-comment-commentid-reply"><a href="#回复评论-post-type-comment-commentid-reply" aria-hidden="true" class="header-anchor">#</a> 回复评论 [POST /<code>type</code>/comment/<code>commentId</code>/reply]</h2> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - 上面的某种 type</li> <li>commentId: (integer, required) - 父评论 id</li> <li>targetUserId: (integer, required) - 父评论的用户 id</li> <li>content: (string, required) - 评论内容，<code>纯文本，100字以内</code></li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 201 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;子评论对象&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;参数错误&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;内容已删除&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="删除子评论-post-type-comment-delete-sub-commentid"><a href="#删除子评论-post-type-comment-delete-sub-commentid" aria-hidden="true" class="header-anchor">#</a> 删除子评论 [POST /<code>type</code>/comment/delete/sub/<code>commentId</code>]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 204 (application/json)</p></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;参数错误&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;该评论已被删除&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 403 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40301,
+      &quot;message&quot;: &quot;继续操作前请先登录&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="删除主评论-post-type-comment-delete-main-commentid"><a href="#删除主评论-post-type-comment-delete-main-commentid" aria-hidden="true" class="header-anchor">#</a> 删除主评论 [POST /<code>type</code>/comment/delete/main/<code>commentId</code>]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 204 (application/json)</p></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;参数错误&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;该评论已被删除&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 403 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40301,
+      &quot;message&quot;: &quot;继续操作前请先登录&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="喜欢-取消喜欢-主评论-post-type-comment-main-togglelike-commentid"><a href="#喜欢-取消喜欢-主评论-post-type-comment-main-togglelike-commentid" aria-hidden="true" class="header-anchor">#</a> &lt;喜欢/取消喜欢&gt;主评论 [POST /<code>type</code>/comment/main/toggleLike/<code>commentId</code>]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 201 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;是否已喜欢&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;参数错误&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="喜欢-取消喜欢-子评论-post-type-comment-sub-togglelike-commentid"><a href="#喜欢-取消喜欢-子评论-post-type-comment-sub-togglelike-commentid" aria-hidden="true" class="header-anchor">#</a> &lt;喜欢/取消喜欢&gt;子评论 [POST /<code>type</code>/comment/sub/toggleLike/<code>commentId</code>]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 201 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;data&quot;: &quot;是否已喜欢&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;参数错误&quot;
+  }
+</code></pre></li></ul></li></ul> <h1 id="排行相关接口"><a href="#排行相关接口" aria-hidden="true" class="header-anchor">#</a> 排行相关接口</h1> <h2 id="动漫角色排行榜-get-trending-cartoon-role"><a href="#动漫角色排行榜-get-trending-cartoon-role" aria-hidden="true" class="header-anchor">#</a> 动漫角色排行榜 [GET /trending/cartoon_role]</h2> <ul><li><p>Parameters</p> <ul><li>seenIds: (string, required) - 看过的帖子的<code>ids</code>, 用','号分割的字符串</li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 0,
+      &quot;0&quot;: {
+          &quot;data&quot;: &quot;角色列表&quot;
+      }
+  }</code></pre></li></ul></li></ul></div> <div class="page-edit"><!----> <!----></div> <!----> </div> <!----></div></div>
+    <script src="/Laputa/assets/js/11.0b4a8022.js" defer></script><script src="/Laputa/assets/js/app.733a7fd1.js" defer></script>
+  </body>
+</html>
