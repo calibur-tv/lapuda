@@ -148,7 +148,6 @@ class CartoonRoleRepository extends Repository
                 ->latest()
                 ->take(100)
                 ->pluck('star_count', 'id');
-
         });
     }
 

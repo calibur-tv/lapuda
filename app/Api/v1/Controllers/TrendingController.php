@@ -10,6 +10,7 @@ use App\Api\V1\Services\Counter\Stats\TotalPostCount;
 use App\Api\V1\Services\Counter\Stats\TotalScoreCount;
 use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Services\Trending\PostTrendingService;
+use App\Api\V1\Services\Trending\RoleTrendingService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use Illuminate\Http\Request;
@@ -148,6 +149,10 @@ class TrendingController extends Controller
         else if ($type === 'score')
         {
             return new ScoreTrendingService($userId, $bangumiId);
+        }
+        else if ($type === 'role')
+        {
+            return new RoleTrendingService($userId, $bangumiId);
         }
 
         return null;

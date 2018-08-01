@@ -143,7 +143,7 @@ class BangumiTransformer extends Transformer
                 'update' => $bangumi['update'],
                 'released_video_id' => $bangumi['released_video_id'],
                 'released_part' => $bangumi['released_part'],
-                'end' => $bangumi['end']
+                'end' => (boolean)$bangumi['end']
             ];
         });
     }
