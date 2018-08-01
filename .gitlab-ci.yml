@@ -10,6 +10,6 @@ pages:
  - npm run docs:build
  artifacts:
    paths:
-   - docs/static
+   - docs
  only:
  - master
