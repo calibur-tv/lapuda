@@ -4,5 +4,7 @@ module.exports = {
   head: [
     ['link', { rel: 'icon', href: 'https://static.calibur.tv/favicon.ico' }]
   ],
-  port: 8080
+  port: 8080,
+  base: 'Laputa',
+  dest: 'docs/static'
 }
