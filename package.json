@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "docs:make": "php artisan api:docs --use-version v1 --output-file ./vuepress/api/v1/index.md",
     "docs:dev": "vuepress dev vuepress",
     "docs:build": "vuepress build vuepress"
   }

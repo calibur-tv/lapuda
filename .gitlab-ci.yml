@@ -4,9 +4,9 @@ pages:
  cache:
    paths:
    - node_modules/
-
  script:
  - npm install
+ - npm run docs:make
  - npm run docs:build
  artifacts:
    paths:
