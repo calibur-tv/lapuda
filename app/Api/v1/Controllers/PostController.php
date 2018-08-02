@@ -180,17 +180,7 @@ class PostController extends Controller
         ]);
     }
 
-    /**
-     * 获取给帖子点赞的用户列表
-     *
-     * @Post("/post/${postId}/likeUsers")
-     *
-     * @Transaction({
-     *      @Request({"seenIds": "看过的userIds, 用','分割的字符串", "take": "获取的数量"}),
-     *      @Response(200, body={"code": 0, "data": "用户列表"}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的帖子"})
-     * })
-     */
+    // TODO：remove
     public function likeUsers(Request $request, $id)
     {
         $page = $request->get('page') ?: 0;
@@ -201,19 +191,7 @@ class PostController extends Controller
         return $this->resOK($users);
     }
 
-    /**
-     * 给帖子点赞或取消点赞
-     *
-     * @Post("/post/`postId`/toggleLike")
-     *
-     * @Transaction({
-     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(201, body={"code": 0, "data": "是否已赞"}),
-     *      @Response(401, body={"code": 40104, "message": "未登录的用户"}),
-     *      @Response(403, body={"code": 40301, "message": "不能给自己点赞/金币不足/请求错误"}),
-     *      @Response(404, body={"code": 40401, "message": "内容已删除"})
-     * })
-     */
+    // TODO：remove
     public function toggleLike($postId)
     {
         $postRepository = new PostRepository();
@@ -254,78 +232,6 @@ class PostController extends Controller
         dispatch($job);
 
         return $this->resCreated(true);
-    }
-
-    /**
-     * 番剧的帖子列表
-     *
-     * @Get("/bangumi/`bangumiId`/posts/news")
-     *
-     * @Parameters({
-     *      @Parameter("minId", description="看过的帖子里，最大的一个id", type="integer", required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"list": "番剧列表", "total": "总数", "noMore": "没有更多"}})
-     * })
-     */
-    public function bangumiNews(Request $request, $id)
-    {
-        $minId = intval($request->get('minId')) ?: 0;
-        $take = 10;
-
-        $userId = $this->getAuthUserId();
-        $postTrendingService = new PostTrendingService($userId, $id);
-
-        return $this->resOK($postTrendingService->news($minId, $take));
-    }
-
-    /**
-     * 番剧的动态帖子列表
-     *
-     * @Get("/post/trending/active")
-     *
-     * @Parameters({
-     *      @Parameter("seenIds", description="看过的帖子的`ids`, 用','号分割的字符串", type="string", required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "total": "总数", "noMore": "没有更多了"}})
-     * })
-     */
-    public function bangumiActive(Request $request, $id)
-    {
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = 10;
-
-        $userId = $this->getAuthUserId();
-        $postTrendingService = new PostTrendingService($userId, $id);
-
-        return $this->resOK($postTrendingService->active($seen, $take));
-    }
-
-    /**
-     * 番剧的热门帖子列表
-     *
-     * @Get("/post/trending/hot")
-     *
-     * @Parameters({
-     *      @Parameter("seenIds", description="看过的帖子的`ids`, 用','号分割的字符串", type="string", required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"list": "帖子列表", "total": "总数", "noMore": "没有更多了"}})
-     * })
-     */
-    public function bangumiHot(Request $request, $id)
-    {
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = 10;
-
-        $userId = $this->getAuthUserId();
-        $postTrendingService = new PostTrendingService($userId, $id);
-
-        return $this->resOK($postTrendingService->hot($seen, $take));
     }
 
     public function bangumiTops(Request $request, $id)
@@ -371,19 +277,7 @@ class PostController extends Controller
         return $this->resOK($transformer->bangumi($list));
     }
 
-    /**
-     * 收藏主题帖或取消收藏
-     *
-     * @Post("/post/`postId`/toggleMark")
-     *
-     * @Transaction({
-     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(201, body={"code": 0, "data": "是否已收藏"}),
-     *      @Response(401, body={"code": 40104, "message": "未登录的用户"}),
-     *      @Response(403, body={"code": 40301, "message": "不能收藏自己的帖子"}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的帖子"})
-     * })
-     */
+    // TODO：remove
     public function toggleMark($postId)
     {
         $postRepository = new PostRepository();
@@ -577,6 +471,7 @@ class PostController extends Controller
         return $this->resNoContent();
     }
 
+    // TODO：doc
     public function setNice(Request $request)
     {
         $postId = $request->get('id');
@@ -612,6 +507,7 @@ class PostController extends Controller
         return $this->resNoContent();
     }
 
+    // TODO：doc
     public function removeNice(Request $request)
     {
         $postId = $request->get('id');
@@ -646,6 +542,7 @@ class PostController extends Controller
         return $this->resNoContent();
     }
 
+    // TODO：doc
     public function setTop(Request $request)
     {
         $postId = $request->get('id');
@@ -685,6 +582,7 @@ class PostController extends Controller
         return $this->resNoContent();
     }
 
+    // TODO：doc
     public function removeTop(Request $request)
     {
         $postId = $request->get('id');

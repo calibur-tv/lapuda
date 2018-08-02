@@ -2,6 +2,7 @@
 
 namespace App\Api\V1\Services\Toggle\Bangumi;
 
+use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Toggle\ToggleService;
 
 /**
@@ -15,5 +16,16 @@ class BangumiFollowService extends ToggleService
     public function __construct()
     {
         parent::__construct('bangumis', 'bangumi_follows', true);
+    }
+
+    public function beforeHook($bangumiId, $userId)
+    {
+        $bangumiManager = new BangumiManager();
+        if ($bangumiManager->isOwner($bangumiId, $userId))
+        {
+            return '管理员不能取消关注';
+        }
+
+        return true;
     }
 }

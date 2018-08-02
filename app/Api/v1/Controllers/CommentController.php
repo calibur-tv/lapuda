@@ -136,7 +136,7 @@ class CommentController extends Controller
      * @Get("/`type`/comment/`type_id`/main/list")
      *
      * @Parameters({
-     *      @Parameter("type", description="上面的某种 type", type="string", required=true),
+     *      @Parameter("type", description="某个 type", type="string", required=true),
      *      @Parameter("type_id", description="如果是帖子，则是帖子id", type="integer", required=true),
      *      @Parameter("fetchId", description="你通过这个接口获取的评论列表里最后的那个id", type="integer", default="0", required=true),
      * })
@@ -213,8 +213,6 @@ class CommentController extends Controller
      * 子评论列表
      *
      * > 一个通用的接口，通过 `type` 和 `commentId` 来获取子评论列表.
-     * 目前支持 `type` 为：
-     * 1. `post`，帖子
      *
      * > `commentId`是父评论的 id：
      * 1. `父评论` 一部视频下的评论列表，列表中的每一个就是一个父评论
@@ -223,7 +221,7 @@ class CommentController extends Controller
      * @Get("/`type`/comment/`commentId`/sub/list")
      *
      * @Parameters({
-     *      @Parameter("type", description="上面的某种 type", type="string", required=true),
+     *      @Parameter("type", description="某种 type", type="string", required=true),
      *      @Parameter("commentId", description="父评论 id", type="integer", required=true),
      *      @Parameter("maxId", description="该父评论下看过的最大的子评论 id", type="integer", default=0, required=true)
      * })
@@ -278,7 +276,7 @@ class CommentController extends Controller
      * @Post("/`type`/comment/`commentId`/reply")
      *
      * @Parameters({
-     *      @Parameter("type", description="上面的某种 type", type="string", required=true),
+     *      @Parameter("type", description="某种 type", type="string", required=true),
      *      @Parameter("commentId", description="父评论 id", type="integer", required=true),
      *      @Parameter("targetUserId", description="父评论的用户 id", type="integer", required=true),
      *      @Parameter("content", description="评论内容，`纯文本，100字以内`", type="string", required=true)
@@ -484,6 +482,7 @@ class CommentController extends Controller
         return $this->resCreated((boolean)$result);
     }
 
+    // TODO：service 未完成
     public function toggleDislikeMainComment($type, $id)
     {
         $commentService = $this->getCommentServiceByType($type);

@@ -331,50 +331,44 @@ FORMAT: 1A
                 "message": "不存在的番剧"
             }
 
-## 关注或取消关注番剧 [POST /bangumi/`bangumiId`/toggleFollow]
+## 吧主编辑番剧信息 [POST /bangumi/`bangumiId`/edit]
 
+
++ Parameters
+    + avatar: (string, required) - 封面图链接，不包含 host
+    + banner: (string, required) - 背景图链接，不包含 host
+    + summary: (string, required) - 200字以内的纯文本
+    + tags: (array, required) - 标签的id数组
 
 + Request (application/json)
     + Headers
 
             Authorization: Bearer JWT-Token
 
-+ Response 201 (application/json)
++ Response 204 (application/json)
+
++ Response 400 (application/json)
     + Body
 
             {
-                "code": 0,
-                "data": "是否已关注"
+                "code": 40003,
+                "message": "请求参数错误或内容非法"
             }
 
-+ Response 401 (application/json)
++ Response 403 (application/json)
     + Body
 
             {
-                "code": 40104,
-                "message": "用户认证失败"
+                "code": 40301,
+                "message": "权限不足"
             }
 
-## 关注番剧的用户列表 [GET /bangumi/`bangumiId`/followers]
-
-
-+ Request (application/json)
++ Response 503 (application/json)
     + Body
 
             {
-                "seenIds": "看过的userIds，用','隔开的字符串",
-                "take": "获取数量"
-            }
-
-+ Response 200 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "data": {
-                    "list": "用户列表",
-                    "noMore": "没有更多"
-                }
+                "50301": 40301,
+                "message": "服务暂不可用"
             }
 
 # 帖子相关接口
@@ -445,167 +439,6 @@ FORMAT: 1A
             {
                 "code": 40401,
                 "message": "帖子不存在/番剧不存在/作者不存在"
-            }
-
-## 获取给帖子点赞的用户列表 [POST /post/${postId}/likeUsers]
-
-
-+ Request (application/json)
-    + Body
-
-            {
-                "seenIds": "看过的userIds, 用','分割的字符串",
-                "take": "获取的数量"
-            }
-
-+ Response 200 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "data": "用户列表"
-            }
-
-+ Response 404 (application/json)
-    + Body
-
-            {
-                "code": 40401,
-                "message": "不存在的帖子"
-            }
-
-## 给帖子点赞或取消点赞 [POST /post/`postId`/toggleLike]
-
-
-+ Request (application/json)
-    + Headers
-
-            Authorization: Bearer JWT-Token
-
-+ Response 201 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "data": "是否已赞"
-            }
-
-+ Response 401 (application/json)
-    + Body
-
-            {
-                "code": 40104,
-                "message": "未登录的用户"
-            }
-
-+ Response 403 (application/json)
-    + Body
-
-            {
-                "code": 40301,
-                "message": "不能给自己点赞/金币不足/请求错误"
-            }
-
-+ Response 404 (application/json)
-    + Body
-
-            {
-                "code": 40401,
-                "message": "内容已删除"
-            }
-
-## 番剧的帖子列表 [GET /bangumi/`bangumiId`/posts/news]
-
-
-+ Parameters
-    + minId: (integer, required) - 看过的帖子里，最大的一个id
-
-+ Response 200 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "data": {
-                    "list": "番剧列表",
-                    "total": "总数",
-                    "noMore": "没有更多"
-                }
-            }
-
-## 番剧的动态帖子列表 [GET /post/trending/active]
-
-
-+ Parameters
-    + seenIds: (string, required) - 看过的帖子的`ids`, 用','号分割的字符串
-
-+ Response 200 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "data": {
-                    "list": "帖子列表",
-                    "total": "总数",
-                    "noMore": "没有更多了"
-                }
-            }
-
-## 番剧的热门帖子列表 [GET /post/trending/hot]
-
-
-+ Parameters
-    + seenIds: (string, required) - 看过的帖子的`ids`, 用','号分割的字符串
-
-+ Response 200 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "data": {
-                    "list": "帖子列表",
-                    "total": "总数",
-                    "noMore": "没有更多了"
-                }
-            }
-
-## 收藏主题帖或取消收藏 [POST /post/`postId`/toggleMark]
-
-
-+ Request (application/json)
-    + Headers
-
-            Authorization: Bearer JWT-Token
-
-+ Response 201 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "data": "是否已收藏"
-            }
-
-+ Response 401 (application/json)
-    + Body
-
-            {
-                "code": 40104,
-                "message": "未登录的用户"
-            }
-
-+ Response 403 (application/json)
-    + Body
-
-            {
-                "code": 40301,
-                "message": "不能收藏自己的帖子"
-            }
-
-+ Response 404 (application/json)
-    + Body
-
-            {
-                "code": 40401,
-                "message": "不存在的帖子"
             }
 
 ## 删除帖子 [POST /post/`postId`/deletePost]
@@ -698,19 +531,20 @@ FORMAT: 1A
                 "message": "未登录的用户"
             }
 
-## 举报图片 [POST /image/report]
+## 新建相册 [POST /image/album/create]
 
 
 + Parameters
-    + id: (integer, required) - 图片的 id
-
-+ Response 204 (application/json)
-
-## 喜欢或取消喜欢图片 [POST /image/toggleLike]
-
-
-+ Parameters
-    + id: (integer, required) - 图片的 id
+    + bangumi_id: (integer, required) - 所选的番剧 id
+    + name: (string, required) - 相册名称`30字以内`
+    + is_cartoon: (boolean, required) - 是不是漫画（只有吧主/管理员才能上传漫画）
+    + is_creator: (boolean, required) - 是不是原唱（漫画默认都不是原创）
+    + url: (string, required) - 封面图片链接，不包含 host
+    + width: (integer, required) - 图片宽度
+    + height: (integer, required) - 图片高度
+    + size: (string, required) - 图片尺寸
+    + type: (string, required) - 图片类型
+    + part: (integer, required) - 漫画是第几集，非漫画传0
 
 + Request (application/json)
     + Headers
@@ -722,23 +556,171 @@ FORMAT: 1A
 
             {
                 "code": 0,
-                "data": "是否已点赞"
+                "data": "相册对象"
             }
 
 + Response 400 (application/json)
     + Body
 
             {
-                "code": 40104,
-                "message": "未登录的用户"
+                "code": 40003,
+                "message": "请求参数错误，或这一集的漫画已存在，或图片非法"
             }
 
 + Response 403 (application/json)
     + Body
 
             {
+                "code": 40301,
+                "message": "权限不足（漫画）"
+            }
+
+## 编辑相册 [POST /image/album/edit]
+
+
++ Parameters
+    + id: (integer, required) - 相册 id
+    + name: (string, required) - 相册名称`30字以内`
+    + url: (string, required) - 封面图片链接，不包含 host
+    + width: (integer, required) - 图片宽度
+    + height: (integer, required) - 图片高度
+    + size: (string, required) - 图片尺寸
+    + type: (string, required) - 图片类型
+    + part: (integer, required) - 漫画是第几集，非漫画传0
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 201 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "相册对象"
+            }
+
++ Response 400 (application/json)
+    + Body
+
+            {
                 "code": 40003,
-                "message": "不能为自己的图片点赞|`原创图片`金币不足"
+                "message": "请求参数错误，或这一集的漫画已存在，或图片非法"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "权限不足（漫画）"
+            }
+
+## 上传单张图片 [POST /image/single/upload]
+
+
++ Parameters
+    + bangumi_id: (integer, required) - 所选的番剧 id
+    + name: (string, required) - 相册名称`30字以内`
+    + is_creator: (boolean, required) - 是不是原唱（漫画默认都不是原创）
+    + url: (string, required) - 封面图片链接，不包含 host
+    + width: (integer, required) - 图片宽度
+    + height: (integer, required) - 图片高度
+    + size: (string, required) - 图片尺寸
+    + type: (string, required) - 图片类型
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 201 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "新图片 id"
+            }
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "请求参数错误，或图片非法"
+            }
+
+## 编辑单张图片 [POST /image/single/edit]
+
+
++ Parameters
+    + id: (integer, required) - 图片 id
+    + bangumi_id: (integer, required) - 所选的番剧 id
+    + name: (string, required) - 相册名称`30字以内`
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 204 (application/json)
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "请求参数错误，或图片非法"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "权限不足"
+            }
+
+## 上传相册内图片 [POST /image/album/upload]
+> 图片对象示例：
+1. `url` 七牛传图后得到的 key，不包含图片地址的 host，如一张图片 https://image.calibur.tv/user/1/avatar.png，七牛返回的 key 是：user/1/avatar.png，将这个 key 传到后端
+2. `width` 图片的宽度，七牛上传图片后得到
+3. `height` 图片的高度，七牛上传图片后得到
+4. `size` 图片的尺寸，七牛上传图片后得到
+5. `type` 图片的类型，七牛上传图片后得到
+
++ Parameters
+    + album_id: (integer, required) - 相册 id
+    + images: (array, required) - 图片对象数组
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 201 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "新图片 id"
+            }
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "请求参数错误"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "权限不足，比如不是吧主，却修改漫画"
             }
 
 + Response 404 (application/json)
@@ -746,7 +728,122 @@ FORMAT: 1A
 
             {
                 "code": 40401,
-                "message": "不存在的图片"
+                "message": "相册不存在"
+            }
+
+## 自己的相册列表 [GET /image/album/users]
+
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "相册数组"
+            }
+
+## 用户的相册列表 [GET /image/users]
+
+
++ Parameters
+    + zone: (string, required) - 用户的空间地址
+    + page: (integer, required) - 页数
+        + Default: 0
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": {
+                    "list": "相册列表",
+                    "total": "总数",
+                    "noMore": "是否还有更多"
+                }
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "用户不存在"
+            }
+
+## 自己的相册列表 [POST /image/album/delete]
+
+
++ Parameters
+    + id: (integer, required) - 相册 id
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 204 (application/json)
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "权限不足"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "相册不存在"
+            }
+
+## 用户的相册列表 [GET /image/${image_id}/show]
+
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "相册页面信息"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "图片不存在"
+            }
+
+## 番剧漫画列表 [GET /bangumi/${bangumi_id}/cartoon]
+
+
++ Parameters
+    + take: (integer, required) - 取的格式
+        + Default: 12
+    + page: (integer, required) - 页数
+        + Default: 0
+    + sort: (string, required) - 升降序，desc 或者 asc
+        + Default: desc
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": {
+                    "list": "漫画列表",
+                    "total": "总数",
+                    "noMore": "是否还有更多"
+                }
             }
 
 ## 相册内图片的排序 [POST /image/album/`albumId`/sort]
@@ -783,6 +880,7 @@ FORMAT: 1A
 
 + Parameters
     + result: (string, required) - 相册内图片排序后的`ids`，用`,`拼接的字符串
+    + imageId: (integer, required) - 要删除的图片id
 
 + Request (application/json)
     + Headers
@@ -796,7 +894,7 @@ FORMAT: 1A
 
             {
                 "code": 40003,
-                "data": "至少要保留一张图"
+                "data": "请求参数错误"
             }
 
 + Response 404 (application/json)
@@ -804,7 +902,7 @@ FORMAT: 1A
 
             {
                 "code": 40401,
-                "message": "不存在的相册"
+                "message": "不存在的相册，或要删除的图片已经被删除"
             }
 
 # 动漫角色相关接口
@@ -1242,7 +1340,7 @@ FORMAT: 1A
 
 
 + Parameters
-    + type: (string, required) - 上面的某种 type
+    + type: (string, required) - 某个 type
     + type_id: (integer, required) - 如果是帖子，则是帖子id
     + fetchId: (integer, required) - 你通过这个接口获取的评论列表里最后的那个id
         + Default: 0
@@ -1274,15 +1372,13 @@ FORMAT: 1A
 
 ## 子评论列表 [GET /`type`/comment/`commentId`/sub/list]
 > 一个通用的接口，通过 `type` 和 `commentId` 来获取子评论列表.
-目前支持 `type` 为：
-1. `post`，帖子
 
 > `commentId`是父评论的 id：
 1. `父评论` 一部视频下的评论列表，列表中的每一个就是一个父评论
 2. `子评论` 每个父评论都有回复列表，这个回复列表中的每一个就是子评论
 
 + Parameters
-    + type: (string, required) - 上面的某种 type
+    + type: (string, required) - 某种 type
     + commentId: (integer, required) - 父评论 id
     + maxId: (integer, required) - 该父评论下看过的最大的子评论 id
         + Default: 0
@@ -1319,7 +1415,7 @@ FORMAT: 1A
 
 
 + Parameters
-    + type: (string, required) - 上面的某种 type
+    + type: (string, required) - 某种 type
     + commentId: (integer, required) - 父评论 id
     + targetUserId: (integer, required) - 父评论的用户 id
     + content: (string, required) - 评论内容，`纯文本，100字以内`

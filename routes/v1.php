@@ -241,8 +241,6 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/album/{id}'], function ($api)
         {
-            $api->get('/show', 'App\Api\V1\Controllers\ImageController@albumShow');
-
             $api->post('/sort', 'App\Api\V1\Controllers\ImageController@albumSort')->middleware(['jwt.auth']);
 
             $api->post('/deleteImage', 'App\Api\V1\Controllers\ImageController@deleteAlbumImage')->middleware(['jwt.auth']);
@@ -310,6 +308,15 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/reward', 'App\Api\V1\Controllers\ToggleController@reward');
 
         $api->get('/check', 'App\Api\V1\Controllers\ToggleController@check');
+
+        $api->get('/{type}/check', 'App\Api\V1\Controllers\ToggleController@mixinCheck');
+
+        $api->get('/{type}/users', 'App\Api\V1\Controllers\ToggleController@mixinUsers');
+    });
+
+    $api->group(['prefix' => '/report'], function ($api)
+    {
+        $api->post('/send', 'App\Api\V1\Controllers\ReportController@send');
     });
 
     $api->group(['prefix' => '/admin', 'middleware' => ['jwt.admin']], function ($api)
