@@ -3,8 +3,10 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
+use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Models\Bangumi;
+use App\Models\Image;
 use App\Models\Post;
 use App\Models\Score;
 use Illuminate\Http\Request;
@@ -92,5 +94,32 @@ class SearchController extends Controller
         }
 
         return $this->resOK($userRepository->item($userId, true));
+    }
+
+    public function migrate()
+    {
+        $data = DB::table('image_likes')
+            ->get()
+            ->toArray();
+
+        foreach ($data as $item)
+        {
+            $isCreator = Image::where('id', $item->modal_id)->pluck('is_creator')->first();
+            if ($isCreator)
+            {
+                DB::table('image_reward')
+                    ->insert([
+                        'user_id' => $item->user_id,
+                        'modal_id' => $item->modal_id,
+                        'created_at' => $item->created_at
+                    ]);
+
+                DB::table('image_likes')
+                    ->where('id', $item->id)
+                    ->delete();
+            }
+        }
+
+        return $this->resOK('success');
     }
 }
