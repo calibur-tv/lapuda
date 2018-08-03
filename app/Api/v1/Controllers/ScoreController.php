@@ -15,6 +15,8 @@ use App\Api\V1\Services\Comment\ScoreCommentService;
 use App\Api\V1\Services\Counter\Stats\TotalScoreCount;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
+use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
+use App\Api\V1\Services\Toggle\Score\ScoreRewardService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\ScoreTransformer;
 use App\Models\Score;
@@ -56,10 +58,30 @@ class ScoreController extends Controller
         $score['user'] = $user;
         $score['bangumi'] = $bangumiRepository->panel($bangumiId, $visitorId);
 
-        $likeService = new ScoreLikeService();
-        $score['like_count'] = $likeService->total($id);
-        $score['like_users'] = $likeService->users($id);
-        $score['liked'] = $likeService->check($visitorId, $id, $userId);
+        if ($score['is_creator'])
+        {
+            $scoreRewardService = new ScoreRewardService();
+            $score['reward_count'] = $scoreRewardService->total($id);
+            $score['reward_users'] = $scoreRewardService->users($id);
+            $score['rewarded'] = $scoreRewardService->check($visitorId, $id, $userId);
+            $score['like_count'] = 0;
+            $score['like_users'] = [];
+            $score['liked'] = false;
+        }
+        else
+        {
+            $scoreLikeService = new ScoreLikeService();
+            $score['like_count'] = $scoreLikeService->total($id);
+            $score['like_users'] = $scoreLikeService->users($id);
+            $score['liked'] = $scoreLikeService->check($visitorId, $id, $userId);
+            $score['reward_count'] = 0;
+            $score['reward_users'] = [];
+            $score['rewarded'] = false;
+        }
+
+        $scoreMarkService = new ScoreMarkService();
+        $score['marked'] = $scoreMarkService->check($visitorId, $id);
+        $score['mark_count'] = $scoreMarkService->total($id);
 
         $commentService = new ScoreCommentService();
         $score['commented'] = $commentService->checkCommented($visitorId, $id);
@@ -220,7 +242,8 @@ class ScoreController extends Controller
             'story' => 'required|integer|min:0|max:10',
             'express' => 'required|integer|min:0|max:10',
             'style' => 'required|integer|min:0|max:10',
-            'do_publish' => 'required|boolean'
+            'do_publish' => 'required|boolean',
+            'is_creator' => 'required|boolean'
         ]);
 
         if ($validator->fails())
@@ -283,7 +306,8 @@ class ScoreController extends Controller
                 'intro' => $intro,
                 'created_at' => $now,
                 'updated_at' => $now,
-                'published_at' => $doPublished ? $now : null
+                'published_at' => $doPublished ? $now : null,
+                'is_creator' => $request->get('is_creator')
             ]);
 
         $scoreRepository = new ScoreRepository();

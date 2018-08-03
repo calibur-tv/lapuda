@@ -14,6 +14,6 @@ class BangumiScoreService extends ToggleService
 {
     public function __construct()
     {
-        parent::__construct('scores', 'bangumi_score_users');
+        parent::__construct('bangumi_score_users');
     }
 }

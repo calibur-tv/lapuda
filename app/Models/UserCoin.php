@@ -27,6 +27,7 @@ class UserCoin extends Model
      * 3：为偶像应援
      * 4：为图片点赞
      * 5：提现
+     * 6：评分
      */
 
     protected $casts = [

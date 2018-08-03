@@ -131,19 +131,19 @@ class ScoreRepository extends Repository
                 ->count();
 
             return [
-                'total' => $total / $count,
+                'total' => round($total / $count, 1),
                 'count' => $count,
                 'radar' => [
-                    'lol' => $lol / $count,
-                    'cry' => $cry / $count,
-                    'fight' => $fight / $count,
-                    'moe' => $moe / $count,
-                    'sound' => $sound / $count,
-                    'vision' => $vision / $count,
-                    'role' => $role / $count,
-                    'story' => $story / $count,
-                    'express' => $express / $count,
-                    'style' => $style / $count,
+                    'lol' => round($lol / $count, 1),
+                    'cry' => round($cry / $count, 1),
+                    'fight' => round($fight / $count, 1),
+                    'moe' => round($moe / $count, 1),
+                    'sound' => round($sound / $count, 1),
+                    'vision' => round($vision / $count, 1),
+                    'role' => round($role / $count, 1),
+                    'story' => round($story / $count, 1),
+                    'express' => round($express / $count, 1),
+                    'style' => round($style / $count, 1),
                 ],
                 'ladder' => [
                     [

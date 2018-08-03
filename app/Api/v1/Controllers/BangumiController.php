@@ -234,18 +234,7 @@ class BangumiController extends Controller
         return $this->resOK($repository->videos($id, json_decode($bangumi['season'])));
     }
 
-    /**
-     * 关注或取消关注番剧
-     *
-     * @Post("/bangumi/`bangumiId`/toggleFollow")
-     *
-     * @Request(headers={"Authorization": "Bearer JWT-Token"})
-     *
-     * @Transaction({
-     *      @Response(201, body={"code": 0, "data": "是否已关注"}),
-     *      @Response(401, body={"code": 40104, "message": "用户认证失败"})
-     * })
-     */
+    // TODO：remove
     public function toggleFollow($id)
     {
         $userId = $this->getAuthUserId();
@@ -261,16 +250,7 @@ class BangumiController extends Controller
         return $this->resCreated((boolean)$result);
     }
 
-    /**
-     * 关注番剧的用户列表
-     *
-     * @Get("/bangumi/`bangumiId`/followers")
-     *
-     * @Transaction({
-     *      @Request({"seenIds": "看过的userIds，用','隔开的字符串", "take": "获取数量"}),
-     *      @Response(200, body={"code": 0, "data": {"list": "用户列表", "noMore": "没有更多"}})
-     * })
-     */
+    // TODO：remove
     public function followers(Request $request, $bangumiId)
     {
         $take = intval($request->get('take')) ?: 10;
@@ -285,6 +265,7 @@ class BangumiController extends Controller
         ]);
     }
 
+    // TODO：remove
     public function managers($bangumiId)
     {
         $bangumiManager = new BangumiManager();
@@ -562,6 +543,26 @@ class BangumiController extends Controller
         return $this->resNoContent();
     }
 
+    /**
+     * 吧主编辑番剧信息
+     *
+     * @Post("/bangumi/`bangumiId`/edit")
+     *
+     * @Parameters({
+     *      @Parameter("avatar", description="封面图链接，不包含 host", type="string", required=true),
+     *      @Parameter("banner", description="背景图链接，不包含 host", type="string", required=true),
+     *      @Parameter("summary", description="200字以内的纯文本", type="string", required=true),
+     *      @Parameter("tags", description="标签的id数组", type="array", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(204),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误或内容非法"}),
+     *      @Response(403, body={"code": 40301, "message": "权限不足"}),
+     *      @Response(503, body={"50301": 40301, "message": "服务暂不可用"})
+     * })
+     */
     public function editBangumiInfo(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [

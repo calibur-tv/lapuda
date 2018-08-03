@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>接口文档 | calibur.tv - 天下漫友是一家</title>
+    <meta name="description" content="Just playing around">
+    <link rel="icon" href="https://static.calibur.tv/favicon.ico">
+    
+    <link rel="preload" href="/Laputa/assets/css/0.styles.c4c0b6bf.css" as="style"><link rel="preload" href="/Laputa/assets/js/app.3a748f12.js" as="script"><link rel="preload" href="/Laputa/assets/js/10.0e1f29d7.js" as="script"><link rel="prefetch" href="/Laputa/assets/js/5.fd858ef1.js"><link rel="prefetch" href="/Laputa/assets/js/2.cda51ec0.js"><link rel="prefetch" href="/Laputa/assets/js/3.d09b8012.js"><link rel="prefetch" href="/Laputa/assets/js/4.8a60e004.js"><link rel="prefetch" href="/Laputa/assets/js/6.a928bdff.js"><link rel="prefetch" href="/Laputa/assets/js/7.01e00b56.js"><link rel="prefetch" href="/Laputa/assets/js/8.9d0e33c2.js"><link rel="prefetch" href="/Laputa/assets/js/9.a7f46f06.js"><link rel="prefetch" href="/Laputa/assets/js/11.cff2607f.js"><link rel="prefetch" href="/Laputa/assets/js/12.7b022ff1.js">
+    <link rel="stylesheet" href="/Laputa/assets/css/0.styles.c4c0b6bf.css">
+  </head>
+  <body>
+    <div id="app" data-server-rendered="true"><div class="theme-container no-sidebar"><header class="navbar"><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/Laputa/" class="home-link router-link-active"><!----> <span class="site-name">calibur.tv - 天下漫友是一家</span></a> <div class="links"><div class="search-box"><input aria-label="Search" autocomplete="off" spellcheck="false" value=""> <!----></div> <!----></div></header> <div class="sidebar-mask"></div> <div class="sidebar"><!---->  <!----> </div> <div class="page"> <div class="content"><h3 id="接口文档"><a href="#接口文档" aria-hidden="true" class="header-anchor">#</a> <a href="/api/index">接口文档</a></h3> <h4 id="获取-geetest-验证码"><a href="#获取-geetest-验证码" aria-hidden="true" class="header-anchor">#</a> 获取 geetest 验证码</h4> <blockquote><p><a href="http://docs.geetest.com/" target="_blank" rel="noopener noreferrer">Geetest文档<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></p></blockquote> <div class="language-javascript extra-class"><pre class="language-javascript"><code>url <span class="token operator">=</span> <span class="token string">'/door/captcha'</span>
+method <span class="token operator">=</span> <span class="token string">'POST'</span>
+authHeader <span class="token operator">=</span> <span class="token boolean">false</span>
+body <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+response <span class="token operator">=</span> <span class="token punctuation">{</span>
+  code<span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+  message<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  data<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+    id<span class="token punctuation">:</span> <span class="token function">geetestGt</span><span class="token punctuation">(</span><span class="token string">'string'</span><span class="token punctuation">)</span><span class="token punctuation">,</span>  <span class="token comment">// 对应 geetest init 时的 gt</span>
+    access<span class="token punctuation">:</span> <span class="token function">geetestToken</span><span class="token punctuation">(</span><span class="token string">'string'</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token comment">// 当请求需要做 geetest 认证时需要携带</span>
+    secret<span class="token punctuation">:</span> <span class="token function">geetestChallenge</span><span class="token punctuation">(</span><span class="token string">'string'</span><span class="token punctuation">)</span> <span class="token comment">// 对应 geetest 的 challenge</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre></div><p><code>备注：</code>当请求需要做 geetest 认证时，你应该将接口返回的 data 对象存起来，然后将 data 对象作为接口的一个参数</p> <h4 id="发送手机短信或邮箱验证码"><a href="#发送手机短信或邮箱验证码" aria-hidden="true" class="header-anchor">#</a> 发送手机短信或邮箱验证码</h4> <div class="language-javascript extra-class"><pre class="language-javascript"><code>url <span class="token operator">=</span> <span class="token string">'/door/send'</span>
+method <span class="token operator">=</span> <span class="token string">'POST'</span>
+authHeader <span class="token operator">=</span> <span class="token boolean">false</span>
+body <span class="token operator">=</span> <span class="token punctuation">{</span>
+  method<span class="token punctuation">:</span> <span class="token function">registerMethod</span><span class="token punctuation">(</span><span class="token string">'required'</span><span class="token punctuation">,</span> <span class="token string">'phone | email'</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+  access<span class="token punctuation">:</span> <span class="token function">registerAccess</span><span class="token punctuation">(</span><span class="token string">'required'</span><span class="token punctuation">,</span> <span class="token string">'注册的账号，手机或邮箱'</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+  nickname<span class="token punctuation">:</span> <span class="token function">registerUsername</span><span class="token punctuation">(</span><span class="token string">'required'</span><span class="token punctuation">,</span> <span class="token string">'用户的昵称'</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+  mustNotRegister<span class="token punctuation">:</span> <span class="token function">registerCanUse</span><span class="token punctuation">(</span><span class="token string">'required'</span><span class="token punctuation">,</span> <span class="token string">'账号必须未注册'</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+response <span class="token operator">=</span> <span class="token punctuation">{</span>
+  code<span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+  message<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  data<span class="token punctuation">:</span> <span class="token string">''</span>
+<span class="token punctuation">}</span>
+errorResponseCode <span class="token operator">=</span> <span class="token punctuation">{</span>
+  <span class="token number">400</span><span class="token punctuation">:</span> <span class="token string">''</span>
+<span class="token punctuation">}</span>
+</code></pre></div><h4 id="用户注册"><a href="#用户注册" aria-hidden="true" class="header-anchor">#</a> 用户注册</h4> <div class="language-javascript extra-class"><pre class="language-javascript"><code>url <span class="token operator">=</span> <span class="token string">'/door/register'</span>
+method <span class="token operator">=</span> <span class="token string">'POST'</span>
+authHeader <span class="token operator">=</span> <span class="token boolean">false</span>
+body <span class="token operator">=</span> <span class="token punctuation">{</span>
+  method<span class="token punctuation">:</span> <span class="token function">registerMethod</span><span class="token punctuation">(</span><span class="token string">'required'</span><span class="token punctuation">,</span> <span class="token string">'phone | email'</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+  access<span class="token punctuation">:</span> <span class="token function">registerAccess</span><span class="token punctuation">(</span><span class="token string">'required'</span><span class="token punctuation">,</span> <span class="token string">'注册的账号，手机或邮箱'</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+  nickname<span class="token punctuation">:</span> <span class="token function">registerUsername</span><span class="token punctuation">(</span><span class="token string">'required'</span><span class="token punctuation">,</span> <span class="token string">'用户的昵称'</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+  authCode<span class="token punctuation">:</span> <span class="token function">registerAuthCode</span><span class="token punctuation">(</span><span class="token string">'required'</span><span class="token punctuation">,</span> <span class="token string">'用户收到的邮箱验证码或短信'</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+  inviteCode<span class="token punctuation">:</span> <span class="token function">registerInviteCode</span><span class="token punctuation">(</span><span class="token string">'邀请码，非必选'</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+  geetest<span class="token punctuation">:</span> <span class="token function">geetestObject</span><span class="token punctuation">(</span><span class="token string">'required'</span><span class="token punctuation">,</span> <span class="token string">'geetest对象，从服务端获取然后传回服务端'</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+response <span class="token operator">=</span> <span class="token punctuation">{</span>
+  code<span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+  message<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  data<span class="token punctuation">:</span> <span class="token function">jwtToken</span><span class="token punctuation">(</span><span class="token string">'string'</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+errorResponseCode <span class="token operator">=</span> <span class="token punctuation">{</span>
+  <span class="token number">401</span><span class="token punctuation">:</span> <span class="token string">'验证码过期'</span><span class="token punctuation">,</span>
+  <span class="token number">403</span><span class="token punctuation">:</span> <span class="token string">'账号已被占用'</span>
+<span class="token punctuation">}</span>
+</code></pre></div><p><code>备注：</code>返回的 jwtToken 需要存起来，做用户认证</p> <h4 id="用户登录"><a href="#用户登录" aria-hidden="true" class="header-anchor">#</a> 用户登录</h4> <div class="language-javascript extra-class"><pre class="language-javascript"><code>url <span class="token operator">=</span> <span class="token string">'/door/login'</span>
+method <span class="token operator">=</span> <span class="token string">'POST'</span>
+authHeader <span class="token operator">=</span> <span class="token boolean">false</span>
+body <span class="token operator">=</span> <span class="token punctuation">{</span>
+  method<span class="token punctuation">:</span> <span class="token function">loginMethod</span><span class="token punctuation">(</span><span class="token string">'required'</span><span class="token punctuation">,</span> <span class="token string">'phone | email'</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+  access<span class="token punctuation">:</span> <span class="token function">loginAccess</span><span class="token punctuation">(</span><span class="token string">'required'</span><span class="token punctuation">,</span> <span class="token string">'手机或邮箱'</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+  secret<span class="token punctuation">:</span> <span class="token function">loginAccess</span><span class="token punctuation">(</span><span class="token string">'required'</span><span class="token punctuation">,</span> <span class="token string">'密码'</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+  geetest<span class="token punctuation">:</span> <span class="token function">geetestObject</span><span class="token punctuation">(</span><span class="token string">'required'</span><span class="token punctuation">,</span> <span class="token string">'geetest对象，从服务端获取然后传回服务端'</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+  remember<span class="token punctuation">:</span> <span class="token number">1</span>
+<span class="token punctuation">}</span>
+response <span class="token operator">=</span> <span class="token punctuation">{</span>
+  code<span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+  message<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  data<span class="token punctuation">:</span> <span class="token function">jwtToken</span><span class="token punctuation">(</span><span class="token string">'string'</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+errorResponseCode <span class="token operator">=</span> <span class="token punctuation">{</span>
+  <span class="token number">422</span><span class="token punctuation">:</span> <span class="token string">'用户名或密码错误'</span>
+<span class="token punctuation">}</span>
+</code></pre></div><h4 id="获取用户信息"><a href="#获取用户信息" aria-hidden="true" class="header-anchor">#</a> 获取用户信息</h4> <div class="language-javascript extra-class"><pre class="language-javascript"><code>url <span class="token operator">=</span> <span class="token string">'/door/user'</span>
+method <span class="token operator">=</span> <span class="token string">'POST'</span>
+authHeader <span class="token operator">=</span> <span class="token boolean">true</span>
+body <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+response <span class="token operator">=</span> <span class="token punctuation">{</span>
+  code<span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+  message<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  data<span class="token punctuation">:</span> UserObject
+<span class="token punctuation">}</span>
+errorResponse <span class="token operator">=</span> <span class="token punctuation">{</span>
+  code<span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+  message<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  data<span class="token punctuation">:</span> <span class="token keyword">null</span>
+<span class="token punctuation">}</span>
+</code></pre></div><h4 id="退出登录"><a href="#退出登录" aria-hidden="true" class="header-anchor">#</a> 退出登录</h4> <div class="language-javascript extra-class"><pre class="language-javascript"><code>url <span class="token operator">=</span> <span class="token string">'/door/logout'</span>
+metohd <span class="token operator">=</span> <span class="token string">'POST'</span>
+authHeader <span class="token operator">=</span> <span class="token boolean">true</span>
+body <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+response <span class="token operator">=</span> <span class="token punctuation">{</span>
+  code<span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+  message<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  data<span class="token punctuation">:</span> <span class="token string">''</span>
+<span class="token punctuation">}</span>
+</code></pre></div></div> <div class="page-edit"><!----> <!----></div> <!----> </div> <!----></div></div>
+    <script src="/Laputa/assets/js/10.0e1f29d7.js" defer></script><script src="/Laputa/assets/js/app.3a748f12.js" defer></script>
+  </body>
+</html>

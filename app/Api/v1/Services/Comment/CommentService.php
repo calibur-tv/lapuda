@@ -424,7 +424,6 @@ class CommentService extends Repository
     public function toggleLike($userId, $modalId)
     {
         $toggleService = new ToggleService(
-            $this->table,
             $this->like_table
         );
 
@@ -568,7 +567,6 @@ class CommentService extends Repository
     protected function getCommentToggleLikeService()
     {
         return new ToggleService(
-            $this->table,
             $this->like_table
         );
     }
