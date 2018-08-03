@@ -10,6 +10,7 @@ use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
+use App\Api\V1\Services\Toggle\Post\PostRewardService;
 use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
@@ -152,13 +153,29 @@ class PostController extends Controller
 
         $post['comment_count'] = $postCommentService->getCommentCount($id);
 
-        $postLikeService = new PostLikeService();
-        $post['liked'] = $postLikeService->check($userId, $id, $post['user_id']);
-        $post['like_count'] = $postLikeService->total($id);
-        $post['like_users'] = $postLikeService->users($id);
+        if ($post['is_creator'])
+        {
+            $postRewardService = new PostRewardService();
+            $post['rewarded'] = $postRewardService->check($userId, $id);
+            $post['reward_count'] = $postRewardService->total($id);
+            $post['reward_users'] = $postRewardService->users($id);
+            $post['liked'] = false;
+            $post['like_count'] = 0;
+            $post['like_users'] = [];
+        }
+        else
+        {
+            $postLikeService = new PostLikeService();
+            $post['liked'] = $postLikeService->check($userId, $id);
+            $post['like_count'] = $postLikeService->total($id);
+            $post['like_users'] = $postLikeService->users($id);
+            $post['rewarded'] = false;
+            $post['reward_count'] = 0;
+            $post['reward_users'] = [];
+        }
 
         $postMarkService = new PostMarkService();
-        $post['marked'] = $postMarkService->check($userId, $id, $post['user_id']);
+        $post['marked'] = $postMarkService->check($userId, $id);
         $post['mark_count'] = $postMarkService->total($id);
 
         $post['preview_images'] = $postRepository->previewImages(

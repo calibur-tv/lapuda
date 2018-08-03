@@ -17,13 +17,11 @@ use App\Api\V1\Repositories\Repository;
  */
 class ToggleService extends Repository
 {
-    protected $modal;
     protected $table;
     protected $needCacheList;
 
-    public function __construct($modalTable, $toggleTable, $needCacheList = false)
+    public function __construct($toggleTable, $needCacheList = false)
     {
-        $this->modal = $modalTable;
         $this->table = $toggleTable;
         $this->needCacheList = $needCacheList;
     }

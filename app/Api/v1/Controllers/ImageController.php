@@ -12,6 +12,8 @@ use App\Api\V1\Services\Counter\Stats\TotalImageCount;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
+use App\Api\V1\Services\Toggle\Image\ImageMarkService;
+use App\Api\V1\Services\Toggle\Image\ImageRewardService;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\AlbumImage;
 use App\Models\Banner;
@@ -810,10 +812,30 @@ class ImageController extends Controller
         $image['images'] = $image['is_album'] ? $imageRepository->albumImages($id) : [];
         $image['parts'] = $image['is_cartoon'] ? $imageRepository->getCartoonParts($image['bangumi_id']) : [];
 
-        $imageLikeService = new ImageLikeService();
-        $image['liked'] = $imageLikeService->check($userId, $id, $image['user_id']);
-        $image['like_users'] = $imageLikeService->users($id);
-        $image['like_total'] = $imageLikeService->total($id);
+        if ($image['is_creator'])
+        {
+            $imageRewardService = new ImageRewardService();
+            $image['rewarded'] = $imageRewardService->check($userId, $id);
+            $image['reward_users'] = $imageRewardService->users($id);
+            $image['reward_count'] = $imageRewardService->total($id);
+            $image['liked'] = false;
+            $image['like_users'] = [];
+            $image['like_count'] = 0;
+        }
+        else
+        {
+            $imageLikeService = new ImageLikeService();
+            $image['liked'] = $imageLikeService->check($userId, $id);
+            $image['like_users'] = $imageLikeService->users($id);
+            $image['like_count'] = $imageLikeService->total($id);
+            $image['rewarded'] = false;
+            $image['reward_count'] = 0;
+            $image['reward_users'] = [];
+        }
+
+        $imageMarkService = new ImageMarkService();
+        $image['marked'] = $imageMarkService->check($userId, $id);
+        $image['mark_count'] = $imageMarkService->total($id);
 
         $imageViewCounter = new ImageViewCounter();
         $imageViewCounter->add($id);

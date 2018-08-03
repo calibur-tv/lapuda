@@ -20,11 +20,13 @@ class PostTransformer extends Transformer
                 'id' => (int)$post['id'],
                 'comment_count' => (int)$post['comment_count'],
                 'like_count' => (int)$post['like_count'],
+                'reward_count' => (int)$post['reward_count'],
                 'view_count' => (int)$post['view_count'],
                 'mark_count' => (int)$post['mark_count'],
                 'title' => $post['title'],
                 'desc' => $post['desc'],
                 'liked' => $post['liked'],
+                'rewarded' => $post['rewarded'],
                 'marked' => $post['marked'],
                 'commented' => $post['commented'],
                 'content' => $post['content'],
@@ -38,8 +40,6 @@ class PostTransformer extends Transformer
                         'url' => config('website.image'). $image['url']
                     ];
                 }),
-                'created_at' => $post['created_at'],
-                'updated_at' => $post['updated_at'],
                 'preview_images' => $this->collection($post['preview_images'], function ($image)
                 {
                     return [
@@ -51,7 +51,11 @@ class PostTransformer extends Transformer
                     ];
                 }),
                 'like_users' => $post['like_users'],
-                'is_nice' => (boolean)$post['is_nice']
+                'reward_users' => $post['reward_users'],
+                'is_nice' => (boolean)$post['is_nice'],
+                'is_creator' => (boolean)$post['is_creator'],
+                'created_at' => $post['created_at'],
+                'updated_at' => $post['updated_at']
             ];
         });
     }
@@ -126,6 +130,7 @@ class PostTransformer extends Transformer
                'marked' => $post['marked'],
                'commented' => $post['commented'],
                'is_nice' => (boolean)$post['is_nice'],
+               'is_creator' => (boolean)$post['is_creator'],
                'top_at' => $post['top_at']
            ];
         });
@@ -166,7 +171,8 @@ class PostTransformer extends Transformer
                 'liked' => $post['liked'],
                 'marked' => $post['marked'],
                 'commented' => $post['commented'],
-                'is_nice' => (boolean)$post['is_nice']
+                'is_nice' => (boolean)$post['is_nice'],
+                'is_creator' => (boolean)$post['is_creator']
             ];
         });
     }
@@ -194,6 +200,7 @@ class PostTransformer extends Transformer
                     ];
                 }),
                 'is_nice' => (boolean)$post['is_nice'],
+                'is_creator' => (boolean)$post['is_creator'],
                 'top_at' => $post['top_at']
             ];
         });

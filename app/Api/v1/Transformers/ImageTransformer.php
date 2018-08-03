@@ -44,6 +44,14 @@ class ImageTransformer extends Transformer
                 'is_album' => (boolean)$image['is_album'],
                 'is_cartoon' => (boolean)$image['is_cartoon'],
                 'is_creator' => (boolean)$image['is_creator'],
+                'liked' => $image['liked'],
+                'marked' => $image['marked'],
+                'rewarded' => $image['rewarded'],
+                'like_users' => $image['like_users'],
+                'reward_users' => $image['reward_users'],
+                'mark_count' => (int)$image['mark_count'],
+                'like_count' => (int)$image['like_count'],
+                'reward_count' => (int)$image['reward_count'],
                 'created_at' => $image['created_at'],
                 'updated_at' => $image['updated_at']
             ];

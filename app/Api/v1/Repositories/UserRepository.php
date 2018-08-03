@@ -249,7 +249,8 @@ class UserRepository extends Repository
             {
                 $count = User::where('id', $fromUserId)->pluck('coin_count')->first();
 
-                if ($count <= 0) {
+                if ($count <= 0)
+                {
                     return false;
                 }
             }
@@ -500,6 +501,36 @@ class UserRepository extends Repository
         $roleCount = CartoonRole::where('created_at', '<', $createdAt)
             ->count();
         $this->setDayStats('create_role', $yesterday, $roleCount);
+    }
+
+    public function getCoinIdByType($type)
+    {
+        switch ($type)
+        {
+            case 'sign':
+                return 0;
+                break;
+            case 'post':
+                return 1;
+                break;
+            case 'invite':
+                return 2;
+                break;
+            case 'role':
+                return 3;
+                break;
+            case 'image':
+                return 4;
+                break;
+            case 'withdrawal':
+                return 5;
+                break;
+            case 'score':
+                return 6;
+                break;
+            default:
+                return -1;
+        }
     }
 
     protected function setDayStats($type, $day, $count)
