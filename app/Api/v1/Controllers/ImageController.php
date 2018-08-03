@@ -99,53 +99,6 @@ class ImageController extends Controller
         return $this->resNoContent();
     }
 
-    // TODO：remove
-    public function toggleLike(Request $request)
-    {
-        $userId = $this->getAuthUserId();
-        $imageId = $request->get('id');
-
-        $image = Image::where('id', $imageId)->first();
-
-        if (is_null($image))
-        {
-            return $this->resErrNotFound();
-        }
-
-        if (intval($image['user_id']) === $userId)
-        {
-            return $this->resErrRole('不能为自己的图片点赞');
-        }
-
-        $imageLikeService = new ImageLikeService();
-        $liked = $imageLikeService->check($userId, $imageId);
-
-        if ($liked)
-        {
-            $imageLikeService->undo($userId, $imageId);
-
-            return $this->resCreated(false);
-        }
-
-        if ((boolean)$image['creator'])
-        {
-            $userRepository = new UserRepository();
-            $success = $userRepository->toggleCoin(false, $userId, $image['user_id'], 4, $imageId);
-
-            if (!$success)
-            {
-                return $this->resErrRole('金币不足');
-            }
-        }
-
-        $likeId = $imageLikeService->do($userId, $imageId);
-
-        $job = (new \App\Jobs\Notification\Image\Like($likeId));
-        dispatch($job);
-
-        return $this->resCreated(true);
-    }
-
     /**
      * 新建相册
      *

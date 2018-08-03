@@ -28,21 +28,6 @@ use Illuminate\Http\Request;
 
 class ToggleController extends Controller
 {
-    public function check(Request $request)
-    {
-        $id = $request->get('id');
-        $type = $request->get('type');
-        $userId = $this->getAuthUserId();
-
-        $likeService = $this->getLikeServiceByType($type);
-        if (is_null($likeService))
-        {
-            return $this->resErrBad();
-        }
-
-        return $this->resOK($likeService->check($userId, $id));
-    }
-
     public function mixinCheck(Request $request, $type)
     {
         $id = $request->get('id');
@@ -122,6 +107,28 @@ class ToggleController extends Controller
             return $this->resErrBad();
         }
 
+        $repository = $this->getRepositoryByType($type);
+        if (is_null($likeService))
+        {
+            return $this->resErrBad();
+        }
+
+        $item = $repository->item($id);
+        if (is_null($item))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($item['is_creator'])
+        {
+            return $this->resErrBad('原创内容只能打赏，不能喜欢');
+        }
+
+        if ($item['user_id'] == $userId)
+        {
+            return $this->resErrBad('不能喜欢自己的内容');
+        }
+
         $result = $likeService->toggle($userId, $id);
 
         return $this->resCreated((boolean)$result);
@@ -162,6 +169,23 @@ class ToggleController extends Controller
             return $this->resErrBad();
         }
 
+        $repository = $this->getRepositoryByType($type);
+        if (is_null($repository))
+        {
+            return $this->resErrBad();
+        }
+
+        $item = $repository->item($id);
+        if (is_null($item))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($item['user_id'] == $userId)
+        {
+            return $this->resErrBad('不能喜欢自己的内容');
+        }
+
         $result = $markService->toggle($userId, $id);
         return $this->resCreated((boolean)$result);
     }
@@ -192,7 +216,7 @@ class ToggleController extends Controller
 
         if (!$item['is_creator'])
         {
-            return $this->resErrBad('该内容非原创');
+            return $this->resErrBad('非原创内容只能喜欢，不能打赏');
         }
 
         if ($item['user_id'] == $userId)
@@ -229,26 +253,6 @@ class ToggleController extends Controller
         $rewardId = $rewardService->toggle($userId, $id);
 
         return $this->resCreated((boolean)$rewardId);
-    }
-
-    public function usersLikeList()
-    {
-
-    }
-
-    public function usersMarkList()
-    {
-
-    }
-
-    public function usersRewardList()
-    {
-
-    }
-
-    public function usersFollowList()
-    {
-
     }
 
     protected function getContributorsServiceByType($type)

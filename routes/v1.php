@@ -168,12 +168,6 @@ $api->version(['v1', 'latest'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\PostController@show');
 
-            $api->get('/likeUsers', 'App\Api\V1\Controllers\PostController@likeUsers');
-
-            $api->post('/toggleLike', 'App\Api\V1\Controllers\PostController@toggleLike')->middleware(['jwt.auth']);
-
-            $api->post('/toggleMark', 'App\Api\V1\Controllers\PostController@toggleMark')->middleware(['jwt.auth']);
-
             $api->post('/deletePost', 'App\Api\V1\Controllers\PostController@deletePost')->middleware(['jwt.auth']);
         });
 
@@ -230,8 +224,6 @@ $api->version(['v1', 'latest'], function ($api)
         $api->get('/uptoken', 'App\Api\V1\Controllers\ImageController@uptoken')->middleware(['jwt.auth']);
 
         $api->post('/report', 'App\Api\V1\Controllers\ImageController@report');
-
-        $api->post('/toggleLike', 'App\Api\V1\Controllers\ImageController@toggleLike')->middleware(['jwt.auth']);
 
         $api->post('/editAlbum', 'App\Api\V1\Controllers\ImageController@editAlbum')->middleware(['jwt.auth']);
 
@@ -304,8 +296,6 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/follow', 'App\Api\V1\Controllers\ToggleController@follow');
 
         $api->post('/reward', 'App\Api\V1\Controllers\ToggleController@reward');
-
-        $api->get('/check', 'App\Api\V1\Controllers\ToggleController@check');
 
         $api->get('/{type}/check', 'App\Api\V1\Controllers\ToggleController@mixinCheck');
 
