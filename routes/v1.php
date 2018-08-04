@@ -285,17 +285,20 @@ $api->version(['v1', 'latest'], function ($api)
         $api->get('/meta', 'App\Api\V1\Controllers\TrendingController@meta');
     });
 
-    $api->group(['prefix' => '/toggle', 'middleware' => ['jwt.auth']], function ($api)
+    $api->group(['prefix' => '/toggle'], function ($api)
     {
-        $api->post('/like', 'App\Api\V1\Controllers\ToggleController@like');
+        $api->group(['middleware' => ['jwt.auth']], function ($api)
+        {
+            $api->post('/like', 'App\Api\V1\Controllers\ToggleController@like');
 
-        $api->post('/mark', 'App\Api\V1\Controllers\ToggleController@mark');
+            $api->post('/mark', 'App\Api\V1\Controllers\ToggleController@mark');
 
-        $api->post('/follow', 'App\Api\V1\Controllers\ToggleController@follow');
+            $api->post('/follow', 'App\Api\V1\Controllers\ToggleController@follow');
 
-        $api->post('/reward', 'App\Api\V1\Controllers\ToggleController@reward');
+            $api->post('/reward', 'App\Api\V1\Controllers\ToggleController@reward');
 
-        $api->get('/{type}/check', 'App\Api\V1\Controllers\ToggleController@mixinCheck');
+            $api->post('/{type}/check', 'App\Api\V1\Controllers\ToggleController@mixinCheck');
+        });
 
         $api->get('/{type}/users', 'App\Api\V1\Controllers\ToggleController@mixinUsers');
     });
