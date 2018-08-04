@@ -8,6 +8,7 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\ScoreRepository;
@@ -494,6 +495,10 @@ class ToggleController extends Controller
             case 'score':
                 return new ScoreRepository();
                 break;
+            case 'bangumi':
+                return new BangumiRepository();
+            case 'user':
+                return new UserRepository();
             default:
                 return null;
         }
