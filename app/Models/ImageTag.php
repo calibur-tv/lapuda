@@ -10,8 +10,5 @@ class ImageTag extends Model
 
     protected $table = 'image_tags';
 
-    protected $fillable = [
-        'tag_id',
-        'image_id'
-    ];
+    protected $fillable = ['tag_id', 'image_id'];
 }

@@ -12,7 +12,5 @@ class UserSign extends Model
 {
     protected $table = 'user_signs';
 
-    protected $fillable = [
-        'user_id'
-    ];
+    protected $fillable = ['user_id'];
 }

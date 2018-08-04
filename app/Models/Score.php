@@ -51,6 +51,6 @@ class Score extends Model
         'role' => 'integer',
         'story' => 'integer',
         'express' => 'integer',
-        'style' => 'integer',
+        'style' => 'integer'
     ];
 }

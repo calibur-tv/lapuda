@@ -15,11 +15,11 @@ class PostImages extends Model
         'size',
         'width',
         'height',
-        'origin_url',
+        'origin_url'
     ];
 
     public function getSrcAttribute($url)
     {
-        return config('website.image').($url ? $url : 'default/user-avatar');
+        return config('website.image') . ($url ? $url : 'default/user-avatar');
     }
 }

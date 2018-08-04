@@ -8,13 +8,7 @@ class Music extends Model
 {
     protected $table = 'musics';
 
-    protected $fillable = [
-        'src',
-        'bangumi_id',
-        'poster',
-        'player',
-        'name'
-    ];
+    protected $fillable = ['src', 'bangumi_id', 'poster', 'player', 'name'];
 
     public function getUrlAttribute($url)
     {

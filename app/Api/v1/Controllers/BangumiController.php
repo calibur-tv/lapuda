@@ -235,22 +235,6 @@ class BangumiController extends Controller
     }
 
     // TODO：remove
-    public function toggleFollow($id)
-    {
-        $userId = $this->getAuthUserId();
-        $bangumiManager = new BangumiManager();
-        $bangumiFollowService = new BangumiFollowService();
-        if ($bangumiManager->isOwner($id, $userId) && $bangumiFollowService->check($userId, $id))
-        {
-            return $this->resErrRole('管理员不能取消关注');
-        }
-
-        $result = $bangumiFollowService->toggle($this->getAuthUserId(), $id);
-
-        return $this->resCreated((boolean)$result);
-    }
-
-    // TODO：remove
     public function followers(Request $request, $bangumiId)
     {
         $take = intval($request->get('take')) ?: 10;

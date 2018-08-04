@@ -24,11 +24,13 @@ class Video extends Model
         'part' => 'integer'
     ];
 
-    public function bangumi() {
+    public function bangumi()
+    {
         return $this->belongsTo(Bangumi::class, 'id', 'bangumi_id');
     }
 
-    public function getUrlAttribute($url) {
+    public function getUrlAttribute($url)
+    {
         if (!$url) {
             return '';
         }
@@ -38,7 +40,8 @@ class Video extends Model
         return config('website.video') . $url;
     }
 
-    public function getPosterAttribute($poster) {
+    public function getPosterAttribute($poster)
+    {
         return config('website.image') . $poster;
     }
 }

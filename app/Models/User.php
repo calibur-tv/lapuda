@@ -24,7 +24,7 @@ class User extends Authenticatable
         'birth_secret',
         'sex_secret',
         'coin_count',
-        'state',    // 0 正常，1 待审
+        'state', // 0 正常，1 待审
         'password_change_at', // 密码最后修改时间
         'remember_token',
         'phone',
@@ -32,9 +32,7 @@ class User extends Authenticatable
         'faker'
     ];
 
-    protected $hidden = [
-        'password'
-    ];
+    protected $hidden = ['password'];
 
     protected $casts = [
         'sex' => 'integer'
@@ -42,11 +40,17 @@ class User extends Authenticatable
 
     public function getAvatarAttribute($avatar)
     {
-        return config('website.image').($avatar ? $avatar : 'default/user-avatar');
+        return (
+            config('website.image') .
+            ($avatar ? $avatar : 'default/user-avatar')
+        );
     }
 
     public function getBannerAttribute($banner)
     {
-        return config('website.image').($banner ? $banner : 'default/user-banner');
+        return (
+            config('website.image') .
+            ($banner ? $banner : 'default/user-banner')
+        );
     }
 }
