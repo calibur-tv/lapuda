@@ -16,7 +16,7 @@ class Kernel extends ConsoleKernel
         Trending\CartoonRole::class,
         Trail\BlackWords::class,
         Job\CronPush::class,
-        Job\DayStats::class,
+        Job\DayStats::class
     ];
 
     /**
@@ -27,15 +27,13 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('CartoonRole')
+        $schedule
+            ->command('CartoonRole')
             ->everyFiveMinutes()
             ->withoutOverlapping();
-        $schedule->command('BlackWords')
-            ->everyFiveMinutes();
-        $schedule->command('CronPush')
-            ->dailyAt('23:33');
-        $schedule->command('DayStats')
-            ->dailyAt('00:01');
+        $schedule->command('BlackWords')->everyFiveMinutes();
+        $schedule->command('CronPush')->dailyAt('23:33');
+        $schedule->command('DayStats')->dailyAt('00:01');
     }
 
     /**

@@ -10,9 +10,5 @@ class DayStats extends Model
 
     protected $table = 'day_stats';
 
-    protected $fillable = [
-        'type',
-        'day',
-        'count',
-    ];
+    protected $fillable = ['type', 'day', 'count'];
 }

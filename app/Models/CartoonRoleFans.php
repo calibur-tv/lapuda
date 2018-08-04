@@ -8,9 +8,5 @@ class CartoonRoleFans extends Model
 {
     protected $table = 'cartoon_role_fans';
 
-    protected $fillable = [
-        'user_id',
-        'role_id',
-        'star_count'
-    ];
+    protected $fillable = ['user_id', 'role_id', 'star_count'];
 }

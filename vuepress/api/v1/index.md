@@ -1582,3 +1582,228 @@ FORMAT: 1A
                     "data": "角色列表"
                 }
             }
+
+# 用户社交点击相关接口
+
+## 检查toggle状态 [POST /toggle/{type}/check]
+> 目前支持的 type：like, follow
+如果是 like，modal 支持：post、image、score
+如果是 follow，modal 支持：bangumi
+
++ Parameters
+    + modal: (string, required) - 要检测的模型
+    + id: (integer, required) - 要检测的id
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 200 (application/json)
+    + Body
+
+            "一个boolean值"
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "请求参数错"
+            }
+
+## 获取发起操作的用户列表 [GET /toggle/{type}/users]
+> 目前支持的 type：like, follow，contributors
+如果是 like，modal 支持：post、image、score
+如果是 follow，modal 支持：bangumi
+如果是 contributors，bangumi 支持：bangumi（就是吧主列表）
+
++ Parameters
+    + modal: (string, required) - 要请求的模型
+    + id: (integer, required) - 要请求的id
+    + page: (integer, required) - 页码
+        + Default: 0
+    + take: (integer, optional) - 获取的个数
+        + Default: 10
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 200 (application/json)
+    + Body
+
+            "一个boolean值"
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "请求参数错"
+            }
+
+## 喜欢或取消喜欢 [POST /toggle/like]
+> 目前支持的 type：post、image、score
+
++ Parameters
+    + type: (string, required) - 要请求的类型
+    + id: (integer, required) - 要请求的id
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 200 (application/json)
+    + Body
+
+            "一个boolean值"
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "请求参数错"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40303,
+                "message": "原创内容只能打赏，不能喜欢 | 不能喜欢自己的内容"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "检测的对象不存在"
+            }
+
+## 关注或取消关注 [POST /toggle/follow]
+> 目前支持的 type：bangumi
+
++ Parameters
+    + type: (string, required) - 要请求的类型
+    + id: (integer, required) - 要请求的id
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 200 (application/json)
+    + Body
+
+            "一个boolean值"
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "请求参数错"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "吧主不能取消关注"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "检测的对象不存在"
+            }
+
+## 收藏或取消收藏 [POST /toggle/mark]
+> 目前支持的 type：post、image、score
+
++ Parameters
+    + type: (string, required) - 要请求的类型
+    + id: (integer, required) - 要请求的id
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 200 (application/json)
+    + Body
+
+            "一个boolean值"
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "请求参数错"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "不能收藏自己的内容"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "检测的对象不存在"
+            }
+
+## 打赏或取消打赏 [POST /toggle/reward]
+> 目前支持的 type：post、image、score
+
++ Parameters
+    + type: (string, required) - 要请求的类型
+    + id: (integer, required) - 要请求的id
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 200 (application/json)
+    + Body
+
+            "一个boolean值"
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "请求参数错 | 不支持该类型内容的打赏"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40303,
+                "message": "非原创内容只能喜欢，不能打赏 | 金币不足 | 未打赏过 | 不能打赏自己的内容"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "检测的对象不存在"
+            }

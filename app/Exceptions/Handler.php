@@ -20,7 +20,7 @@ class Handler extends ExceptionHandler
         \Illuminate\Database\Eloquent\ModelNotFoundException::class,
         \Illuminate\Session\TokenMismatchException::class,
         \Illuminate\Validation\ValidationException::class,
-        \Overtrue\EasySms\Exceptions\NoGatewayAvailableException::class,
+        \Overtrue\EasySms\Exceptions\NoGatewayAvailableException::class
     ];
 
     /**
@@ -33,7 +33,11 @@ class Handler extends ExceptionHandler
      */
     public function report(Exception $exception)
     {
-        if (app()->environment() === 'production' && app()->bound('sentry') && $this->shouldReport($exception)) {
+        if (
+            app()->environment() === 'production' &&
+            app()->bound('sentry') &&
+            $this->shouldReport($exception)
+        ) {
             app('sentry')->captureException($exception);
         }
 
@@ -59,8 +63,10 @@ class Handler extends ExceptionHandler
      * @param  \Illuminate\Auth\AuthenticationException  $exception
      * @return \Illuminate\Http\Response
      */
-    protected function unauthenticated($request, AuthenticationException $exception)
-    {
+    protected function unauthenticated(
+        $request,
+        AuthenticationException $exception
+    ) {
         if ($request->expectsJson()) {
             return response()->json(['error' => 'Unauthenticated.'], 401);
         }

@@ -24,11 +24,11 @@ class CartoonRole extends Model
     protected $casts = [
         'bangumi_id' => 'integer',
         'fans_count' => 'integer',
-        'star_count' => 'integer',
+        'star_count' => 'integer'
     ];
 
     public function getAvatarAttribute($avatar)
     {
-        return config('website.image').($avatar ? $avatar : 'avatar');
+        return config('website.image') . ($avatar ? $avatar : 'avatar');
     }
 }

@@ -8,8 +8,5 @@ class ImageLike extends Model
 {
     protected $table = 'image_likes';
 
-    protected $fillable = [
-        'user_id',
-        'modal_id'
-    ];
+    protected $fillable = ['user_id', 'modal_id'];
 }

@@ -14,8 +14,5 @@ class BangumiFollow extends Model
 {
     protected $table = 'bangumi_follows';
 
-    protected $fillable = [
-        'user_id',
-        'modal_id'
-    ];
+    protected $fillable = ['user_id', 'modal_id'];
 }

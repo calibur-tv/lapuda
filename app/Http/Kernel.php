@@ -13,8 +13,7 @@ class Kernel extends HttpKernel
      *
      * @var array
      */
-    protected $middleware = [
-    ];
+    protected $middleware = [];
 
     /**
      * The application's route middleware groups.
@@ -24,12 +23,12 @@ class Kernel extends HttpKernel
     protected $middlewareGroups = [
         'web' => [
             \Barryvdh\Cors\HandleCors::class,
-            \App\Http\Middleware\Csrf::class,
+            \App\Http\Middleware\Csrf::class
         ],
         'api' => [
             \Barryvdh\Cors\HandleCors::class,
-            \App\Http\Middleware\Csrf::class,
-        ],
+            \App\Http\Middleware\Csrf::class
+        ]
     ];
 
     /**

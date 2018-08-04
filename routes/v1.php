@@ -9,8 +9,6 @@ $api = app('Dingo\Api\Routing\Router');
 
 $api->version(['v1', 'latest'], function ($api)
 {
-    $api->get('/migrate', 'App\Api\V1\Controllers\SearchController@migrate');
-
     $api->group(['prefix' => '/search'], function ($api)
     {
         $api->get('/new', 'App\Api\V1\Controllers\SearchController@search');
@@ -52,8 +50,6 @@ $api->version(['v1', 'latest'], function ($api)
             $api->get('/posts/top', 'App\Api\V1\Controllers\PostController@bangumiTops');
 
             $api->get('/cartoon', 'App\Api\V1\Controllers\ImageController@cartoon');
-
-            $api->post('/toggleFollow', 'App\Api\V1\Controllers\BangumiController@toggleFollow')->middleware(['jwt.auth']);
 
             $api->get('/followers', 'App\Api\V1\Controllers\BangumiController@followers');
 
@@ -170,12 +166,6 @@ $api->version(['v1', 'latest'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\PostController@show');
 
-            $api->get('/likeUsers', 'App\Api\V1\Controllers\PostController@likeUsers');
-
-            $api->post('/toggleLike', 'App\Api\V1\Controllers\PostController@toggleLike')->middleware(['jwt.auth']);
-
-            $api->post('/toggleMark', 'App\Api\V1\Controllers\PostController@toggleMark')->middleware(['jwt.auth']);
-
             $api->post('/deletePost', 'App\Api\V1\Controllers\PostController@deletePost')->middleware(['jwt.auth']);
         });
 
@@ -232,8 +222,6 @@ $api->version(['v1', 'latest'], function ($api)
         $api->get('/uptoken', 'App\Api\V1\Controllers\ImageController@uptoken')->middleware(['jwt.auth']);
 
         $api->post('/report', 'App\Api\V1\Controllers\ImageController@report');
-
-        $api->post('/toggleLike', 'App\Api\V1\Controllers\ImageController@toggleLike')->middleware(['jwt.auth']);
 
         $api->post('/editAlbum', 'App\Api\V1\Controllers\ImageController@editAlbum')->middleware(['jwt.auth']);
 
@@ -297,19 +285,20 @@ $api->version(['v1', 'latest'], function ($api)
         $api->get('/meta', 'App\Api\V1\Controllers\TrendingController@meta');
     });
 
-    $api->group(['prefix' => '/toggle', 'middleware' => ['jwt.auth']], function ($api)
+    $api->group(['prefix' => '/toggle'], function ($api)
     {
-        $api->post('/like', 'App\Api\V1\Controllers\ToggleController@like');
+        $api->group(['middleware' => ['jwt.auth']], function ($api)
+        {
+            $api->post('/like', 'App\Api\V1\Controllers\ToggleController@like');
 
-        $api->post('/mark', 'App\Api\V1\Controllers\ToggleController@mark');
+            $api->post('/mark', 'App\Api\V1\Controllers\ToggleController@mark');
 
-        $api->post('/follow', 'App\Api\V1\Controllers\ToggleController@follow');
+            $api->post('/follow', 'App\Api\V1\Controllers\ToggleController@follow');
 
-        $api->post('/reward', 'App\Api\V1\Controllers\ToggleController@reward');
+            $api->post('/reward', 'App\Api\V1\Controllers\ToggleController@reward');
 
-        $api->get('/check', 'App\Api\V1\Controllers\ToggleController@check');
-
-        $api->get('/{type}/check', 'App\Api\V1\Controllers\ToggleController@mixinCheck');
+            $api->post('/{type}/check', 'App\Api\V1\Controllers\ToggleController@mixinCheck');
+        });
 
         $api->get('/{type}/users', 'App\Api\V1\Controllers\ToggleController@mixinUsers');
     });

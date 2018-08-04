@@ -14,7 +14,7 @@ class Banner extends Model
     protected $casts = [
         'gray' => 'integer',
         'user_id' => 'integer',
-        'bangumi_id' => 'integer',
+        'bangumi_id' => 'integer'
     ];
 
     public function user()

@@ -7,7 +7,7 @@
     <meta name="description" content="Just playing around">
     <link rel="icon" href="https://static.calibur.tv/favicon.ico">
     
-    <link rel="preload" href="/Laputa/assets/css/0.styles.c4c0b6bf.css" as="style"><link rel="preload" href="/Laputa/assets/js/app.3a748f12.js" as="script"><link rel="preload" href="/Laputa/assets/js/11.cff2607f.js" as="script"><link rel="prefetch" href="/Laputa/assets/js/5.fd858ef1.js"><link rel="prefetch" href="/Laputa/assets/js/2.cda51ec0.js"><link rel="prefetch" href="/Laputa/assets/js/3.d09b8012.js"><link rel="prefetch" href="/Laputa/assets/js/4.8a60e004.js"><link rel="prefetch" href="/Laputa/assets/js/6.a928bdff.js"><link rel="prefetch" href="/Laputa/assets/js/7.01e00b56.js"><link rel="prefetch" href="/Laputa/assets/js/8.9d0e33c2.js"><link rel="prefetch" href="/Laputa/assets/js/9.a7f46f06.js"><link rel="prefetch" href="/Laputa/assets/js/10.0e1f29d7.js"><link rel="prefetch" href="/Laputa/assets/js/12.7b022ff1.js">
+    <link rel="preload" href="/Laputa/assets/css/0.styles.c4c0b6bf.css" as="style"><link rel="preload" href="/Laputa/assets/js/app.f3b7dac2.js" as="script"><link rel="preload" href="/Laputa/assets/js/11.b12fa24d.js" as="script"><link rel="prefetch" href="/Laputa/assets/js/5.fd858ef1.js"><link rel="prefetch" href="/Laputa/assets/js/2.cda51ec0.js"><link rel="prefetch" href="/Laputa/assets/js/3.d09b8012.js"><link rel="prefetch" href="/Laputa/assets/js/4.8a60e004.js"><link rel="prefetch" href="/Laputa/assets/js/6.a928bdff.js"><link rel="prefetch" href="/Laputa/assets/js/7.01e00b56.js"><link rel="prefetch" href="/Laputa/assets/js/8.9d0e33c2.js"><link rel="prefetch" href="/Laputa/assets/js/9.a7f46f06.js"><link rel="prefetch" href="/Laputa/assets/js/10.0e1f29d7.js"><link rel="prefetch" href="/Laputa/assets/js/12.7b022ff1.js">
     <link rel="stylesheet" href="/Laputa/assets/css/0.styles.c4c0b6bf.css">
   </head>
   <body>
@@ -599,7 +599,82 @@
       &quot;0&quot;: {
           &quot;data&quot;: &quot;角色列表&quot;
       }
+  }
+</code></pre></li></ul></li></ul> <h1 id="用户社交点击相关接口"><a href="#用户社交点击相关接口" aria-hidden="true" class="header-anchor">#</a> 用户社交点击相关接口</h1> <h2 id="检查toggle状态-post-toggle-type-check"><a href="#检查toggle状态-post-toggle-type-check" aria-hidden="true" class="header-anchor">#</a> 检查toggle状态 [POST /toggle/{type}/check]</h2> <blockquote><p>目前支持的 type：like, follow
+如果是 like，modal 支持：post、image、score
+如果是 follow，modal 支持：bangumi</p></blockquote> <ul><li><p>Parameters</p> <ul><li>modal: (string, required) - 要检测的模型</li> <li>id: (integer, required) - 要检测的id</li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  &quot;一个boolean值&quot;
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;请求参数错&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="获取发起操作的用户列表-get-toggle-type-users"><a href="#获取发起操作的用户列表-get-toggle-type-users" aria-hidden="true" class="header-anchor">#</a> 获取发起操作的用户列表 [GET /toggle/{type}/users]</h2> <blockquote><p>目前支持的 type：like, follow，contributors
+如果是 like，modal 支持：post、image、score
+如果是 follow，modal 支持：bangumi
+如果是 contributors，bangumi 支持：bangumi（就是吧主列表）</p></blockquote> <ul><li><p>Parameters</p> <ul><li>modal: (string, required) - 要请求的模型</li> <li>id: (integer, required) - 要请求的id</li> <li>page: (integer, required) - 页码
+<ul><li>Default: 0</li></ul></li> <li>take: (integer, optional) - 获取的个数
+<ul><li>Default: 10</li></ul></li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  &quot;一个boolean值&quot;
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;请求参数错&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="喜欢或取消喜欢-post-toggle-like"><a href="#喜欢或取消喜欢-post-toggle-like" aria-hidden="true" class="header-anchor">#</a> 喜欢或取消喜欢 [POST /toggle/like]</h2> <blockquote><p>目前支持的 type：post、image、score</p></blockquote> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - 要请求的类型</li> <li>id: (integer, required) - 要请求的id</li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  &quot;一个boolean值&quot;
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;请求参数错&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 403 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40303,
+      &quot;message&quot;: &quot;原创内容只能打赏，不能喜欢 | 不能喜欢自己的内容&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;检测的对象不存在&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="关注或取消关注-post-toggle-follow"><a href="#关注或取消关注-post-toggle-follow" aria-hidden="true" class="header-anchor">#</a> 关注或取消关注 [POST /toggle/follow]</h2> <blockquote><p>目前支持的 type：bangumi</p></blockquote> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - 要请求的类型</li> <li>id: (integer, required) - 要请求的id</li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  &quot;一个boolean值&quot;
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;请求参数错&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 403 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40301,
+      &quot;message&quot;: &quot;吧主不能取消关注&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;检测的对象不存在&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="收藏或取消收藏-post-toggle-mark"><a href="#收藏或取消收藏-post-toggle-mark" aria-hidden="true" class="header-anchor">#</a> 收藏或取消收藏 [POST /toggle/mark]</h2> <blockquote><p>目前支持的 type：post、image、score</p></blockquote> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - 要请求的类型</li> <li>id: (integer, required) - 要请求的id</li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  &quot;一个boolean值&quot;
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;请求参数错&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 403 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40301,
+      &quot;message&quot;: &quot;不能收藏自己的内容&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;检测的对象不存在&quot;
+  }
+</code></pre></li></ul></li></ul> <h2 id="打赏或取消打赏-post-toggle-reward"><a href="#打赏或取消打赏-post-toggle-reward" aria-hidden="true" class="header-anchor">#</a> 打赏或取消打赏 [POST /toggle/reward]</h2> <blockquote><p>目前支持的 type：post、image、score</p></blockquote> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - 要请求的类型</li> <li>id: (integer, required) - 要请求的id</li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  &quot;一个boolean值&quot;
+</code></pre></li></ul></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40003,
+      &quot;message&quot;: &quot;请求参数错 | 不支持该类型内容的打赏&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 403 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40303,
+      &quot;message&quot;: &quot;非原创内容只能喜欢，不能打赏 | 金币不足 | 未打赏过 | 不能打赏自己的内容&quot;
+  }
+</code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+      &quot;code&quot;: 40401,
+      &quot;message&quot;: &quot;检测的对象不存在&quot;
   }</code></pre></li></ul></li></ul></div> <div class="page-edit"><!----> <!----></div> <!----> </div> <!----></div></div>
-    <script src="/Laputa/assets/js/11.cff2607f.js" defer></script><script src="/Laputa/assets/js/app.3a748f12.js" defer></script>
+    <script src="/Laputa/assets/js/11.b12fa24d.js" defer></script><script src="/Laputa/assets/js/app.f3b7dac2.js" defer></script>
   </body>
 </html>

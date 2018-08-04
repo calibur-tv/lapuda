@@ -8,8 +8,5 @@ class PostMark extends Model
 {
     protected $table = 'post_mark';
 
-    protected $fillable = [
-        'user_id',
-        'modal_id'
-    ];
+    protected $fillable = ['user_id', 'modal_id'];
 }

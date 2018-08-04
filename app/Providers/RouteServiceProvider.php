@@ -38,9 +38,9 @@ class RouteServiceProvider extends ServiceProvider
      */
     protected function mapApiRoutes()
     {
-        Route::prefix('/')
-             ->group(base_path('routes/v1.php'));
-        Route::namespace('App\Http\Controllers')
-            ->group(base_path('routes/web.php'));
+        Route::prefix('/')->group(base_path('routes/v1.php'));
+        Route::namespace('App\Http\Controllers')->group(
+            base_path('routes/web.php')
+        );
     }
 }

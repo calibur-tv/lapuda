@@ -197,60 +197,6 @@ class PostController extends Controller
         ]);
     }
 
-    // TODO：remove
-    public function likeUsers(Request $request, $id)
-    {
-        $page = $request->get('page') ?: 0;
-
-        $postLikeService = new PostLikeService();
-        $users = $postLikeService->users($id, $page);
-
-        return $this->resOK($users);
-    }
-
-    // TODO：remove
-    public function toggleLike($postId)
-    {
-        $postRepository = new PostRepository();
-        $post = $postRepository->item($postId);
-
-        if (is_null($post))
-        {
-            return $this->resErrNotFound('不存在的帖子');
-        }
-
-        $userId = $this->getAuthUserId();
-        if ($userId === intval($post['user_id']))
-        {
-            return $this->resErrRole('不能给自己点赞');
-        }
-
-        $postLikeService = new PostLikeService();
-        $liked = $postLikeService->check($userId, $postId);
-
-        if ($liked)
-        {
-            $postLikeService->undo($userId, $postId);
-
-            return $this->resCreated(false);
-        }
-
-        $userRepository = new UserRepository();
-        $result = $userRepository->toggleCoin($liked, $userId, $post['user_id'], 1, $post['id']);
-
-        if (!$result)
-        {
-            return $this->resErrRole($liked ? '未打赏过' : '金币不足');
-        }
-
-        $likeId = $postLikeService->do($userId, $postId);
-
-        $job = (new \App\Jobs\Notification\Post\Like($likeId));
-        dispatch($job);
-
-        return $this->resCreated(true);
-    }
-
     public function bangumiTops(Request $request, $id)
     {
         $bangumiRepository = new BangumiRepository();
@@ -292,34 +238,6 @@ class PostController extends Controller
         $transformer = new PostTransformer();
 
         return $this->resOK($transformer->bangumi($list));
-    }
-
-    // TODO：remove
-    public function toggleMark($postId)
-    {
-        $postRepository = new PostRepository();
-        $post = $postRepository->item($postId);
-
-        if (is_null($post))
-        {
-            return $this->resErrNotFound('不存在的帖子');
-        }
-
-        $userId = $this->getAuthUserId();
-        if ($userId === intval($post['user_id']))
-        {
-            return $this->resErrRole('不能收藏自己的帖子');
-        }
-
-        $postMarkService = new PostMarkService();
-        $marked = $postMarkService->toggle($userId, $postId);
-
-        if (!$marked)
-        {
-            return $this->resCreated(false);
-        }
-
-        return $this->resCreated(true);
     }
 
     /**

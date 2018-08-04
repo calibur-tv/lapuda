@@ -20,8 +20,8 @@ class Bangumi extends Model
         'banner',
         'alias',
         'season',
-        'released_at',  // 周几更新
-        'released_time',    // 更新时间
+        'released_at', // 周几更新
+        'released_time', // 更新时间
         'released_video_id',
         'published_at',
         'count_like',
@@ -30,7 +30,7 @@ class Bangumi extends Model
         'score',
         'has_cartoon',
         'has_video',
-        'cartoon'   // 漫画的 ids
+        'cartoon' // 漫画的 ids
     ];
 
     protected $casts = [
@@ -40,16 +40,16 @@ class Bangumi extends Model
         'others_site_video' => 'boolean',
         'end' => 'boolean',
         'has_video' => 'boolean',
-        'has_cartoon' => 'boolean',
+        'has_cartoon' => 'boolean'
     ];
 
     public function getAvatarAttribute($avatar)
     {
-        return config('website.image').($avatar ? $avatar : 'avatar');
+        return config('website.image') . ($avatar ? $avatar : 'avatar');
     }
 
     public function getBannerAttribute($banner)
     {
-        return config('website.image').($banner ? $banner : 'B-banner');
+        return config('website.image') . ($banner ? $banner : 'B-banner');
     }
 }

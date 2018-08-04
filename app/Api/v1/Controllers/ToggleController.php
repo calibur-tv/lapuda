@@ -26,23 +26,31 @@ use App\Api\V1\Services\Toggle\Score\ScoreRewardService;
 use App\Models\User;
 use Illuminate\Http\Request;
 
+/**
+ * @Resource("用户社交点击相关接口")
+ */
 class ToggleController extends Controller
 {
-    public function check(Request $request)
-    {
-        $id = $request->get('id');
-        $type = $request->get('type');
-        $userId = $this->getAuthUserId();
-
-        $likeService = $this->getLikeServiceByType($type);
-        if (is_null($likeService))
-        {
-            return $this->resErrBad();
-        }
-
-        return $this->resOK($likeService->check($userId, $id));
-    }
-
+    /**
+     * 检查toggle状态
+     *
+     * > 目前支持的 type：like, follow
+     * 如果是 like，modal 支持：post、image、score
+     * 如果是 follow，modal 支持：bangumi
+     *
+     * @Post("/toggle/{type}/check")
+     *
+     * @Parameters({
+     *      @Parameter("modal", description="要检测的模型", type="string", required=true),
+     *      @Parameter("id", description="要检测的id", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body="一个boolean值"),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错"})
+     * })
+     */
     public function mixinCheck(Request $request, $type)
     {
         $id = $request->get('id');
@@ -70,6 +78,29 @@ class ToggleController extends Controller
         return $this->resOK($service->check($userId, $id));
     }
 
+    /**
+     * 获取发起操作的用户列表
+     *
+     * > 目前支持的 type：like, follow，contributors
+     * 如果是 like，modal 支持：post、image、score
+     * 如果是 follow，modal 支持：bangumi
+     * 如果是 contributors，bangumi 支持：bangumi（就是吧主列表）
+     *
+     * @Get("/toggle/{type}/users")
+     *
+     * @Parameters({
+     *      @Parameter("modal", description="要请求的模型", type="string", required=true),
+     *      @Parameter("id", description="要请求的id", type="integer", required=true),
+     *      @Parameter("page", description="页码", type="integer", required=true, default=0),
+     *      @Parameter("take", description="获取的个数", type="integer", default=10)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body="一个boolean值"),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错"})
+     * })
+     */
     public function mixinUsers(Request $request, $type)
     {
         $id = $request->get('id');
@@ -110,6 +141,26 @@ class ToggleController extends Controller
         ]);
     }
 
+    /**
+     * 喜欢或取消喜欢
+     *
+     * > 目前支持的 type：post、image、score
+     *
+     * @Post("/toggle/like")
+     *
+     * @Parameters({
+     *      @Parameter("type", description="要请求的类型", type="string", required=true),
+     *      @Parameter("id", description="要请求的id", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body="一个boolean值"),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错"}),
+     *      @Response(403, body={"code": 40303, "message": "原创内容只能打赏，不能喜欢 | 不能喜欢自己的内容"}),
+     *      @Response(404, body={"code": 40401, "message": "检测的对象不存在"})
+     * })
+     */
     public function like(Request $request)
     {
         $id = $request->get('id');
@@ -122,11 +173,53 @@ class ToggleController extends Controller
             return $this->resErrBad();
         }
 
+        $repository = $this->getRepositoryByType($type);
+        if (is_null($likeService))
+        {
+            return $this->resErrBad();
+        }
+
+        $item = $repository->item($id);
+        if (is_null($item))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($item['is_creator'])
+        {
+            return $this->resErrRole('原创内容只能打赏，不能喜欢');
+        }
+
+        if ($item['user_id'] == $userId)
+        {
+            return $this->resErrRole('不能喜欢自己的内容');
+        }
+
         $result = $likeService->toggle($userId, $id);
 
         return $this->resCreated((boolean)$result);
     }
 
+    /**
+     * 关注或取消关注
+     *
+     * > 目前支持的 type：bangumi
+     *
+     * @Post("/toggle/follow")
+     *
+     * @Parameters({
+     *      @Parameter("type", description="要请求的类型", type="string", required=true),
+     *      @Parameter("id", description="要请求的id", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body="一个boolean值"),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错"}),
+     *      @Response(403, body={"code": 40301, "message": "吧主不能取消关注"}),
+     *      @Response(404, body={"code": 40401, "message": "检测的对象不存在"})
+     * })
+     */
     public function follow(Request $request)
     {
         $id = $request->get('id');
@@ -137,6 +230,18 @@ class ToggleController extends Controller
         if (is_null($followService))
         {
             return $this->resErrBad();
+        }
+
+        $repository = $this->getRepositoryByType($type);
+        if (is_null($repository))
+        {
+            return $this->resErrBad();
+        }
+
+        $item = $repository->item($id);
+        if (is_null($item))
+        {
+            return $this->resErrNotFound();
         }
 
         $check = $followService->beforeHook($id, $userId);
@@ -150,6 +255,26 @@ class ToggleController extends Controller
         return $this->resCreated((boolean)$result);
     }
 
+    /**
+     * 收藏或取消收藏
+     *
+     * > 目前支持的 type：post、image、score
+     *
+     * @Post("/toggle/mark")
+     *
+     * @Parameters({
+     *      @Parameter("type", description="要请求的类型", type="string", required=true),
+     *      @Parameter("id", description="要请求的id", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body="一个boolean值"),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错"}),
+     *      @Response(403, body={"code": 40301, "message": "不能收藏自己的内容"}),
+     *      @Response(404, body={"code": 40401, "message": "检测的对象不存在"})
+     * })
+     */
     public function mark(Request $request)
     {
         $id = $request->get('id');
@@ -162,10 +287,47 @@ class ToggleController extends Controller
             return $this->resErrBad();
         }
 
+        $repository = $this->getRepositoryByType($type);
+        if (is_null($repository))
+        {
+            return $this->resErrBad();
+        }
+
+        $item = $repository->item($id);
+        if (is_null($item))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($item['user_id'] == $userId)
+        {
+            return $this->resErrRole('不能喜欢自己的内容');
+        }
+
         $result = $markService->toggle($userId, $id);
         return $this->resCreated((boolean)$result);
     }
 
+    /**
+     * 打赏或取消打赏
+     *
+     * > 目前支持的 type：post、image、score
+     *
+     * @Post("/toggle/reward")
+     *
+     * @Parameters({
+     *      @Parameter("type", description="要请求的类型", type="string", required=true),
+     *      @Parameter("id", description="要请求的id", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body="一个boolean值"),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错 | 不支持该类型内容的打赏"}),
+     *      @Response(403, body={"code": 40303, "message": "非原创内容只能喜欢，不能打赏 | 金币不足 | 未打赏过 | 不能打赏自己的内容"}),
+     *      @Response(404, body={"code": 40401, "message": "检测的对象不存在"})
+     * })
+     */
     public function reward(Request $request)
     {
         $id = $request->get('id');
@@ -192,12 +354,12 @@ class ToggleController extends Controller
 
         if (!$item['is_creator'])
         {
-            return $this->resErrBad('该内容非原创');
+            return $this->resErrRole('非原创内容只能喜欢，不能打赏');
         }
 
         if ($item['user_id'] == $userId)
         {
-            return $this->resErrBad('不能打赏自己的内容');
+            return $this->resErrRole('不能打赏自己的内容');
         }
 
         $userRepository = new UserRepository();
@@ -229,26 +391,6 @@ class ToggleController extends Controller
         $rewardId = $rewardService->toggle($userId, $id);
 
         return $this->resCreated((boolean)$rewardId);
-    }
-
-    public function usersLikeList()
-    {
-
-    }
-
-    public function usersMarkList()
-    {
-
-    }
-
-    public function usersRewardList()
-    {
-
-    }
-
-    public function usersFollowList()
-    {
-
     }
 
     protected function getContributorsServiceByType($type)
