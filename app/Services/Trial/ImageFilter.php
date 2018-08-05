@@ -217,7 +217,13 @@ class ImageFilter
             "Content-Type" => $contentType,
         );
 
-        $response = Client::post($request_url, $body, $header);
+        try {
+            $response = Client::post($request_url, $body, $header);
+        } catch (\Exception $e) {
+            $response = [
+                'statusCode' => 0
+            ];
+        }
 
         return $response;
     }

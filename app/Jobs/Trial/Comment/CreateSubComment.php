@@ -46,7 +46,7 @@ class CreateSubComment implements ShouldQueue
 
         if ($badWordsCount > 0)
         {
-            $service->changeCommentState($this->id, $comment['user_id']);
+            $service->changeCommentState($this->id, $comment['from_user_id']);
         }
     }
 }

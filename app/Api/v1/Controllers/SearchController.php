@@ -95,4 +95,12 @@ class SearchController extends Controller
 
         return $this->resOK($userRepository->item($userId, true));
     }
+
+    public function migrate()
+    {
+        $userRepository = new UserRepository();
+        $userRepository->statsByDate(time());
+
+        return $this->resOK();
+    }
 }

@@ -149,7 +149,6 @@ class UserController extends Controller
         return $this->resOK($transformer->show($user));
     }
 
-    // TODO：用户性别怎么设计
     // TODO：API Doc
     public function profile(Request $request)
     {
@@ -167,14 +166,14 @@ class UserController extends Controller
         }
 
         $userId = $this->getAuthUserId();
-        $birthday = $request->get('birthday');
+        $birthday = date('Y-m-d H:m:s', $request->get('birthday'));
 
         User::where('id', $userId)->update([
             'nickname' => Purifier::clean($request->get('nickname')),
             'signature' => Purifier::clean($request->get('signature')),
             'sex' => $request->get('sex'),
             'sex_secret' => $request->get('sex_secret'),
-            'birthday' => $birthday === '1970-1-1' ? null : $birthday,
+            'birthday' => $birthday ? $birthday : null,
             'birth_secret' => $request->get('birth_secret')
         ]);
 
