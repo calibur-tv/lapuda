@@ -166,7 +166,7 @@ class UserController extends Controller
         }
 
         $userId = $this->getAuthUserId();
-        $birthday = date('Y-m-d H:m:s', $request->get('birthday'));
+        $birthday = date('Y-m-d H:m:s', strtotime($request->get('birthday')));
 
         User::where('id', $userId)->update([
             'nickname' => Purifier::clean($request->get('nickname')),
