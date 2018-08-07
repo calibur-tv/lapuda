@@ -16,11 +16,8 @@ class QuestionTrendingService extends TrendingService
     protected $visitorId;
     protected $bangumiId;
 
-    public function __construct($visitorId = 0, $bangumiId = 0)
+    public function __construct($bangumiId = 0, $userId = 0)
     {
-        parent::__construct('questions', $bangumiId);
-
-        $this->visitorId = $visitorId;
-        $this->bangumiId = $bangumiId;
+        parent::__construct('questions', $bangumiId, $userId);
     }
 }

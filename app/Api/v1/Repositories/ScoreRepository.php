@@ -171,27 +171,13 @@ class ScoreRepository extends Repository
         }, 1);
     }
 
-    public function userScoreIds($userId, $page, $take)
-    {
-        $ids = $this->Cache($this->cacheKeyUserScoreIds($userId), function () use ($userId)
-        {
-            return Score::where('user_id', $userId)
-                ->whereNotNull('published_at')
-                ->orderBy('created_at', 'DESC')
-                ->pluck('id')
-                ->toArray();
-        }, 'm');
-
-        return $this->filterIdsByPage($ids, $page, $take);
-    }
-
     public function doPublish($userId, $scoreId, $bangumiId)
     {
         $bangumiScoreService = new BangumiScoreService();
         $bangumiScoreService->do($userId, $bangumiId);
         Redis::DEL($this->cacheKeyBangumiScore($bangumiId));
 
-        $scoreTrendingService = new ScoreTrendingService(0, $bangumiId);
+        $scoreTrendingService = new ScoreTrendingService($bangumiId, $userId);
         $scoreTrendingService->create($scoreId);
 
         $bangumiFollowService = new BangumiFollowService();
@@ -208,11 +194,6 @@ class ScoreRepository extends Repository
         $totalScoreCount->add();
         // TODO：SEO
         // TODO：SEARCH
-    }
-
-    public function cacheKeyUserScoreIds($userId)
-    {
-        return 'user_' . $userId . '_score';
     }
 
     public function cacheKeyBangumiScore($bangumiId)

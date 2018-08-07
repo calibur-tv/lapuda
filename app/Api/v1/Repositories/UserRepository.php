@@ -445,12 +445,12 @@ class UserRepository extends Repository
         $result = [];
         foreach ($list as $item)
         {
-            $bangumi = $this->item($item['user_id']);
-            if (is_null($bangumi))
+            $user = $this->item($item['user_id']);
+            if (is_null($user))
             {
                 continue;
             }
-            $item['user'] = $bangumi;
+            $item['user'] = $user;
             $result[] = $item;
         }
 

@@ -14,6 +14,8 @@ use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\ScoreCommentService;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
+use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
+use App\Api\V1\Services\Toggle\Score\ScoreRewardService;
 use App\Api\V1\Services\Trending\Base\TrendingService;
 use App\Api\V1\Transformers\ScoreTransformer;
 use App\Models\Score;
@@ -23,12 +25,9 @@ class ScoreTrendingService extends TrendingService
     protected $visitorId;
     protected $bangumiId;
 
-    public function __construct($visitorId = 0, $bangumiId = 0)
+    public function __construct($bangumiId = 0, $userId = 0)
     {
-        parent::__construct('scores', $bangumiId);
-
-        $this->visitorId = $visitorId;
-        $this->bangumiId = $bangumiId;
+        parent::__construct('scores', $bangumiId, $userId);
     }
 
     public function computeNewsIds()
@@ -40,7 +39,6 @@ class ScoreTrendingService extends TrendingService
             })
             ->orderBy('created_at', 'desc')
             ->whereNotNull('published_at')
-            ->latest()
             ->take(100)
             ->pluck('id');
     }
@@ -54,7 +52,6 @@ class ScoreTrendingService extends TrendingService
             })
             ->orderBy('updated_at', 'desc')
             ->whereNotNull('published_at')
-            ->latest()
             ->take(100)
             ->pluck('updated_at', 'id');
     }
@@ -64,56 +61,63 @@ class ScoreTrendingService extends TrendingService
         return [];
     }
 
+    public function computeUserIds()
+    {
+        return Score
+            ::where('state', 0)
+            ->where('user_id', $this->userId)
+            ->orderBy('created_at', 'desc')
+            ->whereNotNull('published_at')
+            ->pluck('id');
+    }
+
     protected function getListByIds($ids)
     {
-        $scoreRepository = new ScoreRepository();
-        $userRepository = new UserRepository();
-        $bangumiRepository = new BangumiRepository();
-
-        $scores = $scoreRepository->list($ids);
-        $result = [];
-
-        foreach ($scores as $item)
+        $store = new ScoreRepository();
+        if ($this->bangumiId)
         {
-            if (is_null($item))
-            {
-                continue;
-            }
-
-            $user = $userRepository->item($item['user_id']);
-            if (is_null($user))
-            {
-                continue;
-            }
-
-            $bangumi = $bangumiRepository->item($item['bangumi_id']);
-            if (is_null($bangumi))
-            {
-                continue;
-            }
-
-            $item['user'] = $user;
-            $item['bangumi'] = $bangumi;
-            $item['liked'] = false;
-            $item['commented'] = false;
-
-            $result[] = $item;
+            $list = $store->bangumiFlow($ids);
+        }
+        else if ($this->userId)
+        {
+            $list = $store->userFlow($ids);
+        }
+        else
+        {
+            $list = $store->trendingFlow($ids);
         }
 
-        if (empty($result))
+        $likeService = new ScoreLikeService();
+        $rewardService = new ScoreRewardService();
+        $markService = new ScoreMarkService();
+        $commentService = new ScoreCommentService();
+
+        $list = $commentService->batchGetCommentCount($list);
+        $list = $likeService->batchTotal($list, 'like_count');
+        $list = $markService->batchTotal($list, 'mark_count');
+        foreach ($list as $i => $item)
         {
-            return [];
+            if ($item['is_creator'])
+            {
+                $list[$i]['like_count'] = 0;
+                $list[$i]['reward_count'] = $rewardService->total($item['id']);
+            }
+            else
+            {
+                $list[$i]['like_count'] = $likeService->total($item['id']);
+                $list[$i]['reward_count'] = 0;
+            }
         }
 
-        $scoreLikeService = new ScoreLikeService();
-        $scoreCommentService = new ScoreCommentService();
-        $scoreTransformer = new ScoreTransformer();
-
-//        $result = $scoreLikeService->batchCheck($result, $this->visitorId, 'liked');
-        $result = $scoreLikeService->batchTotal($result, 'like_count');
-//        $result = $scoreCommentService->batchCheckCommented($result, $this->visitorId);
-        $result = $scoreCommentService->batchGetCommentCount($result);
-
-        return $scoreTransformer->trending($result);
+        $transformer = new ScoreTransformer();
+        if ($this->bangumiId)
+        {
+            return $transformer->bangumiFlow($list);
+        }
+        else if ($this->userId)
+        {
+            return $transformer->userFlow($list);
+        }
+        return $transformer->trendingFlow($list);
     }
 }
