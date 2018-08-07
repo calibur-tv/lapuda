@@ -3,6 +3,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\CartoonRoleRepository;
+use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Counter\Stats\TotalBangumiCount;
 use App\Api\V1\Services\Counter\Stats\TotalImageAlbumCount;
 use App\Api\V1\Services\Counter\Stats\TotalImageCount;
@@ -58,11 +59,10 @@ class TrendingController extends Controller
 
     public function news(Request $request)
     {
-        $userId = $this->getAuthUserId();
         $bangumiId = $request->get('bangumiId') ?: 0;
         $type = $request->get('type');
         $take = $request->get('take') ?: 10;
-        $trendingService = $this->getTrendingServiceByType($type, $userId, $bangumiId);
+        $trendingService = $this->getTrendingServiceByType($type, $bangumiId);
         if (is_null($trendingService))
         {
             return $this->resErrBad();
@@ -75,11 +75,10 @@ class TrendingController extends Controller
 
     public function active(Request $request)
     {
-        $userId = $this->getAuthUserId();
         $bangumiId = $request->get('bangumiId') ?: 0;
         $type = $request->get('type');
         $take = $request->get('take') ?: 10;
-        $trendingService = $this->getTrendingServiceByType($type, $userId, $bangumiId);
+        $trendingService = $this->getTrendingServiceByType($type, $bangumiId);
         if (is_null($trendingService))
         {
             return $this->resErrBad();
@@ -92,11 +91,10 @@ class TrendingController extends Controller
 
     public function hot(Request $request)
     {
-        $userId = $this->getAuthUserId();
         $bangumiId = $request->get('bangumiId') ?: 0;
         $type = $request->get('type');
         $take = $request->get('take') ?: 10;
-        $trendingService = $this->getTrendingServiceByType($type, $userId, $bangumiId);
+        $trendingService = $this->getTrendingServiceByType($type, $bangumiId);
         if (is_null($trendingService))
         {
             return $this->resErrBad();
@@ -105,6 +103,28 @@ class TrendingController extends Controller
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
 
         return $this->resOK($trendingService->hot($seen, $take));
+    }
+
+    public function users(Request $request)
+    {
+        $zone = $request->get('zone');
+        $type = $request->get('type');
+        $page = $request->get('page') ?: 0;
+        $take = $request->get('take') ?: 10;
+        $userRepository = new UserRepository();
+        $userId = $userRepository->getUserIdByZone($zone);
+        if (!$userId)
+        {
+            return $this->resErrNotFound();
+        }
+
+        $trendingService = $this->getTrendingServiceByType($type, 0, $userId);
+        if (is_null($trendingService))
+        {
+            return $this->resErrBad();
+        }
+
+        return $this->resOK($trendingService->users($page, $take));
     }
 
     public function meta(Request $request)
@@ -136,23 +156,23 @@ class TrendingController extends Controller
         ]);
     }
 
-    protected function getTrendingServiceByType($type, $userId, $bangumiId)
+    protected function getTrendingServiceByType($type, $bangumiId = 0, $userId = 0)
     {
         if ($type === 'post')
         {
-            return new PostTrendingService($userId, $bangumiId);
+            return new PostTrendingService($bangumiId, $userId);
         }
         else if ($type === 'image')
         {
-            return new ImageTrendingService($userId, $bangumiId);
+            return new ImageTrendingService($bangumiId, $userId);
         }
         else if ($type === 'score')
         {
-            return new ScoreTrendingService($userId, $bangumiId);
+            return new ScoreTrendingService($bangumiId, $userId);
         }
         else if ($type === 'role')
         {
-            return new RoleTrendingService($userId, $bangumiId);
+            return new RoleTrendingService($bangumiId, $userId);
         }
 
         return null;

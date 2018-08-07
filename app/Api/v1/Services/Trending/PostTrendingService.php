@@ -15,6 +15,7 @@ use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Counter\PostViewCounter;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
+use App\Api\V1\Services\Toggle\Post\PostRewardService;
 use App\Api\V1\Services\Trending\Base\TrendingService;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Models\Post;
@@ -25,12 +26,9 @@ class PostTrendingService extends TrendingService
     protected $visitorId;
     protected $bangumiId;
 
-    public function __construct($visitorId = 0, $bangumiId = 0)
+    public function __construct($bangumiId = 0, $userId = 0)
     {
-        parent::__construct('posts', $bangumiId);
-
-        $this->visitorId = $visitorId;
-        $this->bangumiId = $bangumiId;
+        parent::__construct('posts', $bangumiId, $userId);
     }
 
     public function computeNewsIds()
@@ -105,62 +103,62 @@ class PostTrendingService extends TrendingService
         return $result;
     }
 
+    public function computeUserIds()
+    {
+        return Post
+            ::where('state', 0)
+            ->where('user_id', $this->userId)
+            ->orderBy('created_at', 'desc')
+            ->pluck('id');
+    }
+
     protected function getListByIds($ids)
     {
-        $postRepository = new PostRepository();
-        $userRepository = new UserRepository();
-        $bangumiRepository = new BangumiRepository();
-
-        $posts = $postRepository->list($ids);
-        $result = [];
-
-        foreach ($posts as $item)
+        $store = new PostRepository();
+        if ($this->bangumiId)
         {
-            if (is_null($item))
-            {
-                continue;
-            }
-
-            $user = $userRepository->item($item['user_id']);
-            if (is_null($user))
-            {
-                continue;
-            }
-
-            $bangumi = $bangumiRepository->item($item['bangumi_id']);
-            if (is_null($bangumi))
-            {
-                continue;
-            }
-
-            $item['user'] = $user;
-            $item['bangumi'] = $bangumi;
-            $item['liked'] = false;
-            $item['commented'] = false;
-            $item['marked'] = false;
-
-            $result[] = $item;
+            $list = $store->bangumiFlow($ids);
+        }
+        else if ($this->userId)
+        {
+            $list = $store->userFlow($ids);
+        }
+        else
+        {
+            $list = $store->trendingFlow($ids);
         }
 
-        if (empty($result))
+        $likeService = new PostLikeService();
+        $rewardService = new PostRewardService();
+        $markService = new PostMarkService();
+        $commentService = new PostCommentService();
+
+        $list = $commentService->batchGetCommentCount($list);
+        $list = $likeService->batchTotal($list, 'like_count');
+        $list = $markService->batchTotal($list, 'mark_count');
+        foreach ($list as $i => $item)
         {
-            return [];
+            if ($item['is_creator'])
+            {
+                $list[$i]['like_count'] = 0;
+                $list[$i]['reward_count'] = $rewardService->total($item['id']);
+            }
+            else
+            {
+                $list[$i]['like_count'] = $likeService->total($item['id']);
+                $list[$i]['reward_count'] = 0;
+            }
         }
 
-        $postLikeService = new PostLikeService();
-        $postViewCounter = new PostViewCounter();
-        $postCommentService = new PostCommentService();
-        $postMarkService = new PostMarkService();
-        $postTransformer = new PostTransformer();
-
-//        $result = $postLikeService->batchCheck($result, $this->visitorId, 'liked');
-        $result = $postLikeService->batchTotal($result, 'like_count');
-//        $result = $postMarkService->batchCheck($result, $this->visitorId, 'marked');
-        $result = $postMarkService->batchTotal($result, 'mark_count');
-//        $result = $postCommentService->batchCheckCommented($result, $this->visitorId);
-        $result = $postCommentService->batchGetCommentCount($result);
-        $result = $postViewCounter->batchGet($result, 'view_count');
-
-        return $postTransformer->trending($result);
+        $transformer = new PostTransformer();
+        if ($this->bangumiId)
+        {
+            return $transformer->bangumiFlow($list);
+        }
+        else if ($this->userId)
+        {
+            return $transformer->userFlow($list);
+        }
+        return $transformer->trendingFlow($list);
     }
 }

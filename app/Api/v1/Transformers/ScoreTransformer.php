@@ -53,41 +53,6 @@ class ScoreTransformer extends Transformer
         ];
     }
 
-    public function trending($list)
-    {
-        return $this->collection($list, function ($score)
-        {
-            return [
-                'id' => (int)$score['id'],
-                'user' => $this->transformer($score['user'], function ($user)
-                {
-                    return [
-                        'id' => (int)$user['id'],
-                        'zone' => $user['zone'],
-                        'nickname' => $user['nickname'],
-                        'avatar' => $user['avatar']
-                    ];
-                }),
-                'bangumi' => $this->transformer($score['bangumi'], function ($bangumi)
-                {
-                    return [
-                        'id' => (int)$bangumi['id'],
-                        'name' => $bangumi['name'],
-                        'avatar' => $bangumi['avatar']
-                    ];
-                }),
-                'title' => $score['title'],
-                'liked' => (boolean)$score['liked'],
-                'commented' => (boolean)$score['commented'],
-                'like_count' => (int)$score['like_count'],
-                'comment_count' => (int)$score['comment_count'],
-                'intro' => $score['intro'],
-                'total' => (int)$score['total'],
-                'created_at' => $score['created_at']
-            ];
-        });
-    }
-
     public function users($list)
     {
         return $this->collection($list, function ($score)
@@ -121,6 +86,98 @@ class ScoreTransformer extends Transformer
                 'bangumi' => $score['bangumi'],
                 'title' => $score['title'],
                 'intro' => $score['intro']
+            ];
+        });
+    }
+
+    public function userFlow($list)
+    {
+        return $this->collection($list, function ($item)
+        {
+            return array_merge(
+                $this->baseFlow($item),
+                [
+                    'bangumi' => $this->transformer($item['bangumi'], function ($bangumi)
+                    {
+                        return [
+                            'id' => (int)$bangumi['id'],
+                            'name' => $bangumi['name'],
+                            'avatar' => $bangumi['avatar']
+                        ];
+                    })
+                ]
+            );
+        });
+    }
+
+    public function bangumiFlow($list)
+    {
+        return $this->collection($list, function ($item)
+        {
+            return array_merge(
+                $this->baseFlow($item),
+                [
+                    'user' => $this->transformer($item['user'], function ($user)
+                    {
+                        return [
+                            'id' => (int)$user['id'],
+                            'nickname' => $user['nickname'],
+                            'avatar' => $user['avatar'],
+                            'zone' => $user['zone']
+                        ];
+                    })
+                ]
+            );
+        });
+    }
+
+    public function trendingFlow($list)
+    {
+        return $this->collection($list, function ($item)
+        {
+            return array_merge(
+                $this->baseFlow($item),
+                [
+                    'bangumi' => $this->transformer($item['bangumi'], function ($bangumi)
+                    {
+                        return [
+                            'id' => (int)$bangumi['id'],
+                            'name' => $bangumi['name'],
+                            'avatar' => $bangumi['avatar']
+                        ];
+                    }),
+                    'user' => $this->transformer($item['user'], function ($user)
+                    {
+                        return [
+                            'id' => (int)$user['id'],
+                            'nickname' => $user['nickname'],
+                            'avatar' => $user['avatar'],
+                            'zone' => $user['zone']
+                        ];
+                    })
+                ]
+            );
+        });
+    }
+
+    protected function baseFlow($item)
+    {
+        return $this->transformer($item, function ($item)
+        {
+            return [
+                'id' => (int)$item['id'],
+                //
+                'title' => $item['title'],
+                'intro' => $item['intro'],
+                'total' => (int)$item['total'],
+                //
+                'is_creator' => (boolean)$item['is_creator'],
+                'like_count' => $item['like_count'],
+                'reward_count' => $item['reward_count'],
+                'comment_count' => $item['comment_count'],
+                'mark_count' => $item['mark_count'],
+                'created_at' => $item['created_at'],
+                'updated_at' => $item['updated_at']
             ];
         });
     }

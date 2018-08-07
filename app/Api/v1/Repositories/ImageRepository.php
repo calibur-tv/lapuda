@@ -324,23 +324,10 @@ class ImageRepository extends Repository
 
     public function imageCreateSuccessProcess($imageId, $userId, $bangumiId)
     {
-        $this->ListInsertBefore($this->cacheKeyUserImageIds($userId), $imageId);
-        $imageTrendingService = new ImageTrendingService(0, $bangumiId);
+        $imageTrendingService = new ImageTrendingService($bangumiId, $userId);
         $imageTrendingService->create($imageId);
         // TODO：SEO
         // TODO：search
-    }
-
-    public function getUserImageIds($userId, $page, $take)
-    {
-        $ids = $this->RedisList($this->cacheKeyUserImageIds($userId), function () use ($userId)
-        {
-            return Image::where('user_id', $userId)
-                ->orderBy('created_at', 'DESC')
-                ->pluck('id');
-        });
-
-        return $this->filterIdsByPage($ids, $page, $take);
     }
 
     public function cacheKeyImageItem($id)
@@ -356,10 +343,5 @@ class ImageRepository extends Repository
     public function cacheKeyCartoonParts($bangumiId)
     {
         return 'bangumi_' . $bangumiId . '_cartoon_parts';
-    }
-
-    public function cacheKeyUserImageIds($userId)
-    {
-        return 'user_' . $userId . '_image_ids';
     }
 }

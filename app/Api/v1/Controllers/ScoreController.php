@@ -9,6 +9,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
+use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\ScoreCommentService;
@@ -17,6 +18,7 @@ use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
 use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
 use App\Api\V1\Services\Toggle\Score\ScoreRewardService;
+use App\Api\V1\Services\Trending\ScoreTrendingService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\ScoreTransformer;
 use App\Models\Score;
@@ -126,49 +128,20 @@ class ScoreController extends Controller
 
     public function users(Request $request)
     {
-        $userId = $request->get('user_id');
+        $zone = $request->get('zone');
         $page = $request->get('page') ?: 0;
         $take = $request->get('take') ?: 10;
 
-        $userRepository = new UserRepository();
-        $user = $userRepository->item($userId);
-        if (is_null($user))
+        $repository = new Repository();
+        $userId = $repository->getUserIdByZone($zone);
+        if (!$userId)
         {
             return $this->resErrNotFound();
         }
 
-        $scoreRepository = new ScoreRepository();
+        $scoreTrendingService = new ScoreTrendingService(0, $userId);
 
-        $idsObj = $scoreRepository->userScoreIds($userId, $page, $take);
-
-        $list = $scoreRepository->list($idsObj['ids']);
-
-        $bangumiRepository = new BangumiRepository();
-        $result = [];
-        foreach ($list as $score)
-        {
-            $bangumi = $bangumiRepository->item($score['bangumi_id']);
-            if (is_null($bangumi))
-            {
-                continue;
-            }
-            $score['bangumi'] = $bangumi;
-            $result[] = $score;
-        }
-
-        $scoreLikeService = new ScoreLikeService();
-        $result = $scoreLikeService->batchTotal($result, 'like_count');
-
-        $scoreCommentService = new ScoreCommentService();
-        $result = $scoreCommentService->batchGetCommentCount($result);
-
-        $scoreTransformer = new ScoreTransformer();
-
-        return $this->resOK([
-            'list' => $scoreTransformer->users($result),
-            'noMore' => $idsObj['noMore'],
-            'total' => $idsObj['total']
-        ]);
+        return $this->resOK($scoreTrendingService->users($page, $take));
     }
 
     public function drafts()
@@ -315,7 +288,6 @@ class ScoreController extends Controller
         {
             $scoreRepository->doPublish($userId, $newId, $bangumiId);;
         }
-        Redis::DEL($scoreRepository->cacheKeyUserScoreIds($userId));
 
         return $this->resOK($newId);
     }
@@ -418,7 +390,6 @@ class ScoreController extends Controller
         {
             $scoreRepository->doPublish($userId, $newId, $bangumiId);;
         }
-        Redis::DEL($scoreRepository->cacheKeyUserScoreIds($userId));
         Redis::DEL($scoreRepository->cacheKeyScoreItem($newId));
 
         return $this->resNoContent();
@@ -446,9 +417,11 @@ class ScoreController extends Controller
                 'deleted_at' => Carbon::now()
             ]);
 
-        Redis::DEL($scoreRepository->cacheKeyUserScoreIds($userId));
         Redis::DEL($scoreRepository->cacheKeyScoreItem($id));
         Redis::DEL($scoreRepository->cacheKeyBangumiScore($score['bangumi_id']));
+
+        $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
+        $scoreTrendingService->delete($id);
 
         $totalScoreCount = new TotalScoreCount();
         $totalScoreCount->add(-1);

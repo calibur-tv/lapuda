@@ -12,6 +12,8 @@ use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Counter\ImageViewCounter;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
+use App\Api\V1\Services\Toggle\Image\ImageMarkService;
+use App\Api\V1\Services\Toggle\Image\ImageRewardService;
 use App\Api\V1\Services\Trending\Base\TrendingService;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\Image;
@@ -19,15 +21,12 @@ use Carbon\Carbon;
 
 class ImageTrendingService extends TrendingService
 {
-    protected $visitorId;
     protected $bangumiId;
+    protected $userId;
 
-    public function __construct($visitorId = 0, $bangumiId = 0)
+    public function __construct($bangumiId = 0, $userId = 0)
     {
-        parent::__construct('images', $bangumiId);
-
-        $this->visitorId = $visitorId;
-        $this->bangumiId = $bangumiId;
+        parent::__construct('images', $bangumiId, $userId);
     }
 
     public function computeNewsIds()
@@ -121,21 +120,63 @@ class ImageTrendingService extends TrendingService
         return $result;
     }
 
+    public function computeUserIds()
+    {
+        return Image
+            ::where('state', 0)
+            ->where('user_id', $this->userId)
+            ->where('is_cartoon', 0)
+            ->latest()
+            ->pluck('id');
+    }
+
     protected function getListByIds($ids)
     {
-        $imageRepository = new ImageRepository();
-        $imageCommentService = new ImageCommentService();
-        $imageLikeService = new ImageLikeService();
-        $imageViewService = new ImageViewCounter();
+        $store = new ImageRepository();
+        if ($this->bangumiId)
+        {
+            $list = $store->bangumiFlow($ids);
+        }
+        else if ($this->userId)
+        {
+            $list = $store->userFlow($ids);
+        }
+        else
+        {
+            $list = $store->trendingFlow($ids);
+        }
 
-        $images = $imageRepository->trendingFlow($ids);
+        $likeService = new ImageLikeService();
+        $rewardService = new ImageRewardService();
+        $markService = new ImageMarkService();
+        $commentService = new ImageCommentService();
 
-        $images = $imageCommentService->batchGetCommentCount($images);
-        $images = $imageLikeService->batchTotal($images, 'like_count');
-        $images = $imageViewService->batchGet($images, 'view_count');
+        $list = $commentService->batchGetCommentCount($list);
+        $list = $likeService->batchTotal($list, 'like_count');
+        $list = $markService->batchTotal($list, 'mark_count');
+        foreach ($list as $i => $item)
+        {
+            if ($item['is_creator'])
+            {
+                $list[$i]['like_count'] = 0;
+                $list[$i]['reward_count'] = $rewardService->total($item['id']);
+            }
+            else
+            {
+                $list[$i]['like_count'] = $likeService->total($item['id']);
+                $list[$i]['reward_count'] = 0;
+            }
+        }
 
-        $imageTransformer = new ImageTransformer();
-
-        return $imageTransformer->trendingFlow($images);
+        $transformer = new ImageTransformer();
+        if ($this->bangumiId)
+        {
+            return $transformer->bangumiFlow($list);
+        }
+        else if ($this->userId)
+        {
+            return $transformer->userFlow($list);
+        }
+        return $transformer->trendingFlow($list);
     }
 }

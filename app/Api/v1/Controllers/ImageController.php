@@ -4,6 +4,7 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ImageRepository;
+use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Counter\ImageViewCounter;
@@ -14,6 +15,7 @@ use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Services\Toggle\Image\ImageMarkService;
 use App\Api\V1\Services\Toggle\Image\ImageRewardService;
+use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\AlbumImage;
 use App\Models\Banner;
@@ -619,42 +621,16 @@ class ImageController extends Controller
         $zone = $request->get('zone');
         $take = 12;
 
-        $imageRepository = new ImageRepository();
-        $userId = $imageRepository->getUserIdByZone($zone);
-
+        $repository = new Repository();
+        $userId = $repository->getUserIdByZone($zone);
         if (!$userId)
         {
             return $this->resErrNotFound();
         }
 
-        $idsObj = $imageRepository->getUserImageIds($userId, $page, $take);
+        $imageTrendingService = new ImageTrendingService(0, $userId);
 
-        $list = $imageRepository->userFlow($idsObj['ids']);
-
-        if (empty($list))
-        {
-            return $this->resOK([
-                'list' => [],
-                'total' => 0,
-                'noMore' => true
-            ]);
-        }
-
-        $imageViewCounter = new ImageViewCounter();
-        $imageCommentService = new ImageCommentService();
-        $imageLikeService = new ImageLikeService();
-
-        $list = $imageViewCounter->batchGet($list, 'view_count');
-        $list = $imageCommentService->batchGetCommentCount($list);
-        $list = $imageLikeService->batchTotal($list, 'like_count');
-
-        $imageTransformer = new ImageTransformer();
-
-        return $this->resOK([
-            'list' => $imageTransformer->userFlow($list),
-            'total' => $idsObj['total'],
-            'noMore' => $idsObj['noMore']
-        ]);
+        return $this->resOK($imageTrendingService->users($page, $take));
     }
 
     /**
@@ -703,6 +679,8 @@ class ImageController extends Controller
 
         Image::where('id', $albumId)->delete();
         Redis::DEL($imageRepository->cacheKeyImageItem($albumId));
+        $imageTrendingService = new ImageTrendingService($album['bangumi_id'], $album['user_id']);
+        $imageTrendingService->delete($albumId);
 
         if ($album['is_album'])
         {

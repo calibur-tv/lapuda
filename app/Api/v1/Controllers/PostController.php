@@ -96,12 +96,8 @@ class PostController extends Controller
             'updated_at' => $now
         ], $request->get('images'));
 
-        $cacheKey = $postRepository->bangumiListCacheKey($bangumiId);
-        if (Redis::EXISTS($cacheKey))
-        {
-            Redis::ZADD($cacheKey, $now->timestamp, $id);
-        }
-        Redis::LPUSHX('user_'.$userId.'_minePostIds', $id);
+        $postTrendingService = new PostTrendingService($bangumiId, $userId);
+        $postTrendingService->create($id);
 
         $job = (new \App\Jobs\Trial\Post\Create($id));
         dispatch($job);
@@ -281,15 +277,9 @@ class PostController extends Controller
          * 删除最新和热门帖子下该帖子的缓存
          * 删掉主题帖的缓存
          */
-        $bangumiId = $post['bangumi_id'];
-        Redis::pipeline(function ($pipe) use ($bangumiId, $postId, $userId)
-        {
-            $pipe->LREM('user_'.$userId.'_minePostIds', 1, $postId);
-            $pipe->ZREM('bangumi_'.$bangumiId.'_posts_new_ids', $postId);
-            $pipe->DEL('post_'.$postId);
-        });
-        $trendingService = new PostTrendingService();
-        $trendingService->delete($postId);
+        Redis::DEL('post_'.$postId);
+        $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
+        $postTrendingService->delete($postId);
 
         $job = (new \App\Jobs\Search\Post\Delete($postId));
         dispatch($job);

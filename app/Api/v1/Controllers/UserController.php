@@ -18,6 +18,7 @@ use App\Api\V1\Services\Counter\Stats\TotalUserCount;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
+use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\PostTransformer;
@@ -166,7 +167,7 @@ class UserController extends Controller
         }
 
         $userId = $this->getAuthUserId();
-        $birthday = date('Y-m-d H:m:s', $request->get('birthday'));
+        $birthday = date('Y-m-d H:m:s', strtotime($request->get('birthday')));
 
         User::where('id', $userId)->update([
             'nickname' => Purifier::clean($request->get('nickname')),
@@ -218,7 +219,7 @@ class UserController extends Controller
      * @Get("/user/`zone`/posts/mine")
      *
      * @Transaction({
-     *      @Request({"minId": "看过的帖子列表里，id 最小的那个帖子的 id"}),
+     *      @Request({"page": "页码", default=0}),
      *      @Response(200, body={"code": 0, "data": "帖子列表"}),
      *      @Response(404, body={"code": 40401, "message": "找不到用户"})
      * })
@@ -232,44 +233,12 @@ class UserController extends Controller
             return $this->resErrNotFound('找不到用户');
         }
 
-        $ids = $userRepository->minePostIds($userId);
-        if (empty($ids))
-        {
-            return $this->resOK([
-                'list' => [],
-                'total' => 0,
-                'noMore' => true
-            ]);
-        }
+        $postTrendingService = new PostTrendingService(0, $userId);
 
-        $minId = $request->get('minId') ?: 0;
+        $page = $request->get('page') ?: 0;
         $take = 10;
-        $idsObject = $this->filterIdsByMaxId($ids, $minId, $take);
 
-        $postRepository = new PostRepository();
-        $postTransformer = new PostTransformer();
-        $bangumiRepository = new BangumiRepository();
-        $list = $postRepository->list($idsObject['ids']);
-        foreach ($list as $i => $item)
-        {
-            $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
-        }
-
-        $ViewCounter = new PostViewCounter();
-        $commentService = new PostCommentService();
-        $likeService = new PostLikeService();
-        $markService = new PostMarkService();
-
-        $list = $likeService->batchTotal($list, 'like_count');
-        $list = $markService->batchTotal($list, 'mark_count');
-        $list = $commentService->batchGetCommentCount($list);
-        $list = $ViewCounter->batchGet($list, 'view_count');
-
-        return $this->resOK([
-            'list' => $postTransformer->usersMine($list),
-            'total' => $idsObject['total'],
-            'noMore' => $idsObject['noMore']
-        ]);
+        return $this->resOK($postTrendingService->users($page, $take));
     }
 
     /**

@@ -15,12 +15,14 @@ class TrendingService extends Repository
 {
     protected $table;
     protected $bangumiId;
-    protected $timeout = 60; // 1 分钟重算一次
+    protected $userId;
+    protected $timeout = 1800; // 30 分钟重算一次
 
-    public function __construct($table, $bangumiId)
+    public function __construct($table, $bangumiId, $userId)
     {
         $this->table = $table;
         $this->bangumiId = $bangumiId;
+        $this->userId = $userId;
     }
 
     public function news($minId, $take)
@@ -59,11 +61,23 @@ class TrendingService extends Repository
         ];
     }
 
+    public function users($page, $take)
+    {
+        $idsObject = $this->getUserIds($page, $take);
+        $list = $this->getListByIds($idsObject['ids']);
+
+        return [
+            'list' => $list,
+            'noMore' => $idsObject['noMore'],
+            'total' => $idsObject['total']
+        ];
+    }
+
     public function getNewsIds($maxId, $take)
     {
         $this->deleteCacheIfTimeout('news');
         // 动态有序，使用 minId 的 list
-        $ids = $this->RedisList($this->trendingIdsCacheKey('news'), function ()
+        $ids = $this->RedisList($this->trendingIdsCacheKey('news', $this->bangumiId), function ()
         {
             $ids = $this->computeNewsIds();
 
@@ -79,7 +93,7 @@ class TrendingService extends Repository
     {
         $this->deleteCacheIfTimeout('active');
         // 动态无序，使用 seenIds 的 sort set
-        $ids = $this->RedisSort($this->trendingIdsCacheKey('active'), function ()
+        $ids = $this->RedisSort($this->trendingIdsCacheKey('active', $this->bangumiId), function ()
         {
             $ids = $this->computeActiveIds();
 
@@ -95,7 +109,7 @@ class TrendingService extends Repository
     {
         $this->deleteCacheIfTimeout('hot');
         // 动态无序，使用 seenIds 的 sort set
-        $ids = $this->RedisSort($this->trendingIdsCacheKey('hot'), function ()
+        $ids = $this->RedisSort($this->trendingIdsCacheKey('hot', $this->bangumiId), function ()
         {
             $ids = $this->computeHotIds();
 
@@ -107,22 +121,40 @@ class TrendingService extends Repository
         return $this->filterIdsBySeenIds($ids, $seenIds, $take);
     }
 
+    public function getUserIds($page, $take)
+    {
+        $ids = $this->RedisList($this->trendingFlowUsersKey(), function ()
+        {
+            return $this->computeUserIds();
+        });
+
+        return $this->filterIdsByPage($ids, $page, $take);
+    }
+
     public function create($id)
     {
-        $this->ListInsertBefore($this->trendingIdsCacheKey('news'), $id);
-        $this->SortAdd($this->trendingIdsCacheKey('active'), $id);
+        $this->ListInsertBefore($this->trendingIdsCacheKey('news', $this->bangumiId), $id);
+        $this->ListInsertBefore($this->trendingIdsCacheKey('news', 0), $id);
+        $this->SortAdd($this->trendingIdsCacheKey('active', $this->bangumiId), $id);
+        $this->SortAdd($this->trendingIdsCacheKey('active', 0), $id);
+        $this->ListInsertBefore($this->trendingFlowUsersKey(), $id);
     }
 
     public function update($id)
     {
-        $this->SortAdd($this->trendingIdsCacheKey('active'), $id);
+        $this->SortAdd($this->trendingIdsCacheKey('active', $this->bangumiId), $id);
+        $this->SortAdd($this->trendingIdsCacheKey('active', 0), $id);
     }
 
     public function delete($id)
     {
-        $this->ListRemove($this->trendingIdsCacheKey('news'), $id);
-        $this->SortRemove($this->trendingIdsCacheKey('active'), $id);
-        $this->SortRemove($this->trendingIdsCacheKey('hot'), $id);
+        $this->ListRemove($this->trendingIdsCacheKey('news', $this->bangumiId), $id);
+        $this->ListRemove($this->trendingIdsCacheKey('news', 0), $id);
+        $this->SortRemove($this->trendingIdsCacheKey('active', $this->bangumiId), $id);
+        $this->SortRemove($this->trendingIdsCacheKey('active', 0), $id);
+        $this->SortRemove($this->trendingIdsCacheKey('hot', $this->bangumiId), $id);
+        $this->SortRemove($this->trendingIdsCacheKey('hot', 0), $id);
+        $this->ListRemove($this->trendingFlowUsersKey(), $id);
     }
 
     protected function getListByIds($ids)
@@ -145,32 +177,42 @@ class TrendingService extends Repository
         return [];
     }
 
+    protected function computeUserIds()
+    {
+        return [];
+    }
+
     protected function deleteCacheIfTimeout($type)
     {
         if (
-            !Redis::EXISTS($this->checkTimeoutCacheKey($type)) ||
-            time() - Redis::EXISTS($this->checkTimeoutCacheKey($type)) > $this->timeout
+            !Redis::EXISTS($this->checkTimeoutCacheKey($type, $this->bangumiId)) ||
+            time() - Redis::EXISTS($this->checkTimeoutCacheKey($type, $this->bangumiId)) > $this->timeout
         )
         {
-            Redis::DEL($this->trendingIdsCacheKey($type));
+            Redis::DEL($this->trendingIdsCacheKey($type, $this->bangumiId));
         }
     }
 
     protected function refreshTimeout($type)
     {
-        $this->RedisItem($this->checkTimeoutCacheKey($type), function ()
+        $this->RedisItem($this->checkTimeoutCacheKey($type, $this->bangumiId), function ()
         {
             return time();
         });
     }
 
-    protected function trendingIdsCacheKey($type)
+    protected function trendingFlowUsersKey()
     {
-        return 'trending_' . $this->table . '_bangumi_' . $this->bangumiId . '_' . $type . '_ids';
+        return 'trending_' . $this->table . '_user_' . $this->userId . '_created_ids';
     }
 
-    protected function checkTimeoutCacheKey($type)
+    protected function trendingIdsCacheKey($type, $bangumiId)
     {
-        return 'trending_' . $this->table . '_bangumi_' . $this->bangumiId . '_' . $type . '_timeout';
+        return 'trending_' . $this->table . '_bangumi_' . $bangumiId . '_' . $type . '_ids';
+    }
+
+    protected function checkTimeoutCacheKey($type, $bangumiId)
+    {
+        return 'trending_' . $this->table . '_bangumi_' . $bangumiId . '_' . $type . '_timeout';
     }
 }
