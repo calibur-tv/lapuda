@@ -32,7 +32,7 @@ class CommentController extends Controller
 {
     public function __construct()
     {
-        $this->types = ['post', 'image', 'score'];
+        $this->types = ['post', 'image', 'score', 'video'];
     }
 
     /**
