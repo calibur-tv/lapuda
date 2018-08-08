@@ -218,8 +218,11 @@ class UserController extends Controller
      *
      * @Get("/user/`zone`/posts/mine")
      *
+     * @Parameters({
+     *      @Parameter("page", description="页码", type="integer", default=0, required=true)
+     * })
+     *
      * @Transaction({
-     *      @Request({"page": "页码", default=0}),
      *      @Response(200, body={"code": 0, "data": "帖子列表"}),
      *      @Response(404, body={"code": 40401, "message": "找不到用户"})
      * })

@@ -23,20 +23,28 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 /**
  * @Resource("评论相关接口")
  */
 class CommentController extends Controller
 {
+    public function __construct()
+    {
+        $this->types = ['post', 'image', 'score'];
+    }
+
     /**
      * 新建主评论
      *
-     * @Post("/`type`/comment/`type_id`/create")
+     * @Post("/comment/create")
      *
      * @Parameters({
      *      @Parameter("content", description="内容，`1000字以内`", type="string", required=true),
-     *      @Parameter("images", description="图片对象数组", type="array", required=true)
+     *      @Parameter("images", description="图片对象数组", type="array", required=true),
+     *      @Parameter("type", description="某个 type", type="string", required=true),
+     *      @Parameter("id", description="评论主题的 id", type="integer", required=true)
      * })
      *
      * @Transaction({
@@ -45,17 +53,25 @@ class CommentController extends Controller
      *      @Response(400, body={"code": 40003, "message": "请求参数错误"})
      * })
      */
-    public function create(Request $request, $type, $id)
+    public function create(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'content' => 'required|max:1200',
-            'images' => 'array'
+            'images' => 'array',
+            'id' => 'required|integer|min:1',
+            'type' => [
+                'required',
+                Rule::in($this->types),
+            ],
         ]);
 
         if ($validator->fails())
         {
             return $this->resErrParams($validator);
         }
+
+        $type = $request->get('type');
+        $id = $request->get('id');
 
         $commentService = $this->getCommentServiceByType($type);
         if (is_null($commentService))
@@ -133,12 +149,12 @@ class CommentController extends Controller
     /**
      * 获取主评论列表
      *
-     * @Get("/`type`/comment/`type_id`/main/list")
+     * @Get("/comment/main/list")
      *
      * @Parameters({
      *      @Parameter("type", description="某个 type", type="string", required=true),
-     *      @Parameter("type_id", description="如果是帖子，则是帖子id", type="integer", required=true),
-     *      @Parameter("fetchId", description="你通过这个接口获取的评论列表里最后的那个id", type="integer", default="0", required=true),
+     *      @Parameter("id", description="如果是帖子，则是帖子id", type="integer", required=true),
+     *      @Parameter("fetchId", description="你通过这个接口获取的评论列表里最后的那个id", type="integer", default="0", required=true)
      * })
      *
      * @Transaction({
@@ -147,16 +163,24 @@ class CommentController extends Controller
      *      @Response(400, body={"code": 40003, "message": "请求参数错误"})
      * })
      */
-    public function mainList(Request $request, $type, $id)
+    public function mainList(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'fetchId' => 'required'
+            'fetchId' => 'required',
+            'id' => 'required|integer|min:1',
+            'type' => [
+                'required',
+                Rule::in($this->types),
+            ],
         ]);
 
         if ($validator->fails())
         {
             return $this->resErrBad();
         }
+
+        $type = $request->get('type');
+        $id = $request->get('id');
 
         $commentService = $this->getCommentServiceByType($type);
         if (is_null($commentService))
@@ -218,11 +242,11 @@ class CommentController extends Controller
      * 1. `父评论` 一部视频下的评论列表，列表中的每一个就是一个父评论
      * 2. `子评论` 每个父评论都有回复列表，这个回复列表中的每一个就是子评论
      *
-     * @Get("/`type`/comment/`commentId`/sub/list")
+     * @Get("/comment/sub/list")
      *
      * @Parameters({
      *      @Parameter("type", description="某种 type", type="string", required=true),
-     *      @Parameter("commentId", description="父评论 id", type="integer", required=true),
+     *      @Parameter("id", description="父评论 id", type="integer", required=true),
      *      @Parameter("maxId", description="该父评论下看过的最大的子评论 id", type="integer", default=0, required=true)
      * })
      *
@@ -232,16 +256,24 @@ class CommentController extends Controller
      *      @Response(404, body={"code": 40401, "message": "不存在的父评论"})
      * })
      */
-    public function subList(Request $request, $type, $id)
+    public function subList(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'maxId' => 'required'
+            'maxId' => 'required',
+            'id' => 'required|integer|min:1',
+            'type' => [
+                'required',
+                Rule::in($this->types),
+            ],
         ]);
 
         if ($validator->fails())
         {
             return $this->resErrBad();
         }
+
+        $type = $request->get('type');
+        $id = $request->get('id');
 
         $commentService = $this->getCommentServiceByType($type);
         if (is_null($commentService))
@@ -273,11 +305,11 @@ class CommentController extends Controller
     /**
      * 回复评论
      *
-     * @Post("/`type`/comment/`commentId`/reply")
+     * @Post("/comment/reply")
      *
      * @Parameters({
      *      @Parameter("type", description="某种 type", type="string", required=true),
-     *      @Parameter("commentId", description="父评论 id", type="integer", required=true),
+     *      @Parameter("id", description="父评论 id", type="integer", required=true),
      *      @Parameter("targetUserId", description="父评论的用户 id", type="integer", required=true),
      *      @Parameter("content", description="评论内容，`纯文本，100字以内`", type="string", required=true)
      * })
@@ -289,17 +321,25 @@ class CommentController extends Controller
      *      @Response(404, body={"code": 40401, "message": "内容已删除"})
      * })
      */
-    public function reply(Request $request, $type, $id)
+    public function reply(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'content' => 'required|max:100',
-            'targetUserId' => 'required|Integer'
+            'targetUserId' => 'required|Integer',
+            'id' => 'required|integer|min:1',
+            'type' => [
+                'required',
+                Rule::in($this->types),
+            ],
         ]);
 
         if ($validator->fails())
         {
             return $this->resErrParams($validator);
         }
+
+        $type = $request->get('type');
+        $id = $request->get('id');
 
         $commentService = $this->getCommentServiceByType($type);
         if (is_null($commentService))
@@ -353,19 +393,39 @@ class CommentController extends Controller
     /**
      * 删除子评论
      *
-     * @Post("/`type`/comment/delete/sub/`commentId`")
+     * @Post("/comment/sub/delete")
      *
-     * @Request(headers={"Authorization": "Bearer JWT-Token"})
+     * @Parameters({
+     *      @Parameter("type", description="某种 type", type="string", required=true),
+     *      @Parameter("id", description="父评论 id", type="integer", required=true)
+     * })
      *
      * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(204),
      *      @Response(400, body={"code": 40003, "message": "参数错误"}),
      *      @Response(404, body={"code": 40401, "message": "该评论已被删除"}),
      *      @Response(403, body={"code": 40301, "message": "继续操作前请先登录"})
      * })
      */
-    public function deleteSubComment($type, $id)
+    public function deleteSubComment(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer|min:1',
+            'type' => [
+                'required',
+                Rule::in($this->types),
+            ],
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $type = $request->get('type');
+        $id = $request->get('id');
+
         $commentService = $this->getCommentServiceByType($type);
         if (is_null($commentService))
         {
@@ -398,19 +458,39 @@ class CommentController extends Controller
     /**
      * 删除主评论
      *
-     * @Post("/`type`/comment/delete/main/`commentId`")
+     * @Post("/comment/main/delete")
      *
-     * @Request(headers={"Authorization": "Bearer JWT-Token"})
+     * @Parameters({
+     *      @Parameter("type", description="某种 type", type="string", required=true),
+     *      @Parameter("id", description="父评论 id", type="integer", required=true)
+     * })
      *
      * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(204),
      *      @Response(400, body={"code": 40003, "message": "参数错误"}),
      *      @Response(404, body={"code": 40401, "message": "该评论已被删除"}),
      *      @Response(403, body={"code": 40301, "message": "继续操作前请先登录"})
      * })
      */
-    public function deleteMainComment($type, $id)
+    public function deleteMainComment(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer|min:1',
+            'type' => [
+                'required',
+                Rule::in($this->types),
+            ],
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $type = $request->get('type');
+        $id = $request->get('id');
+
         $commentService = $this->getCommentServiceByType($type);
         if (is_null($commentService))
         {
@@ -449,17 +529,37 @@ class CommentController extends Controller
     /**
      * <喜欢/取消喜欢>主评论
      *
-     * @Post("/`type`/comment/main/toggleLike/`commentId`")
+     * @Post("/comment/main/toggleLike")
      *
-     * @Request(headers={"Authorization": "Bearer JWT-Token"})
+     * @Parameters({
+     *      @Parameter("type", description="某种 type", type="string", required=true),
+     *      @Parameter("id", description="父评论 id", type="integer", required=true)
+     * })
      *
      * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(201, body={"code": 0, "data": "是否已喜欢"}),
      *      @Response(400, body={"code": 40003, "message": "参数错误"})
      * })
      */
-    public function toggleLikeMainComment($type, $id)
+    public function toggleLikeMainComment(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer|min:1',
+            'type' => [
+                'required',
+                Rule::in($this->types),
+            ],
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $type = $request->get('type');
+        $id = $request->get('id');
+
         $commentService = $this->getCommentServiceByType($type);
         if (is_null($commentService))
         {
@@ -482,45 +582,40 @@ class CommentController extends Controller
         return $this->resCreated((boolean)$result);
     }
 
-    // TODO：service 未完成
-    public function toggleDislikeMainComment($type, $id)
-    {
-        $commentService = $this->getCommentServiceByType($type);
-        if (is_null($commentService))
-        {
-            return $this->resErrBad('错误的类型');
-        }
-
-        $result = $commentService->toggleDislike($this->getAuthUserId(), $id);
-
-        if ($result)
-        {
-            if ($type === 'post')
-            {
-                $job = (new \App\Jobs\Notification\Post\Agree($result));
-                dispatch($job);
-            }
-        }
-
-        // TODO：dispatch job to update open search weight
-
-        return $this->resCreated((boolean)$result);
-    }
-
     /**
      * <喜欢/取消喜欢>子评论
      *
-     * @Post("/`type`/comment/sub/toggleLike/`commentId`")
+     * @Post("/comment/sub/toggleLike")
      *
-     * @Request(headers={"Authorization": "Bearer JWT-Token"})
+     * @Parameters({
+     *      @Parameter("type", description="某种 type", type="string", required=true),
+     *      @Parameter("id", description="父评论 id", type="integer", required=true)
+     * })
      *
      * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(201, body={"code": 0, "data": "是否已喜欢"}),
      *      @Response(400, body={"code": 40003, "message": "参数错误"})
      * })
      */
-    public function toggleLikeSubComment($type, $id)
+    public function toggleLikeSubComment(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer|min:1',
+            'type' => [
+                'required',
+                Rule::in($this->types),
+            ],
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $type = $request->get('type');
+        $id = $request->get('id');
+
         $commentService = $this->getCommentServiceByType($type);
         if (is_null($commentService))
         {

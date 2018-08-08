@@ -7,7 +7,7 @@
     <meta name="description" content="Just playing around">
     <link rel="icon" href="https://static.calibur.tv/favicon.ico">
     
-    <link rel="preload" href="/Laputa/assets/css/0.styles.c4c0b6bf.css" as="style"><link rel="preload" href="/Laputa/assets/js/app.ab7beaa4.js" as="script"><link rel="preload" href="/Laputa/assets/js/12.6b419e48.js" as="script"><link rel="prefetch" href="/Laputa/assets/js/6.ce8155ce.js"><link rel="prefetch" href="/Laputa/assets/js/2.cda51ec0.js"><link rel="prefetch" href="/Laputa/assets/js/3.3c9f2f97.js"><link rel="prefetch" href="/Laputa/assets/js/4.94372848.js"><link rel="prefetch" href="/Laputa/assets/js/5.efecfa5f.js"><link rel="prefetch" href="/Laputa/assets/js/7.17095df0.js"><link rel="prefetch" href="/Laputa/assets/js/8.2b8aae52.js"><link rel="prefetch" href="/Laputa/assets/js/9.dab1ec7a.js"><link rel="prefetch" href="/Laputa/assets/js/10.24126194.js"><link rel="prefetch" href="/Laputa/assets/js/11.13ff39d6.js"><link rel="prefetch" href="/Laputa/assets/js/13.f3aa5752.js">
+    <link rel="preload" href="/Laputa/assets/css/0.styles.c4c0b6bf.css" as="style"><link rel="preload" href="/Laputa/assets/js/app.35680cd8.js" as="script"><link rel="preload" href="/Laputa/assets/js/12.af125e47.js" as="script"><link rel="prefetch" href="/Laputa/assets/js/6.ce8155ce.js"><link rel="prefetch" href="/Laputa/assets/js/2.cda51ec0.js"><link rel="prefetch" href="/Laputa/assets/js/3.3c9f2f97.js"><link rel="prefetch" href="/Laputa/assets/js/4.94372848.js"><link rel="prefetch" href="/Laputa/assets/js/5.efecfa5f.js"><link rel="prefetch" href="/Laputa/assets/js/7.c8c3fb3f.js"><link rel="prefetch" href="/Laputa/assets/js/8.2b8aae52.js"><link rel="prefetch" href="/Laputa/assets/js/9.dab1ec7a.js"><link rel="prefetch" href="/Laputa/assets/js/10.24126194.js"><link rel="prefetch" href="/Laputa/assets/js/11.13ff39d6.js"><link rel="prefetch" href="/Laputa/assets/js/13.f3aa5752.js">
     <link rel="stylesheet" href="/Laputa/assets/css/0.styles.c4c0b6bf.css">
   </head>
   <body>
@@ -413,10 +413,8 @@
       &quot;code&quot;: 40401,
       &quot;message&quot;: &quot;该用户不存在&quot;
   }
-</code></pre></li></ul></li></ul> <h2 id="用户发布的帖子列表-get-user-zone-posts-mine"><a href="#用户发布的帖子列表-get-user-zone-posts-mine" aria-hidden="true" class="header-anchor">#</a> 用户发布的帖子列表 [GET /user/<code>zone</code>/posts/mine]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
-      &quot;minId&quot;: &quot;看过的帖子列表里，id 最小的那个帖子的 id&quot;
-  }
-</code></pre></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+</code></pre></li></ul></li></ul> <h2 id="用户发布的帖子列表-get-user-zone-posts-mine"><a href="#用户发布的帖子列表-get-user-zone-posts-mine" aria-hidden="true" class="header-anchor">#</a> 用户发布的帖子列表 [GET /user/<code>zone</code>/posts/mine]</h2> <ul><li><p>Parameters</p> <ul><li>page: (integer, required) - 页码
+<ul><li>Default: 0</li></ul></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
       &quot;code&quot;: 0,
       &quot;data&quot;: &quot;帖子列表&quot;
   }
@@ -497,7 +495,7 @@
       &quot;code&quot;: 40401,
       &quot;message&quot;: &quot;该用户不存在&quot;
   }
-</code></pre></li></ul></li></ul> <h1 id="评论相关接口"><a href="#评论相关接口" aria-hidden="true" class="header-anchor">#</a> 评论相关接口</h1> <h2 id="新建主评论-post-type-comment-type-id-create"><a href="#新建主评论-post-type-comment-type-id-create" aria-hidden="true" class="header-anchor">#</a> 新建主评论 [POST /<code>type</code>/comment/<code>type_id</code>/create]</h2> <ul><li><p>Parameters</p> <ul><li>content: (string, required) - 内容，<code>1000字以内</code></li> <li>images: (array, required) - 图片对象数组</li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li></ul> <h1 id="评论相关接口"><a href="#评论相关接口" aria-hidden="true" class="header-anchor">#</a> 评论相关接口</h1> <h2 id="新建主评论-post-comment-create"><a href="#新建主评论-post-comment-create" aria-hidden="true" class="header-anchor">#</a> 新建主评论 [POST /comment/create]</h2> <ul><li><p>Parameters</p> <ul><li>content: (string, required) - 内容，<code>1000字以内</code></li> <li>images: (array, required) - 图片对象数组</li> <li>type: (string, required) - 某个 type</li> <li>id: (integer, required) - 评论主题的 id</li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
 </code></pre></li></ul></li> <li><p>Response 201 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
       &quot;code&quot;: 0,
       &quot;data&quot;: &quot;主评论对象&quot;
@@ -506,7 +504,7 @@
       &quot;code&quot;: 40003,
       &quot;message&quot;: &quot;请求参数错误&quot;
   }
-</code></pre></li></ul></li></ul> <h2 id="获取主评论列表-get-type-comment-type-id-main-list"><a href="#获取主评论列表-get-type-comment-type-id-main-list" aria-hidden="true" class="header-anchor">#</a> 获取主评论列表 [GET /<code>type</code>/comment/<code>type_id</code>/main/list]</h2> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - 某个 type</li> <li>type_id: (integer, required) - 如果是帖子，则是帖子id</li> <li>fetchId: (integer, required) - 你通过这个接口获取的评论列表里最后的那个id
+</code></pre></li></ul></li></ul> <h2 id="获取主评论列表-get-comment-main-list"><a href="#获取主评论列表-get-comment-main-list" aria-hidden="true" class="header-anchor">#</a> 获取主评论列表 [GET /comment/main/list]</h2> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - 某个 type</li> <li>id: (integer, required) - 如果是帖子，则是帖子id</li> <li>fetchId: (integer, required) - 你通过这个接口获取的评论列表里最后的那个id
 <ul><li>Default: 0</li></ul></li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
 </code></pre></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
       &quot;code&quot;: 0,
@@ -520,7 +518,7 @@
       &quot;code&quot;: 40003,
       &quot;message&quot;: &quot;请求参数错误&quot;
   }
-</code></pre></li></ul></li></ul> <h2 id="子评论列表-get-type-comment-commentid-sub-list"><a href="#子评论列表-get-type-comment-commentid-sub-list" aria-hidden="true" class="header-anchor">#</a> 子评论列表 [GET /<code>type</code>/comment/<code>commentId</code>/sub/list]</h2> <blockquote><p>一个通用的接口，通过 <code>type</code> 和 <code>commentId</code> 来获取子评论列表.</p></blockquote> <blockquote><p><code>commentId</code>是父评论的 id：</p></blockquote> <ol><li><code>父评论</code> 一部视频下的评论列表，列表中的每一个就是一个父评论</li> <li><code>子评论</code> 每个父评论都有回复列表，这个回复列表中的每一个就是子评论</li></ol> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - 某种 type</li> <li>commentId: (integer, required) - 父评论 id</li> <li>maxId: (integer, required) - 该父评论下看过的最大的子评论 id
+</code></pre></li></ul></li></ul> <h2 id="子评论列表-get-comment-sub-list"><a href="#子评论列表-get-comment-sub-list" aria-hidden="true" class="header-anchor">#</a> 子评论列表 [GET /comment/sub/list]</h2> <blockquote><p>一个通用的接口，通过 <code>type</code> 和 <code>commentId</code> 来获取子评论列表.</p></blockquote> <blockquote><p><code>commentId</code>是父评论的 id：</p></blockquote> <ol><li><code>父评论</code> 一部视频下的评论列表，列表中的每一个就是一个父评论</li> <li><code>子评论</code> 每个父评论都有回复列表，这个回复列表中的每一个就是子评论</li></ol> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - 某种 type</li> <li>id: (integer, required) - 父评论 id</li> <li>maxId: (integer, required) - 该父评论下看过的最大的子评论 id
 <ul><li>Default: 0</li></ul></li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
       &quot;code&quot;: 0,
       &quot;data&quot;: {
@@ -537,7 +535,7 @@
       &quot;code&quot;: 40401,
       &quot;message&quot;: &quot;不存在的父评论&quot;
   }
-</code></pre></li></ul></li></ul> <h2 id="回复评论-post-type-comment-commentid-reply"><a href="#回复评论-post-type-comment-commentid-reply" aria-hidden="true" class="header-anchor">#</a> 回复评论 [POST /<code>type</code>/comment/<code>commentId</code>/reply]</h2> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - 某种 type</li> <li>commentId: (integer, required) - 父评论 id</li> <li>targetUserId: (integer, required) - 父评论的用户 id</li> <li>content: (string, required) - 评论内容，<code>纯文本，100字以内</code></li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li></ul> <h2 id="回复评论-post-comment-reply"><a href="#回复评论-post-comment-reply" aria-hidden="true" class="header-anchor">#</a> 回复评论 [POST /comment/reply]</h2> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - 某种 type</li> <li>id: (integer, required) - 父评论 id</li> <li>targetUserId: (integer, required) - 父评论的用户 id</li> <li>content: (string, required) - 评论内容，<code>纯文本，100字以内</code></li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
 </code></pre></li></ul></li> <li><p>Response 201 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
       &quot;code&quot;: 0,
       &quot;data&quot;: &quot;子评论对象&quot;
@@ -550,7 +548,7 @@
       &quot;code&quot;: 40401,
       &quot;message&quot;: &quot;内容已删除&quot;
   }
-</code></pre></li></ul></li></ul> <h2 id="删除子评论-post-type-comment-delete-sub-commentid"><a href="#删除子评论-post-type-comment-delete-sub-commentid" aria-hidden="true" class="header-anchor">#</a> 删除子评论 [POST /<code>type</code>/comment/delete/sub/<code>commentId</code>]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li></ul> <h2 id="删除子评论-post-comment-sub-delete"><a href="#删除子评论-post-comment-sub-delete" aria-hidden="true" class="header-anchor">#</a> 删除子评论 [POST /comment/sub/delete]</h2> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - 某种 type</li> <li>id: (integer, required) - 父评论 id</li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
 </code></pre></li></ul></li> <li><p>Response 204 (application/json)</p></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
       &quot;code&quot;: 40003,
       &quot;message&quot;: &quot;参数错误&quot;
@@ -563,7 +561,7 @@
       &quot;code&quot;: 40301,
       &quot;message&quot;: &quot;继续操作前请先登录&quot;
   }
-</code></pre></li></ul></li></ul> <h2 id="删除主评论-post-type-comment-delete-main-commentid"><a href="#删除主评论-post-type-comment-delete-main-commentid" aria-hidden="true" class="header-anchor">#</a> 删除主评论 [POST /<code>type</code>/comment/delete/main/<code>commentId</code>]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li></ul> <h2 id="删除主评论-post-comment-main-delete"><a href="#删除主评论-post-comment-main-delete" aria-hidden="true" class="header-anchor">#</a> 删除主评论 [POST /comment/main/delete]</h2> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - 某种 type</li> <li>id: (integer, required) - 父评论 id</li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
 </code></pre></li></ul></li> <li><p>Response 204 (application/json)</p></li> <li><p>Response 400 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
       &quot;code&quot;: 40003,
       &quot;message&quot;: &quot;参数错误&quot;
@@ -576,7 +574,7 @@
       &quot;code&quot;: 40301,
       &quot;message&quot;: &quot;继续操作前请先登录&quot;
   }
-</code></pre></li></ul></li></ul> <h2 id="喜欢-取消喜欢-主评论-post-type-comment-main-togglelike-commentid"><a href="#喜欢-取消喜欢-主评论-post-type-comment-main-togglelike-commentid" aria-hidden="true" class="header-anchor">#</a> &lt;喜欢/取消喜欢&gt;主评论 [POST /<code>type</code>/comment/main/toggleLike/<code>commentId</code>]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li></ul> <h2 id="喜欢-取消喜欢-主评论-post-comment-main-togglelike"><a href="#喜欢-取消喜欢-主评论-post-comment-main-togglelike" aria-hidden="true" class="header-anchor">#</a> &lt;喜欢/取消喜欢&gt;主评论 [POST /comment/main/toggleLike]</h2> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - 某种 type</li> <li>id: (integer, required) - 父评论 id</li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
 </code></pre></li></ul></li> <li><p>Response 201 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
       &quot;code&quot;: 0,
       &quot;data&quot;: &quot;是否已喜欢&quot;
@@ -585,7 +583,7 @@
       &quot;code&quot;: 40003,
       &quot;message&quot;: &quot;参数错误&quot;
   }
-</code></pre></li></ul></li></ul> <h2 id="喜欢-取消喜欢-子评论-post-type-comment-sub-togglelike-commentid"><a href="#喜欢-取消喜欢-子评论-post-type-comment-sub-togglelike-commentid" aria-hidden="true" class="header-anchor">#</a> &lt;喜欢/取消喜欢&gt;子评论 [POST /<code>type</code>/comment/sub/toggleLike/<code>commentId</code>]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li></ul> <h2 id="喜欢-取消喜欢-子评论-post-comment-sub-togglelike"><a href="#喜欢-取消喜欢-子评论-post-comment-sub-togglelike" aria-hidden="true" class="header-anchor">#</a> &lt;喜欢/取消喜欢&gt;子评论 [POST /comment/sub/toggleLike]</h2> <ul><li><p>Parameters</p> <ul><li>type: (string, required) - 某种 type</li> <li>id: (integer, required) - 父评论 id</li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
 </code></pre></li></ul></li> <li><p>Response 201 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
       &quot;code&quot;: 0,
       &quot;data&quot;: &quot;是否已喜欢&quot;
@@ -675,6 +673,6 @@
       &quot;code&quot;: 40401,
       &quot;message&quot;: &quot;检测的对象不存在&quot;
   }</code></pre></li></ul></li></ul></div> <div class="page-edit"><!----> <!----></div> <!----> </div> <!----></div></div>
-    <script src="/Laputa/assets/js/12.6b419e48.js" defer></script><script src="/Laputa/assets/js/app.ab7beaa4.js" defer></script>
+    <script src="/Laputa/assets/js/12.af125e47.js" defer></script><script src="/Laputa/assets/js/app.35680cd8.js" defer></script>
   </body>
 </html>
