@@ -323,4 +323,17 @@ class Repository
 
         return $list;
     }
+
+    protected function formatJsonContent($content)
+    {
+        $content = json_decode($content, true);
+        $result = [];
+        foreach ($content as $item)
+        {
+            unset($item['id']);
+            $result[] = $item;
+        }
+
+        return $result;
+    }
 }

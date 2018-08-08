@@ -29,7 +29,7 @@ class ScoreRepository extends Repository
             }
 
             $score = $score->toArray();
-            $score['content'] = json_decode($score['content']);
+            $score['content'] = $this->formatJsonContent($score['content']);
             $score['total'] = number_format($score['total'] / 10, 1);
             $score['lol'] = number_format($score['lol'] / 2, 1);
             $score['cry'] = number_format($score['cry'] / 2, 1);
