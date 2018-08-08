@@ -331,6 +331,10 @@ class Repository
         foreach ($content as $item)
         {
             unset($item['id']);
+            if ($item['type'] === 'img')
+            {
+                $item['url'] = config('website.image') . $item['url'];
+            }
             $result[] = $item;
         }
 
