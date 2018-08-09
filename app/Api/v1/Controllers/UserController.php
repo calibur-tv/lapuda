@@ -19,6 +19,7 @@ use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Services\Trending\PostTrendingService;
+use App\Api\V1\Services\Trending\RoleTrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\PostTransformer;
@@ -491,42 +492,25 @@ class UserController extends Controller
      */
     public function followedRoles(Request $request, $zone)
     {
-        $userId = User::where('zone', $zone)->pluck('id')->first();
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $userId = $cartoonRoleRepository->getUserIdByZone($zone);
         if (is_null($userId))
         {
             return $this->resErrNotFound('该用户不存在');
         }
 
-        $repository = new UserRepository();
-        $ids = $repository->rolesIds($userId);
-        if (empty($ids))
-        {
-            return $this->resOK([
-                'list' => [],
-                'total' => 0,
-                'noMore' => true
-            ]);
-        }
-
         $page = $request->get('page') ?: 0;
         $take = 10;
-        $idsObject = $this->filterIdsByPage($ids, $page, $take);
 
-        $cartoonRoleRepository = new CartoonRoleRepository();
-        $list = $cartoonRoleRepository->list($idsObject['ids']);
+        $cartoonRoleTrendingService = new RoleTrendingService(0 ,$userId);
+        $result = $cartoonRoleTrendingService->users($page, $take);
 
-        foreach ($list as $i => $item)
+        foreach ($result['list'] as $i => $item)
         {
-            $list[$i]['has_star'] = $cartoonRoleRepository->checkHasStar($item['id'], $userId);
+            $result['list'][$i]['has_star'] = $cartoonRoleRepository->checkHasStar($item['id'], $userId);
         }
 
-        $transformer = new CartoonRoleTransformer();
-
-        return $this->resOK([
-            'list' => $transformer->userList($list),
-            'total' => $idsObject['total'],
-            'noMore' => $idsObject['noMore']
-        ]);
+        return $this->resOK($result);
     }
 
     public function fakers()
