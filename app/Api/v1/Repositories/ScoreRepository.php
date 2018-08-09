@@ -15,6 +15,7 @@ use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
 use App\Models\Score;
 use Illuminate\Support\Facades\Redis;
+use Mews\Purifier\Facades\Purifier;
 
 class ScoreRepository extends Repository
 {
@@ -204,5 +205,33 @@ class ScoreRepository extends Repository
     public function cacheKeyScoreItem($id)
     {
         return 'score_' . $id;
+    }
+
+    public function filterContent(array $content)
+    {
+        $result = [];
+        foreach ($content as $item)
+        {
+            if ($item['type'] === 'txt')
+            {
+                $result[] = [
+                    'type' => $item['type'],
+                    'text' => $item['text']
+                ];
+            }
+            else if ($item['type'] === 'img')
+            {
+                $result[] = [
+                    'type' => $item['type'],
+                    'width' => $item['width'],
+                    'height' => $item['height'],
+                    'size' => $item['size'],
+                    'mime' => $item['mime'],
+                    'text' => $item['text'],
+                    'url' => str_replace(config('website.image'), '', $item['url'])
+                ];
+            }
+        }
+        return Purifier::clean(json_encode($result));
     }
 }

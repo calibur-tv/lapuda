@@ -241,6 +241,7 @@ class ScoreController extends Controller
             return $this->resErrBad('同一番剧不能重复评分');
         }
 
+        $scoreRepository = new ScoreRepository();
         $lol = $request->get('lol');
         $cry = $request->get('cry');
         $fight = $request->get('fight');
@@ -252,7 +253,7 @@ class ScoreController extends Controller
         $express = $request->get('express');
         $style = $request->get('style');
         $total = $lol + $cry + $fight + $moe + $sound + $vision + $role + $story + $express + $style;
-        $content = Purifier::clean(json_encode($request->get('content')));
+        $content = $scoreRepository->filterContent($request->get('content'));
         $title = Purifier::clean($request->get('title'));
         $intro = $request->get('intro');
         $now = Carbon::now();
@@ -283,7 +284,6 @@ class ScoreController extends Controller
                 'is_creator' => $request->get('is_creator')
             ]);
 
-        $scoreRepository = new ScoreRepository();
         if ($doPublished)
         {
             $scoreRepository->doPublish($userId, $newId, $bangumiId);;
@@ -361,7 +361,7 @@ class ScoreController extends Controller
         $express = $request->get('express');
         $style = $request->get('style');
         $total = $lol + $cry + $fight + $moe + $sound + $vision + $role + $story + $express + $style;
-        $content = Purifier::clean(json_encode($request->get('content')));
+        $content = $scoreRepository->filterContent($request->get('content'));
         $intro = $request->get('intro');
         $title = Purifier::clean($request->get('title'));
 
