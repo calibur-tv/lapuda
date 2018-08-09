@@ -187,25 +187,29 @@ $api->version(['v1', 'latest'], function ($api)
         });
     });
 
-    $api->group(['prefix' => '/{type}/comment'], function ($api)
+    $api->group(['prefix' => '/comment'], function ($api)
     {
-        $api->get('/{id}/main/list', 'App\Api\V1\Controllers\CommentController@mainList');
+        $api->group(['prefix' => '/main'], function ($api)
+        {
+            $api->get('/list', 'App\Api\V1\Controllers\CommentController@mainList');
 
-        $api->get('/{id}/sub/list', 'App\Api\V1\Controllers\CommentController@subList');
+            $api->post('/create', 'App\Api\V1\Controllers\CommentController@create')->middleware(['jwt.auth']);
 
-        $api->post('/{id}/create', 'App\Api\V1\Controllers\CommentController@create')->middleware(['jwt.auth']);
+            $api->post('/reply', 'App\Api\V1\Controllers\CommentController@reply')->middleware(['jwt.auth']);
 
-        $api->post('/{id}/reply', 'App\Api\V1\Controllers\CommentController@reply')->middleware(['jwt.auth']);
+            $api->post('/delete', 'App\Api\V1\Controllers\CommentController@deleteMainComment')->middleware(['jwt.auth']);
 
-        $api->post('/delete/main/{id}', 'App\Api\V1\Controllers\CommentController@deleteMainComment')->middleware(['jwt.auth']);
+            $api->post('/toggleLike', 'App\Api\V1\Controllers\CommentController@toggleLikeMainComment')->middleware(['jwt.auth']);
+        });
 
-        $api->post('/delete/sub/{id}', 'App\Api\V1\Controllers\CommentController@deleteSubComment')->middleware(['jwt.auth']);
+        $api->group(['prefix' => '/sub'], function ($api)
+        {
+            $api->get('/list', 'App\Api\V1\Controllers\CommentController@subList');
 
-        $api->post('/sub/toggleLike/{id}', 'App\Api\V1\Controllers\CommentController@toggleLikeSubComment')->middleware(['jwt.auth']);
+            $api->post('/delete', 'App\Api\V1\Controllers\CommentController@deleteSubComment')->middleware(['jwt.auth']);
 
-        $api->post('/main/toggleLike/{id}', 'App\Api\V1\Controllers\CommentController@toggleLikeMainComment')->middleware(['jwt.auth']);
-
-        $api->post('/main/toggleDislike/{id}', 'App\Api\V1\Controllers\CommentController@toggleDislikeMainComment')->middleware(['jwt.auth']);
+            $api->post('/toggleLike', 'App\Api\V1\Controllers\CommentController@toggleLikeSubComment')->middleware(['jwt.auth']);
+        });
     });
 
     $api->group(['prefix' => '/image'], function ($api)

@@ -9,6 +9,7 @@
 namespace App\Api\V1\Services\Comment;
 
 use App\Api\V1\Repositories\Repository;
+use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Counter\Base\RelationCounterService;
 use App\Api\V1\Services\Toggle\ToggleService;
 use App\Api\V1\Transformers\CommentTransformer;
@@ -48,6 +49,7 @@ class CommentService extends Repository
     protected $order;
     protected $author_sort;
     protected $commentTransformer;
+    protected $userRepository;
     protected $like_table;
     protected $modal_table;
     protected $comment_count_field = 'comment_count';
@@ -282,13 +284,7 @@ class CommentService extends Repository
                     "$tableName.created_at",
                     "$tableName.to_user_id",
                     "$tableName.parent_id",
-                    "$tableName.user_id AS from_user_id",
-                    'from.nickname AS from_user_name',
-                    'from.zone AS from_user_zone',
-                    'from.avatar AS from_user_avatar',
-                    'to.nickname AS to_user_name',
-                    'to.avatar AS to_user_avatar',
-                    'to.zone AS to_user_zone'
+                    "$tableName.user_id"
                 )
                 ->first();
 
@@ -304,6 +300,16 @@ class CommentService extends Repository
         {
             return null;
         }
+
+        $fromUser = $this->userRepository()->item($result['user_id']);
+        $toUser = $this->userRepository()->item($result['to_user_id']);
+
+        $result['from_user_name'] = $fromUser['nickname'];
+        $result['from_user_zone'] = $fromUser['zone'];
+        $result['from_user_avatar'] = $fromUser['avatar'];
+        $result['to_user_name'] = $toUser['nickname'];
+        $result['to_user_zone'] = $toUser['zone'];
+        $result['to_user_avatar'] = $toUser['avatar'];
 
         return $this->transformer()->sub($result);
     }
@@ -326,13 +332,7 @@ class CommentService extends Repository
                     "$tableName.created_at",
                     "$tableName.modal_id",
                     "$tableName.to_user_id",
-                    "$tableName.user_id AS from_user_id",
-                    'from.nickname AS from_user_name',
-                    'from.zone AS from_user_zone',
-                    'from.avatar AS from_user_avatar',
-                    'to.nickname AS to_user_name',
-                    'to.avatar AS to_user_avatar',
-                    'to.zone AS to_user_zone'
+                    "$tableName.user_id"
                 )
                 ->first();
 
@@ -363,6 +363,16 @@ class CommentService extends Repository
         {
             return null;
         }
+
+        $fromUser = $this->userRepository()->item($result['user_id']);
+        $toUser = $this->userRepository()->item($result['to_user_id']);
+
+        $result['from_user_name'] = $fromUser['nickname'];
+        $result['from_user_zone'] = $fromUser['zone'];
+        $result['from_user_avatar'] = $fromUser['avatar'];
+        $result['to_user_name'] = $toUser['nickname'];
+        $result['to_user_zone'] = $toUser['zone'];
+        $result['to_user_avatar'] = $toUser['avatar'];
 
         $result = $this->transformer()->main($result);
 
@@ -522,6 +532,16 @@ class CommentService extends Repository
         DB::table($this->table)
             ->where('id', $mainCommentId)
             ->increment('comment_count', $isCreate ? 1 : -1);
+    }
+
+    protected function userRepository()
+    {
+        if (!$this->userRepository)
+        {
+            $this->userRepository = new UserRepository();
+        }
+
+        return $this->userRepository;
     }
 
     protected function transformer()

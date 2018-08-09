@@ -4,4 +4,6 @@
 
 ## [商业计划书](/about/qa.html)
 
+## [金币系统](/about/coin.html)
+
 ## [接口文档](/api/v1/index.html)

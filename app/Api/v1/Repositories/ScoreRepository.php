@@ -29,18 +29,18 @@ class ScoreRepository extends Repository
             }
 
             $score = $score->toArray();
-            $score['content'] = json_decode($score['content']);
-            $score['total'] = $score['total'] / 10;
-            $score['lol'] = $score['lol'] / 2;
-            $score['cry'] = $score['cry'] / 2;
-            $score['fight'] = $score['fight'] / 2;
-            $score['moe'] = $score['moe'] / 2;
-            $score['sound'] = $score['sound'] / 2;
-            $score['vision'] = $score['vision'] / 2;
-            $score['role'] = $score['role'] / 2;
-            $score['story'] = $score['story'] / 2;
-            $score['express'] = $score['express'] / 2;
-            $score['style'] = $score['style'] / 2;
+            $score['content'] = $this->formatJsonContent($score['content']);
+            $score['total'] = number_format($score['total'] / 10, 1);
+            $score['lol'] = number_format($score['lol'] / 2, 1);
+            $score['cry'] = number_format($score['cry'] / 2, 1);
+            $score['fight'] = number_format($score['fight'] / 2, 1);
+            $score['moe'] = number_format($score['moe'] / 2, 1);
+            $score['sound'] = number_format($score['sound'] / 2, 1);
+            $score['vision'] = number_format($score['vision'] / 2, 1);
+            $score['role'] = number_format($score['role'] / 2, 1);
+            $score['story'] = number_format($score['story'] / 2, 1);
+            $score['express'] = number_format($score['express'] / 2, 1);
+            $score['style'] = number_format($score['style'] / 2, 1);
 
             return $score;
         });
@@ -131,19 +131,19 @@ class ScoreRepository extends Repository
                 ->count();
 
             return [
-                'total' => round($total / $count, 1),
+                'total' => number_format($total / $count, 1),
                 'count' => $count,
                 'radar' => [
-                    'lol' => round($lol / $count, 1),
-                    'cry' => round($cry / $count, 1),
-                    'fight' => round($fight / $count, 1),
-                    'moe' => round($moe / $count, 1),
-                    'sound' => round($sound / $count, 1),
-                    'vision' => round($vision / $count, 1),
-                    'role' => round($role / $count, 1),
-                    'story' => round($story / $count, 1),
-                    'express' => round($express / $count, 1),
-                    'style' => round($style / $count, 1),
+                    'lol' => number_format($lol / $count, 1),
+                    'cry' => number_format($cry / $count, 1),
+                    'fight' => number_format($fight / $count, 1),
+                    'moe' => number_format($moe / $count, 1),
+                    'sound' => number_format($sound / $count, 1),
+                    'vision' => number_format($vision / $count, 1),
+                    'role' => number_format($role / $count, 1),
+                    'story' => number_format($story / $count, 1),
+                    'express' => number_format($express / $count, 1),
+                    'style' => number_format($style / $count, 1),
                 ],
                 'ladder' => [
                     [
