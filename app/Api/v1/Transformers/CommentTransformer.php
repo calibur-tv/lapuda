@@ -26,9 +26,9 @@ class CommentTransformer extends Transformer
                 'from_user_zone' => $comment['from_user_zone'],
                 'from_user_avatar' => $comment['from_user_avatar'],
                 'to_user_id' => (int)$comment['to_user_id'],
-                'to_user_name' => $comment['to_user_name'],
-                'to_user_zone' => $comment['to_user_zone'],
-                'to_user_avatar' => $comment['to_user_avatar']
+                'to_user_name' => $comment['to_user_name'] ?: '',
+                'to_user_zone' => $comment['to_user_zone'] ?: '',
+                'to_user_avatar' => $comment['to_user_avatar'] ?: ''
             ];
         });
     }
