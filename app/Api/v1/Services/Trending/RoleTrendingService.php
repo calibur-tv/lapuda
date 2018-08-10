@@ -10,9 +10,11 @@ namespace App\Api\V1\Services\Trending;
 
 
 use App\Api\V1\Repositories\CartoonRoleRepository;
+use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Trending\Base\TrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Models\CartoonRole;
+use App\Models\CartoonRoleFans;
 
 class RoleTrendingService extends TrendingService
 {
@@ -37,22 +39,34 @@ class RoleTrendingService extends TrendingService
             ->pluck('star_count', 'id');
     }
 
+    public function computeUserIds()
+    {
+        return CartoonRoleFans
+            ::where('user_id', $this->userId)
+            ->orderBy('updated_at', 'DESC')
+            ->pluck('role_id');
+    }
+
     public function getListByIds($ids)
     {
-        $cartoonRoleRepository = new CartoonRoleRepository();
-        $cartoonRoleTransformer = new CartoonRoleTransformer();
-
-        $result = [];
-        foreach ($ids as $id)
+        $store = new CartoonRoleRepository();
+        $userRepository = new UserRepository();
+        $list = $store->userFlow($ids);
+        foreach ($list as $i => $role)
         {
-            $role = $cartoonRoleRepository->trendingItem($id);
-            if (is_null($role))
+            $hasLover = intval($role['loverId']);
+            $user = $hasLover ? $userRepository->item($role['loverId']) : null;
+
+            if ($hasLover)
             {
-                continue;
+                $list[$i]['lover_avatar'] = $user['avatar'];
+                $list[$i]['lover_nickname'] = $user['nickname'];
+                $list[$i]['lover_zone'] = $user['zone'];
             }
-            $result[] = $role;
         }
 
-        return $cartoonRoleTransformer->trending($result);
+        $transformer = new CartoonRoleTransformer();
+
+        return $transformer->trending($list);
     }
 }

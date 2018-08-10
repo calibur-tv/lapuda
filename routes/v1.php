@@ -278,8 +278,6 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/trending'], function ($api)
     {
-        $api->get('/cartoon_role', 'App\Api\V1\Controllers\TrendingController@cartoonRole');
-
         $api->get('/news', 'App\Api\V1\Controllers\TrendingController@news');
 
         $api->get('/active', 'App\Api\V1\Controllers\TrendingController@active');
