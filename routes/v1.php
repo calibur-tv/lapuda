@@ -284,6 +284,8 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/hot', 'App\Api\V1\Controllers\TrendingController@hot');
 
+        $api->get('/users', 'App\Api\V1\Controllers\TrendingController@users');
+
         $api->get('/meta', 'App\Api\V1\Controllers\TrendingController@meta');
     });
 

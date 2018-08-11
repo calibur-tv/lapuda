@@ -275,9 +275,9 @@ class UserController extends Controller
             ]);
         }
 
-        $minId = $request->get('minId') ?: 0;
+        $page = $request->get('page') ?: 0;
         $take = 10;
-        $idsObject = $this->filterIdsByMaxId($ids, $minId, $take);
+        $idsObject = $this->filterIdsByPage($ids, $page, $take);
 
         $data = [];
         foreach ($idsObject['ids'] as $id)
