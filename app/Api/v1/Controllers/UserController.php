@@ -19,6 +19,7 @@ use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Services\Trending\PostTrendingService;
+use App\Api\V1\Services\Trending\RoleTrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\PostTransformer;
@@ -167,7 +168,7 @@ class UserController extends Controller
         }
 
         $userId = $this->getAuthUserId();
-        $birthday = date('Y-m-d H:m:s', strtotime($request->get('birthday')));
+        $birthday = date('Y-m-d H:m:s', (int)$request->get('birthday'));
 
         User::where('id', $userId)->update([
             'nickname' => Purifier::clean($request->get('nickname')),
@@ -218,8 +219,11 @@ class UserController extends Controller
      *
      * @Get("/user/`zone`/posts/mine")
      *
+     * @Parameters({
+     *      @Parameter("page", description="页码", type="integer", default=0, required=true)
+     * })
+     *
      * @Transaction({
-     *      @Request({"page": "页码", default=0}),
      *      @Response(200, body={"code": 0, "data": "帖子列表"}),
      *      @Response(404, body={"code": 40401, "message": "找不到用户"})
      * })
@@ -271,9 +275,9 @@ class UserController extends Controller
             ]);
         }
 
-        $minId = $request->get('minId') ?: 0;
+        $page = $request->get('page') ?: 0;
         $take = 10;
-        $idsObject = $this->filterIdsByMaxId($ids, $minId, $take);
+        $idsObject = $this->filterIdsByPage($ids, $page, $take);
 
         $data = [];
         foreach ($idsObject['ids'] as $id)
@@ -488,42 +492,19 @@ class UserController extends Controller
      */
     public function followedRoles(Request $request, $zone)
     {
-        $userId = User::where('zone', $zone)->pluck('id')->first();
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $userId = $cartoonRoleRepository->getUserIdByZone($zone);
         if (is_null($userId))
         {
             return $this->resErrNotFound('该用户不存在');
         }
 
-        $repository = new UserRepository();
-        $ids = $repository->rolesIds($userId);
-        if (empty($ids))
-        {
-            return $this->resOK([
-                'list' => [],
-                'total' => 0,
-                'noMore' => true
-            ]);
-        }
-
         $page = $request->get('page') ?: 0;
         $take = 10;
-        $idsObject = $this->filterIdsByPage($ids, $page, $take);
 
-        $cartoonRoleRepository = new CartoonRoleRepository();
-        $list = $cartoonRoleRepository->list($idsObject['ids']);
+        $cartoonRoleTrendingService = new RoleTrendingService(0 ,$userId);
 
-        foreach ($list as $i => $item)
-        {
-            $list[$i]['has_star'] = $cartoonRoleRepository->checkHasStar($item['id'], $userId);
-        }
-
-        $transformer = new CartoonRoleTransformer();
-
-        return $this->resOK([
-            'list' => $transformer->userList($list),
-            'total' => $idsObject['total'],
-            'noMore' => $idsObject['noMore']
-        ]);
+        return $this->resOK($cartoonRoleTrendingService->users($page, $take));
     }
 
     public function fakers()

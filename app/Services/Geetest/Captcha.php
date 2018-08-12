@@ -142,17 +142,25 @@ class Captcha
             "sdk"         => self::GT_SDK_VERSION
         );
 
-        $query = array_merge($query,$param);
-        $url = "http://api.geetest.com/validate.php";
-        $codevalidate = $this->post_request($url, $query);
-        $obj = json_decode($codevalidate,true);
 
-        if ($obj === false)
+        try
+        {
+            $query = array_merge($query,$param);
+            $url = "http://api.geetest.com/validate.php";
+            $codevalidate = $this->post_request($url, $query);
+            $obj = json_decode($codevalidate,true);
+
+            if ($obj === false)
+            {
+                return false;
+            }
+
+            return $obj['seccode'] === md5($seccode);
+        }
+        catch (\Exception $e)
         {
             return false;
         }
-
-        return $obj['seccode'] === md5($seccode);
     }
 
     /**

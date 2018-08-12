@@ -20,6 +20,7 @@ class CartoonRoleTransformer extends Transformer
                 'data' => $this->transformer($role['data'], function ($info)
                 {
                     return [
+                        'id' => (int)$info['id'],
                         'alias' => $info['alias'],
                         'avatar' => $info['avatar'],
                         'fans_count' => (int)$info['fans_count'],
@@ -76,53 +77,6 @@ class CartoonRoleTransformer extends Transformer
         });
     }
 
-    public function trending($list)
-    {
-        return $this->collection($list, function ($user)
-        {
-            $result = [
-                'id' => (int)$user['id'],
-                'avatar' => $user['avatar'],
-                'name' => $user['name'],
-                'intro' => $user['intro'],
-                'star_count' => (int)$user['star_count'],
-                'fans_count' => (int)$user['fans_count'],
-                'bangumi_id' => (int)$user['bangumi_id'],
-                'bangumi_avatar' => $user['bangumi_avatar'],
-                'bangumi_name' => $user['bangumi_name'],
-                'lover_id' => (int)$user['lover_id']
-            ];
-
-            if ($user['lover_id'])
-            {
-                $result = array_merge($result, [
-                    'lover_avatar' => $user['lover_avatar'],
-                    'lover_nickname' => $user['lover_nickname'],
-                    'lover_zone' => $user['lover_zone']
-                ]);
-            }
-
-            return $result;
-        });
-    }
-
-    public function userList($list)
-    {
-        return $this->collection($list, function ($role)
-        {
-            return [
-                'id' => (int)$role['id'],
-                'name' => $role['name'],
-                'avatar' => $role['avatar'],
-                'intro' => $role['intro'],
-                'star_count' => (int)$role['star_count'],
-                'fans_count' => (int)$role['fans_count'],
-                'has_star' => (int)$role['has_star'],
-                'bangumi_id' => (int)$role['bangumi_id']
-            ];
-        });
-    }
-
     public function search($data)
     {
         return $this->transformer($data, function ($role)
@@ -133,6 +87,49 @@ class CartoonRoleTransformer extends Transformer
                 'avatar' => $role['avatar'],
                 'intro' => $role['intro']
             ];
+        });
+    }
+
+    public function trending($list)
+    {
+        return $this->collection($list, function ($item)
+        {
+            $result = [
+                'id' => (int)$item['id'],
+                'avatar' => $item['avatar'],
+                'name' => $item['name'],
+                'intro' => $item['intro'],
+                'star_count' => (int)$item['star_count'],
+                'fans_count' => (int)$item['fans_count'],
+                'bangumi' => $this->transformer($item['bangumi'], function ($bangumi)
+                {
+                    return [
+                        'id' => (int)$bangumi['id'],
+                        'name' => $bangumi['name'],
+                        'avatar' => $bangumi['avatar']
+                    ];
+                })
+            ];
+
+            if ($item['loverId'])
+            {
+                $result = array_merge($result, [
+                    'lover' => [
+                        'id' => $item['loverId'],
+                        'avatar' => $item['lover_avatar'],
+                        'nickname' => $item['lover_nickname'],
+                        'zone' => $item['lover_zone']
+                    ]
+                ]);
+            }
+            else
+            {
+                $result = array_merge($result, [
+                    'lover' => null
+                ]);
+            }
+
+            return $result;
         });
     }
 }

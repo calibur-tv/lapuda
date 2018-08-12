@@ -926,7 +926,7 @@ FORMAT: 1A
                 "message": "不存在的番剧"
             }
 
-## 给角色应援 [POST /bangumi/`bangumiId`/role/`roleId`/star]
+## 给角色应援 [POST /cartoon_role/`roleId`/star]
 
 
 + Request (application/json)
@@ -951,6 +951,9 @@ FORMAT: 1A
                 "code": 40301,
                 "message": "没有足够的金币"
             }
+
+## 角色的粉丝列表 [POST /cartoon_role/`roleId`/fans]
+
 
 ## 角色详情 [GET /cartoon_role/`roleId`/show]
 
@@ -1094,12 +1097,9 @@ FORMAT: 1A
 ## 用户发布的帖子列表 [GET /user/`zone`/posts/mine]
 
 
-+ Request (application/json)
-    + Body
-
-            {
-                "minId": "看过的帖子列表里，id 最小的那个帖子的 id"
-            }
++ Parameters
+    + page: (integer, required) - 页码
+        + Default: 0
 
 + Response 200 (application/json)
     + Body
@@ -1308,12 +1308,14 @@ FORMAT: 1A
 
 # 评论相关接口
 
-## 新建主评论 [POST /`type`/comment/`type_id`/create]
+## 新建主评论 [POST /comment/create]
 
 
 + Parameters
     + content: (string, required) - 内容，`1000字以内`
     + images: (array, required) - 图片对象数组
+    + type: (string, required) - 某个 type
+    + id: (integer, required) - 评论主题的 id
 
 + Request (application/json)
     + Headers
@@ -1336,12 +1338,12 @@ FORMAT: 1A
                 "message": "请求参数错误"
             }
 
-## 获取主评论列表 [GET /`type`/comment/`type_id`/main/list]
+## 获取主评论列表 [GET /comment/main/list]
 
 
 + Parameters
     + type: (string, required) - 某个 type
-    + type_id: (integer, required) - 如果是帖子，则是帖子id
+    + id: (integer, required) - 如果是帖子，则是帖子id
     + fetchId: (integer, required) - 你通过这个接口获取的评论列表里最后的那个id
         + Default: 0
 
@@ -1370,7 +1372,7 @@ FORMAT: 1A
                 "message": "请求参数错误"
             }
 
-## 子评论列表 [GET /`type`/comment/`commentId`/sub/list]
+## 子评论列表 [GET /comment/sub/list]
 > 一个通用的接口，通过 `type` 和 `commentId` 来获取子评论列表.
 
 > `commentId`是父评论的 id：
@@ -1379,7 +1381,7 @@ FORMAT: 1A
 
 + Parameters
     + type: (string, required) - 某种 type
-    + commentId: (integer, required) - 父评论 id
+    + id: (integer, required) - 父评论 id
     + maxId: (integer, required) - 该父评论下看过的最大的子评论 id
         + Default: 0
 
@@ -1411,12 +1413,12 @@ FORMAT: 1A
                 "message": "不存在的父评论"
             }
 
-## 回复评论 [POST /`type`/comment/`commentId`/reply]
+## 回复评论 [POST /comment/reply]
 
 
 + Parameters
     + type: (string, required) - 某种 type
-    + commentId: (integer, required) - 父评论 id
+    + id: (integer, required) - 父评论 id
     + targetUserId: (integer, required) - 父评论的用户 id
     + content: (string, required) - 评论内容，`纯文本，100字以内`
 
@@ -1449,138 +1451,136 @@ FORMAT: 1A
                 "message": "内容已删除"
             }
 
-## 删除子评论 [POST /`type`/comment/delete/sub/`commentId`]
-
-
-+ Request (application/json)
-    + Headers
-
-            Authorization: Bearer JWT-Token
-
-+ Response 204 (application/json)
-
-+ Response 400 (application/json)
-    + Body
-
-            {
-                "code": 40003,
-                "message": "参数错误"
-            }
-
-+ Response 404 (application/json)
-    + Body
-
-            {
-                "code": 40401,
-                "message": "该评论已被删除"
-            }
-
-+ Response 403 (application/json)
-    + Body
-
-            {
-                "code": 40301,
-                "message": "继续操作前请先登录"
-            }
-
-## 删除主评论 [POST /`type`/comment/delete/main/`commentId`]
-
-
-+ Request (application/json)
-    + Headers
-
-            Authorization: Bearer JWT-Token
-
-+ Response 204 (application/json)
-
-+ Response 400 (application/json)
-    + Body
-
-            {
-                "code": 40003,
-                "message": "参数错误"
-            }
-
-+ Response 404 (application/json)
-    + Body
-
-            {
-                "code": 40401,
-                "message": "该评论已被删除"
-            }
-
-+ Response 403 (application/json)
-    + Body
-
-            {
-                "code": 40301,
-                "message": "继续操作前请先登录"
-            }
-
-## <喜欢/取消喜欢>主评论 [POST /`type`/comment/main/toggleLike/`commentId`]
-
-
-+ Request (application/json)
-    + Headers
-
-            Authorization: Bearer JWT-Token
-
-+ Response 201 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "data": "是否已喜欢"
-            }
-
-+ Response 400 (application/json)
-    + Body
-
-            {
-                "code": 40003,
-                "message": "参数错误"
-            }
-
-## <喜欢/取消喜欢>子评论 [POST /`type`/comment/sub/toggleLike/`commentId`]
-
-
-+ Request (application/json)
-    + Headers
-
-            Authorization: Bearer JWT-Token
-
-+ Response 201 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "data": "是否已喜欢"
-            }
-
-+ Response 400 (application/json)
-    + Body
-
-            {
-                "code": 40003,
-                "message": "参数错误"
-            }
-
-# 排行相关接口
-
-## 动漫角色排行榜 [GET /trending/cartoon_role]
+## 删除子评论 [POST /comment/sub/delete]
 
 
 + Parameters
-    + seenIds: (string, required) - 看过的帖子的`ids`, 用','号分割的字符串
+    + type: (string, required) - 某种 type
+    + id: (integer, required) - 父评论 id
 
-+ Response 200 (application/json)
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 204 (application/json)
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "参数错误"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "该评论已被删除"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "继续操作前请先登录"
+            }
+
+## 删除主评论 [POST /comment/main/delete]
+
+
++ Parameters
+    + type: (string, required) - 某种 type
+    + id: (integer, required) - 父评论 id
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 204 (application/json)
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "参数错误"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "该评论已被删除"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "继续操作前请先登录"
+            }
+
+## <喜欢/取消喜欢>主评论 [POST /comment/main/toggleLike]
+
+
++ Parameters
+    + type: (string, required) - 某种 type
+    + id: (integer, required) - 父评论 id
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 201 (application/json)
     + Body
 
             {
                 "code": 0,
-                "0": {
-                    "data": "角色列表"
-                }
+                "data": "是否已喜欢"
+            }
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "参数错误"
+            }
+
+## <喜欢/取消喜欢>子评论 [POST /comment/sub/toggleLike]
+
+
++ Parameters
+    + type: (string, required) - 某种 type
+    + id: (integer, required) - 父评论 id
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 201 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "是否已喜欢"
+            }
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "参数错误"
             }
 
 # 用户社交点击相关接口

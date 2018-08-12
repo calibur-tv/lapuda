@@ -77,7 +77,7 @@ class CartoonRoleController extends Controller
     /**
      * 给角色应援
      *
-     * @Post("/bangumi/`bangumiId`/role/`roleId`/star")
+     * @Post("/cartoon_role/`roleId`/star")
      *
      * @Request(headers={"Authorization": "Bearer JWT-Token"})
      *
@@ -87,9 +87,9 @@ class CartoonRoleController extends Controller
      *      @Response(403, body={"code": 40301, "message": "没有足够的金币"})
      * })
      */
-    public function star(Request $request, $bangumiId, $roleId)
+    public function star($id)
     {
-        if (!CartoonRole::where('id', $roleId)->count())
+        if (!CartoonRole::where('id', $id)->count())
         {
             return $this->resErrNotFound();
         }
@@ -97,22 +97,22 @@ class CartoonRoleController extends Controller
         $userId = $this->getAuthUserId();
         $userRepository = new UserRepository();
 
-        if (!$userRepository->toggleCoin(false, $userId, 0, 3, $roleId))
+        if (!$userRepository->toggleCoin(false, $userId, 0, 3, $id))
         {
             return $this->resErrRole('没有足够的金币');
         }
 
         $cartoonRoleRepository = new CartoonRoleRepository();
 
-        if ($cartoonRoleRepository->checkHasStar($roleId, $userId))
+        if ($cartoonRoleRepository->checkHasStar($id, $userId))
         {
-            CartoonRoleFans::whereRaw('role_id = ? and user_id = ?', [$roleId, $userId])->increment('star_count');
+            CartoonRoleFans::whereRaw('role_id = ? and user_id = ?', [$id, $userId])->increment('star_count');
 
-            $trendingKey = 'cartoon_role_trending_' . $roleId;
+            $trendingKey = 'cartoon_role_trending_' . $id;
 
-            if (Redis::EXISTS('cartoon_role_'.$roleId))
+            if (Redis::EXISTS('cartoon_role_'.$id))
             {
-                Redis::HINCRBYFLOAT('cartoon_role_'.$roleId, 'star_count', 1);
+                Redis::HINCRBYFLOAT('cartoon_role_'.$id, 'star_count', 1);
             }
             if (Redis::EXISTS($trendingKey))
             {
@@ -122,19 +122,19 @@ class CartoonRoleController extends Controller
         else
         {
             CartoonRoleFans::create([
-                'role_id' => $roleId,
+                'role_id' => $id,
                 'user_id' => $userId,
                 'star_count' => 1
             ]);
 
-            CartoonRole::where('id', $roleId)->increment('fans_count');
+            CartoonRole::where('id', $id)->increment('fans_count');
 
-            $trendingKey = 'cartoon_role_trending_' . $roleId;
+            $trendingKey = 'cartoon_role_trending_' . $id;
 
-            if (Redis::EXISTS('cartoon_role_'.$roleId))
+            if (Redis::EXISTS('cartoon_role_'.$id))
             {
-                Redis::HINCRBYFLOAT('cartoon_role_'.$roleId, 'fans_count', 1);
-                Redis::HINCRBYFLOAT('cartoon_role_'.$roleId, 'star_count', 1);
+                Redis::HINCRBYFLOAT('cartoon_role_'.$id, 'fans_count', 1);
+                Redis::HINCRBYFLOAT('cartoon_role_'.$id, 'star_count', 1);
             }
             if (Redis::EXISTS($trendingKey))
             {
@@ -143,8 +143,8 @@ class CartoonRoleController extends Controller
             }
         }
 
-        $newCacheKey = 'cartoon_role_' . $roleId . '_new_fans_ids';
-        $hotCacheKey = 'cartoon_role_' . $roleId . '_hot_fans_ids';
+        $newCacheKey = 'cartoon_role_' . $id . '_new_fans_ids';
+        $hotCacheKey = 'cartoon_role_' . $id . '_hot_fans_ids';
 
         if (Redis::EXISTS($newCacheKey))
         {
@@ -155,16 +155,22 @@ class CartoonRoleController extends Controller
             Redis::ZINCRBY($hotCacheKey, 1, $userId);
         }
 
-        CartoonRole::where('id', $roleId)->increment('star_count');
+        CartoonRole::where('id', $id)->increment('star_count');
 
         return $this->resNoContent();
     }
 
-    // TODO：vote service
-    // TODO：API doc
-    public function fans(Request $request, $bangumiId, $roleId)
+    /**
+     * 角色的粉丝列表
+     *
+     * @Post("/cartoon_role/`roleId`/fans")
+     *
+     * 如果是 sort 传入 new，就再传 minId，如果 sort 传入 hot，就再传 seenIds
+     *
+     */
+    public function fans(Request $request, $id)
     {
-        if (!CartoonRole::where('id', $roleId)->count())
+        if (!CartoonRole::where('id', $id)->count())
         {
             return $this->resErrNotFound();
         }
@@ -173,7 +179,7 @@ class CartoonRoleController extends Controller
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
         $minId = $request->get('minId') ?: 0;
         $cartoonRoleRepository = new CartoonRoleRepository();
-        $ids = $sort === 'new' ? $cartoonRoleRepository->newFansIds($roleId, $minId) : $cartoonRoleRepository->hotFansIds($roleId, $seen);
+        $ids = $sort === 'new' ? $cartoonRoleRepository->newFansIds($id, $minId) : $cartoonRoleRepository->hotFansIds($id, $seen);
 
         if (empty($ids))
         {
@@ -183,9 +189,9 @@ class CartoonRoleController extends Controller
         $userRepository = new UserRepository();
         $users = [];
         $i = 0;
-        foreach ($ids as $id => $score)
+        foreach ($ids as $roleId => $score)
         {
-            $users[] = $userRepository->item($id);
+            $users[] = $userRepository->item($roleId);
             $users[$i]['score'] = $score;
             $i++;
         }

@@ -2,7 +2,7 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Api\V1\Repositories\CartoonRoleRepository;
+use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Counter\Stats\TotalBangumiCount;
 use App\Api\V1\Services\Counter\Stats\TotalImageAlbumCount;
@@ -13,48 +13,93 @@ use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Services\Trending\RoleTrendingService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
-use App\Api\V1\Transformers\CartoonRoleTransformer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 /**
  * @Resource("排行相关接口")
  */
 class TrendingController extends Controller
 {
-    /**
-     * 动漫角色排行榜
-     *
-     * @Get("/trending/cartoon_role")
-     *
-     * @Parameters({
-     *      @Parameter("seenIds", description="看过的帖子的`ids`, 用','号分割的字符串", type="string", required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, {"data": "角色列表"}})
-     * })
-     */
-    public function cartoonRole(Request $request)
+    public function flowlist(Request $request)
     {
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'userZone' => 'string',
+                'bangumiId' => 'required|integer',
+                'type' => [
+                    'required',
+                    Rule::in(['post', 'image', 'score', 'role']),
+                ],
+                'sort' => [
+                    'required',
+                    Rule::in(['news', 'active', 'hot']),
+                ],
+            ]
+        );
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $userId = 0;
+        $bangumiId = $request->get('bangumiId') ?: 0;
+        $userZone = $request->get('userZone') ?: '';
+
+        if ($bangumiId && $userZone)
+        {
+            return $this->resErrBad();
+        }
+
+        if ($bangumiId || $userZone)
+        {
+            $repository = new BangumiRepository();
+            if ($bangumiId)
+            {
+                $bangumi = $repository->item($bangumiId);
+                if (is_null($bangumi))
+                {
+                    return $this->resErrNotFound();
+                }
+            }
+            if ($userZone)
+            {
+                $userId = $repository->getUserIdByZone($userZone);
+                if (!$userId)
+                {
+                    return $this->resErrNotFound();
+                }
+            }
+        }
+
+        $trendingService = $this->getTrendingServiceByType($request->get('type'), $bangumiId, $userId);
+
+        $take = $request->get('take') ?: 10;
+        $sort = $request->get('sort');
+        if ($userId)
+        {
+            $page = $request->get('page') ?: 0;
+
+            return $this->resOK($trendingService->users($page, $take));
+        }
+        if ($sort === 'news')
+        {
+            $minId = intval($request->get('minId')) ?: 0;
+
+            return $this->resOK($trendingService->news($minId, $take));
+        }
+
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $repository = new CartoonRoleRepository();
 
-        $ids = array_slice(array_diff($repository->trendingIds(), $seen), 0, config('website.list_count'));
-
-        if (empty($ids))
+        if ($sort === 'active')
         {
-            return $this->resOK([]);
+            return $this->resOK($trendingService->active($seen, $take));
         }
 
-        $result = [];
-        foreach ($ids as $id)
-        {
-            $result[] = $repository->trendingItem($id);
-        }
-
-        $transformer = new CartoonRoleTransformer();
-
-        return $this->resOK($transformer->trending($result));
+        return $this->resOK($trendingService->hot($seen, $take));
     }
 
     public function news(Request $request)

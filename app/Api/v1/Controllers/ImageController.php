@@ -560,8 +560,16 @@ class ImageController extends Controller
                 ]);
         }
 
-        $job = (new \App\Jobs\Trial\Image\Create($newIds));
-        dispatch($job);
+        if ($album['is_cartoon'])
+        {
+            $totalImageCount = new TotalImageCount();
+            $totalImageCount->add(count($images));
+        }
+        else
+        {
+            $job = (new \App\Jobs\Trial\Image\Create($newIds));
+            dispatch($job);
+        }
 
         Redis::DEL($imageRepository->cacheKeyImageItem($albumId));
         Redis::DEL($imageRepository->cacheKeyAlbumImages($albumId));
