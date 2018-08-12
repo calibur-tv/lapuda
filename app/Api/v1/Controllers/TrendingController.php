@@ -22,15 +22,10 @@ use Illuminate\Validation\Rule;
  */
 class TrendingController extends Controller
 {
-    public function flowlist(Request $request, $order)
+    public function flowlist(Request $request)
     {
         $validator = Validator::make(
-            array_merge(
-                [
-                    'order' => $order
-                ],
-                $request->all()
-            ),
+            $request->all(),
             [
                 'userZone' => 'string',
                 'bangumiId' => 'required|integer',
@@ -38,7 +33,7 @@ class TrendingController extends Controller
                     'required',
                     Rule::in(['post', 'image', 'score', 'role']),
                 ],
-                'order' => [
+                'sort' => [
                     'required',
                     Rule::in(['news', 'active', 'hot']),
                 ],

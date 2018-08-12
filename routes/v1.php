@@ -284,9 +284,9 @@ $api->version(['v1', 'latest'], function ($api)
         $api->get('/users', 'App\Api\V1\Controllers\TrendingController@users');
 
         $api->get('/meta', 'App\Api\V1\Controllers\TrendingController@meta');
-
-        $api->get('/flow/{order}', 'App\Api\V1\Controllers\TrendingController@flowlist');
     });
+
+    $api->get('/flowlist', 'App\Api\V1\Controllers\TrendingController@flowlist');
 
     $api->group(['prefix' => '/toggle'], function ($api)
     {
