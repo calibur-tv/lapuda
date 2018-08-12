@@ -65,7 +65,8 @@ class PostController extends Controller
             'bangumiId' => 'required|integer',
             'desc' => 'required|max:120',
             'content' => 'required|max:1200',
-            'images' => 'array'
+            'images' => 'array',
+            'is_creator' => 'required|boolean'
         ]);
 
         if ($validator->fails())
@@ -92,6 +93,7 @@ class PostController extends Controller
             'desc' => Purifier::clean($request->get('desc')),
             'bangumi_id' => $bangumiId,
             'user_id' => $userId,
+            'is_creator' => $request->get('is_creator'),
             'created_at' => $now,
             'updated_at' => $now
         ], $request->get('images'));
