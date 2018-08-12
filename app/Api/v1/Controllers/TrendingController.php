@@ -78,13 +78,14 @@ class TrendingController extends Controller
         $trendingService = $this->getTrendingServiceByType($request->get('type'), $bangumiId, $userId);
 
         $take = $request->get('take') ?: 10;
+        $sort = $request->get('sort');
         if ($userId)
         {
             $page = $request->get('page') ?: 0;
 
             return $this->resOK($trendingService->users($page, $take));
         }
-        if ($order === 'news')
+        if ($sort === 'news')
         {
             $minId = intval($request->get('minId')) ?: 0;
 
@@ -93,7 +94,7 @@ class TrendingController extends Controller
 
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
 
-        if ($order === 'active')
+        if ($sort === 'active')
         {
             return $this->resOK($trendingService->active($seen, $take));
         }
