@@ -77,7 +77,7 @@ class CartoonRoleController extends Controller
     /**
      * 给角色应援
      *
-     * @Post("/bangumi/`bangumiId`/role/`roleId`/star")
+     * @Post("/cartoon_role/`roleId`/star")
      *
      * @Request(headers={"Authorization": "Bearer JWT-Token"})
      *
@@ -160,8 +160,14 @@ class CartoonRoleController extends Controller
         return $this->resNoContent();
     }
 
-    // TODO：vote service
-    // TODO：API doc
+    /**
+     * 角色的粉丝列表
+     *
+     * @Post("/cartoon_role/`roleId`/fans")
+     *
+     * 如果是 sort 传入 new，就再传 minId，如果 sort 传入 hot，就再传 seenIds
+     *
+     */
     public function fans(Request $request, $id)
     {
         if (!CartoonRole::where('id', $id)->count())

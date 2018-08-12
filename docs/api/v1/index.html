@@ -7,7 +7,7 @@
     <meta name="description" content="Just playing around">
     <link rel="icon" href="https://static.calibur.tv/favicon.ico">
     
-    <link rel="preload" href="/Laputa/assets/css/0.styles.c4c0b6bf.css" as="style"><link rel="preload" href="/Laputa/assets/js/app.35680cd8.js" as="script"><link rel="preload" href="/Laputa/assets/js/12.af125e47.js" as="script"><link rel="prefetch" href="/Laputa/assets/js/6.ce8155ce.js"><link rel="prefetch" href="/Laputa/assets/js/2.cda51ec0.js"><link rel="prefetch" href="/Laputa/assets/js/3.3c9f2f97.js"><link rel="prefetch" href="/Laputa/assets/js/4.94372848.js"><link rel="prefetch" href="/Laputa/assets/js/5.efecfa5f.js"><link rel="prefetch" href="/Laputa/assets/js/7.c8c3fb3f.js"><link rel="prefetch" href="/Laputa/assets/js/8.2b8aae52.js"><link rel="prefetch" href="/Laputa/assets/js/9.dab1ec7a.js"><link rel="prefetch" href="/Laputa/assets/js/10.24126194.js"><link rel="prefetch" href="/Laputa/assets/js/11.13ff39d6.js"><link rel="prefetch" href="/Laputa/assets/js/13.f3aa5752.js">
+    <link rel="preload" href="/Laputa/assets/css/0.styles.c4c0b6bf.css" as="style"><link rel="preload" href="/Laputa/assets/js/app.e474f94e.js" as="script"><link rel="preload" href="/Laputa/assets/js/13.023aecbb.js" as="script"><link rel="prefetch" href="/Laputa/assets/js/6.a8b288aa.js"><link rel="prefetch" href="/Laputa/assets/js/2.cda51ec0.js"><link rel="prefetch" href="/Laputa/assets/js/3.3c9f2f97.js"><link rel="prefetch" href="/Laputa/assets/js/4.f511c5e7.js"><link rel="prefetch" href="/Laputa/assets/js/5.9b280909.js"><link rel="prefetch" href="/Laputa/assets/js/7.37ad1893.js"><link rel="prefetch" href="/Laputa/assets/js/8.ab668919.js"><link rel="prefetch" href="/Laputa/assets/js/9.7a53077a.js"><link rel="prefetch" href="/Laputa/assets/js/10.35cf4083.js"><link rel="prefetch" href="/Laputa/assets/js/11.24e282e2.js"><link rel="prefetch" href="/Laputa/assets/js/12.0e46a4dd.js"><link rel="prefetch" href="/Laputa/assets/js/14.3f9f66b2.js">
     <link rel="stylesheet" href="/Laputa/assets/css/0.styles.c4c0b6bf.css">
   </head>
   <body>
@@ -349,7 +349,7 @@
       &quot;code&quot;: 40401,
       &quot;message&quot;: &quot;不存在的番剧&quot;
   }
-</code></pre></li></ul></li></ul> <h2 id="给角色应援-post-bangumi-bangumiid-role-roleid-star"><a href="#给角色应援-post-bangumi-bangumiid-role-roleid-star" aria-hidden="true" class="header-anchor">#</a> 给角色应援 [POST /bangumi/<code>bangumiId</code>/role/<code>roleId</code>/star]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
+</code></pre></li></ul></li></ul> <h2 id="给角色应援-post-cartoon-role-roleid-star"><a href="#给角色应援-post-cartoon-role-roleid-star" aria-hidden="true" class="header-anchor">#</a> 给角色应援 [POST /cartoon_role/<code>roleId</code>/star]</h2> <ul><li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
 </code></pre></li></ul></li> <li><p>Response 204 (application/json)</p></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
       &quot;code&quot;: 40401,
       &quot;message&quot;: &quot;不存在的角色&quot;
@@ -358,7 +358,7 @@
       &quot;code&quot;: 40301,
       &quot;message&quot;: &quot;没有足够的金币&quot;
   }
-</code></pre></li></ul></li></ul> <h2 id="角色详情-get-cartoon-role-roleid-show"><a href="#角色详情-get-cartoon-role-roleid-show" aria-hidden="true" class="header-anchor">#</a> 角色详情 [GET /cartoon_role/<code>roleId</code>/show]</h2> <ul><li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+</code></pre></li></ul></li></ul> <h2 id="角色的粉丝列表-post-cartoon-role-roleid-fans"><a href="#角色的粉丝列表-post-cartoon-role-roleid-fans" aria-hidden="true" class="header-anchor">#</a> 角色的粉丝列表 [POST /cartoon_role/<code>roleId</code>/fans]</h2> <h2 id="角色详情-get-cartoon-role-roleid-show"><a href="#角色详情-get-cartoon-role-roleid-show" aria-hidden="true" class="header-anchor">#</a> 角色详情 [GET /cartoon_role/<code>roleId</code>/show]</h2> <ul><li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
       &quot;code&quot;: 0,
       &quot;data&quot;: {
           &quot;bangumi&quot;: &quot;番剧简介&quot;,
@@ -592,12 +592,6 @@
       &quot;code&quot;: 40003,
       &quot;message&quot;: &quot;参数错误&quot;
   }
-</code></pre></li></ul></li></ul> <h1 id="排行相关接口"><a href="#排行相关接口" aria-hidden="true" class="header-anchor">#</a> 排行相关接口</h1> <h2 id="动漫角色排行榜-get-trending-cartoon-role"><a href="#动漫角色排行榜-get-trending-cartoon-role" aria-hidden="true" class="header-anchor">#</a> 动漫角色排行榜 [GET /trending/cartoon_role]</h2> <ul><li><p>Parameters</p> <ul><li>seenIds: (string, required) - 看过的帖子的<code>ids</code>, 用','号分割的字符串</li></ul></li> <li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
-      &quot;code&quot;: 0,
-      &quot;0&quot;: {
-          &quot;data&quot;: &quot;角色列表&quot;
-      }
-  }
 </code></pre></li></ul></li></ul> <h1 id="用户社交点击相关接口"><a href="#用户社交点击相关接口" aria-hidden="true" class="header-anchor">#</a> 用户社交点击相关接口</h1> <h2 id="检查toggle状态-post-toggle-type-check"><a href="#检查toggle状态-post-toggle-type-check" aria-hidden="true" class="header-anchor">#</a> 检查toggle状态 [POST /toggle/{type}/check]</h2> <blockquote><p>目前支持的 type：like, follow
 如果是 like，modal 支持：post、image、score
 如果是 follow，modal 支持：bangumi</p></blockquote> <ul><li><p>Parameters</p> <ul><li>modal: (string, required) - 要检测的模型</li> <li>id: (integer, required) - 要检测的id</li></ul></li> <li><p>Request (application/json)</p> <ul><li><p>Headers</p> <pre><code>  Authorization: Bearer JWT-Token
@@ -673,6 +667,6 @@
       &quot;code&quot;: 40401,
       &quot;message&quot;: &quot;检测的对象不存在&quot;
   }</code></pre></li></ul></li></ul></div> <div class="page-edit"><!----> <!----></div> <!----> </div> <!----></div></div>
-    <script src="/Laputa/assets/js/12.af125e47.js" defer></script><script src="/Laputa/assets/js/app.35680cd8.js" defer></script>
+    <script src="/Laputa/assets/js/13.023aecbb.js" defer></script><script src="/Laputa/assets/js/app.e474f94e.js" defer></script>
   </body>
 </html>
