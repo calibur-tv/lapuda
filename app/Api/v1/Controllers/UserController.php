@@ -503,14 +503,8 @@ class UserController extends Controller
         $take = 10;
 
         $cartoonRoleTrendingService = new RoleTrendingService(0 ,$userId);
-        $result = $cartoonRoleTrendingService->users($page, $take);
 
-        foreach ($result['list'] as $i => $item)
-        {
-            $result['list'][$i]['has_star'] = $cartoonRoleRepository->checkHasStar($item['id'], $userId);
-        }
-
-        return $this->resOK($result);
+        return $this->resOK($cartoonRoleTrendingService->users($page, $take));
     }
 
     public function fakers()

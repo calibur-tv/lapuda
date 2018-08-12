@@ -47,6 +47,24 @@ class RoleTrendingService extends TrendingService
             ->pluck('role_id');
     }
 
+    public function users($page, $take)
+    {
+        $idsObject = $this->getUserIds($page, $take);
+        $list = $this->getListByIds($idsObject['ids']);
+
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        foreach ($list as $i => $item)
+        {
+            $list[$i]['has_star'] = $cartoonRoleRepository->checkHasStar($item['id'], $this->userId);
+        }
+
+        return [
+            'list' => $list,
+            'noMore' => $idsObject['noMore'],
+            'total' => $idsObject['total']
+        ];
+    }
+
     public function getListByIds($ids)
     {
         $store = new CartoonRoleRepository();
