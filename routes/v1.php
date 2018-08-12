@@ -58,13 +58,6 @@ $api->version(['v1', 'latest'], function ($api)
             $api->get('/roles', 'App\Api\V1\Controllers\CartoonRoleController@listOfBangumi');
 
             $api->post('/edit', 'App\Api\V1\Controllers\BangumiController@editBangumiInfo')->middleware(['jwt.auth']);
-
-            $api->group(['prefix' => '/role/{roleId}'], function ($api)
-            {
-                $api->get('/fans', 'App\Api\V1\Controllers\CartoonRoleController@fans');
-
-                $api->post('/star', 'App\Api\V1\Controllers\CartoonRoleController@star')->middleware(['jwt.auth']);
-            });
         });
     });
 
@@ -273,6 +266,10 @@ $api->version(['v1', 'latest'], function ($api)
             $api->get('/show', 'App\Api\V1\Controllers\CartoonRoleController@show');
 
             $api->get('/images', 'App\Api\V1\Controllers\CartoonRoleController@images');
+
+            $api->get('/fans', 'App\Api\V1\Controllers\CartoonRoleController@fans');
+
+            $api->post('/star', 'App\Api\V1\Controllers\CartoonRoleController@star')->middleware(['jwt.auth']);
         });
     });
 
