@@ -98,18 +98,7 @@ class CartoonRoleRepository extends Repository
 
         }, true, true);
 
-        if (empty($ids))
-        {
-            return [];
-        }
-
-        $keys = array_keys($ids);
-        if (!$minId || !in_array($minId, $keys))
-        {
-            return array_slice($ids, 0, $take, true);
-        }
-
-        return array_slice($ids, array_search($minId, $keys) + 1, $take, true);
+        return $this->filterIdsByMaxId($ids, $minId, $take, true);
     }
 
     public function hotFansIds($roleId, $seenIds)
@@ -124,20 +113,7 @@ class CartoonRoleRepository extends Repository
 
         }, false, true);
 
-        if (empty($ids))
-        {
-            return [];
-        }
-
-        foreach ($ids as $key => $val)
-        {
-            if (in_array($key, $seenIds))
-            {
-                unset($ids[$key]);
-            }
-        }
-
-        return array_slice($ids, 0, config('website.list_count'), true);
+        return $this->filterIdsBySeenIds($ids, $seenIds, config('website.list_count'), true);
     }
 
     public function trendingIds($force = false)

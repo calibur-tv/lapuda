@@ -179,11 +179,16 @@ class CartoonRoleController extends Controller
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
         $minId = $request->get('minId') ?: 0;
         $cartoonRoleRepository = new CartoonRoleRepository();
-        $ids = $sort === 'new' ? $cartoonRoleRepository->newFansIds($id, $minId) : $cartoonRoleRepository->hotFansIds($id, $seen);
+        $idsObj = $sort === 'new' ? $cartoonRoleRepository->newFansIds($id, $minId) : $cartoonRoleRepository->hotFansIds($id, $seen);
 
+        $ids = $idsObj['ids'];
         if (empty($ids))
         {
-            return $this->resOK([]);
+            return $this->resOK([
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ]);
         }
 
         $userRepository = new UserRepository();
@@ -191,14 +196,24 @@ class CartoonRoleController extends Controller
         $i = 0;
         foreach ($ids as $roleId => $score)
         {
+            $role = $userRepository->item($roleId);
+            if (is_null($role))
+            {
+                continue;
+            }
             $users[] = $userRepository->item($roleId);
             $users[$i]['score'] = $score;
             $i++;
         }
 
         $transformer = new CartoonRoleTransformer();
+        $list = $transformer->fans($users);
 
-        return $this->resOK($transformer->fans($users));
+        return $this->resOK([
+            'list' => $list,
+            'total' => $idsObj['total'],
+            'noMore' => $idsObj['noMore']
+        ]);
     }
 
     /**
