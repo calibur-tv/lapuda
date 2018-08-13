@@ -55,8 +55,6 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->get('/managers', 'App\Api\V1\Controllers\BangumiController@managers');
 
-            $api->get('/roles', 'App\Api\V1\Controllers\CartoonRoleController@listOfBangumi');
-
             $api->post('/edit', 'App\Api\V1\Controllers\BangumiController@editBangumiInfo')->middleware(['jwt.auth']);
         });
     });
@@ -140,13 +138,7 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->group(['prefix' => '/posts'], function ($api)
             {
-                $api->get('/mine', 'App\Api\V1\Controllers\UserController@postsOfMine');
-
                 $api->get('/reply', 'App\Api\V1\Controllers\UserController@postsOfReply');
-
-                $api->get('/like', 'App\Api\V1\Controllers\UserController@postsOfLiked');
-
-                $api->get('/mark', 'App\Api\V1\Controllers\UserController@postsOfMarked');
             });
         });
     });
@@ -264,8 +256,6 @@ $api->version(['v1', 'latest'], function ($api)
         $api->group(['prefix' => '/{id}'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\CartoonRoleController@show');
-
-            $api->get('/images', 'App\Api\V1\Controllers\CartoonRoleController@images');
 
             $api->get('/fans', 'App\Api\V1\Controllers\CartoonRoleController@fans');
 

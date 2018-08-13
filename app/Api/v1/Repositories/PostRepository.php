@@ -19,12 +19,46 @@ use Illuminate\Support\Facades\Redis;
 
 class PostRepository extends Repository
 {
-    private $userRepository;
-    private $bangumiRepository;
-
-    public function bangumiListCacheKey($bangumiId, $listType = 'new')
+    public function item($id)
     {
-        return 'bangumi_'.$bangumiId.'_posts_'.$listType.'_ids';
+        if (!$id)
+        {
+            return null;
+        }
+
+        return $this->Cache('post_' . $id, function () use ($id)
+        {
+            $post = Post::find($id);
+
+            if (is_null($post))
+            {
+                return null;
+            }
+            $post = $post->toArray();
+
+            $images = PostImages::where('post_id', $id)
+                ->orderBy('created_at', 'ASC')
+                ->select('src AS url', 'width', 'height', 'size', 'type')
+                ->get()
+                ->toArray();
+
+            $post['images'] = $images;
+
+            return $post;
+        });
+    }
+
+    public function list($ids)
+    {
+        $result = [];
+        foreach ($ids as $id)
+        {
+            $item = $this->item($id);
+            if ($item) {
+                $result[] = $item;
+            }
+        }
+        return $result;
     }
 
     public function create($data, $images)
@@ -84,81 +118,7 @@ class PostRepository extends Repository
 
         $trendingService = new PostTrendingService();
         $trendingService->update($id);
-
-        // 更新番剧帖子列表的缓存
-        $this->SortAdd($this->bangumiListCacheKey($post['bangumi_id']), $id);
-
-        Redis::pipeline(function ($pipe) use ($id, $newId, $userId)
-        {
-            // 更新用户回复帖子列表的缓存
-            $pipe->LPUSHX('user_'.$userId.'_replyPostIds', $newId);
-            // 更新帖子楼层的
-            $pipe->RPUSHX('post_'.$id.'_ids', $newId);
-        });
-    }
-
-    public function item($id)
-    {
-        if (!$id)
-        {
-            return null;
-        }
-
-        return $this->Cache('post_' . $id, function () use ($id)
-        {
-            $post = Post::find($id);
-
-            if (is_null($post))
-            {
-                return null;
-            }
-            $post = $post->toArray();
-
-            if (is_null($this->userRepository))
-            {
-                $this->userRepository = new UserRepository();
-            }
-
-            $user = $this->userRepository->item($post['user_id']);
-            if (is_null($user))
-            {
-                return null;
-            }
-
-            if (is_null($this->bangumiRepository))
-            {
-                $this->bangumiRepository = new BangumiRepository();
-            }
-
-            $bangumi = $this->bangumiRepository->item($post['bangumi_id']);
-            if (is_null($bangumi))
-            {
-                return null;
-            }
-
-            $images = PostImages::where('post_id', $id)
-                ->orderBy('created_at', 'ASC')
-                ->select('src AS url', 'width', 'height', 'size', 'type')
-                ->get()
-                ->toArray();
-
-            $post['images'] = $images;
-
-            return $post;
-        });
-    }
-
-    public function list($ids)
-    {
-        $result = [];
-        foreach ($ids as $id)
-        {
-            $item = $this->item($id);
-            if ($item) {
-                $result[] = $item;
-            }
-        }
-        return $result;
+        Redis::LPUSHX('user_'.$userId.'_replyPostIds', $newId);
     }
 
     public function previewImages($id, $masterId, $onlySeeMaster)

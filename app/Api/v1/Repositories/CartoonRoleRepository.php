@@ -13,9 +13,6 @@ use App\Models\CartoonRoleFans;
 
 class CartoonRoleRepository extends Repository
 {
-    protected $userRepository;
-    protected $bangumiRepository;
-
     public function item($id)
     {
         if (!$id)
@@ -61,17 +58,6 @@ class CartoonRoleRepository extends Repository
         return $result;
     }
 
-    public function bangumiOfIds($bangumiId)
-    {
-        return $this->RedisSort('bangumi_' . $bangumiId . 'cartoon_role_ids', function () use ($bangumiId)
-        {
-            return CartoonRole::where('bangumi_id', $bangumiId)
-                ->orderBy('star_count', 'desc')
-                ->latest()
-                ->pluck('fans_count', 'id');
-        }, false, false, 'm');
-    }
-
     public function checkHasStar($roleId, $userId)
     {
         if (!$userId)
@@ -114,73 +100,5 @@ class CartoonRoleRepository extends Repository
         }, false, true);
 
         return $this->filterIdsBySeenIds($ids, $seenIds, config('website.list_count'), true);
-    }
-
-    public function trendingIds($force = false)
-    {
-        return $this->RedisSort('cartoon_role_trending_ids', function ()
-        {
-            return CartoonRole::orderBy('star_count', 'desc')
-                ->latest()
-                ->take(100)
-                ->pluck('star_count', 'id');
-        });
-    }
-
-    public function trendingItem($roleId)
-    {
-        return $this->RedisHash('cartoon_role_trending_' . $roleId, function () use ($roleId)
-        {
-            $role = $this->item($roleId);
-
-            if (is_null($role))
-            {
-                return null;
-            }
-
-            if (is_null($this->bangumiRepository))
-            {
-                $this->bangumiRepository = new BangumiRepository();
-            }
-
-            $bangumi = $this->bangumiRepository->item($role['bangumi_id']);
-
-            if (is_null($bangumi))
-            {
-                return null;
-            }
-
-            if (is_null($this->userRepository))
-            {
-                $this->userRepository = new UserRepository();
-            }
-
-            $hasLover = intval($role['loverId']);
-            $user = $hasLover ? $this->userRepository->item($role['loverId']) : null;
-
-            $result = [
-                'id' => $role['id'],
-                'avatar' => $role['avatar'],
-                'name' => $role['name'],
-                'intro' => $role['intro'],
-                'star_count' => $role['star_count'],
-                'fans_count' => $role['fans_count'],
-                'bangumi_id' => $role['bangumi_id'],
-                'bangumi_avatar' => $bangumi['avatar'],
-                'bangumi_name' => $bangumi['name'],
-                'lover_id' => $hasLover
-            ];
-
-            if ($hasLover)
-            {
-                $result = array_merge($result, [
-                    'lover_avatar' => $user['avatar'],
-                    'lover_nickname' => $user['nickname'],
-                    'lover_zone' => $user['zone']
-                ]);
-            }
-
-            return $result;
-        }, 'h');
     }
 }

@@ -108,92 +108,11 @@ class UserRepository extends Repository
         return UserSign::whereRaw('user_id = ? and created_at > ?', [$userId, Carbon::now()->startOfDay()])->count() !== 0;
     }
 
-    public function minePostIds($userId)
-    {
-        return $this->RedisList('user_'.$userId.'_minePostIds', function () use ($userId)
-        {
-           return Post::where('user_id', $userId)
-               ->orderBy('created_at', 'DESC')
-               ->pluck('id');
-        });
-    }
-
     public function replyPostIds($userId)
     {
         $postCommentService = new PostCommentService();
 
         return $postCommentService->getUserCommentIds($userId);
-    }
-
-    public function likedPostIds($userId)
-    {
-        $postLikeService = new PostLikeService();
-
-        return $postLikeService->usersDoIds($userId, -1);
-    }
-
-    public function likedPost($userId)
-    {
-        $postLikeService = new PostLikeService();
-        $ids = $postLikeService->usersDoIds($userId, -1);
-
-        if (empty($ids))
-        {
-            return [];
-        }
-
-        $postRepository = new PostRepository();
-        $posts = [];
-
-        foreach ($ids as $id => $time)
-        {
-            $post = $postRepository->item($id);
-            if(is_null($post) || !$post['title'])
-            {
-                continue;
-            }
-            $post['created_at'] = $time;
-            $posts[] = $post;
-        }
-
-        $postTransformer = new PostTransformer();
-        return [
-            'list' => $postTransformer->userLike($posts),
-            'total' => count($ids),
-            'noMore' => true
-        ];
-    }
-
-    public function markedPost($userId)
-    {
-        $postMarkService = new PostMarkService();
-        $ids = $postMarkService->usersDoIds($userId, -1);
-
-        if (empty($ids))
-        {
-            return [];
-        }
-
-        $postRepository = new PostRepository();
-        $posts = [];
-
-        foreach ($ids as $id => $time)
-        {
-            $post = $postRepository->item($id);
-            if(is_null($post))
-            {
-                continue;
-            }
-            $post['created_at'] = $time;
-            $posts[] = $post;
-        }
-
-        $postTransformer = new PostTransformer();
-        return [
-            'list' => $postTransformer->userMark($posts),
-            'total' => count($ids),
-            'noMore' => true
-        ];
     }
 
     public function replyPostItem($userId, $postId)
@@ -390,26 +309,6 @@ class UserRepository extends Repository
         }
 
         return $transformer->notification($result);
-    }
-
-    public function rolesIds($userId)
-    {
-        return $this->RedisList('user_'.$userId.'_followRoleIds', function () use ($userId)
-        {
-            return CartoonRoleFans::where('user_id', $userId)
-                ->orderBy('updated_at', 'DESC')
-                ->pluck('role_id');
-        });
-    }
-
-    public function imageAlbums($userId)
-    {
-        return $this->Cache('user_' . $userId . '_image_albums', function () use ($userId)
-        {
-            return Image::whereRaw('user_id = ? and album_id = 0 and image_count <> 0', [$userId])
-                ->get()
-                ->toArray();
-        }, 'm');
     }
 
     public function followedBangumis($userId, $page = -1, $count = 10)

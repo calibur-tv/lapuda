@@ -34,17 +34,32 @@ class VideoRepository extends Repository
 
             if (isset($resource['video'][720]) && isset($resource['video'][720]['src']) && $resource['video'][720]['src'])
             {
-                $resource['video'][720]['src'] = $this->computeVideoSrc($resource['video'][720]['src']);
+                $src = $this->computeVideoSrc($resource['video'][720]['src']);
+                $other_site = 0;
             }
-
-            if (isset($resource['video'][1080]) && isset($resource['video'][1080]['src']) && $resource['video'][1080]['src'])
+            else if (isset($resource['video'][1080]) && isset($resource['video'][1080]['src']) && $resource['video'][1080]['src'])
             {
-                $resource['video'][1080]['src'] = $this->computeVideoSrc($resource['video'][1080]['src']);
+                $src = $this->computeVideoSrc($resource['video'][1080]['src']);
+                $other_site = 0;
+            }
+            else
+            {
+                $src = $video['url'];
+                $other_site = 1;
             }
 
             $video['resource'] = $resource;
 
-            return $video;
+            return [
+                'id' => $video['id'],
+                'src' => $src,
+                'poster' => $video['poster'],
+                'other_site' => $other_site,
+                'part' => $video['part'],
+                'name' => $video['name'],
+                'bangumi_id' => $video['bangumi_id'],
+                'user_id' => $video['user_id']
+            ];
         }, 'h');
     }
 
