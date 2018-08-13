@@ -288,7 +288,14 @@ class BangumiRepository extends Repository
             }
             else
             {
-                $videos = $list;
+                $videos = [
+                    [
+                        'data' => $list,
+                        'base' => 0,
+                        'time' => '',
+                        'name' => ''
+                    ]
+                ];
             }
 
             return [
