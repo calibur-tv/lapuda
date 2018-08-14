@@ -234,30 +234,6 @@ class BangumiController extends Controller
         return $this->resOK($repository->videos($id, json_decode($bangumi['season'])));
     }
 
-    // TODO：remove
-    public function followers(Request $request, $bangumiId)
-    {
-        $take = intval($request->get('take')) ?: 10;
-        $page = intval($request->get('page')) ?: 0;
-
-        $bangumiFollowService = new BangumiFollowService();
-        $users = $bangumiFollowService->users($bangumiId, $page, $take);
-
-        return $this->resOK([
-            'list' => $users,
-            'noMore' => $bangumiFollowService->total($bangumiId) - (($page + 1) * $take) <= 0
-        ]);
-    }
-
-    // TODO：remove
-    public function managers($bangumiId)
-    {
-        $bangumiManager = new BangumiManager();
-        $managers = $bangumiManager->getOwners($bangumiId);
-
-        return $this->resOK($managers);
-    }
-
     public function updateBangumiRelease(Request $request)
     {
         $bangumi_id = $request->get('bangumi_id');

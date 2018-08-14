@@ -51,10 +51,6 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->get('/cartoon', 'App\Api\V1\Controllers\ImageController@cartoon');
 
-            $api->get('/followers', 'App\Api\V1\Controllers\BangumiController@followers');
-
-            $api->get('/managers', 'App\Api\V1\Controllers\BangumiController@managers');
-
             $api->post('/edit', 'App\Api\V1\Controllers\BangumiController@editBangumiInfo')->middleware(['jwt.auth']);
         });
     });
@@ -209,8 +205,6 @@ $api->version(['v1', 'latest'], function ($api)
         $api->get('/captcha', 'App\Api\V1\Controllers\ImageController@captcha');
 
         $api->get('/uptoken', 'App\Api\V1\Controllers\ImageController@uptoken')->middleware(['jwt.auth']);
-
-        $api->post('/report', 'App\Api\V1\Controllers\ImageController@report');
 
         $api->post('/editAlbum', 'App\Api\V1\Controllers\ImageController@editAlbum')->middleware(['jwt.auth']);
 

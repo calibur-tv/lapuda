@@ -89,17 +89,6 @@ class ImageController extends Controller
         return $this->resOK($repository->uptoken());
     }
 
-    // TODO：remove
-    public function report(Request $request)
-    {
-        $userId = $this->getAuthUserId();
-        Image::where('id', $request->get('id'))
-            ->update([
-                'state' => $userId ? $userId : time()
-            ]);
-
-        return $this->resNoContent();
-    }
 
     /**
      * 新建相册

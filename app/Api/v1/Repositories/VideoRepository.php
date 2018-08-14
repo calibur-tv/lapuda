@@ -30,25 +30,34 @@ class VideoRepository extends Repository
             }
 
             $video = $video->toArray();
-            $resource = $video['resource'] === 'null' ? null : json_decode($video['resource'], true);
+            $bangumiRepository = new BangumiRepository();
+            $bangumi = $bangumiRepository->item($video['id']);
 
-            if (isset($resource['video'][720]) && isset($resource['video'][720]['src']) && $resource['video'][720]['src'])
+            if ($bangumi['others_site_video'])
             {
-                $src = $this->computeVideoSrc($resource['video'][720]['src']);
-                $other_site = 0;
-            }
-            else if (isset($resource['video'][1080]) && isset($resource['video'][1080]['src']) && $resource['video'][1080]['src'])
-            {
-                $src = $this->computeVideoSrc($resource['video'][1080]['src']);
-                $other_site = 0;
+                $resource = $video['resource'] === 'null' ? null : json_decode($video['resource'], true);
+
+                if (isset($resource['video'][720]) && isset($resource['video'][720]['src']) && $resource['video'][720]['src'])
+                {
+                    $src = $this->computeVideoSrc($resource['video'][720]['src']);
+                    $other_site = 0;
+                }
+                else if (isset($resource['video'][1080]) && isset($resource['video'][1080]['src']) && $resource['video'][1080]['src'])
+                {
+                    $src = $this->computeVideoSrc($resource['video'][1080]['src']);
+                    $other_site = 0;
+                }
+                else
+                {
+                    $src = $video['url'];
+                    $other_site = 1;
+                }
             }
             else
             {
                 $src = $video['url'];
                 $other_site = 1;
             }
-
-            $video['resource'] = $resource;
 
             return [
                 'id' => $video['id'],
