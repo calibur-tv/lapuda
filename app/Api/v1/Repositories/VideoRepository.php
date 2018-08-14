@@ -31,9 +31,14 @@ class VideoRepository extends Repository
 
             $video = $video->toArray();
             $bangumiRepository = new BangumiRepository();
-            $bangumi = $bangumiRepository->item($video['id']);
+            $bangumi = $bangumiRepository->item($video['bangumi_id']);
 
-            if ($bangumi['others_site_video'])
+            if ($bangumi['others_site_video'] == 1)
+            {
+                $src = $video['url'];
+                $other_site = 1;
+            }
+            else
             {
                 $resource = $video['resource'] === 'null' ? null : json_decode($video['resource'], true);
 
@@ -52,11 +57,6 @@ class VideoRepository extends Repository
                     $src = $video['url'];
                     $other_site = 1;
                 }
-            }
-            else
-            {
-                $src = $video['url'];
-                $other_site = 1;
             }
 
             return [
