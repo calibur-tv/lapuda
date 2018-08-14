@@ -38,35 +38,6 @@ class BangumiTransformer extends Transformer
         });
     }
 
-    public function post($bangumi)
-    {
-        return $this->transformer($bangumi, function ($bangumi)
-        {
-            return [
-                'id' => (int)$bangumi['id'],
-                'name' => $bangumi['name'],
-                'avatar' => $bangumi['avatar'],
-                'summary' => $bangumi['summary'],
-                'followed' => $bangumi['followed']
-            ];
-        });
-    }
-
-    public function album($bangumi)
-    {
-        return $this->transformer($bangumi, function ($bangumi)
-        {
-            return [
-                'id' => (int)$bangumi['id'],
-                'name' => $bangumi['name'],
-                'banner' => $bangumi['banner'],
-                'avatar' => $bangumi['avatar'],
-                'summary' => $bangumi['summary'],
-                'followed' => $bangumi['followed']
-            ];
-        });
-    }
-
     public function show($bangumi)
     {
         return $this->transformer($bangumi, function () use ($bangumi)

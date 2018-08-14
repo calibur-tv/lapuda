@@ -205,37 +205,34 @@ class PostController extends Controller
             return $this->resOK([]);
         }
 
-        $userId = $this->getAuthUserId();
         $postRepository = new PostRepository();
-        $list = $postRepository->list($ids);
+        $list = $postRepository->bangumiFlow($ids);
 
         $postCommentService = new PostCommentService();
         $postLikeService = new PostLikeService();
         $postMarkService = new PostMarkService();
-        $postViewCounter = new PostViewCounter();
-        $userRepository = new UserRepository();
-        $bangumiRepository = new BangumiRepository();
+        $postRewardService = new PostRewardService();
 
         foreach ($list as $i => $item)
         {
-            $id = $item['id'];
-
-            $authorId = $item['user_id'];
-            $list[$i]['view_count'] = $postViewCounter->get($id);
-
-            $list[$i]['user'] = $userRepository->item($authorId);
-            $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
+            if ($item['is_creator'])
+            {
+                $list[$i]['like_count'] = 0;
+                $list[$i]['reward_count'] = $postRewardService->total($item['id']);
+            }
+            else
+            {
+                $list[$i]['like_count'] = $postLikeService->total($item['id']);
+                $list[$i]['reward_count'] = 0;
+            }
         }
-        $list = $postLikeService->batchCheck($list, $userId, 'liked');
-        $list = $postLikeService->batchTotal($list, 'like_count');
-        $list = $postMarkService->batchCheck($list, $userId, 'marked');
+
         $list = $postMarkService->batchTotal($list, 'mark_count');
-        $list = $postCommentService->batchCheckCommented($list, $userId);
         $list = $postCommentService->batchGetCommentCount($list);
 
         $transformer = new PostTransformer();
 
-        return $this->resOK($transformer->bangumi($list));
+        return $this->resOK($transformer->bangumiFlow($list));
     }
 
     /**
