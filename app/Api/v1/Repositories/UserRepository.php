@@ -314,8 +314,8 @@ class UserRepository extends Repository
     public function followedBangumis($userId, $page = -1, $count = 10)
     {
         $bangumiFollowService = new BangumiFollowService();
-        $bangumiIds = $bangumiFollowService->usersDoIds($userId, $page, $count);
-
+        $idsObj = $bangumiFollowService->usersDoIds($userId, $page, $count);
+        $bangumiIds = $idsObj['ids'];
         if (empty($bangumiIds))
         {
             return [];

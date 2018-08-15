@@ -745,25 +745,29 @@ class ImageController extends Controller
             $imageRewardService = new ImageRewardService();
             $image['rewarded'] = $imageRewardService->check($userId, $id);
             $image['reward_users'] = $imageRewardService->users($id);
-            $image['reward_count'] = $imageRewardService->total($id);
             $image['liked'] = false;
-            $image['like_users'] = [];
-            $image['like_count'] = 0;
+            $image['like_users'] = [
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ];
         }
         else
         {
             $imageLikeService = new ImageLikeService();
             $image['liked'] = $imageLikeService->check($userId, $id);
             $image['like_users'] = $imageLikeService->users($id);
-            $image['like_count'] = $imageLikeService->total($id);
             $image['rewarded'] = false;
-            $image['reward_count'] = 0;
-            $image['reward_users'] = [];
+            $image['reward_users'] = [
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ];
         }
 
         $imageMarkService = new ImageMarkService();
         $image['marked'] = $imageMarkService->check($userId, $id);
-        $image['mark_count'] = $imageMarkService->total($id);
+        $image['mark_users'] = $imageMarkService->users($id);
 
         $imageViewCounter = new ImageViewCounter();
         $imageViewCounter->add($id);

@@ -148,33 +148,36 @@ class PostController extends Controller
 
         $postCommentService = new PostCommentService();
         $post['commented'] = $postCommentService->checkCommented($userId, $id);
-
         $post['comment_count'] = $postCommentService->getCommentCount($id);
 
         if ($post['is_creator'])
         {
             $postRewardService = new PostRewardService();
             $post['rewarded'] = $postRewardService->check($userId, $id);
-            $post['reward_count'] = $postRewardService->total($id);
             $post['reward_users'] = $postRewardService->users($id);
             $post['liked'] = false;
-            $post['like_count'] = 0;
-            $post['like_users'] = [];
+            $post['like_users'] = [
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ];
         }
         else
         {
             $postLikeService = new PostLikeService();
             $post['liked'] = $postLikeService->check($userId, $id);
-            $post['like_count'] = $postLikeService->total($id);
             $post['like_users'] = $postLikeService->users($id);
             $post['rewarded'] = false;
-            $post['reward_count'] = 0;
-            $post['reward_users'] = [];
+            $post['reward_users'] = [
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ];
         }
 
         $postMarkService = new PostMarkService();
         $post['marked'] = $postMarkService->check($userId, $id);
-        $post['mark_count'] = $postMarkService->total($id);
+        $post['mark_users'] = $postMarkService->users($id);
 
         $post['preview_images'] = $postRepository->previewImages(
             $id,

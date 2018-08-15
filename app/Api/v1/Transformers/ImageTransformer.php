@@ -49,9 +49,7 @@ class ImageTransformer extends Transformer
                 'rewarded' => $image['rewarded'],
                 'like_users' => $image['like_users'],
                 'reward_users' => $image['reward_users'],
-                'mark_count' => (int)$image['mark_count'],
-                'like_count' => (int)$image['like_count'],
-                'reward_count' => (int)$image['reward_count'],
+                'mark_users' => $image['mark_users'],
                 'created_at' => $image['created_at'],
                 'updated_at' => $image['updated_at']
             ];

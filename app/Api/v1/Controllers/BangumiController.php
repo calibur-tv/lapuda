@@ -189,8 +189,7 @@ class BangumiController extends Controller
         $userId = $this->getAuthUserId();
 
         $bangumiFollowService = new BangumiFollowService();
-        $bangumi['count_like'] = $bangumiFollowService->total($id);
-        $bangumi['followers'] = $bangumiFollowService->users($id);
+        $bangumi['follow_users'] = $bangumiFollowService->users($id);
         $bangumi['followed'] = $bangumiFollowService->check($userId, $id);
 
         $bangumiScoreService = new BangumiScoreService();
@@ -200,8 +199,13 @@ class BangumiController extends Controller
         $bangumi['score'] = $bangumiScoreCounter->get($id);
 
         $bangumiManager = new BangumiManager();
+        $managers = $bangumiManager->getOwners($id);
         $bangumi['is_master'] = $bangumiManager->isOwner($id, $userId);
-        $bangumi['managers'] = $bangumiManager->getOwners($id);
+        $bangumi['manager_users'] = [
+            'list' => $managers,
+            'noMore' => true,
+            'total' => count($managers)
+        ];
 
         $bangumiTagService = new BangumiTagService();
         $bangumi['tags'] = $bangumiTagService->tags($id);

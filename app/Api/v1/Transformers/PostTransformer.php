@@ -18,17 +18,8 @@ class PostTransformer extends Transformer
         {
             return [
                 'id' => (int)$post['id'],
-                'comment_count' => (int)$post['comment_count'],
-                'like_count' => (int)$post['like_count'],
-                'reward_count' => (int)$post['reward_count'],
-                'view_count' => (int)$post['view_count'],
-                'mark_count' => (int)$post['mark_count'],
                 'title' => $post['title'],
                 'desc' => $post['desc'],
-                'liked' => $post['liked'],
-                'rewarded' => $post['rewarded'],
-                'marked' => $post['marked'],
-                'commented' => $post['commented'],
                 'content' => $post['content'],
                 'images' => $this->collection($post['images'], function ($image)
                 {
@@ -50,7 +41,14 @@ class PostTransformer extends Transformer
                         'url' => config('website.image') . $image['url']
                     ];
                 }),
+                'comment_count' => (int)$post['comment_count'],
+                'view_count' => (int)$post['view_count'],
+                'liked' => $post['liked'],
+                'rewarded' => $post['rewarded'],
+                'marked' => $post['marked'],
+                'commented' => $post['commented'],
                 'like_users' => $post['like_users'],
+                'mark_users' => $post['mark_users'],
                 'reward_users' => $post['reward_users'],
                 'is_nice' => (boolean)$post['is_nice'],
                 'is_creator' => (boolean)$post['is_creator'],

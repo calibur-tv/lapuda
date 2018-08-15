@@ -214,11 +214,12 @@ class Repository
         }
 
         $total = count($ids);
+        $result = array_slice($ids, $offset, $take, $withScore);
 
         return [
-            'ids' => array_slice($ids, $offset, $take, $withScore),
+            'ids' => $result,
             'total' => $total,
-            'noMore' => $total - ($offset + $take) <= 0
+            'noMore' => $result > 0 ? ($total - ($offset + $take) <= 0) : true
         ];
     }
 
@@ -257,7 +258,7 @@ class Repository
         ];
     }
 
-    public function filterIdsByPage($ids, $page, $take)
+    public function filterIdsByPage($ids, $page, $take, $withScore = false)
     {
         $ids = gettype($ids) === 'string' ? explode(',', $ids) : $ids;
 
@@ -270,7 +271,7 @@ class Repository
             ];
         }
 
-        $result = array_slice($ids, $page * $take, $take);
+        $result = array_slice($ids, $page * $take, $take, $withScore);
         $total = count($ids);
 
         return [
