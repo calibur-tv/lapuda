@@ -82,17 +82,16 @@ class ToggleController extends Controller
     /**
      * 获取发起操作的用户列表
      *
-     * > 目前支持的 type：like, follow，contributors
-     * 如果是 like，modal 支持：post、image、score
+     * > 目前支持的 type：like, follow，mark, reward, contributors
      * 如果是 follow，modal 支持：bangumi
-     * 如果是 contributors，bangumi 支持：bangumi（就是吧主列表）
+     * 如果是 contributors，modal 支持：bangumi（就是吧主列表）
      *
      * @Get("/toggle/{type}/users")
      *
      * @Parameters({
      *      @Parameter("modal", description="要请求的模型", type="string", required=true),
      *      @Parameter("id", description="要请求的id", type="integer", required=true),
-     *      @Parameter("page", description="页码", type="integer", required=true, default=0),
+     *      @Parameter("last_id", description="已获取列表里的最后一个 item 的 id", type="integer", required=true, default=0),
      *      @Parameter("take", description="获取的个数", type="integer", default=10)
      * })
      *
@@ -105,9 +104,9 @@ class ToggleController extends Controller
     public function mixinUsers(Request $request, $type)
     {
         $id = $request->get('id');
-        $page = $request->get('page') ?: 0;
         $take = $request->get('take') ?: 10;
         $model = $request->get('model');
+        $lastId = $request->get('last_id') ?: 0;
 
         if ($type === 'like')
         {
@@ -116,6 +115,14 @@ class ToggleController extends Controller
         else if ($type === 'follow')
         {
             $service = $this->getFollowServiceByType($model);
+        }
+        else if ($type === 'reward')
+        {
+            $service = $this->getRewardServiceByType($model);
+        }
+        else if ($type === 'mark')
+        {
+            $service = $this->getMarkServiceByType($model);
         }
         else if ($type === 'contributors')
         {
@@ -131,15 +138,7 @@ class ToggleController extends Controller
             return $this->resErrBad();
         }
 
-        $users = $service->users($id, $page, $take);
-        $total = $service->total($id);
-        $noMore = $total === 0 ? true : ($total - (($page + 1) * $take) <= 0);
-
-        return $this->resOK([
-            'list' => $users,
-            'noMore' => $noMore,
-            'total' => $total === 0 ? count($users) : $total
-        ]);
+        return $this->resOK($service->users($id, $lastId, $take));
     }
 
     /**

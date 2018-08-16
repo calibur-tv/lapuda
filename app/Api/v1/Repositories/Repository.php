@@ -193,22 +193,63 @@ class Repository
         Redis::ZREM($key, $value);
     }
 
-    public function filterIdsByMaxId($ids, $maxId, $take)
+    public function filterIdsByMaxId($ids, $maxId, $take, $withScore = false)
     {
-        $offset = $maxId ? array_search($maxId, $ids) + 1 : 0;
+        if (empty($ids))
+        {
+            return [
+                'ids' => [],
+                'total' => 0,
+                'noMore' => true
+            ];
+        }
+
+        if ($withScore)
+        {
+            $offset = $maxId ? array_search($maxId, array_keys($ids)) + 1 : 0;
+        }
+        else
+        {
+            $offset = $maxId ? array_search($maxId, $ids) + 1 : 0;
+        }
+
         $total = count($ids);
+        $result = array_slice($ids, $offset, $take, $withScore);
 
         return [
-            'ids' => array_slice($ids, $offset, $take),
+            'ids' => $result,
             'total' => $total,
-            'noMore' => $total - ($offset + $take) <= 0
+            'noMore' => $result > 0 ? ($total - ($offset + $take) <= 0) : true
         ];
     }
 
-    public function filterIdsBySeenIds($ids, $seenIds, $take)
+    public function filterIdsBySeenIds($ids, $seenIds, $take, $withScore = false)
     {
-        $result = array_slice(array_diff($ids, $seenIds), 0, $take);
+        if (empty($ids))
+        {
+            return [
+                'ids' => [],
+                'total' => 0,
+                'noMore' => true
+            ];
+        }
+
         $total = count($ids);
+        if ($withScore)
+        {
+            foreach ($ids as $key => $val)
+            {
+                if (in_array($key, $seenIds))
+                {
+                    unset($ids[$key]);
+                }
+            }
+            $result = array_slice($ids, 0, $take, true);
+        }
+        else
+        {
+            $result = array_slice(array_diff($ids, $seenIds), 0, $take);
+        }
 
         return [
             'ids' => $result,
@@ -217,10 +258,20 @@ class Repository
         ];
     }
 
-    public function filterIdsByPage($ids, $page, $take)
+    public function filterIdsByPage($ids, $page, $take, $withScore = false)
     {
         $ids = gettype($ids) === 'string' ? explode(',', $ids) : $ids;
-        $result = array_slice($ids, $page * $take, $take);
+
+        if (empty($ids))
+        {
+            return [
+                'ids' => [],
+                'total' => 0,
+                'noMore' => true
+            ];
+        }
+
+        $result = array_slice($ids, $page * $take, $take, $withScore);
         $total = count($ids);
 
         return [

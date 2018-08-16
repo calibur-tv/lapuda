@@ -63,31 +63,31 @@ class ScoreController extends Controller
         if ($score['is_creator'])
         {
             $scoreRewardService = new ScoreRewardService();
-            $score['reward_count'] = $scoreRewardService->total($id);
             $score['reward_users'] = $scoreRewardService->users($id);
             $score['rewarded'] = $scoreRewardService->check($visitorId, $id, $userId);
-            $score['like_count'] = 0;
-            $score['like_users'] = [];
+            $score['like_users'] = [
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ];;
             $score['liked'] = false;
         }
         else
         {
             $scoreLikeService = new ScoreLikeService();
-            $score['like_count'] = $scoreLikeService->total($id);
             $score['like_users'] = $scoreLikeService->users($id);
             $score['liked'] = $scoreLikeService->check($visitorId, $id, $userId);
-            $score['reward_count'] = 0;
-            $score['reward_users'] = [];
+            $score['reward_users'] = [
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ];;
             $score['rewarded'] = false;
         }
 
         $scoreMarkService = new ScoreMarkService();
         $score['marked'] = $scoreMarkService->check($visitorId, $id);
-        $score['mark_count'] = $scoreMarkService->total($id);
-
-        $commentService = new ScoreCommentService();
-        $score['commented'] = $commentService->checkCommented($visitorId, $id);
-        $score['comment_count'] = $commentService->getCommentCount($id);
+        $score['mark_users'] = $scoreMarkService->users($id);
 
         $transformer = new ScoreTransformer();
         return $this->resOK($transformer->show($score));

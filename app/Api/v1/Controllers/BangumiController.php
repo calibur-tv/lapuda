@@ -189,8 +189,7 @@ class BangumiController extends Controller
         $userId = $this->getAuthUserId();
 
         $bangumiFollowService = new BangumiFollowService();
-        $bangumi['count_like'] = $bangumiFollowService->total($id);
-        $bangumi['followers'] = $bangumiFollowService->users($id);
+        $bangumi['follow_users'] = $bangumiFollowService->users($id);
         $bangumi['followed'] = $bangumiFollowService->check($userId, $id);
 
         $bangumiScoreService = new BangumiScoreService();
@@ -201,7 +200,7 @@ class BangumiController extends Controller
 
         $bangumiManager = new BangumiManager();
         $bangumi['is_master'] = $bangumiManager->isOwner($id, $userId);
-        $bangumi['managers'] = $bangumiManager->getOwners($id);
+        $bangumi['manager_users'] = $bangumiManager->users($id);
 
         $bangumiTagService = new BangumiTagService();
         $bangumi['tags'] = $bangumiTagService->tags($id);
@@ -232,30 +231,6 @@ class BangumiController extends Controller
         }
 
         return $this->resOK($repository->videos($id, json_decode($bangumi['season'])));
-    }
-
-    // TODO：remove
-    public function followers(Request $request, $bangumiId)
-    {
-        $take = intval($request->get('take')) ?: 10;
-        $page = intval($request->get('page')) ?: 0;
-
-        $bangumiFollowService = new BangumiFollowService();
-        $users = $bangumiFollowService->users($bangumiId, $page, $take);
-
-        return $this->resOK([
-            'list' => $users,
-            'noMore' => $bangumiFollowService->total($bangumiId) - (($page + 1) * $take) <= 0
-        ]);
-    }
-
-    // TODO：remove
-    public function managers($bangumiId)
-    {
-        $bangumiManager = new BangumiManager();
-        $managers = $bangumiManager->getOwners($bangumiId);
-
-        return $this->resOK($managers);
     }
 
     public function updateBangumiRelease(Request $request)

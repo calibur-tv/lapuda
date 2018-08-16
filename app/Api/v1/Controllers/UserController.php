@@ -302,50 +302,6 @@ class UserController extends Controller
     }
 
     /**
-     * 用户喜欢的帖子列表
-     *
-     * @Get("/user/`zone`/posts/like")
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": "帖子列表"}),
-     *      @Response(404, body={"code": 40401, "message": "找不到用户"})
-     * })
-     */
-    public function postsOfLiked(Request $request, $zone)
-    {
-        $userRepository = new UserRepository();
-        $userId = $userRepository->getUserIdByZone($zone);
-        if (!$userId)
-        {
-            return $this->resErrNotFound('找不到用户');
-        }
-
-        return $this->resOK($userRepository->likedPost($userId));
-    }
-
-    /**
-     * 用户收藏的帖子列表
-     *
-     * @Get("/user/`zone`/posts/mark")
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": "帖子列表"}),
-     *      @Response(404, body={"code": 40401, "message": "找不到用户"})
-     * })
-     */
-    public function postsOfMarked(Request $request, $zone)
-    {
-        $userRepository = new UserRepository();
-        $userId = $userRepository->getUserIdByZone($zone);
-        if (!$userId)
-        {
-            return $this->resErrNotFound('找不到用户');
-        }
-
-        return $this->resOK($userRepository->markedPost($userId));
-    }
-
-    /**
      * 用户反馈
      *
      * @Post("/user/feedback")

@@ -26,55 +26,6 @@ use Mews\Purifier\Facades\Purifier;
 class CartoonRoleController extends Controller
 {
     /**
-     * 番剧角色列表
-     *
-     * @Get("/bangumi/`bangumiId`/roles")
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": "角色列表"}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的番剧"})
-     * })
-     */
-    public function listOfBangumi(Request $request, $bangumiId)
-    {
-        if (!Bangumi::where('id', $bangumiId)->count())
-        {
-            return $this->resErrNotFound('不存在的番剧');
-        }
-
-        $cartoonRoleRepository = new CartoonRoleRepository();
-        $ids = $cartoonRoleRepository->bangumiOfIds($bangumiId);
-
-        if (empty($ids))
-        {
-            return $this->resOK([]);
-        }
-
-        $roles = $cartoonRoleRepository->list($ids);
-        $userRepository = new UserRepository();
-        $userId = $this->getAuthUserId();
-
-        foreach ($roles as $i => $item)
-        {
-            if ($item['loverId'])
-            {
-                $roles[$i]['lover'] = $userRepository->item($item['loverId']);
-                $roles[$i]['loveMe'] = $userId === intval($item['loverId']);
-            }
-            else
-            {
-                $roles[$i]['lover'] = null;
-                $roles[$i]['loveMe'] = false;
-            }
-            $roles[$i]['hasStar'] = $cartoonRoleRepository->checkHasStar($item['id'], $userId);
-        }
-
-        $transformer = new CartoonRoleTransformer();
-
-        return $this->resOK($transformer->bangumi($roles));
-    }
-
-    /**
      * 给角色应援
      *
      * @Post("/cartoon_role/`roleId`/star")
@@ -179,11 +130,16 @@ class CartoonRoleController extends Controller
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
         $minId = $request->get('minId') ?: 0;
         $cartoonRoleRepository = new CartoonRoleRepository();
-        $ids = $sort === 'new' ? $cartoonRoleRepository->newFansIds($id, $minId) : $cartoonRoleRepository->hotFansIds($id, $seen);
+        $idsObj = $sort === 'new' ? $cartoonRoleRepository->newFansIds($id, $minId) : $cartoonRoleRepository->hotFansIds($id, $seen);
 
+        $ids = $idsObj['ids'];
         if (empty($ids))
         {
-            return $this->resOK([]);
+            return $this->resOK([
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ]);
         }
 
         $userRepository = new UserRepository();
@@ -191,14 +147,24 @@ class CartoonRoleController extends Controller
         $i = 0;
         foreach ($ids as $roleId => $score)
         {
+            $role = $userRepository->item($roleId);
+            if (is_null($role))
+            {
+                continue;
+            }
             $users[] = $userRepository->item($roleId);
             $users[$i]['score'] = $score;
             $i++;
         }
 
         $transformer = new CartoonRoleTransformer();
+        $list = $transformer->fans($users);
 
-        return $this->resOK($transformer->fans($users));
+        return $this->resOK([
+            'list' => $list,
+            'total' => $idsObj['total'],
+            'noMore' => $idsObj['noMore']
+        ]);
     }
 
     /**
@@ -240,50 +206,6 @@ class CartoonRoleController extends Controller
             'bangumi' => $bangumi,
             'data' => $role
         ]));
-    }
-
-    // TODO：trending service
-    // TODO：API doc
-    public function images(Request $request, $id)
-    {
-        if (!CartoonRole::where('id', $id)->count())
-        {
-            return $this->resErrNotFound();
-        }
-
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = intval($request->get('take')) ?: 12;
-        $size = intval($request->get('size')) ?: 0;
-        $tags = $request->get('tags') ?: 0;
-        $creator = intval($request->get('creator'));
-        $sort = $request->get('sort') ?: 'new';
-
-        $repository = new ImageRepository();
-        $ids = $repository->getRoleImageIds($id, $seen, $take, $size, $tags, $creator, $sort);
-
-        if (empty($ids))
-        {
-            return $this->resOK([
-                'list' => [],
-                'type' => $repository->uploadImageTypes()
-            ]);
-        }
-
-        $imageTransformer = new ImageTransformer();
-
-        $visitorId = $this->getAuthUserId();
-        $list = $repository->list($ids);
-        $imageLikeService = new ImageLikeService();
-
-        foreach ($list as $i => $item)
-        {
-            $list[$i]['liked'] = $imageLikeService->check($visitorId, $item['id'], $item['user_id']);
-        }
-
-        return $this->resOK([
-            'list' => $imageTransformer->roleShow($list),
-            'type' => $repository->uploadImageTypes()
-        ]);
     }
 
     public function adminShow(Request $request)

@@ -23,6 +23,46 @@ use Mews\Purifier\Facades\Purifier;
 
 class ImageRepository extends Repository
 {
+    public function item($id)
+    {
+        if (!$id)
+        {
+            return null;
+        }
+
+        return $this->Cache($this->cacheKeyImageItem($id), function () use ($id)
+        {
+            $image = Image::find($id);
+
+            if (is_null($image))
+            {
+                return null;
+            }
+
+            $image = $image->toArray();
+
+            $image['image_count'] = $image['is_album'] == 1
+                ? is_null($image['image_ids']) ? 0 : count(explode(',', $image['image_ids']))
+                : 1;
+
+            return $image;
+        });
+    }
+
+    public function list($ids)
+    {
+        $result = [];
+        foreach ($ids as $id)
+        {
+            $item = $this->item($id);
+            if ($item)
+            {
+                $result[] = $item;
+            }
+        }
+        return $result;
+    }
+
     public function createSingle($params)
     {
         $imageFilter = new ImageFilter();
@@ -152,60 +192,6 @@ class ImageRepository extends Repository
         return $result;
     }
 
-    public function uploadImageTypes()
-    {
-        return $this->Cache('upload-image-types', function ()
-        {
-            $size = Tag::where('model', '2')->select('name', 'id')->get();
-            $tags = Tag::where('model', '1')->select('name', 'id')->get();
-
-            return [
-                'size' => $size,
-                'tags' => $tags
-            ];
-        }, 'm');
-    }
-
-    public function item($id)
-    {
-        if (!$id)
-        {
-            return null;
-        }
-
-        return $this->Cache($this->cacheKeyImageItem($id), function () use ($id)
-        {
-            $image = Image::find($id);
-
-            if (is_null($image))
-            {
-                return null;
-            }
-
-            $image = $image->toArray();
-
-            $image['image_count'] = $image['is_album'] == 1
-                ? is_null($image['image_ids']) ? 0 : count(explode(',', $image['image_ids']))
-                : 1;
-
-            return $image;
-        });
-    }
-
-    public function list($ids)
-    {
-        $result = [];
-        foreach ($ids as $id)
-        {
-            $item = $this->item($id);
-            if ($item)
-            {
-                $result[] = $item;
-            }
-        }
-        return $result;
-    }
-
     public function albumImages($albumId)
     {
         if (!$albumId)
@@ -282,35 +268,6 @@ class ImageRepository extends Repository
         }
 
         return $this->filterIdsByPage($ids, $page, $take);
-    }
-
-    public function getRoleImageIds($roleId, $seen, $take, $size, $tags, $creator, $sort)
-    {
-        return Image::whereIn('state', [1, 4])
-            ->whereRaw('role_id = ? and image_count <> ?', [$roleId, 1])
-            ->whereNotIn('images.id', $seen)
-            ->take($take)
-            ->when($sort === 'new', function ($query)
-            {
-                return $query->latest();
-            }, function ($query)
-            {
-                return $query->orderBy('like_count', 'DESC');
-            })
-            ->when($creator !== -1, function ($query) use ($creator)
-            {
-                return $query->where('creator', $creator);
-            })
-            ->when($size, function ($query) use ($size)
-            {
-                return $query->where('size_id', $size);
-            })
-            ->when($tags, function ($query) use ($tags)
-            {
-                return $query->leftJoin('image_tags AS tags', 'images.id', '=', 'tags.image_id')
-                    ->where('tags.tag_id', $tags);
-            })
-            ->pluck('images.id');
     }
 
     public function checkHasPartCartoon($bangumiId, $part)

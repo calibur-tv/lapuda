@@ -170,10 +170,9 @@ class OwnerService extends Repository
         return true;
     }
 
-    // TODO：remove
-    public function getOwners($modalId)
+    public function users($modalId)
     {
-        return $this->Cache($this->ownersCacheKey($modalId), function () use ($modalId)
+        $result = $this->Cache($this->ownersCacheKey($modalId), function () use ($modalId)
         {
             $users = DB::table($this->owner_table)
                 ->where('modal_id', $modalId)
@@ -204,12 +203,12 @@ class OwnerService extends Repository
 
             return $users;
         });
-    }
 
-    public function users($modalId)
-    {
-        // 统一接口
-        return $this->getOwners($modalId);
+        return [
+            'list' => $result,
+            'total' => count($result),
+            'noMore' => true
+        ];
     }
 
     public function total($modalId)

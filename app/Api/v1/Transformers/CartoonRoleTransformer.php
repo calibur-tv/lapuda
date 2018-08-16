@@ -35,34 +35,6 @@ class CartoonRoleTransformer extends Transformer
         });
     }
 
-    public function bangumi($list)
-    {
-        return $this->collection($list, function ($role)
-        {
-            return [
-                'id' => (int)$role['id'],
-                'name' => $role['name'],
-                'avatar' => $role['avatar'],
-                'loverId' => (int)$role['loverId'],
-                'intro' => $role['intro'],
-                'alias' => $role['alias'],
-                'star_count' => (int)$role['star_count'],
-                'fans_count' => (int)$role['fans_count'],
-                'loveMe' => (boolean)$role['loveMe'],
-                'lover' => $role['lover'] ? $this->transformer($role['lover'], function ($user)
-                {
-                    return [
-                        'id' => (int)$user['id'],
-                        'avatar' => $user['avatar'],
-                        'zone' => $user['zone'],
-                        'nickname' => $user['nickname']
-                    ];
-                }) : null,
-                'has_star' => $role['hasStar']
-            ];
-        });
-    }
-
     public function fans($users)
     {
         return $this->collection($users, function ($user)
