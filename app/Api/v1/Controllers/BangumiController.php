@@ -199,7 +199,7 @@ class BangumiController extends Controller
         $bangumi['score'] = $bangumiScoreCounter->get($id);
 
         $bangumiManager = new BangumiManager();
-        $managers = $bangumiManager->getOwners($id);
+        $managers = $bangumiManager->users($id);
         $bangumi['is_master'] = $bangumiManager->isOwner($id, $userId);
         $bangumi['manager_users'] = [
             'list' => $managers,

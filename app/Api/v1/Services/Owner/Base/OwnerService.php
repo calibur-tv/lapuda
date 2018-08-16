@@ -170,8 +170,7 @@ class OwnerService extends Repository
         return true;
     }
 
-    // TODO：remove
-    public function getOwners($modalId)
+    public function users($modalId)
     {
         return $this->Cache($this->ownersCacheKey($modalId), function () use ($modalId)
         {
@@ -204,12 +203,6 @@ class OwnerService extends Repository
 
             return $users;
         });
-    }
-
-    public function users($modalId)
-    {
-        // 统一接口
-        return $this->getOwners($modalId);
     }
 
     public function total($modalId)
