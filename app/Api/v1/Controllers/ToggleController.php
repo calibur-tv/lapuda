@@ -126,7 +126,6 @@ class ToggleController extends Controller
         }
         else if ($type === 'contributors')
         {
-            // 格式化一下返回值
             $service = $this->getContributorsServiceByType($model);
         }
         else
