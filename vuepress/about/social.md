@@ -1,5 +1,16 @@
 ## calibur.tv社区系统的详细介绍
 
+### 目录大纲
+1. 我们的功能是什么
+2. 我们的竞品是什么
+3. 我们这样做的好处是什么
+    - 相对于竞品的好处
+    - 排除竞品后的好处
+5. 为什么竞品不做我们做的事
+6. 为什么是这几个功能，而不是其它功能
+7. 如何管理这么多的功能
+8. 这样的模式，是否有成功的先例
+
 ### 包含版块：
 1. [番剧版块](https://m.calibur.tv/bangumi/33)，对标 [bilibili](https://www.bilibili.com/bangumi/media/md1650/?from=search&seid=9840610067289015812)，附 [番剧](https://baike.baidu.com/item/%E7%95%AA%E5%89%A7/17528517?fr=aladdin) 的解释
 2. [帖子功能](https://www.calibur.tv/world/post), 对标 [百度贴吧](https://tieba.baidu.com/f?kw=calibur)
