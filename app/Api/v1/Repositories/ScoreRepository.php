@@ -213,7 +213,7 @@ class ScoreRepository extends Repository
                     'size' => $item['size'],
                     'mime' => $item['mime'],
                     'text' => $item['text'],
-                    'url' => $this->convertImagePath($item['uri'])
+                    'url' => $this->convertImagePath($item['url'])
                 ];
             }
         }
