@@ -240,7 +240,6 @@ class ScoreRepository extends Repository
         $baiduPush = new BaiduPush();
         $baiduPush->create($id, 'score');
         $baiduPush->trending('score');
-        $baiduPush->bangumi($score['bangumi_id']);
     }
 
     public function updateProcess($id)
