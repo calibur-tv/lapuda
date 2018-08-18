@@ -128,8 +128,6 @@ $api->version(['v1', 'latest'], function ($api)
             $api->group(['prefix' => '/followed'], function ($api)
             {
                 $api->get('/bangumi', 'App\Api\V1\Controllers\UserController@followedBangumis');
-
-                $api->get('/role', 'App\Api\V1\Controllers\UserController@followedRoles');
             });
 
             $api->group(['prefix' => '/posts'], function ($api)
@@ -257,15 +255,9 @@ $api->version(['v1', 'latest'], function ($api)
         });
     });
 
-    $api->group(['prefix' => '/trending'], function ($api)
+    $api->group(['prefix' => '/flow'], function ($api)
     {
-        $api->get('/news', 'App\Api\V1\Controllers\TrendingController@news');
-
-        $api->get('/active', 'App\Api\V1\Controllers\TrendingController@active');
-
-        $api->get('/hot', 'App\Api\V1\Controllers\TrendingController@hot');
-
-        $api->get('/users', 'App\Api\V1\Controllers\TrendingController@users');
+        $api->get('/list', 'App\Api\V1\Controllers\TrendingController@flowlist');
 
         $api->get('/meta', 'App\Api\V1\Controllers\TrendingController@meta');
     });
@@ -410,10 +402,6 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/add_to_trial', 'App\Api\V1\Controllers\UserController@addUserToTrial');
 
-            $api->post('/block', 'App\Api\V1\Controllers\UserController@blockUser');
-
-            $api->post('/recover', 'App\Api\V1\Controllers\UserController@recoverUser');
-
             $api->post('/transactions', 'App\Api\V1\Controllers\UserController@getUserCoinTransactions');
 
             $api->post('/withdrawal', 'App\Api\V1\Controllers\UserController@withdrawal');
@@ -452,45 +440,49 @@ $api->version(['v1', 'latest'], function ($api)
             {
                 $api->get('/list', 'App\Api\V1\Controllers\UserController@trials');
 
-                $api->post('/delete_info', 'App\Api\V1\Controllers\UserController@deleteUserInfo');
+                $api->post('/ban', 'App\Api\V1\Controllers\UserController@ban');
 
-                $api->post('/pass', 'App\Api\V1\Controllers\UserController@passUser');
+                $api->post('/pass', 'App\Api\V1\Controllers\UserController@pass');
+
+                $api->post('/recover', 'App\Api\V1\Controllers\UserController@recover');
+
+                $api->post('/delete_info', 'App\Api\V1\Controllers\UserController@deleteUserInfo');
             });
 
             $api->group(['prefix' => '/image'], function ($api)
             {
-                $api->get('/list', 'App\Api\V1\Controllers\ImageController@trialList');
+                $api->get('/list', 'App\Api\V1\Controllers\ImageController@trials');
 
-                $api->post('/delete', 'App\Api\V1\Controllers\ImageController@trialDelete');
+                $api->post('/ban', 'App\Api\V1\Controllers\ImageController@ban');
 
-                $api->post('/pass', 'App\Api\V1\Controllers\ImageController@trialPass');
+                $api->post('/pass', 'App\Api\V1\Controllers\ImageController@pass');
             });
 
             $api->group(['prefix' => '/comment'], function ($api)
             {
-                $api->get('/list', 'App\Api\V1\Controllers\CommentController@trialList');
+                $api->get('/list', 'App\Api\V1\Controllers\CommentController@trials');
 
-                $api->post('/delete', 'App\Api\V1\Controllers\CommentController@trialDelete');
+                $api->post('/ban', 'App\Api\V1\Controllers\CommentController@ban');
 
-                $api->post('/pass', 'App\Api\V1\Controllers\CommentController@trialPass');
+                $api->post('/pass', 'App\Api\V1\Controllers\CommentController@pass');
             });
 
             $api->group(['prefix' => '/bangumi'], function ($api)
             {
-                $api->get('/list', 'App\Api\V1\Controllers\BangumiController@trialList');
+                $api->get('/list', 'App\Api\V1\Controllers\BangumiController@trials');
 
-                $api->post('/pass', 'App\Api\V1\Controllers\BangumiController@trialPass');
+                $api->post('/pass', 'App\Api\V1\Controllers\BangumiController@pass');
             });
 
             $api->group(['prefix' => '/post'], function ($api)
             {
-                $api->get('/list', 'App\Api\V1\Controllers\PostController@trialList');
+                $api->get('/list', 'App\Api\V1\Controllers\PostController@trials');
+
+                $api->post('/ban', 'App\Api\V1\Controllers\PostController@ban');
+
+                $api->post('/pass', 'App\Api\V1\Controllers\PostController@pass');
 
                 $api->post('/delete_image', 'App\Api\V1\Controllers\PostController@deletePostImage');
-
-                $api->post('/delete', 'App\Api\V1\Controllers\PostController@trialDelete');
-
-                $api->post('/pass', 'App\Api\V1\Controllers\PostController@trialPass');
             });
 
             $api->group(['prefix' => '/score'], function ($api)
@@ -504,11 +496,11 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->group(['prefix' => '/cartoon_role'], function ($api)
             {
-                $api->get('/list', 'App\Api\V1\Controllers\CartoonRoleController@trialList');
+                $api->get('/list', 'App\Api\V1\Controllers\CartoonRoleController@trials');
 
-                $api->post('/ban', 'App\Api\V1\Controllers\CartoonRoleController@trialBan');
+                $api->post('/ban', 'App\Api\V1\Controllers\CartoonRoleController@ban');
 
-                $api->post('/pass', 'App\Api\V1\Controllers\CartoonRoleController@trialPass');
+                $api->post('/pass', 'App\Api\V1\Controllers\CartoonRoleController@pass');
             });
         });
     });

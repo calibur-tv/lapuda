@@ -19,21 +19,25 @@ use Illuminate\Support\Facades\Redis;
 
 class PostRepository extends Repository
 {
-    public function item($id)
+    public function item($id, $isShow = false)
     {
         if (!$id)
         {
             return null;
         }
 
-        return $this->Cache('post_' . $id, function () use ($id)
+        $result = $this->Cache('post_' . $id, function () use ($id)
         {
-            $post = Post::find($id);
+            $post = Post
+                ::withTrashed()
+                ->where('id', $id)
+                ->first();
 
             if (is_null($post))
             {
                 return null;
             }
+
             $post = $post->toArray();
 
             $images = PostImages::where('post_id', $id)
@@ -46,6 +50,13 @@ class PostRepository extends Repository
 
             return $post;
         });
+
+        if (!$result || ($result['deleted_at'] && !$isShow))
+        {
+            return null;
+        }
+
+        return $result;
     }
 
     public function list($ids)
@@ -54,7 +65,8 @@ class PostRepository extends Repository
         foreach ($ids as $id)
         {
             $item = $this->item($id);
-            if ($item) {
+            if ($item)
+            {
                 $result[] = $item;
             }
         }

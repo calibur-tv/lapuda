@@ -31,7 +31,8 @@ class ImageTrendingService extends TrendingService
 
     public function computeNewsIds()
     {
-        return Image::where('state', 0)
+        return Image
+            ::where('state', 0)
             ->when($this->bangumiId, function ($query)
             {
                 return $query->where('bangumi_id', $this->bangumiId);
@@ -52,7 +53,8 @@ class ImageTrendingService extends TrendingService
 
     public function computeActiveIds()
     {
-        return Image::where('state', 0)
+        return Image
+            ::where('state', 0)
             ->when($this->bangumiId, function ($query)
             {
                 return $query->where('bangumi_id', $this->bangumiId);
@@ -73,7 +75,9 @@ class ImageTrendingService extends TrendingService
 
     public function computeHotIds()
     {
-        $ids = Image::where('created_at', '>', Carbon::now()->addDays(-30))
+        $ids = Image
+            ::where('state', 0)
+            ->where('created_at', '>', Carbon::now()->addDays(-30))
             ->when($this->bangumiId, function ($query)
             {
                 return $query->where('bangumi_id', $this->bangumiId);

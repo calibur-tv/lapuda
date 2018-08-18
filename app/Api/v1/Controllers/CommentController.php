@@ -629,7 +629,7 @@ class CommentController extends Controller
         return $this->resCreated((boolean)$result);
     }
 
-    public function trialList()
+    public function trials()
     {
         $types = ['post', 'video', 'image', 'score'];
         $result = [];
@@ -663,7 +663,7 @@ class CommentController extends Controller
         ]);
     }
 
-    public function trialDelete(Request $request)
+    public function ban(Request $request)
     {
         $id = $request->get('id');
         $type = $request->get('type');
@@ -678,7 +678,7 @@ class CommentController extends Controller
         return $this->resNoContent();
     }
 
-    public function trialPass(Request $request)
+    public function pass(Request $request)
     {
         $id = $request->get('id');
         $type = $request->get('type');
