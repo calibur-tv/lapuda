@@ -26,19 +26,6 @@ class QuestionRepository extends Repository
         return $id;
     }
 
-    public function list($ids)
-    {
-        $result = [];
-        foreach ($ids as $id)
-        {
-            $item = $this->item($id);
-            if ($item) {
-                $result[] = $item;
-            }
-        }
-        return $result;
-    }
-
     public function userFlow()
     {
 

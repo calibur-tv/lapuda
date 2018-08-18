@@ -206,8 +206,6 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/editAlbum', 'App\Api\V1\Controllers\ImageController@editAlbum')->middleware(['jwt.auth']);
 
-        $api->get('/users', 'App\Api\V1\Controllers\ImageController@users');
-
         $api->group(['prefix' => '/album/{id}'], function ($api)
         {
             $api->post('/sort', 'App\Api\V1\Controllers\ImageController@albumSort')->middleware(['jwt.auth']);
@@ -261,8 +259,6 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/meta', 'App\Api\V1\Controllers\TrendingController@meta');
     });
-
-    $api->get('/flowlist', 'App\Api\V1\Controllers\TrendingController@flowlist');
 
     $api->group(['prefix' => '/toggle'], function ($api)
     {

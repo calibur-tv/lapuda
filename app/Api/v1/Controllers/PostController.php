@@ -74,6 +74,23 @@ class PostController extends Controller
             return $this->resErrParams($validator);
         }
 
+        $images = $request->get('images');
+        foreach ($images as $i => $image)
+        {
+            $validator = Validator::make($image, [
+                'key' => 'required|string',
+                'width' => 'required|integer',
+                'height' => 'required|integer',
+                'size' => 'required|integer',
+                'type' => 'required|string',
+            ]);
+
+            if ($validator->fails())
+            {
+                return $this->resErrParams($validator);
+            }
+        }
+
         $bangumiId = $request->get('bangumiId');
         $userId = $this->getAuthUserId();
         $postRepository = new PostRepository();
@@ -96,13 +113,7 @@ class PostController extends Controller
             'is_creator' => $request->get('is_creator'),
             'created_at' => $now,
             'updated_at' => $now
-        ], $request->get('images'));
-
-        $postTrendingService = new PostTrendingService($bangumiId, $userId);
-        $postTrendingService->create($id);
-
-        $job = (new \App\Jobs\Trial\Post\Create($id));
-        dispatch($job);
+        ], $images);
 
         return $this->resCreated($id);
     }
@@ -277,30 +288,7 @@ class PostController extends Controller
             return $this->resErrRole('权限不足');
         }
 
-        DB::table('posts')
-            ->where('id', $postId)
-            ->update([
-                'deleted_at' => Carbon::now()
-            ]);
-        /*
-         * 删除主题帖
-         * 删除 bangumi-cache-ids-list 中的这个帖子 id
-         * 删除用户帖子列表的id
-         * 删除最新和热门帖子下该帖子的缓存
-         * 删掉主题帖的缓存
-         */
-        Redis::DEL('post_'.$postId);
-        $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
-        $postTrendingService->delete($postId);
-
-        $job = (new \App\Jobs\Search\Post\Delete($postId));
-        dispatch($job);
-
-        $job = (new \App\Jobs\Push\Baidu('post/' . $postId, 'del'));
-        dispatch($job);
-
-        $totalPostCount = new TotalPostCount();
-        $totalPostCount->add(-1);
+        $postRepository->deleteProcess($postId, 0);
 
         return $this->resNoContent();
     }
@@ -476,61 +464,30 @@ class PostController extends Controller
     public function ban(Request $request)
     {
         $id = $request->get('id');
-        $post = Post::withTrashed()
-            ->where('id', $id)
-            ->first();
-
+        $postRepository = new PostRepository();
+        $post = $postRepository->item($id, true);
         if (is_null($post))
         {
             return $this->resErrNotFound();
         }
 
-        Redis::DEL('post_'.$id);
-        Redis::ZREM('post_how_ids', $id);
-        Redis::ZREM('post_new_ids', $id);
-        Redis::ZREM('bangumi_'.$post->bangumi_id.'_posts_new_ids', $id);
+        $postRepository->deleteProcess($post['id'], 0);
 
-        $post->update([
-            'state' => 0
-        ]);
-        $post->delete();
-
-        $searchService = new Search();
-        $searchService->delete($id, 'post');
-        // TODO：百度
         return $this->resNoContent();
     }
 
     public function pass(Request $request)
     {
         $postId = $request->get('id');
-
-        $post = Post::withTrashed()
-            ->where('id', $postId)
-            ->first();
+        $postRepository = new PostRepository();
+        $post = $postRepository->item($postId, true);
 
         if (is_null($post))
         {
             return $this->resErrNotFound();
         }
 
-        if ($post->deleted_at)
-        {
-            $post->restore();
-            $postRepository = new PostRepository();
-            $postRepository->trialPass($post);
-        }
-        $post->update([
-            'state' => 0
-        ]);
-
-        $searchService = new Search();
-        $searchService->create(
-            $postId,
-            $post->title . ',' . $post->desc,
-            'post',
-            strtotime($post->created_at)
-        );
+        $postRepository->recoverProcess($postId);
 
         return $this->resNoContent();
     }

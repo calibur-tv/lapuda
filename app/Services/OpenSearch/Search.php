@@ -64,6 +64,11 @@ class Search
 
     public function create($id, $content, $modal, $time = null)
     {
+        if (config('app.env') !== 'production')
+        {
+            return 0;
+        }
+
         $modalId = $this->computeModalIdByStr($modal);
         if (!$modalId)
         {
@@ -83,6 +88,11 @@ class Search
 
     public function delete($id, $modal)
     {
+        if (config('app.env') !== 'production')
+        {
+            return 0;
+        }
+
         $modalId = $this->computeModalIdByStr($modal);
         if (!$modalId)
         {
@@ -96,6 +106,11 @@ class Search
 
     public function update($id, $content, $modal)
     {
+        if (config('app.env') !== 'production')
+        {
+            return 0;
+        }
+
         $modalId = $this->computeModalIdByStr($modal);
         if (!$modalId)
         {
@@ -192,6 +207,11 @@ class Search
 
     public function weight($id, $modal, $score = 1)
     {
+        if (config('app.env') !== 'production')
+        {
+            return 0;
+        }
+
         $modalId = $this->computeModalIdByStr($modal);
         if (!$modalId)
         {

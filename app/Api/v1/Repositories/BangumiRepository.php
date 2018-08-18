@@ -127,19 +127,6 @@ class BangumiRepository extends Repository
         return $bangumi;
     }
 
-    public function list($ids)
-    {
-        $result = [];
-        foreach ($ids as $id)
-        {
-            $item = $this->item($id);
-            if ($item) {
-                $result[] = $item;
-            }
-        }
-        return $result;
-    }
-
     public function timeline($year)
     {
         return $this->Cache('bangumi_news_' . $year, function () use ($year)

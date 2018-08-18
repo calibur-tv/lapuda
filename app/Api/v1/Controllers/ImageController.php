@@ -54,6 +54,86 @@ class ImageController extends Controller
         return $this->resOK($imageTransformer->indexBanner($list));
     }
 
+    public function getIndexBanners()
+    {
+        $imageRepository = new ImageRepository();
+
+        $list = $imageRepository->banners(true);
+        $transformer = new ImageTransformer();
+
+        return $this->resOK($transformer->indexBanner($list));
+    }
+
+    public function uploadIndexBanner(Request $request)
+    {
+        $now = Carbon::now();
+
+        $id = Banner::insertGetId([
+            'url' => $request->get('url'),
+            'bangumi_id' => $request->get('bangumi_id') ?: 0,
+            'user_id' => $request->get('user_id') ?: 0,
+            'gray' => $request->get('gray') ?: 0,
+            'created_at' => $now,
+            'updated_at' => $now
+        ]);
+
+        Redis::DEL('loop_banners');
+        Redis::DEL('loop_banners_all');
+
+        return $this->resCreated($id);
+    }
+
+    public function toggleIndexBanner(Request $request)
+    {
+        $id = $request->get('id');
+        $banner = Banner::find($id);
+
+        if (is_null($banner))
+        {
+            Banner::withTrashed()->find($id)->restore();
+            $result = true;
+        }
+        else
+        {
+            $banner->delete();
+            $result = false;
+        }
+
+        Redis::DEL('loop_banners');
+        Redis::DEL('loop_banners_all');
+
+        return $this->resOK($result);
+    }
+
+    public function editIndexBanner(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer|min:1',
+            'bangumi_id' => 'required|integer|min:0',
+            'user_id' => 'required|integer|min:0'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $id = $request->get('id');
+
+        Banner::withTrashed()
+            ->where('id', $id)
+            ->update([
+                'bangumi_id' => $request->get('bangumi_id'),
+                'user_id' => $request->get('user_id'),
+                'updated_at' => Carbon::now()
+            ]);
+
+        Redis::DEL('loop_banners');
+        Redis::DEL('loop_banners_all');
+
+        return $this->resNoContent();
+    }
+
     /**
      * 获取 Geetest 验证码
      *
@@ -181,14 +261,6 @@ class ImageController extends Controller
             'part' => $part
         ]);
 
-        if (!$albumId)
-        {
-            return $this->resErrBad('图片中可能含有违规信息');
-        }
-
-        $totalImageAlbumCount = new TotalImageAlbumCount();
-        $totalImageAlbumCount->add();
-
         $newAlbum = $imageRepository->item($albumId);
         $imageTransformer = new ImageTransformer();
 
@@ -267,22 +339,8 @@ class ImageController extends Controller
             }
         }
 
-        $url = $request->get('url');
-        $imageFilter = new ImageFilter();
-        $result = $imageFilter->check($url);
-        if ($result['delete'])
-        {
-            return $this->resErrBad('新封面可能含有违规信息');
-        }
-
-        $state = 0;
+        $url = $imageRepository->convertImagePath($request->get('url'));
         $name = Purifier::clean($request->get('name'));
-        $wordsFilter = new WordsFilter();
-        $badWordsCount = $wordsFilter->count($name);
-        if ($result['review'] || $badWordsCount)
-        {
-            $state = $userId;
-        }
 
         Image::where('id', $id)
             ->update([
@@ -292,15 +350,13 @@ class ImageController extends Controller
                 'type' => $request->get('type'),
                 'width' => $request->get('width'),
                 'height' => $request->get('height'),
-                'part' => $request->get('part'),
-                'state' => $state
+                'part' => $request->get('part')
             ]);
 
-        Redis::DEL($imageRepository->cacheKeyImageItem($id));
-        if ($album['is_cartoon'])
-        {
-            Redis::DEL($imageRepository->cacheKeyCartoonParts($album['bangumi_id']));
-        }
+        Redis::DEL($imageRepository->itemCacheKey($id));
+
+        $job = (new \App\Jobs\Trial\Image\Create($id));
+        dispatch($job);
 
         return $this->resNoContent();
     }
@@ -362,22 +418,14 @@ class ImageController extends Controller
             'is_album' => false,
             'is_cartoon' => false,
             'is_creator' => $request->get('is_creator'),
-            'name' => $request->get('name'),
-            'url' => $request->get('url'),
+            'name' => Purifier::clean($request->get('name')),
+            'url' => $imageRepository->convertImagePath($request->get('url')),
             'width' => $request->get('width'),
             'height' => $request->get('height'),
             'size' => $request->get('size'),
             'type' => $request->get('type'),
             'part' => 0
         ]);
-
-        if (!$newId)
-        {
-            return $this->resErrBad('图片中可能含有违规信息');
-        }
-
-        $totalImageCount = new TotalImageCount();
-        $totalImageCount->add();
 
         return $this->resCreated($newId);
     }
@@ -436,7 +484,8 @@ class ImageController extends Controller
                 'bangumi_id' => $bangumiId
             ]);
 
-        Redis::DEL($imageRepository->cacheKeyImageItem($imageId));
+        Redis::DEL($this->itemCacheKey($imageId));
+        $imageRepository->updateProcess($imageId);
 
         return $this->resNoContent();
     }
@@ -482,6 +531,7 @@ class ImageController extends Controller
         $userId = $this->getAuthUserId();
         $images = $request->get('images');
         $albumId = $request->get('album_id');
+        $imageRepository = new ImageRepository();
 
         foreach ($images as $i => $image)
         {
@@ -498,13 +548,13 @@ class ImageController extends Controller
                 return $this->resErrParams($validator);
             }
 
+            $images[$i]['url'] = $imageRepository->convertImagePath($image['url']);
             $images[$i]['user_id'] = $userId;
             $images[$i]['album_id'] = $albumId;
             $images[$i]['created_at'] = $now;
             $images[$i]['updated_at'] = $now;
         }
 
-        $imageRepository = new ImageRepository();
         $album = $imageRepository->item($albumId);
 
         if (is_null($album) || $album['user_id'] != $userId)
@@ -556,12 +606,13 @@ class ImageController extends Controller
         }
         else
         {
-            $job = (new \App\Jobs\Trial\Image\Create($newIds));
+            $job = (new \App\Jobs\Trial\Image\Append($newIds));
             dispatch($job);
         }
 
-        Redis::DEL($imageRepository->cacheKeyImageItem($albumId));
+        Redis::DEL($imageRepository->itemCacheKey($albumId));
         Redis::DEL($imageRepository->cacheKeyAlbumImages($albumId));
+        $imageRepository->updateProcess($albumId);
 
         return $this->resNoContent();
     }
@@ -595,39 +646,6 @@ class ImageController extends Controller
         $imageTransformer = new ImageTransformer();
 
         return $this->resOK($imageTransformer->userAlbums($list));
-    }
-
-    /**
-     * 用户的相册列表
-     *
-     * @Get("/image/users")
-     *
-     * @Parameters({
-     *      @Parameter("zone", description="用户的空间地址", type="string", required=true),
-     *      @Parameter("page", description="页数", type="integer", required=true, default=0),
-     * })
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"list":"相册列表", "total": "总数", "noMore": "是否还有更多"}}),
-     *      @Response(404, body={"code": 40401, "message": "用户不存在"})
-     * })
-     */
-    public function users(Request $request)
-    {
-        $page = $request->get('page') ?: 0;
-        $zone = $request->get('zone');
-        $take = 12;
-
-        $repository = new Repository();
-        $userId = $repository->getUserIdByZone($zone);
-        if (!$userId)
-        {
-            return $this->resErrNotFound();
-        }
-
-        $imageTrendingService = new ImageTrendingService(0, $userId);
-
-        return $this->resOK($imageTrendingService->users($page, $take));
     }
 
     /**
@@ -674,35 +692,13 @@ class ImageController extends Controller
             }
         }
 
-        Image::where('id', $albumId)->delete();
-        Redis::DEL($imageRepository->cacheKeyImageItem($albumId));
-        $imageTrendingService = new ImageTrendingService($album['bangumi_id'], $album['user_id']);
-        $imageTrendingService->delete($albumId);
+        $imageRepository->deleteProcess($albumId);
 
-        if ($album['is_album'])
-        {
-            AlbumImage::where('album_id', $albumId)->delete();
-            Redis::DEL($imageRepository->cacheKeyAlbumImages($albumId));
-            if ($albumId['is_cartoon'])
-            {
-                Redis::DEL($imageRepository->cacheKeyCartoonParts($album['bangumi_id']));
-            }
-            else
-            {
-                $totalImageAlbumCount = new TotalImageAlbumCount();
-                $totalImageAlbumCount->add(-1);
-                $totalImageCount = new TotalImageCount();
-                $totalImageCount->add(-count(explode(',', $album['image_ids'])));
-            }
-        }
-
-        // TODO：SEO
-        // TODO：search
         return $this->resNoContent();
     }
 
     /**
-     * 用户的相册列表
+     * 图片详情页
      *
      * @Get("/image/${image_id}/show")
      *
@@ -904,7 +900,7 @@ class ImageController extends Controller
                 'image_ids' => $result
             ]);
 
-        Redis::DEL($imageRepository->cacheKeyAlbumImages($id));
+        Redis::DEL($imageRepository->itemCacheKey($id));
 
         return $this->resNoContent();
     }
@@ -984,91 +980,11 @@ class ImageController extends Controller
 
         $image->delete();
 
-        Redis::DEL($imageRepository->cacheKeyImageItem($id));
+        Redis::DEL($imageRepository->itemCacheKey($id));
         Redis::DEL($imageRepository->cacheKeyAlbumImages($id));
 
         $totalImageCount = new TotalImageCount();
         $totalImageCount->add(-1);
-
-        return $this->resNoContent();
-    }
-
-    public function getIndexBanners()
-    {
-        $imageRepository = new ImageRepository();
-
-        $list = $imageRepository->banners(true);
-        $transformer = new ImageTransformer();
-
-        return $this->resOK($transformer->indexBanner($list));
-    }
-
-    public function uploadIndexBanner(Request $request)
-    {
-        $now = Carbon::now();
-
-        $id = Banner::insertGetId([
-            'url' => $request->get('url'),
-            'bangumi_id' => $request->get('bangumi_id') ?: 0,
-            'user_id' => $request->get('user_id') ?: 0,
-            'gray' => $request->get('gray') ?: 0,
-            'created_at' => $now,
-            'updated_at' => $now
-        ]);
-
-        Redis::DEL('loop_banners');
-        Redis::DEL('loop_banners_all');
-
-        return $this->resCreated($id);
-    }
-
-    public function toggleIndexBanner(Request $request)
-    {
-        $id = $request->get('id');
-        $banner = Banner::find($id);
-
-        if (is_null($banner))
-        {
-            Banner::withTrashed()->find($id)->restore();
-            $result = true;
-        }
-        else
-        {
-            $banner->delete();
-            $result = false;
-        }
-
-        Redis::DEL('loop_banners');
-        Redis::DEL('loop_banners_all');
-
-        return $this->resOK($result);
-    }
-
-    public function editIndexBanner(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'id' => 'required|integer|min:1',
-            'bangumi_id' => 'required|integer|min:0',
-            'user_id' => 'required|integer|min:0'
-        ]);
-
-        if ($validator->fails())
-        {
-            return $this->resErrParams($validator);
-        }
-
-        $id = $request->get('id');
-
-        Banner::withTrashed()
-            ->where('id', $id)
-            ->update([
-                'bangumi_id' => $request->get('bangumi_id'),
-                'user_id' => $request->get('user_id'),
-                'updated_at' => Carbon::now()
-            ]);
-
-        Redis::DEL('loop_banners');
-        Redis::DEL('loop_banners_all');
 
         return $this->resNoContent();
     }
@@ -1090,28 +1006,10 @@ class ImageController extends Controller
     public function ban(Request $request)
     {
         $id = $request->get('id');
-        $type = $request->get('type');
         $imageRepository = new ImageRepository();
 
-        if ($type === 'image')
-        {
-            $albumId = AlbumImage::where('id', $id)->pluck('album_id')->first();
-            AlbumImage::withTrashed()->where('id', $id)
-                ->update([
-                    'state' => 0,
-                    'deleted_at' => Carbon::now()
-                ]);
-            Redis::DEL($imageRepository->cacheKeyAlbumImages($albumId));
-        }
-        else
-        {
-            Image::withTrashed()->where('id', $id)
-                ->update([
-                    'state' => 0,
-                    'deleted_at' => Carbon::now()
-                ]);
-            Redis::DEL($imageRepository->cacheKeyImageItem($id));
-        }
+        Redis::DEL($imageRepository->itemCacheKey($id));
+        $imageRepository->deleteProcess($id);
 
         return $this->resNoContent();
     }
@@ -1123,10 +1021,8 @@ class ImageController extends Controller
 
         if ($type === 'album')
         {
-            Image::withTrashed()->where('id', $id)
-                ->update([
-                    'state' => 0
-                ]);
+            $imageRepository = new ImageRepository();
+            $imageRepository->recoverProcess($id);
         }
         else
         {

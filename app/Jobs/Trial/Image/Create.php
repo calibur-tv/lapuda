@@ -2,9 +2,11 @@
 
 namespace App\Jobs\Trial\Image;
 
+use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Services\Counter\Stats\TotalImageCount;
 use App\Models\AlbumImage;
 use App\Services\Trial\ImageFilter;
+use App\Services\Trial\WordsFilter;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
@@ -17,15 +19,15 @@ class Create implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $ids;
+    protected $imageId;
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($newIdsArr)
+    public function __construct($id)
     {
-        $this->ids = $newIdsArr;
+        $this->imageId = $id;
     }
 
     /**
@@ -35,37 +37,45 @@ class Create implements ShouldQueue
      */
     public function handle()
     {
-        $images = AlbumImage::whereIn('id', $this->ids)
-            ->select('id', 'url', 'album_id', 'user_id')
-            ->get()
-            ->toArray();
+        $imageRepository = new ImageRepository();
+        $image = $imageRepository->item($this->imageId);
 
-        $total = count($images);
         $imageFilter = new ImageFilter();
-        foreach ($images as $image)
+        $result = $imageFilter->check($image['url']);
+
+        $needDelete = false;
+        $needTrial = false;
+        if ($result['delete'])
         {
-            $result = $imageFilter->check($image['url']);
-            if ($result['delete'])
-            {
-                DB::table('album_images')
-                    ->where('id', $image['id'])
-                    ->update([
-                        'state' => $image['user_id'],
-                        'url' => ''
-                    ]);
-                $total--;
-            }
-            if ($result['review'])
-            {
-                DB::table('album_images')
-                    ->where('id', $image['id'])
-                    ->update([
-                        'state' => $image['user_id']
-                    ]);
-            }
+            $needDelete = true;
         }
 
-        $totalImageCount = new TotalImageCount();
-        $totalImageCount->add($total);
+        $wordsFilter = new WordsFilter();
+        $badWordsCount = $wordsFilter->count($image['name']);
+
+        if ($result['review'] || $badWordsCount > 0)
+        {
+            $needTrial = true;
+        }
+
+        if ($needDelete)
+        {
+            $imageRepository->deleteProcess($this->imageId, $image['user_id']);
+        }
+        else if ($needTrial)
+        {
+            $imageRepository->trialProcess($this->imageId, $image['user_id']);
+        }
+        else
+        {
+            if ($image['updated_at'] !== $image['created_at'])
+            {
+                $imageRepository->updateProcess($this->imageId);
+            }
+            else
+            {
+                $imageRepository->createProcess($this->imageId);
+            }
+        }
     }
 }
