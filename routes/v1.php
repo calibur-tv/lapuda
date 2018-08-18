@@ -262,8 +262,6 @@ $api->version(['v1', 'latest'], function ($api)
         $api->get('/meta', 'App\Api\V1\Controllers\TrendingController@meta');
     });
 
-    $api->get('/flowlist', 'App\Api\V1\Controllers\TrendingController@flowlist');
-
     $api->group(['prefix' => '/toggle'], function ($api)
     {
         $api->group(['middleware' => ['jwt.auth']], function ($api)
