@@ -3,17 +3,13 @@
 namespace App\Jobs\Trial\Post;
 
 use App\Api\V1\Repositories\PostRepository;
-use App\Api\V1\Services\Counter\Stats\TotalPostCount;
 use App\Services\Trial\ImageFilter;
 use App\Services\Trial\WordsFilter;
-use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 
 class Create implements ShouldQueue
 {
@@ -71,29 +67,22 @@ class Create implements ShouldQueue
 
         if ($needDelete)
         {
-            DB::table('posts')
-                ->where('id', $this->postId)
-                ->update([
-                    'state' => $post['user_id'],
-                    'deleted_at' => Carbon::now()
-                ]);
-
-            Redis::DEL('post_'.$post['id']);
+            $postRepository->deleteProcess($this->postId, $post['user_id']);
         }
         else if ($needTrial)
         {
-            DB::table('posts')
-                ->where('id', $this->postId)
-                ->update([
-                    'state' => $post['user_id']
-                ]);
+            $postRepository->trialProcess($this->postId, $post['user_id']);
         }
         else
         {
-            $postRepository->trialPass($post);
+            if ($post['created_at'] !== $post['updated_at'])
+            {
+                $postRepository->updateProcess($this->postId);
+            }
+            else
+            {
+                $postRepository->createProcess($this->postId);
+            }
         }
-
-        $totalPostCounter = new TotalPostCount();
-        $totalPostCounter->add();
     }
 }

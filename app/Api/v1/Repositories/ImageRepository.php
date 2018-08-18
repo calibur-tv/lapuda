@@ -8,14 +8,15 @@
 
 namespace App\Api\V1\Repositories;
 
+use App\Api\V1\Services\Counter\Stats\TotalImageAlbumCount;
+use App\Api\V1\Services\Counter\Stats\TotalImageCount;
 use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\AlbumImage;
 use App\Models\Banner;
 use App\Models\Image;
-use App\Models\Tag;
-use App\Services\Trial\ImageFilter;
-use App\Services\Trial\WordsFilter;
+use App\Services\BaiduSearch\BaiduPush;
+use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -30,7 +31,7 @@ class ImageRepository extends Repository
             return null;
         }
 
-        $result = $this->Cache($this->cacheKeyImageItem($id), function () use ($id)
+        $result = $this->Cache($this->itemCacheKey($id), function () use ($id)
         {
             $image = Image
                 ::withTrashed()
@@ -59,38 +60,8 @@ class ImageRepository extends Repository
         return $result;
     }
 
-    public function list($ids)
-    {
-        $result = [];
-        foreach ($ids as $id)
-        {
-            $item = $this->item($id);
-            if ($item)
-            {
-                $result[] = $item;
-            }
-        }
-        return $result;
-    }
-
     public function createSingle($params)
     {
-        $imageFilter = new ImageFilter();
-        $result = $imageFilter->check($params['url']);
-        if ($result['delete'])
-        {
-            return 0;
-        }
-
-        $wordsFilter = new WordsFilter();
-        $badWordsCount = $wordsFilter->count($params['name']);
-        $state = 0;
-        if ($result['review'] || $badWordsCount > 0)
-        {
-            $state = $params['user_id'];
-        }
-
-
         $now = Carbon::now();
 
         $newId = DB::table('images')
@@ -101,23 +72,19 @@ class ImageRepository extends Repository
                 'is_creator' => $params['is_creator'],
                 'is_album' => $params['is_album'],
                 'name' => Purifier::clean($params['name']),
-                'url' => $params['url'],
+                'url' => $this->convertImagePath($params['url']),
                 'width' => $params['width'],
                 'height' => $params['height'],
                 'size' => $params['size'],
                 'type' => $params['type'],
                 'part' => $params['part'],
-                'state' => $state,
+                'state' => 0,
                 'created_at' => $now,
                 'updated_at' => $now
             ]);
 
-        if ($params['is_cartoon'])
-        {
-            Redis::DEL($this->cacheKeyCartoonParts($params['bangumi_id']));
-        }
-
-        $this->imageCreateSuccessProcess($newId, $params['user_id'], $params['bangumi_id']);
+        $job = (new \App\Jobs\Trial\Image\Create($newId));
+        dispatch($job);
 
         return $newId;
     }
@@ -289,15 +256,125 @@ class ImageRepository extends Repository
             ->count();
     }
 
-    public function imageCreateSuccessProcess($imageId, $userId, $bangumiId)
+    public function createProcess($id)
     {
-        $imageTrendingService = new ImageTrendingService($bangumiId, $userId);
-        $imageTrendingService->create($imageId);
-        // TODO：SEO
-        // TODO：search
+        $image = $this->item($id);
+
+        $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
+        $imageTrendingService->create($id);
+
+        $totalAlbumImageCount = new TotalImageAlbumCount();
+        $totalAlbumImageCount->add();
+
+        $search = new Search();
+        $search->create($id, $image['name'], 'image');
+
+        $baiduPush = new BaiduPush();
+        $baiduPush->create($id, 'image');
+        $baiduPush->trending('image');
+        $baiduPush->bangumi($image['bangumi_id']);
+
+        if ($image['is_cartoon'])
+        {
+            Redis::DEL($this->cacheKeyCartoonParts($image['bangumi_id']));
+        }
     }
 
-    public function cacheKeyImageItem($id)
+    public function updateProcess($id)
+    {
+        $image = $this->item($id);
+
+        $search = new Search();
+        $search->update($id, $image['name'], 'image');
+
+        $baiduPush = new BaiduPush();
+        $baiduPush->update($id, 'image');
+
+        if ($image['is_cartoon'])
+        {
+            Redis::DEL($this->cacheKeyCartoonParts($image['bangumi_id']));
+        }
+    }
+
+    public function trialProcess($id, $state)
+    {
+        DB::table('images')
+            ->where('id', $id)
+            ->update([
+                'state' => $state
+            ]);
+
+        Redis::DEL($this->itemCacheKey($id));
+    }
+
+    public function deleteProcess($id, $state = 0)
+    {
+        $image = $this->item($id);
+
+        DB::table('images')
+            ->where('id', $id)
+            ->update([
+                'state' => $state,
+                'deleted_at' => Carbon::now()
+            ]);
+
+        if ($state === 0 || $image['created_at'] !== $image['updated_at'])
+        {
+            $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
+            $imageTrendingService->delete($id);
+
+            $totalAlbumImageCount = new TotalImageAlbumCount();
+            $totalAlbumImageCount->add(-1);
+
+            $search = new Search();
+            $search->delete($id, 'image');
+
+            $baiduPush = new BaiduPush();
+            $baiduPush->delete($id, 'image');
+        }
+
+        if ($image['is_album'])
+        {
+            AlbumImage::where('album_id', $id)->delete();
+            Redis::DEL($this->cacheKeyAlbumImages($id));
+            if ($image['is_cartoon'])
+            {
+                Redis::DEL($this->cacheKeyCartoonParts($image['bangumi_id']));
+            }
+
+            $totalImageCount = new TotalImageCount();
+            $totalImageCount->add(-count(explode(',', $image['image_ids'])));
+        }
+
+        Redis::DEL($this->itemCacheKey($id));
+    }
+
+    public function recoverProcess($id)
+    {
+        $image = $this->item($id);
+        DB::table('images')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
+
+        if ($image['deleted_at'])
+        {
+            $totalAlbumImageCount = new TotalImageAlbumCount();
+            $totalAlbumImageCount->add();
+
+            $search = new Search();
+            $search->create($id, $image['name'], 'image');
+
+            $baiduPush = new BaiduPush();
+            $baiduPush->create($id, 'image');
+        }
+
+        Redis::DEL($this->itemCacheKey($id));
+    }
+
+    public function itemCacheKey($id)
     {
         return 'image_' . $id;
     }

@@ -10,11 +10,14 @@ namespace App\Api\V1\Repositories;
 
 
 use App\Api\V1\Services\Comment\PostCommentService;
+use App\Api\V1\Services\Counter\Stats\TotalPostCount;
 use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Models\Post;
 use App\Models\PostImages;
+use App\Services\BaiduSearch\BaiduPush;
 use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
 class PostRepository extends Repository
@@ -26,7 +29,7 @@ class PostRepository extends Repository
             return null;
         }
 
-        $result = $this->Cache('post_' . $id, function () use ($id)
+        $result = $this->Cache($this->itemCacheKey($id), function () use ($id)
         {
             $post = Post
                 ::withTrashed()
@@ -59,24 +62,14 @@ class PostRepository extends Repository
         return $result;
     }
 
-    public function list($ids)
-    {
-        $result = [];
-        foreach ($ids as $id)
-        {
-            $item = $this->item($id);
-            if ($item)
-            {
-                $result[] = $item;
-            }
-        }
-        return $result;
-    }
-
     public function create($data, $images)
     {
         $newId = Post::insertGetId($data);
+
         $this->savePostImage($newId, $newId, $images);
+        $job = (new \App\Jobs\Trial\Post\Create($newId));
+        dispatch($job);
+
         return $newId;
     }
 
@@ -91,7 +84,7 @@ class PostRepository extends Repository
             {
                 $arr[] = [
                     'post_id' => $commentId,
-                    'src' => $item['key'],
+                    'src' => $this->convertImagePath($item['key']),
                     'size' => intval($item['size']),
                     'width' => intval($item['width']),
                     'height' => intval($item['height']),
@@ -167,25 +160,103 @@ class PostRepository extends Repository
         return $result;
     }
 
-    public function trialPass($post)
+    public function createProcess($id)
     {
-        $searchService = new Search();
-        $searchService->create(
-            $post['id'],
-            $post['title'] . ',' . $post['desc'],
-            'post'
-        );
+        $post = $this->item($id);
 
-        $trendingService = new PostTrendingService();
-        $trendingService->create($post['id']);
+        $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
+        $postTrendingService->create($id);
 
-        $job = (new \App\Jobs\Push\Baidu('post/trending/new', 'update'));
-        dispatch($job);
+        $totalPostCount = new TotalPostCount();
+        $totalPostCount->add();
 
-        $job = (new \App\Jobs\Push\Baidu('post/' . $post['id']));
-        dispatch($job);
+        $search = new Search();
+        $search->create($id, $post['title'] . '|' . $post['content'], 'post');
 
-        $job = (new \App\Jobs\Push\Baidu('bangumi/' . $post['bangumi_id'], 'update'));
-        dispatch($job);
+        $baiduPush = new BaiduPush();
+        $baiduPush->create($id, 'post');
+        $baiduPush->trending('post');
+        $baiduPush->bangumi($post['bangumi_id']);
+    }
+
+    public function updateProcess($id)
+    {
+        $post = $this->item($id);
+
+        $search = new Search();
+        $search->update($id, $post['title'] . '|' . $post['content'], 'post');
+
+        $baiduPush = new BaiduPush();
+        $baiduPush->update($id, 'post');
+    }
+
+    public function trialProcess($id, $state)
+    {
+        DB::table('posts')
+            ->where('id', $id)
+            ->update([
+                'state' => $state
+            ]);
+
+        Redis::DEL($this->itemCacheKey($id));
+    }
+
+    public function deleteProcess($id, $state = 0)
+    {
+        $post = $this->item($id);
+
+        DB::table('posts')
+            ->where('id', $id)
+            ->update([
+                'state' => $state,
+                'deleted_at' => Carbon::now()
+            ]);
+
+        if ($state === 0 || $post['created_at'] !== $post['updated_at'])
+        {
+            $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
+            $postTrendingService->delete($id);
+
+            $totalPostCount = new TotalPostCount();
+            $totalPostCount->add(-1);
+
+            $search = new Search();
+            $search->delete($id, 'post');
+
+            $baiduPush = new BaiduPush();
+            $baiduPush->delete($id, 'post');
+        }
+
+        Redis::DEL($this->itemCacheKey($id));
+    }
+
+    public function recoverProcess($id)
+    {
+        $post = $this->item($id);
+        DB::table('posts')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
+
+        if ($post['deleted_at'])
+        {
+            $totalPostCount = new TotalPostCount();
+            $totalPostCount->add();
+
+            $search = new Search();
+            $search->create($id, $post['title'] . '|' . $post['content'], 'post');
+
+            $baiduPush = new BaiduPush();
+            $baiduPush->create($id, 'post');
+        }
+
+        Redis::DEL($this->itemCacheKey($id));
+    }
+
+    public function itemCacheKey($id)
+    {
+        return 'post_' . $id;
     }
 }

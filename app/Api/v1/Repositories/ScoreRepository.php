@@ -14,6 +14,10 @@ use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
 use App\Models\Score;
+use App\Services\BaiduSearch\BaiduPush;
+use App\Services\OpenSearch\Search;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
@@ -21,7 +25,7 @@ class ScoreRepository extends Repository
 {
     public function item($id, $isShow = false)
     {
-        $result = $this->Cache($this->cacheKeyScoreItem($id), function () use ($id)
+        $result = $this->Cache($this->itemCacheKey($id), function () use ($id)
         {
             $score = Score
                 ::withTrashed()
@@ -55,20 +59,6 @@ class ScoreRepository extends Repository
             return null;
         }
 
-        return $result;
-    }
-
-    public function list($ids)
-    {
-        $result = [];
-        foreach ($ids as $id)
-        {
-            $item = $this->item($id);
-            if ($item)
-            {
-                $result[] = $item;
-            }
-        }
         return $result;
     }
 
@@ -186,13 +176,6 @@ class ScoreRepository extends Repository
 
     public function doPublish($userId, $scoreId, $bangumiId)
     {
-        $bangumiScoreService = new BangumiScoreService();
-        $bangumiScoreService->do($userId, $bangumiId);
-        Redis::DEL($this->cacheKeyBangumiScore($bangumiId));
-
-        $scoreTrendingService = new ScoreTrendingService($bangumiId, $userId);
-        $scoreTrendingService->create($scoreId);
-
         $bangumiFollowService = new BangumiFollowService();
         if (!$bangumiFollowService->check($userId, $bangumiId))
         {
@@ -200,23 +183,13 @@ class ScoreRepository extends Repository
             $bangumiFollowService->do($userId, $bangumiId);
         }
 
-        $job = (new \App\Jobs\Trial\JsonContent\TrialScore($scoreId));
+        $job = (new \App\Jobs\Trial\Score\Create($scoreId));
         dispatch($job);
-
-        $totalScoreCount = new TotalScoreCount();
-        $totalScoreCount->add();
-        // TODO：SEO
-        // TODO：SEARCH
     }
 
     public function cacheKeyBangumiScore($bangumiId)
     {
         return 'bangumi_' . $bangumiId . '_score';
-    }
-
-    public function cacheKeyScoreItem($id)
-    {
-        return 'score_' . $id;
     }
 
     public function filterContent(array $content)
@@ -240,10 +213,117 @@ class ScoreRepository extends Repository
                     'size' => $item['size'],
                     'mime' => $item['mime'],
                     'text' => $item['text'],
-                    'url' => str_replace(config('website.image'), '', $item['url'])
+                    'url' => $this->convertImagePath($item['uri'])
                 ];
             }
         }
         return Purifier::clean(json_encode($result));
+    }
+
+    public function createProcess($id)
+    {
+        $score = $this->item($id);
+
+        $bangumiScoreService = new BangumiScoreService();
+        $bangumiScoreService->do($score['user_id'], $score['bangumi_id']);
+        Redis::DEL($this->cacheKeyBangumiScore($score['bangumi_id']));
+
+        $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
+        $scoreTrendingService->create($id);
+
+        $totalScoreCount = new TotalScoreCount();
+        $totalScoreCount->add();
+
+        $search = new Search();
+        $search->create($id, $score['title'] . '|' . $score['intro'], 'score');
+
+        $baiduPush = new BaiduPush();
+        $baiduPush->create($id, 'score');
+        $baiduPush->trending('score');
+        $baiduPush->bangumi($score['bangumi_id']);
+    }
+
+    public function updateProcess($id)
+    {
+        $score = $this->item($id);
+
+        $search = new Search();
+        $search->update($id, $score['title'] . '|' . $score['intro'], 'score');
+
+        $baiduPush = new BaiduPush();
+        $baiduPush->update($id, 'score');
+    }
+
+    public function trialProcess($id, $state)
+    {
+        DB::table('scores')
+            ->where('id', $id)
+            ->update([
+                'state' => $state
+            ]);
+
+        Redis::DEL($this->itemCacheKey($id));
+    }
+
+    public function deleteProcess($id, $state = 0)
+    {
+        $score = $this->item($id);
+
+        DB::table('scores')
+            ->where('id', $id)
+            ->update([
+                'state' => $state,
+                'deleted_at' => Carbon::now()
+            ]);
+
+        if ($state === 0 || $score['created_at'] !== $score['updated_at'])
+        {
+            $bangumiScoreService = new BangumiScoreService();
+            $bangumiScoreService->undo($score['user_id'], $score['bangumi_id']);
+
+            $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
+            $scoreTrendingService->delete($id);
+
+            $totalPostCount = new TotalScoreCount();
+            $totalPostCount->add(-1);
+
+            $search = new Search();
+            $search->delete($id, 'score');
+
+            $baiduPush = new BaiduPush();
+            $baiduPush->delete($id, 'score');
+        }
+
+        Redis::DEL($this->itemCacheKey($id));
+    }
+
+    public function recoverProcess($id)
+    {
+        $post = $this->item($id);
+        DB::table('scores')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
+
+        if ($post['deleted_at'])
+        {
+            $totalScoreCount = new TotalScoreCount();
+            $totalScoreCount->add();
+
+            $search = new Search();
+            $search->create($id, $post['title'] . '|' . $post['intro'], 'score');
+
+            $baiduPush = new BaiduPush();
+            $baiduPush->create($id, 'score');
+        }
+
+        Redis::DEL($this->itemCacheKey($id));
+    }
+
+    public function itemCacheKey($id)
+    {
+        return 'post_' . $id;
     }
 }

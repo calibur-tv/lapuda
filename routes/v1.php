@@ -206,8 +206,6 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/editAlbum', 'App\Api\V1\Controllers\ImageController@editAlbum')->middleware(['jwt.auth']);
 
-        $api->get('/users', 'App\Api\V1\Controllers\ImageController@users');
-
         $api->group(['prefix' => '/album/{id}'], function ($api)
         {
             $api->post('/sort', 'App\Api\V1\Controllers\ImageController@albumSort')->middleware(['jwt.auth']);

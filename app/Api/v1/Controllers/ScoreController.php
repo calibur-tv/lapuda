@@ -12,8 +12,6 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
-use App\Api\V1\Services\Comment\ScoreCommentService;
-use App\Api\V1\Services\Counter\Stats\TotalScoreCount;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
 use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
@@ -400,7 +398,7 @@ class ScoreController extends Controller
         {
             $scoreRepository->doPublish($userId, $newId, $bangumiId);;
         }
-        Redis::DEL($scoreRepository->cacheKeyScoreItem($newId));
+        Redis::DEL($scoreRepository->itemCacheKey($newId));
 
         return $this->resNoContent();
     }
@@ -420,21 +418,7 @@ class ScoreController extends Controller
             return $this->resErrRole();
         }
 
-        DB::table('scores')
-            ->where('id', $id)
-            ->update([
-                'state' => 0,
-                'deleted_at' => Carbon::now()
-            ]);
-
-        Redis::DEL($scoreRepository->cacheKeyScoreItem($id));
-        Redis::DEL($scoreRepository->cacheKeyBangumiScore($score['bangumi_id']));
-
-        $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
-        $scoreTrendingService->delete($id);
-
-        $totalScoreCount = new TotalScoreCount();
-        $totalScoreCount->add(-1);
+        $scoreRepository->deleteProcess($id);
 
         return $this->resNoContent();
     }
@@ -460,12 +444,9 @@ class ScoreController extends Controller
     public function pass(Request $request)
     {
         $id = $request->get('id');
-        DB::table('scores')
-            ->where('id', $id)
-            ->update([
-                'state' => 0,
-                'deleted_at' => null
-            ]);
+
+        $scoreRepository = new ScoreRepository();
+        $scoreRepository->recoverProcess($id);
 
         return $this->resNoContent();
     }
@@ -473,12 +454,9 @@ class ScoreController extends Controller
     public function ban(Request $request)
     {
         $id = $request->get('id');
-        DB::table('scores')
-            ->where('id', $id)
-            ->update([
-                'state' => 0,
-                'deleted_at' => Carbon::now()
-            ]);
+
+        $scoreRepository = new ScoreRepository();
+        $scoreRepository->deleteProcess($id);
 
         return $this->resNoContent();
     }

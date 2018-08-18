@@ -15,6 +15,25 @@ use Illuminate\Support\Facades\Cache;
 
 class Repository
 {
+    public function list($ids)
+    {
+        if (empty($ids))
+        {
+            return [];
+        }
+
+        $result = [];
+        foreach ($ids as $id)
+        {
+            $item = $this->item($id);
+            if ($item)
+            {
+                $result[] = $item;
+            }
+        }
+        return $result;
+    }
+
     public function applyAddComment($userId, $post, $images, $newComment)
     {
 
@@ -373,6 +392,11 @@ class Repository
         $list = $bangumiRepository->appendBangumiToList($list);
 
         return $list;
+    }
+
+    public function convertImagePath($url)
+    {
+        return str_replace(config('website.image'), '', $url);
     }
 
     protected function formatJsonContent($content)

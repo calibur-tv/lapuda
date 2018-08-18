@@ -39,25 +39,6 @@ class CartoonRoleRepository extends Repository
         }, 'h');
     }
 
-    public function list($ids)
-    {
-        if (empty($ids))
-        {
-            return [];
-        }
-
-        $result = [];
-        foreach ($ids as $id)
-        {
-            $item = $this->item($id);
-            if ($item) {
-                $result[] = $item;
-            }
-        }
-
-        return $result;
-    }
-
     public function checkHasStar($roleId, $userId)
     {
         if (!$userId)

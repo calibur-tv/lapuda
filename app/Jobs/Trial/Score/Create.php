@@ -1,19 +1,17 @@
 <?php
 
-namespace App\Jobs\Trial\JsonContent;
+namespace App\Jobs\Trial\Score;
 
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Services\Trial\JsonContentFilter;
 use App\Services\Trial\WordsFilter;
-use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Support\Facades\DB;
 
-class TrialScore implements ShouldQueue
+class Create implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -39,31 +37,39 @@ class TrialScore implements ShouldQueue
         $score = $scoreRepository->item($this->scoreId);
 
         $filter = new JsonContentFilter();
-        $result = $filter->exec($score['content']);
         $wordsFilter = new WordsFilter();
-        if ($wordsFilter->count($score['title']) > 1)
-        {
-            $result['delete'] = true;
-        }
+        $result = $filter->exec($score['content']);
+
+        $needDelete = false;
+        $needTrial = false;
 
         if ($result['delete'])
         {
-            DB::table('scores')
-                ->where('id', $score['id'])
-                ->update([
-                    'state' => $score['user_id'],
-                    'deleted_at' => Carbon::now()
-                ]);
-
-            return;
+            $needDelete = true;
         }
-        if ($result['review'])
+        if ($result['review'] || $wordsFilter->count($score['title'] . $score['intro']) > 0)
         {
-            DB::table('scores')
-                ->where('id', $score['id'])
-                ->update([
-                    'state' => $score['user_id']
-                ]);
+            $needTrial = true;
+        }
+
+        if ($needDelete)
+        {
+            $scoreRepository->deleteProcess($this->scoreId, $score['user_id']);
+        }
+        else if ($needTrial)
+        {
+            $scoreRepository->trialProcess($this->scoreId, $score['user_id']);
+        }
+        else
+        {
+            if ($score['created_at'] !== $score['updated_at'])
+            {
+                $scoreRepository->updateProcess($this->scoreId);
+            }
+            else
+            {
+                $scoreRepository->createProcess($this->scoreId);
+            }
         }
     }
 }
