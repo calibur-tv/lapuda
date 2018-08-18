@@ -298,7 +298,7 @@ class ScoreRepository extends Repository
 
     public function recoverProcess($id)
     {
-        $post = $this->item($id);
+        $score = $this->item($id);
         DB::table('scores')
             ->where('id', $id)
             ->update([
@@ -306,13 +306,13 @@ class ScoreRepository extends Repository
                 'deleted_at' => null
             ]);
 
-        if ($post['deleted_at'])
+        if ($score['deleted_at'])
         {
             $totalScoreCount = new TotalScoreCount();
             $totalScoreCount->add();
 
             $search = new Search();
-            $search->create($id, $post['title'] . '|' . $post['intro'], 'score');
+            $search->create($id, $score['title'] . '|' . $score['intro'], 'score');
 
             $baiduPush = new BaiduPush();
             $baiduPush->create($id, 'score');
@@ -323,6 +323,6 @@ class ScoreRepository extends Repository
 
     public function itemCacheKey($id)
     {
-        return 'post_' . $id;
+        return 'score_' . $id;
     }
 }
