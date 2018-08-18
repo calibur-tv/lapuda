@@ -32,7 +32,8 @@ class ScoreTrendingService extends TrendingService
 
     public function computeNewsIds()
     {
-        return Score::where('state', 0)
+        return Score
+            ::where('state', 0)
             ->when($this->bangumiId, function ($query)
             {
                 return $query->where('bangumi_id', $this->bangumiId);
@@ -45,7 +46,8 @@ class ScoreTrendingService extends TrendingService
 
     public function computeActiveIds()
     {
-        return Score::where('state', 0)
+        return Score
+            ::where('state', 0)
             ->when($this->bangumiId, function ($query)
             {
                 return $query->where('bangumi_id', $this->bangumiId);

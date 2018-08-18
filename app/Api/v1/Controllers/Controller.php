@@ -104,6 +104,14 @@ class Controller extends BaseController
         ], 404);
     }
 
+    protected function resErrLocked($message = null)
+    {
+        return response([
+            'code' => 42301,
+            'message' => $message ?: config('error.42301')
+        ], 423);
+    }
+
     protected function resErrServiceUnavailable($message = null)
     {
         return response([

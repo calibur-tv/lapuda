@@ -19,11 +19,15 @@ use Mews\Purifier\Facades\Purifier;
 
 class ScoreRepository extends Repository
 {
-    public function item($id)
+    public function item($id, $isShow = false)
     {
-        return $this->Cache($this->cacheKeyScoreItem($id), function () use ($id)
+        $result = $this->Cache($this->cacheKeyScoreItem($id), function () use ($id)
         {
-            $score = Score::find($id);
+            $score = Score
+                ::withTrashed()
+                ->where('id', $id)
+                ->first();
+
             if (is_null($score))
             {
                 return null;
@@ -45,6 +49,13 @@ class ScoreRepository extends Repository
 
             return $score;
         });
+
+        if (!$result || ($result['deleted_at'] && !$isShow))
+        {
+            return null;
+        }
+
+        return $result;
     }
 
     public function list($ids)
@@ -53,7 +64,8 @@ class ScoreRepository extends Repository
         foreach ($ids as $id)
         {
             $item = $this->item($id);
-            if ($item) {
+            if ($item)
+            {
                 $result[] = $item;
             }
         }

@@ -125,10 +125,20 @@ class PostController extends Controller
     public function show(Request $request, $id)
     {
         $postRepository = new PostRepository();
-        $post = $postRepository->item($id);
+        $post = $postRepository->item($id, true);
         if (is_null($post))
         {
             return $this->resErrNotFound('不存在的帖子');
+        }
+
+        if ($post['deleted_at'])
+        {
+            if ($post['state'])
+            {
+                return $this->resErrLocked();
+            }
+
+            return $this->resErrNotFound();
         }
 
         $userRepository = new UserRepository();
@@ -294,110 +304,6 @@ class PostController extends Controller
 
         return $this->resNoContent();
     }
-
-    public function trialList()
-    {
-        $list = Post::withTrashed()
-            ->where('state', '<>', 0)
-            ->get();
-
-        if (empty($list))
-        {
-            return $this->resOK([]);
-        }
-
-        $filter = new WordsFilter();
-        $userRepository = new UserRepository();
-
-        foreach ($list as $i =>$row)
-        {
-            $list[$i]['f_title'] = $filter->filter($row['title']);
-            $list[$i]['f_content'] = $filter->filter($row['content']);
-            $list[$i]['words'] = $filter->filter($row['title'] . $row['content']);
-            $list[$i]['images'] = PostImages::where('post_id', $row['id'])->get();
-            $list[$i]['user'] = $userRepository->item($row['user_id']);
-        }
-
-        return $this->resOK($list);
-    }
-
-    public function deletePostImage(Request $request)
-    {
-        $id = $request->get('id');
-        $postId = PostImages::where('id', $id)->pluck('post_id')->first();
-        PostImages::where('id', $id)
-            ->update([
-                'src' => '',
-                'origin_url' => $request->get('src')
-            ]);
-
-        Redis::DEL('post_'.$postId.'_images');
-
-        return $this->resNoContent();
-    }
-
-    public function trialDelete(Request $request)
-    {
-        $id = $request->get('id');
-        $post = Post::withTrashed()
-            ->where('id', $id)
-            ->first();
-
-        if (is_null($post))
-        {
-            return $this->resErrNotFound();
-        }
-
-        Redis::DEL('post_'.$id);
-        Redis::ZREM('post_how_ids', $id);
-        Redis::ZREM('post_new_ids', $id);
-        Redis::ZREM('bangumi_'.$post->bangumi_id.'_posts_new_ids', $id);
-
-        $post->update([
-            'state' => 0
-        ]);
-        $post->delete();
-
-        $searchService = new Search();
-        $searchService->delete($id, 'post');
-        // TODO：百度
-        return $this->resNoContent();
-    }
-
-    public function trialPass(Request $request)
-    {
-        $postId = $request->get('id');
-
-        $post = Post::withTrashed()
-            ->where('id', $postId)
-            ->first();
-
-        if (is_null($post))
-        {
-            return $this->resErrNotFound();
-        }
-
-        if ($post->deleted_at)
-        {
-            $post->restore();
-            $postRepository = new PostRepository();
-            $postRepository->trialPass($post);
-        }
-        $post->update([
-            'state' => 0
-        ]);
-
-        $searchService = new Search();
-        $searchService->create(
-            $postId,
-            $post->title . ',' . $post->desc,
-            'post',
-            strtotime($post->created_at)
-        );
-
-        return $this->resNoContent();
-    }
-
     // TODO：doc
     public function setNice(Request $request)
     {
@@ -433,7 +339,6 @@ class PostController extends Controller
 
         return $this->resNoContent();
     }
-
     // TODO：doc
     public function removeNice(Request $request)
     {
@@ -468,7 +373,6 @@ class PostController extends Controller
 
         return $this->resNoContent();
     }
-
     // TODO：doc
     public function setTop(Request $request)
     {
@@ -508,7 +412,6 @@ class PostController extends Controller
 
         return $this->resNoContent();
     }
-
     // TODO：doc
     public function removeTop(Request $request)
     {
@@ -540,6 +443,109 @@ class PostController extends Controller
             ]);
 
         Redis::DEL('post_' . $postId);
+
+        return $this->resNoContent();
+    }
+
+    public function trials()
+    {
+        $list = Post::withTrashed()
+            ->where('state', '<>', 0)
+            ->get();
+
+        if (empty($list))
+        {
+            return $this->resOK([]);
+        }
+
+        $filter = new WordsFilter();
+        $userRepository = new UserRepository();
+
+        foreach ($list as $i =>$row)
+        {
+            $list[$i]['f_title'] = $filter->filter($row['title']);
+            $list[$i]['f_content'] = $filter->filter($row['content']);
+            $list[$i]['words'] = $filter->filter($row['title'] . $row['content']);
+            $list[$i]['images'] = PostImages::where('post_id', $row['id'])->get();
+            $list[$i]['user'] = $userRepository->item($row['user_id']);
+        }
+
+        return $this->resOK($list);
+    }
+
+    public function ban(Request $request)
+    {
+        $id = $request->get('id');
+        $post = Post::withTrashed()
+            ->where('id', $id)
+            ->first();
+
+        if (is_null($post))
+        {
+            return $this->resErrNotFound();
+        }
+
+        Redis::DEL('post_'.$id);
+        Redis::ZREM('post_how_ids', $id);
+        Redis::ZREM('post_new_ids', $id);
+        Redis::ZREM('bangumi_'.$post->bangumi_id.'_posts_new_ids', $id);
+
+        $post->update([
+            'state' => 0
+        ]);
+        $post->delete();
+
+        $searchService = new Search();
+        $searchService->delete($id, 'post');
+        // TODO：百度
+        return $this->resNoContent();
+    }
+
+    public function pass(Request $request)
+    {
+        $postId = $request->get('id');
+
+        $post = Post::withTrashed()
+            ->where('id', $postId)
+            ->first();
+
+        if (is_null($post))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($post->deleted_at)
+        {
+            $post->restore();
+            $postRepository = new PostRepository();
+            $postRepository->trialPass($post);
+        }
+        $post->update([
+            'state' => 0
+        ]);
+
+        $searchService = new Search();
+        $searchService->create(
+            $postId,
+            $post->title . ',' . $post->desc,
+            'post',
+            strtotime($post->created_at)
+        );
+
+        return $this->resNoContent();
+    }
+
+    public function deletePostImage(Request $request)
+    {
+        $id = $request->get('id');
+        $postId = PostImages::where('id', $id)->pluck('post_id')->first();
+        PostImages::where('id', $id)
+            ->update([
+                'src' => '',
+                'origin_url' => $request->get('src')
+            ]);
+
+        Redis::DEL('post_'.$postId.'_images');
 
         return $this->resNoContent();
     }

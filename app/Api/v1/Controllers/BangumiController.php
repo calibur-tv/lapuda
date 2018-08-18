@@ -594,7 +594,7 @@ class BangumiController extends Controller
         }
     }
 
-    public function trialList()
+    public function trials()
     {
         $bangumiIds = Bangumi::where('state', '<>', 0)
             ->pluck('id');
@@ -611,7 +611,7 @@ class BangumiController extends Controller
         return $this->resOK($list);
     }
 
-    public function trialPass(Request $request)
+    public function pass(Request $request)
     {
         Bangumi::where('id', $request->get('id'))
             ->update([

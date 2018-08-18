@@ -23,16 +23,19 @@ use Mews\Purifier\Facades\Purifier;
 
 class ImageRepository extends Repository
 {
-    public function item($id)
+    public function item($id, $isShow = false)
     {
         if (!$id)
         {
             return null;
         }
 
-        return $this->Cache($this->cacheKeyImageItem($id), function () use ($id)
+        $result = $this->Cache($this->cacheKeyImageItem($id), function () use ($id)
         {
-            $image = Image::find($id);
+            $image = Image
+                ::withTrashed()
+                ->where('id', $id)
+                ->first();
 
             if (is_null($image))
             {
@@ -47,6 +50,13 @@ class ImageRepository extends Repository
 
             return $image;
         });
+
+        if (!$result || ($result['deleted_at'] && !$isShow))
+        {
+            return null;
+        }
+
+        return $result;
     }
 
     public function list($ids)

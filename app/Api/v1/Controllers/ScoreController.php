@@ -34,9 +34,19 @@ class ScoreController extends Controller
     public function show($id)
     {
         $scoreRepository = new ScoreRepository();
-        $score = $scoreRepository->item($id);
+        $score = $scoreRepository->item($id, true);
         if (is_null($score) || !$score['published_at'])
         {
+            return $this->resErrNotFound();
+        }
+
+        if ($score['deleted_at'])
+        {
+            if ($score['state'])
+            {
+                return $this->resErrLocked();
+            }
+
             return $this->resErrNotFound();
         }
 

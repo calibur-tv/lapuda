@@ -714,9 +714,19 @@ class ImageController extends Controller
     public function show($id)
     {
         $imageRepository = new ImageRepository();
-        $image = $imageRepository->item($id);
+        $image = $imageRepository->item($id, true);
         if (is_null($image))
         {
+            return $this->resErrNotFound();
+        }
+
+        if ($image['deleted_at'])
+        {
+            if ($image['state'])
+            {
+                return $this->resErrLocked();
+            }
+
             return $this->resErrNotFound();
         }
 
@@ -1063,7 +1073,7 @@ class ImageController extends Controller
         return $this->resNoContent();
     }
 
-    public function trialList()
+    public function trials()
     {
         $albums = Image::withTrashed()
             ->where('state', '<>', 0)
@@ -1077,7 +1087,7 @@ class ImageController extends Controller
         return $this->resOK(array_merge($albums, $images));
     }
 
-    public function trialDelete(Request $request)
+    public function ban(Request $request)
     {
         $id = $request->get('id');
         $type = $request->get('type');
@@ -1106,7 +1116,7 @@ class ImageController extends Controller
         return $this->resNoContent();
     }
 
-    public function trialPass(Request $request)
+    public function pass(Request $request)
     {
         $id = $request->get('id');
         $type = $request->get('type');

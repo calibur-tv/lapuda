@@ -33,7 +33,8 @@ class PostTrendingService extends TrendingService
 
     public function computeNewsIds()
     {
-        return Post::where('state', 0)
+        return Post
+            ::where('state', 0)
             ->when($this->bangumiId, function ($query)
             {
                 return $query
@@ -48,7 +49,8 @@ class PostTrendingService extends TrendingService
 
     public function computeActiveIds()
     {
-        return Post::where('state', 0)
+        return Post
+            ::where('state', 0)
             ->when($this->bangumiId, function ($query)
             {
                 return $query
@@ -63,7 +65,9 @@ class PostTrendingService extends TrendingService
 
     public function computeHotIds()
     {
-        $ids = Post::where('created_at', '>', Carbon::now()->addDays(-30))
+        $ids = Post
+            ::where('state', 0)
+            ->where('created_at', '>', Carbon::now()->addDays(-30))
             ->when($this->bangumiId, function ($query)
             {
                 return $query

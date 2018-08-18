@@ -31,21 +31,20 @@ use Illuminate\Support\Facades\DB;
 
 class UserRepository extends Repository
 {
-    public function item($id, $force = false)
+    public function item($id, $isShow = false)
     {
         if (!$id)
         {
             return null;
         }
 
-        if ($force)
+        $result = $this->RedisHash('user_'.$id, function () use ($id)
         {
-            return User::withTrashed()->find($id);
-        }
+            $user = User
+                ::withTrashed()
+                ->where('id', $id)
+                ->first();
 
-        return $this->RedisHash('user_'.$id, function () use ($id)
-        {
-            $user = User::where('id', $id)->first();
             if (is_null($user))
             {
                 return null;
@@ -55,6 +54,13 @@ class UserRepository extends Repository
 
             return $user;
         });
+
+        if (!$result || ($result['deleted_at'] && !$isShow))
+        {
+            return null;
+        }
+
+        return $result;
     }
 
     public function list($ids)

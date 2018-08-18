@@ -310,7 +310,7 @@ class CartoonRoleController extends Controller
         return $this->resNoContent();
     }
 
-    public function trialList()
+    public function trials()
     {
         $roles = CartoonRole::where('state', '<>', 0)
             ->select('id', 'state', 'name', 'bangumi_id')
@@ -319,23 +319,23 @@ class CartoonRoleController extends Controller
         return $this->resOK($roles);
     }
 
-    public function trialPass(Request $request)
-    {
-        CartoonRole::where('id', $request->get('id'))
-            ->update([
-                'state' => 0
-            ]);
-
-        return $this->resNoContent();
-    }
-
-    public function trialBan(Request $request)
+    public function ban(Request $request)
     {
         $id = $request->get('id');
         $bangumiId = $request->get('bangumi_id');
 
         CartoonRole::where('id', $id)->delete();
         Redis::DEL('bangumi_'.$bangumiId.'_cartoon_role_ids');
+
+        return $this->resNoContent();
+    }
+
+    public function pass(Request $request)
+    {
+        CartoonRole::where('id', $request->get('id'))
+            ->update([
+                'state' => 0
+            ]);
 
         return $this->resNoContent();
     }

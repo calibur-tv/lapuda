@@ -138,17 +138,26 @@ class UserController extends Controller
      */
     public function show($zone)
     {
-        $userId = User::where('zone', $zone)->pluck('id')->first();
+        $userRepository = new UserRepository();
+        $userId = $userRepository->getUserIdByZone($zone);
         if (is_null($userId))
         {
             return $this->resErrNotFound('该用户不存在');
         }
 
-        $repository = new UserRepository();
-        $transformer = new UserTransformer();
-        $user = $repository->item($userId);
+        $userTransformer = new UserTransformer();
+        $user = $userRepository->item($userId, true);
+        if ($user['deleted_at'])
+        {
+            if ($user['state'])
+            {
+                return $this->resErrLocked();
+            }
 
-        return $this->resOK($transformer->show($user));
+            return $this->resErrNotFound('该用户不存在');
+        }
+
+        return $this->resOK($userTransformer->show($user));
     }
 
     // TODO：API Doc
@@ -212,37 +221,6 @@ class UserController extends Controller
         $bangumis = $userRepository->followedBangumis($userId);
 
         return $this->resOK($bangumis);
-    }
-
-    /**
-     * 用户发布的帖子列表
-     *
-     * @Get("/user/`zone`/posts/mine")
-     *
-     * @Parameters({
-     *      @Parameter("page", description="页码", type="integer", default=0, required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": "帖子列表"}),
-     *      @Response(404, body={"code": 40401, "message": "找不到用户"})
-     * })
-     */
-    public function postsOfMine(Request $request, $zone)
-    {
-        $userRepository = new UserRepository();
-        $userId = $userRepository->getUserIdByZone($zone);
-        if (!$userId)
-        {
-            return $this->resErrNotFound('找不到用户');
-        }
-
-        $postTrendingService = new PostTrendingService(0, $userId);
-
-        $page = $request->get('page') ?: 0;
-        $take = 10;
-
-        return $this->resOK($postTrendingService->users($page, $take));
     }
 
     /**
@@ -432,37 +410,6 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
-    /**
-     * 用户应援的角色列表
-     *
-     * @Get("/user/`zone`/followed/role")
-     *
-     * @Parameters({
-     *      @Parameter("page", description="页码", type="integer", default=0, required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"list": "角色列表", "total": "总数", "noMore": "没有更多"}}),
-     *      @Response(404, body={"code": 40401, "message": "该用户不存在"})
-     * })
-     */
-    public function followedRoles(Request $request, $zone)
-    {
-        $cartoonRoleRepository = new CartoonRoleRepository();
-        $userId = $cartoonRoleRepository->getUserIdByZone($zone);
-        if (is_null($userId))
-        {
-            return $this->resErrNotFound('该用户不存在');
-        }
-
-        $page = $request->get('page') ?: 0;
-        $take = 10;
-
-        $cartoonRoleTrendingService = new RoleTrendingService(0 ,$userId);
-
-        return $this->resOK($cartoonRoleTrendingService->users($page, $take));
-    }
-
     public function fakers()
     {
         $users = User::withTrashed()
@@ -534,41 +481,6 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
-    public function blockUser(Request $request)
-    {
-        $userId = $request->get('id');
-        DB::table('users')
-            ->where('id', $userId)
-            ->update([
-                'state' => 0,
-                'deleted_at' => Carbon::now()
-            ]);
-
-        $searchService = new Search();
-        $searchService->delete($userId, 'user');
-
-        Redis::DEL('user_' . $userId);
-
-        return $this->resNoContent();
-    }
-
-    public function recoverUser(Request $request)
-    {
-        $userId = $request->get('id');
-
-        User::withTrashed()->where('id', $userId)->restore();
-        $user = User::withTrashed()->where('id', $userId)->first();
-
-        $searchService = new Search();
-        $searchService->create(
-            $userId,
-            $user->nickname . ',' . $user->zone,
-            'user'
-        );
-
-        return $this->resNoContent();
-    }
-
     public function feedbackList()
     {
         $list = Feedback::where('stage', 0)->get();
@@ -625,46 +537,6 @@ class UserController extends Controller
             ->update([
                 'is_admin' => 1
             ]);
-
-        return $this->resNoContent();
-    }
-
-    public function trials()
-    {
-        $users = User
-            ::withTrashed()
-            ->where('state', '<>', 0)
-            ->orderBy('updated_at', 'DESC')
-            ->get();
-
-        return $this->resOK($users);
-    }
-
-    public function deleteUserInfo(Request $request)
-    {
-        $userId = $request->get('id');
-        User::where('id', $userId)
-            ->update([
-                $request->get('key') => $request->get('value') ?: ''
-            ]);
-
-        $user = User::where('id', $userId)->first();
-
-        $searchService = new Search();
-        $searchService->update(
-            $userId,
-            $user->nickname . ',' . $user->zone,
-            'user'
-        );
-
-        return $this->resNoContent();
-    }
-
-    public function passUser(Request $request)
-    {
-        User::where('id', $request->get('id'))->update([
-            'state' => 0
-        ]);
 
         return $this->resNoContent();
     }
@@ -800,6 +672,81 @@ class UserController extends Controller
             'type' => 5,
             'count' => $money
         ]);
+
+        return $this->resNoContent();
+    }
+
+    public function trials()
+    {
+        $users = User
+            ::withTrashed()
+            ->where('state', '<>', 0)
+            ->orderBy('updated_at', 'DESC')
+            ->get();
+
+        return $this->resOK($users);
+    }
+
+    public function ban(Request $request)
+    {
+        $userId = $request->get('id');
+        DB::table('users')
+            ->where('id', $userId)
+            ->update([
+                'state' => 0,
+                'deleted_at' => Carbon::now()
+            ]);
+
+        $searchService = new Search();
+        $searchService->delete($userId, 'user');
+
+        Redis::DEL('user_' . $userId);
+
+        return $this->resNoContent();
+    }
+
+    public function pass(Request $request)
+    {
+        User::where('id', $request->get('id'))->update([
+            'state' => 0
+        ]);
+
+        return $this->resNoContent();
+    }
+
+    public function recover(Request $request)
+    {
+        $userId = $request->get('id');
+
+        User::withTrashed()->where('id', $userId)->restore();
+        $user = User::withTrashed()->where('id', $userId)->first();
+
+        $searchService = new Search();
+        $searchService->create(
+            $userId,
+            $user->nickname . ',' . $user->zone,
+            'user'
+        );
+
+        return $this->resNoContent();
+    }
+
+    public function deleteUserInfo(Request $request)
+    {
+        $userId = $request->get('id');
+        User::where('id', $userId)
+            ->update([
+                $request->get('key') => $request->get('value') ?: ''
+            ]);
+
+        $user = User::where('id', $userId)->first();
+
+        $searchService = new Search();
+        $searchService->update(
+            $userId,
+            $user->nickname . ',' . $user->zone,
+            'user'
+        );
 
         return $this->resNoContent();
     }
