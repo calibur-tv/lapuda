@@ -70,7 +70,8 @@ class VideoRepository extends Repository
                 'part' => $video['part'],
                 'name' => $video['name'],
                 'bangumi_id' => $video['bangumi_id'],
-                'user_id' => $video['user_id']
+                'user_id' => $video['user_id'],
+                'deleted_at' => $video['deleted_at']
             ];
         }, 'h');
 
