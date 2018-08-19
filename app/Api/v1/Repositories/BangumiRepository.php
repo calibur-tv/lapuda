@@ -5,15 +5,10 @@ namespace App\Api\V1\Repositories;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Transformers\BangumiTransformer;
-use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Bangumi;
-use App\Models\BangumiFollow;
 use App\Models\Post;
-use App\Models\User;
 use App\Models\Video;
-use App\Services\OpenSearch\Search;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 
 class BangumiRepository extends Repository
 {

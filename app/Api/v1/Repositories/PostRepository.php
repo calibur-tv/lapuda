@@ -10,12 +10,10 @@ namespace App\Api\V1\Repositories;
 
 
 use App\Api\V1\Services\Comment\PostCommentService;
-use App\Api\V1\Services\Counter\Stats\TotalPostCount;
 use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Models\Post;
 use App\Models\PostImages;
 use App\Services\BaiduSearch\BaiduPush;
-use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -167,27 +165,20 @@ class PostRepository extends Repository
         $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
         $postTrendingService->create($id);
 
-        $totalPostCount = new TotalPostCount();
-        $totalPostCount->add();
-
-        $search = new Search();
-        $search->create($id, $post['title'] . '|' . $post['content'], 'post');
-
         $baiduPush = new BaiduPush();
-        $baiduPush->create($id, 'post');
         $baiduPush->trending('post');
         $baiduPush->bangumi($post['bangumi_id']);
+
+        $job = (new \App\Jobs\Search\Index('C', 'post', $id, $post['title'] . '|' . $post['content']));
+        dispatch($job);
     }
 
     public function updateProcess($id)
     {
         $post = $this->item($id);
 
-        $search = new Search();
-        $search->update($id, $post['title'] . '|' . $post['content'], 'post');
-
-        $baiduPush = new BaiduPush();
-        $baiduPush->update($id, 'post');
+        $job = (new \App\Jobs\Search\Index('U', 'post', $id, $post['title'] . '|' . $post['content']));
+        dispatch($job);
     }
 
     public function trialProcess($id, $state)
@@ -217,14 +208,8 @@ class PostRepository extends Repository
             $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
             $postTrendingService->delete($id);
 
-            $totalPostCount = new TotalPostCount();
-            $totalPostCount->add(-1);
-
-            $search = new Search();
-            $search->delete($id, 'post');
-
-            $baiduPush = new BaiduPush();
-            $baiduPush->delete($id, 'post');
+            $job = (new \App\Jobs\Search\Index('D', 'post', $id));
+            dispatch($job);
         }
 
         Redis::DEL($this->itemCacheKey($id));
@@ -242,14 +227,8 @@ class PostRepository extends Repository
 
         if ($post['deleted_at'])
         {
-            $totalPostCount = new TotalPostCount();
-            $totalPostCount->add();
-
-            $search = new Search();
-            $search->create($id, $post['title'] . '|' . $post['content'], 'post');
-
-            $baiduPush = new BaiduPush();
-            $baiduPush->create($id, 'post');
+            $job = (new \App\Jobs\Search\Index('C', 'post', $id, $post['title'] . '|' . $post['content']));
+            dispatch($job);
         }
 
         Redis::DEL($this->itemCacheKey($id));

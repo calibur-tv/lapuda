@@ -9,13 +9,11 @@
 namespace App\Api\V1\Repositories;
 
 
-use App\Api\V1\Services\Counter\Stats\TotalScoreCount;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
 use App\Models\Score;
 use App\Services\BaiduSearch\BaiduPush;
-use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -231,26 +229,19 @@ class ScoreRepository extends Repository
         $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
         $scoreTrendingService->create($id);
 
-        $totalScoreCount = new TotalScoreCount();
-        $totalScoreCount->add();
-
-        $search = new Search();
-        $search->create($id, $score['title'] . '|' . $score['intro'], 'score');
-
         $baiduPush = new BaiduPush();
-        $baiduPush->create($id, 'score');
         $baiduPush->trending('score');
+
+        $job = (new \App\Jobs\Search\Index('C', 'score', $id, $score['title'] . '|' . $score['intro']));
+        dispatch($job);
     }
 
     public function updateProcess($id)
     {
         $score = $this->item($id);
 
-        $search = new Search();
-        $search->update($id, $score['title'] . '|' . $score['intro'], 'score');
-
-        $baiduPush = new BaiduPush();
-        $baiduPush->update($id, 'score');
+        $job = (new \App\Jobs\Search\Index('U', 'score', $id, $score['title'] . '|' . $score['intro']));
+        dispatch($job);
     }
 
     public function trialProcess($id, $state)
@@ -283,14 +274,8 @@ class ScoreRepository extends Repository
             $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
             $scoreTrendingService->delete($id);
 
-            $totalPostCount = new TotalScoreCount();
-            $totalPostCount->add(-1);
-
-            $search = new Search();
-            $search->delete($id, 'score');
-
-            $baiduPush = new BaiduPush();
-            $baiduPush->delete($id, 'score');
+            $job = (new \App\Jobs\Search\Index('D', 'score', $id));
+            dispatch($job);
         }
 
         Redis::DEL($this->itemCacheKey($id));
@@ -308,14 +293,8 @@ class ScoreRepository extends Repository
 
         if ($score['deleted_at'])
         {
-            $totalScoreCount = new TotalScoreCount();
-            $totalScoreCount->add();
-
-            $search = new Search();
-            $search->create($id, $score['title'] . '|' . $score['intro'], 'score');
-
-            $baiduPush = new BaiduPush();
-            $baiduPush->create($id, 'score');
+            $job = (new \App\Jobs\Search\Index('C', 'score', $id, $score['title'] . '|' . $score['intro']));
+            dispatch($job);
         }
 
         Redis::DEL($this->itemCacheKey($id));

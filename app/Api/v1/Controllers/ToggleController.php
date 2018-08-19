@@ -402,10 +402,13 @@ class ToggleController extends Controller
                 break;
             case 'question':
                 return null;
+                break;
             case 'word':
                 return null;
+                break;
             default:
                 return null;
+                break;
         }
     }
 

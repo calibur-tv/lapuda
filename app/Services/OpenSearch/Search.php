@@ -51,17 +51,6 @@ class Search
         $this->params = new SearchParamsBuilder();
     }
 
-    public function index($key)
-    {
-        $this->params->setStart(0);
-        $this->params->setHits(1);
-        $this->params->setAppName($this->appName);
-        $this->params->setFormat('fulljson');
-        $this->params->setQuery("default:'${key}' AND modal_id:'2'");
-        $ret = json_decode($this->search->execute($this->params->build())->result, true);
-        return $ret['result']['items'];
-    }
-
     public function create($id, $content, $modal, $time = null)
     {
         if (config('app.env') !== 'production')
@@ -170,14 +159,17 @@ class Search
         if ($modalId)
         {
             $transformer = $this->getTransformerByType($modalId);
-            foreach ($list as $item)
+            if (!is_null($transformer))
             {
-                $source = $repository->item($item['type_id']);
-                if (!is_null($source))
+                foreach ($list as $item)
                 {
-                    $source = $transformer->search($source);
-                    $source['type'] = $modalId;
-                    $result[] = $source;
+                    $source = $repository->item($item['type_id']);
+                    if (!is_null($source))
+                    {
+                        $source = $transformer->search($source);
+                        $source['type'] = $modalId;
+                        $result[] = $source;
+                    }
                 }
             }
         }
@@ -187,14 +179,19 @@ class Search
             {
                 $typeId = intval($item['modal_id']);
                 $repository = $this->getRepositoryByType($typeId);
-                $source = $repository->item($item['type_id']);
-                if (!is_null($source))
+                if (is_null($repository))
                 {
-                    $transformer = $this->getTransformerByType($typeId);
-                    $source = $transformer->search($source);
-                    $source['type'] = $typeId;
-                    $result[] = $source;
+                    continue;
                 }
+                $source = $repository->item($item['type_id']);
+                if (is_null($source))
+                {
+                    continue;
+                }
+                $transformer = $this->getTransformerByType($typeId);
+                $source = $transformer->search($source);
+                $source['type'] = $typeId;
+                $result[] = $source;
             }
         }
 
@@ -296,6 +293,14 @@ class Search
         else if ($modal === 'role')
         {
             return 5;
+        }
+        else if ($modal === 'image')
+        {
+            return 6;
+        }
+        else if ($modal === 'score')
+        {
+            return 7;
         }
 
         return 0;

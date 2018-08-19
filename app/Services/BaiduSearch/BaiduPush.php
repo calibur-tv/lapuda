@@ -12,10 +12,6 @@ class BaiduPush
 {
     public function create($id, $modal)
     {
-        if (config('app.env') !== 'production')
-        {
-            return;
-        }
         $pushUrl = $this->computePushUrl('urls');
         $pushContent = $this->computeContentUrl($id, $modal);
 
@@ -24,10 +20,6 @@ class BaiduPush
 
     public function update($id, $modal)
     {
-        if (config('app.env') !== 'production')
-        {
-            return;
-        }
         $pushUrl = $this->computePushUrl('update');
         $pushContent = $this->computeContentUrl($id, $modal);
 
@@ -36,10 +28,6 @@ class BaiduPush
 
     public function delete($id, $modal)
     {
-        if (config('app.env') !== 'production')
-        {
-            return;
-        }
         $pushUrl = $this->computePushUrl('del');
         $pushContent = $this->computeContentUrl($id, $modal);
 
@@ -96,8 +84,8 @@ class BaiduPush
         }
 
         $urls = [
-            'https://m.calibur.tv/bangumi/' . $id,
-            'https://www.calibur.tv/bangumi/' . $id
+            'https://m.calibur.tv/bangumi/' . $id . '/' . $type,
+            'https://www.calibur.tv/bangumi/' . $id . '/' . $type
         ];
 
         $ch = curl_init();
@@ -144,7 +132,7 @@ class BaiduPush
         {
             $prefix = 'user';
         }
-        else if ($model === 'cartoon_role')
+        else if ($model === 'role')
         {
             $prefix = 'role';
         }
