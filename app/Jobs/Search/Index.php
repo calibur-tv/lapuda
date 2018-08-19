@@ -81,7 +81,7 @@ class Index implements ShouldQueue
             $pushPath = $user['zone'];
         }
 
-        if ($this->type === 'c')
+        if ($this->type === 'C')
         {
             $search->create($this->id, $this->text, $this->model);
             $baiduPush->create($pushPath, $this->model);
@@ -92,7 +92,7 @@ class Index implements ShouldQueue
                 $counter->add();
             }
         }
-        else if ($this->type === 'u')
+        else if ($this->type === 'U')
         {
             $search->update($this->id, $this->text, $this->model);
             $baiduPush->update($pushPath, $this->model);
