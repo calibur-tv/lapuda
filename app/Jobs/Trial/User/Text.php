@@ -3,7 +3,6 @@
 namespace App\Jobs\Trial\User;
 
 use App\Models\User;
-use App\Services\OpenSearch\Search;
 use App\Services\Trial\WordsFilter;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
@@ -34,26 +33,37 @@ class Text implements ShouldQueue
     public function handle()
     {
         $user = User::find($this->userId);
+        $nickname = $user->nickname;
+        $signature = $user->signature;
 
         $filter = new WordsFilter();
-        $nameCount = $filter->count($user->nickname);
-        $wordCount = $filter->count($user->signature);
+        $nameCount = $filter->count($nickname);
+        $wordCount = $filter->count($signature);
 
-        if ($nameCount + $wordCount > 1)
+        if ($nameCount + $wordCount > 0)
         {
-            User::where('id', $this->userId)
-                ->update([
-                    'state' => 1
-                ]);
+            if ($nameCount > 1 || $wordCount > 1)
+            {
+                $nickname = '未命名';
+                $signature = '签名什么的不重要';
+
+                User::where('id', $this->userId)
+                    ->update([
+                        'state' => $this->userId,
+                        'nickname' => $nickname,
+                        'signature' => $signature
+                    ]);
+            }
+            else
+            {
+                User::where('id', $this->userId)
+                    ->update([
+                        'state' => 1
+                    ]);
+            }
         }
-        else
-        {
-            $searchService = new Search();
-            $searchService->update(
-                $user->id,
-                $user->nickname . ',' . $user->zone,
-                'user'
-            );
-        }
+
+        $job = (new \App\Jobs\Search\Index('U', 'user', $user->id, $nickname . '|' . $signature));
+        dispatch($job);
     }
 }

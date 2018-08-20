@@ -4,17 +4,13 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
-use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Owner\BangumiManager;
-use App\Api\V1\Services\Toggle\Image\ImageLikeService;
+use App\Api\V1\Services\Trending\RoleTrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
-use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\UserTransformer;
-use App\Models\Bangumi;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
-use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
@@ -253,17 +249,11 @@ class CartoonRoleController extends Controller
             'updated_at' => $time
         ]);
 
-        $searchService = new Search();
-        $searchService->create(
-            $id,
-            $alias,
-            'role'
-        );
-
-        Redis::DEL('bangumi_'.$bangumiId.'_cartoon_role_ids');
-
-        $job = (new \App\Jobs\Push\Baidu('role/' . $id));
+        $job = (new \App\Jobs\Search\Index('C', 'role', $id, $alias));
         dispatch($job);
+
+        $cartoonRoleTrendingService = new RoleTrendingService($bangumiId);
+        $cartoonRoleTrendingService->create($id);
 
         return $this->resCreated($id);
     }
@@ -295,14 +285,7 @@ class CartoonRoleController extends Controller
             'state' => $userId
         ]);
 
-        $searchService = new Search();
-        $searchService->update(
-            $id,
-            $alias,
-            'role'
-        );
-
-        $job = (new \App\Jobs\Push\Baidu('role/' . $id, 'update'));
+        $job = (new \App\Jobs\Search\Index('U', 'role', $id, $alias));
         dispatch($job);
 
         Redis::DEL('cartoon_role_' . $id);
@@ -325,7 +308,12 @@ class CartoonRoleController extends Controller
         $bangumiId = $request->get('bangumi_id');
 
         CartoonRole::where('id', $id)->delete();
-        Redis::DEL('bangumi_'.$bangumiId.'_cartoon_role_ids');
+
+        $cartoonRoleTrendingService = new RoleTrendingService($bangumiId);
+        $cartoonRoleTrendingService->delete($id);
+
+        $job = (new \App\Jobs\Search\Index('D', 'role', $id));
+        dispatch($job);
 
         return $this->resNoContent();
     }

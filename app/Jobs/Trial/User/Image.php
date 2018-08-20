@@ -3,6 +3,7 @@
 namespace App\Jobs\Trial\User;
 
 use App\Models\User;
+use App\Services\BaiduSearch\BaiduPush;
 use App\Services\Trial\ImageFilter;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
@@ -54,5 +55,8 @@ class Image implements ShouldQueue
                     'state' => 1
                 ]);
         }
+
+        $baiduPush = new BaiduPush();
+        $baiduPush->update($user['zone'], 'user');
     }
 }

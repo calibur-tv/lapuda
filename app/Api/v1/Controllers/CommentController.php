@@ -122,20 +122,14 @@ class CommentController extends Controller
 
         $repository->applyAddComment($userId, $parent, $images, $newComment);
 
-        if ($type === 'post')
-        {
-            if ($userId !== $masterId)
-            {
-                $job = (new \App\Jobs\Notification\Post\Reply($newComment['id']));
-                dispatch($job);
-            }
-        }
-
-        if ($type === 'post')
-        {
-            $job = (new \App\Jobs\Push\Baidu('post/' . $id, 'update'));
-            dispatch($job);
-        }
+        $job = (new \App\Jobs\Notification\Create(
+            $type . '-comment',
+            $masterId,
+            $userId,
+            $id,
+            $newComment['id']
+        ));
+        dispatch($job);
 
         $newComment['liked'] = false;
         $newComment['like_count'] = 0;
@@ -369,19 +363,14 @@ class CommentController extends Controller
             return $this->resErrServiceUnavailable();
         }
 
-        // 发通知
-        if ($targetUserId)
-        {
-            // TODO：优化成多态，并在通知里展示content
-            if ($type === 'post')
-            {
-                $job = (new \App\Jobs\Notification\Post\Comment($newComment['id']));
-                dispatch($job);
-            }
-        }
-
-        // 更新百度索引
-        $job = (new \App\Jobs\Push\Baidu($type . '/' . $comment['modal_id'], 'update'));
+        $job = (new \App\Jobs\Notification\Create(
+            $type . '-reply',
+            $targetUserId,
+            $userId,
+            $comment['modal_id'],
+            $id,
+            $newComment['id']
+        ));
         dispatch($job);
 
         $totalCommentCount = new TotalCommentCount();
@@ -566,18 +555,26 @@ class CommentController extends Controller
             return $this->resErrBad('错误的类型');
         }
 
-        $result = $commentService->toggleLike($this->getAuthUserId(), $id);
+        $comment = $commentService->getMainCommentItem($id);
+        if (is_null($comment))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $userId = $this->getAuthUserId();
+        $result = $commentService->toggleLike($userId, $id);
 
         if ($result)
         {
-            if ($type === 'post')
-            {
-                $job = (new \App\Jobs\Notification\Post\Agree($result));
-                dispatch($job);
-            }
+            $job = (new \App\Jobs\Notification\Create(
+                $type . '-comment-like',
+                $comment['user_id'],
+                $userId,
+                $comment['modal_id'],
+                $comment['id']
+            ));
+            dispatch($job);
         }
-
-        // TODO：dispatch job to update open search weight
 
         return $this->resCreated((boolean)$result);
     }
@@ -621,10 +618,26 @@ class CommentController extends Controller
         {
             return $this->resErrBad('错误的类型');
         }
+        $comment = $commentService->getSubCommentItem($id);
+        if (is_null($comment))
+        {
+            return $this->resErrNotFound();
+        }
 
-        $result = $commentService->toggleLike($this->getAuthUserId(), $id);
-
-        // TODO：dispatch job to update open search weight
+        $userId = $this->getAuthUserId();
+        $result = $commentService->toggleLike($userId, $id);
+        if ($result)
+        {
+            $job = (new \App\Jobs\Notification\Create(
+                $type . '-reply-like',
+                $comment['user_id'],
+                $userId,
+                $comment['modal_id'],
+                $comment['parent_id'],
+                $comment['id']
+            ));
+            dispatch($job);
+        }
 
         return $this->resCreated((boolean)$result);
     }

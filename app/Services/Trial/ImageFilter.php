@@ -39,7 +39,14 @@ class ImageFilter
             ]
         ];
         $response = $this->validateImage($url);
-        if ($response->statusCode !== 200)
+        try
+        {
+            if ($response->statusCode !== 200)
+            {
+                return $result;
+            }
+        }
+        catch (\Exception $e)
         {
             return $result;
         }

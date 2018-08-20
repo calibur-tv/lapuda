@@ -8,30 +8,14 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Api\V1\Repositories\BangumiRepository;
-use App\Api\V1\Repositories\CartoonRoleRepository;
-use App\Api\V1\Repositories\ImageRepository;
-use App\Api\V1\Repositories\PostRepository;
-use App\Api\V1\Services\Comment\PostCommentService;
-use App\Api\V1\Services\Counter\PostViewCounter;
 use App\Api\V1\Services\Counter\Stats\TotalUserCount;
-use App\Api\V1\Services\Toggle\Image\ImageLikeService;
-use App\Api\V1\Services\Toggle\Post\PostLikeService;
-use App\Api\V1\Services\Toggle\Post\PostMarkService;
-use App\Api\V1\Services\Trending\PostTrendingService;
-use App\Api\V1\Services\Trending\RoleTrendingService;
-use App\Api\V1\Transformers\CartoonRoleTransformer;
-use App\Api\V1\Transformers\ImageTransformer;
-use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
-use App\Models\Image;
 use App\Models\Notifications;
 use App\Models\User;
 use App\Api\V1\Repositories\UserRepository;
 use App\Models\UserCoin;
 use App\Models\UserSign;
-use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -112,15 +96,9 @@ class UserController extends Controller
             $key => $val
         ]);
 
-        $cache = 'user_'.$userId;
-        if (Redis::EXISTS($cache))
-        {
-            Redis::HSET($cache, $key, config('website.image') . $val);
-        }
-        $job = (new \App\Jobs\Trial\User\Image($userId, $key));
-        dispatch($job);
+        Redis::DEL('user_'.$userId);
 
-        $job = (new \App\Jobs\Push\Baidu('user/' . User::where('id', $userId)->pluck('zone')->first(), 'update'));
+        $job = (new \App\Jobs\Trial\User\Image($userId, $key));
         dispatch($job);
 
         return $this->resNoContent();
@@ -189,10 +167,8 @@ class UserController extends Controller
         ]);
 
         Redis::DEL('user_'.$userId);
-        $job = (new \App\Jobs\Trial\User\Text($userId));
-        dispatch($job);
 
-        $job = (new \App\Jobs\Push\Baidu('user/' . User::where('id', $userId)->pluck('zone')->first(), 'update'));
+        $job = (new \App\Jobs\Trial\User\Text($userId));
         dispatch($job);
 
         return $this->resNoContent();
@@ -330,14 +306,12 @@ class UserController extends Controller
     public function notifications(Request $request)
     {
         $userId = $this->getAuthUserId();
-
         $minId = $request->get('minId') ?: 0;
         $take = 10;
 
         $repository = new UserRepository();
-        $data = $repository->getNotifications($userId, $minId, $take);
 
-        return $this->resOK($data);
+        return $this->resOK($repository->getNotifications($userId, $minId, $take));
     }
 
     /**
@@ -388,6 +362,8 @@ class UserController extends Controller
             'checked' => true
         ]);
 
+        Redis::DEL('notification-' . $id);
+
         return $this->resNoContent();
     }
 
@@ -403,9 +379,15 @@ class UserController extends Controller
      */
     public function clearNotification()
     {
-        Notifications::where('to_user_id', $this->getAuthUserId())->update([
+        $userId = $this->getAuthUserId();
+
+        Notifications
+        ::where('to_user_id', $userId)
+        ->update([
             'checked' => true
         ]);
+
+        Redis::DEL('user-' . $userId . '-notification-ids');
 
         return $this->resNoContent();
     }
@@ -697,8 +679,8 @@ class UserController extends Controller
                 'deleted_at' => Carbon::now()
             ]);
 
-        $searchService = new Search();
-        $searchService->delete($userId, 'user');
+        $job = (new \App\Jobs\Search\Index('D', 'user', $userId));
+        dispatch($job);
 
         Redis::DEL('user_' . $userId);
 
@@ -717,16 +699,17 @@ class UserController extends Controller
     public function recover(Request $request)
     {
         $userId = $request->get('id');
+        $userRepository = new UserRepository();
+        $user = $userRepository->item($userId, true);
+        if (is_null($user))
+        {
+            return $this->resErrNotFound();
+        }
 
         User::withTrashed()->where('id', $userId)->restore();
-        $user = User::withTrashed()->where('id', $userId)->first();
 
-        $searchService = new Search();
-        $searchService->create(
-            $userId,
-            $user->nickname . ',' . $user->zone,
-            'user'
-        );
+        $job = (new \App\Jobs\Search\Index('C', 'user', $userId, $user['nickname'] . ',' . $user['zone']));
+        dispatch($job);
 
         return $this->resNoContent();
     }
@@ -738,15 +721,6 @@ class UserController extends Controller
             ->update([
                 $request->get('key') => $request->get('value') ?: ''
             ]);
-
-        $user = User::where('id', $userId)->first();
-
-        $searchService = new Search();
-        $searchService->update(
-            $userId,
-            $user->nickname . ',' . $user->zone,
-            'user'
-        );
 
         return $this->resNoContent();
     }

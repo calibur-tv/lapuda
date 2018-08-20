@@ -13,16 +13,19 @@ use App\Models\Video;
 
 class VideoRepository extends Repository
 {
-    public function item($id)
+    public function item($id, $isShow = false)
     {
         if (!$id)
         {
             return null;
         }
 
-        return $this->Cache('video_'.$id, function () use ($id)
+        $result = $this->Cache('video_'.$id, function () use ($id)
         {
-            $video = Video::find($id);
+            $video = Video
+                ::withTrashed()
+                ->where('id', $id)
+                ->first();
 
             if (is_null($video))
             {
@@ -67,9 +70,17 @@ class VideoRepository extends Repository
                 'part' => $video['part'],
                 'name' => $video['name'],
                 'bangumi_id' => $video['bangumi_id'],
-                'user_id' => $video['user_id']
+                'user_id' => $video['user_id'],
+                'deleted_at' => $video['deleted_at']
             ];
         }, 'h');
+
+        if (!$result || ($result['deleted_at'] && !$isShow))
+        {
+            return null;
+        }
+
+        return $result;
     }
 
     protected function computeVideoSrc($src)

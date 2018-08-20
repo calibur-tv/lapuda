@@ -120,9 +120,10 @@ class VideoController extends Controller
     public function edit(Request $request)
     {
         $videoId = $request->get('id');
+        $name = $request->get('name');
         Video::withTrashed()->where('id', $videoId)
             ->update([
-                'name' => $request->get('name'),
+                'name' => $name,
                 'bangumi_id' => $request->get('bangumi_id'),
                 'part' => $request->get('part'),
                 'poster' => $request->get('poster'),
@@ -133,7 +134,7 @@ class VideoController extends Controller
         Redis::DEL('video_' . $videoId);
         Redis::DEL('bangumi_' . $request->get('bangumi_id') . '_videos');
 
-        $job = (new \App\Jobs\Push\Baidu('video/' . $videoId, 'update'));
+        $job = (new \App\Jobs\Search\Index('U', 'video', $videoId, $name));
         dispatch($job);
 
         return $this->resNoContent();
@@ -158,7 +159,8 @@ class VideoController extends Controller
                     'created_at' => $time,
                     'updated_at' => $time
                 ]);
-                $job = (new \App\Jobs\Push\Baidu('video/' . $newId));
+
+                $job = (new \App\Jobs\Search\Index('C', 'video', $newId, $video['name']));
                 dispatch($job);
             }
             else
@@ -172,9 +174,11 @@ class VideoController extends Controller
                     'poster' => $video['poster'],
                     'updated_at' => $time
                 ]);
-                Redis::DEL('video_' . $id);
-                $job = (new \App\Jobs\Push\Baidu('video/' . $id, 'update'));
+
+                $job = (new \App\Jobs\Search\Index('U', 'video', $id, $video['name']));
                 dispatch($job);
+
+                Redis::DEL('video_' . $id);
             }
             Redis::DEL('bangumi_'.$video['bangumiId'].'_videos');
         }
@@ -185,21 +189,24 @@ class VideoController extends Controller
     public function delete(Request $request)
     {
         $videoId = $request->get('id');
-        $video = Video::find($videoId);
+        $videoRepository = new VideoRepository();
+        $video = $videoRepository->item($videoId, true);
 
-        if (is_null($video))
+        if ($video['deleted_at'])
         {
             Video::withTrashed()->where('id', $videoId)->restore();
-            $job = (new \App\Jobs\Push\Baidu('video/' . $videoId));
+
+            $job = (new \App\Jobs\Search\Index('C', 'video', $videoId, $video['name']));
             dispatch($job);
         }
         else
         {
             $video->delete();
-            $job = (new \App\Jobs\Push\Baidu('video/' . $videoId, 'del'));
+
+            $job = (new \App\Jobs\Search\Index('D', 'video', $videoId));
             dispatch($job);
-            Redis::DEL('video_' . $videoId);
         }
+
         Redis::DEL('bangumi_' . $video['bangumi_id'] . '_videos');
 
         return $this->resNoContent();

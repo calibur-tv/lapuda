@@ -8,7 +8,6 @@
 
 namespace App\Api\V1\Repositories;
 
-use App\Api\V1\Services\Counter\Stats\TotalImageAlbumCount;
 use App\Api\V1\Services\Counter\Stats\TotalImageCount;
 use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Transformers\ImageTransformer;
@@ -16,7 +15,6 @@ use App\Models\AlbumImage;
 use App\Models\Banner;
 use App\Models\Image;
 use App\Services\BaiduSearch\BaiduPush;
-use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -263,31 +261,24 @@ class ImageRepository extends Repository
         $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
         $imageTrendingService->create($id);
 
-        $totalAlbumImageCount = new TotalImageAlbumCount();
-        $totalAlbumImageCount->add();
-
-        $search = new Search();
-        $search->create($id, $image['name'], 'image');
-
         $baiduPush = new BaiduPush();
-        $baiduPush->create($id, 'image');
         $baiduPush->trending('image');
 
         if ($image['is_cartoon'])
         {
             Redis::DEL($this->cacheKeyCartoonParts($image['bangumi_id']));
         }
+
+        $job = (new \App\Jobs\Search\Index('C', 'image', $id, $image['name']));
+        dispatch($job);
     }
 
     public function updateProcess($id)
     {
         $image = $this->item($id);
 
-        $search = new Search();
-        $search->update($id, $image['name'], 'image');
-
-        $baiduPush = new BaiduPush();
-        $baiduPush->update($id, 'image');
+        $job = (new \App\Jobs\Search\Index('U', 'image', $id, $image['name']));
+        dispatch($job);
 
         if ($image['is_cartoon'])
         {
@@ -322,14 +313,8 @@ class ImageRepository extends Repository
             $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
             $imageTrendingService->delete($id);
 
-            $totalAlbumImageCount = new TotalImageAlbumCount();
-            $totalAlbumImageCount->add(-1);
-
-            $search = new Search();
-            $search->delete($id, 'image');
-
-            $baiduPush = new BaiduPush();
-            $baiduPush->delete($id, 'image');
+            $job = (new \App\Jobs\Search\Index('D', 'image', $id));
+            dispatch($job);
         }
 
         if ($image['is_album'])
@@ -360,14 +345,8 @@ class ImageRepository extends Repository
 
         if ($image['deleted_at'])
         {
-            $totalAlbumImageCount = new TotalImageAlbumCount();
-            $totalAlbumImageCount->add();
-
-            $search = new Search();
-            $search->create($id, $image['name'], 'image');
-
-            $baiduPush = new BaiduPush();
-            $baiduPush->create($id, 'image');
+            $job = (new \App\Jobs\Search\Index('C', 'image', $id, $image['name']));
+            dispatch($job);
         }
 
         Redis::DEL($this->itemCacheKey($id));
