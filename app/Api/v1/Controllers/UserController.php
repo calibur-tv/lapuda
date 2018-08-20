@@ -306,14 +306,12 @@ class UserController extends Controller
     public function notifications(Request $request)
     {
         $userId = $this->getAuthUserId();
-
         $minId = $request->get('minId') ?: 0;
         $take = 10;
 
         $repository = new UserRepository();
-        $data = $repository->getNotifications($userId, $minId, $take);
 
-        return $this->resOK($data);
+        return $this->resOK($repository->getNotifications($userId, $minId, $take));
     }
 
     /**
@@ -364,6 +362,8 @@ class UserController extends Controller
             'checked' => true
         ]);
 
+        Redis::DEL('notification-' . $id);
+
         return $this->resNoContent();
     }
 
@@ -379,9 +379,15 @@ class UserController extends Controller
      */
     public function clearNotification()
     {
-        Notifications::where('to_user_id', $this->getAuthUserId())->update([
+        $userId = $this->getAuthUserId();
+
+        Notifications
+        ::where('to_user_id', $userId)
+        ->update([
             'checked' => true
         ]);
+
+        Redis::DEL('user-' . $userId . '-notification-ids');
 
         return $this->resNoContent();
     }

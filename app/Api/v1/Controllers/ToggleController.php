@@ -142,65 +142,6 @@ class ToggleController extends Controller
     }
 
     /**
-     * 喜欢或取消喜欢
-     *
-     * > 目前支持的 type：post、image、score
-     *
-     * @Post("/toggle/like")
-     *
-     * @Parameters({
-     *      @Parameter("type", description="要请求的类型", type="string", required=true),
-     *      @Parameter("id", description="要请求的id", type="integer", required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(200, body="一个boolean值"),
-     *      @Response(400, body={"code": 40003, "message": "请求参数错"}),
-     *      @Response(403, body={"code": 40303, "message": "原创内容只能打赏，不能喜欢 | 不能喜欢自己的内容"}),
-     *      @Response(404, body={"code": 40401, "message": "检测的对象不存在"})
-     * })
-     */
-    public function like(Request $request)
-    {
-        $id = $request->get('id');
-        $type = $request->get('type');
-        $userId = $this->getAuthUserId();
-
-        $likeService = $this->getLikeServiceByType($type);
-        if (is_null($likeService))
-        {
-            return $this->resErrBad();
-        }
-
-        $repository = $this->getRepositoryByType($type);
-        if (is_null($likeService))
-        {
-            return $this->resErrBad();
-        }
-
-        $item = $repository->item($id);
-        if (is_null($item))
-        {
-            return $this->resErrNotFound();
-        }
-
-        if ($item['is_creator'])
-        {
-            return $this->resErrRole('原创内容只能打赏，不能喜欢');
-        }
-
-        if ($item['user_id'] == $userId)
-        {
-            return $this->resErrRole('不能喜欢自己的内容');
-        }
-
-        $result = $likeService->toggle($userId, $id);
-
-        return $this->resCreated((boolean)$result);
-    }
-
-    /**
      * 关注或取消关注
      *
      * > 目前支持的 type：bangumi
@@ -256,6 +197,75 @@ class ToggleController extends Controller
     }
 
     /**
+     * 喜欢或取消喜欢
+     *
+     * > 目前支持的 type：post、image、score
+     *
+     * @Post("/toggle/like")
+     *
+     * @Parameters({
+     *      @Parameter("type", description="要请求的类型", type="string", required=true),
+     *      @Parameter("id", description="要请求的id", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body="一个boolean值"),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错"}),
+     *      @Response(403, body={"code": 40303, "message": "原创内容只能打赏，不能喜欢 | 不能喜欢自己的内容"}),
+     *      @Response(404, body={"code": 40401, "message": "检测的对象不存在"})
+     * })
+     */
+    public function like(Request $request)
+    {
+        $id = $request->get('id');
+        $type = $request->get('type');
+        $userId = $this->getAuthUserId();
+
+        $likeService = $this->getLikeServiceByType($type);
+        if (is_null($likeService))
+        {
+            return $this->resErrBad();
+        }
+
+        $repository = $this->getRepositoryByType($type);
+        if (is_null($likeService))
+        {
+            return $this->resErrBad();
+        }
+
+        $item = $repository->item($id);
+        if (is_null($item))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($item['is_creator'])
+        {
+            return $this->resErrRole('原创内容只能打赏，不能喜欢');
+        }
+
+        if ($item['user_id'] == $userId)
+        {
+            return $this->resErrRole('不能喜欢自己的内容');
+        }
+
+        $result = $likeService->toggle($userId, $id);
+        if ($result)
+        {
+            $job = (new \App\Jobs\Notification\Create(
+                $type . '-like',
+                $item['user_id'],
+                $userId,
+                $item['id']
+            ));
+            dispatch($job);
+        }
+
+        return $this->resCreated((boolean)$result);
+    }
+
+    /**
      * 收藏或取消收藏
      *
      * > 目前支持的 type：post、image、score
@@ -305,6 +315,17 @@ class ToggleController extends Controller
         }
 
         $result = $markService->toggle($userId, $id);
+        if ($result)
+        {
+            $job = (new \App\Jobs\Notification\Create(
+                $type . '-mark',
+                $item['user_id'],
+                $userId,
+                $item['id']
+            ));
+            dispatch($job);
+        }
+
         return $this->resCreated((boolean)$result);
     }
 
@@ -389,6 +410,16 @@ class ToggleController extends Controller
         }
 
         $rewardId = $rewardService->toggle($userId, $id);
+        if ($rewardId)
+        {
+            $job = (new \App\Jobs\Notification\Create(
+                $type . '-reward',
+                $item['user_id'],
+                $userId,
+                $item['id']
+            ));
+            dispatch($job);
+        }
 
         return $this->resCreated((boolean)$rewardId);
     }

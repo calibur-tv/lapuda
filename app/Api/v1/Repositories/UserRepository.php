@@ -191,113 +191,94 @@ class UserRepository extends Repository
 
     public function getNotifications($userId, $minId, $take)
     {
-        $list = Notifications::where('to_user_id', $userId)
-            ->when($minId, function ($query) use ($minId) {
-                return $query->where('id', '<', $minId);
-            })
-            ->orderBy('id', 'DESC')
-            ->take($take)
-            ->get()
-            ->toArray();
+        $list = $this->RedisList('user-' . $userId . '-notification-ids', function () use ($userId)
+        {
+            return Notifications
+                ::where('to_user_id', $userId)
+                ->orderBy('created_at', 'DESC')
+                ->pluck('id');
+        });
 
         if (empty($list))
         {
-            return [];
-        }
-
-        $userRepository = new UserRepository();
-        $postRepository = new PostRepository();
-        $transformer = new UserTransformer();
-
-        $result = [];
-
-        foreach ($list as $item)
-        {
-            $type = intval($item['type']);
-            $user = $userRepository->item($item['from_user_id']);
-            $ids = explode(',', $item['about_id']);
-
-            if ($type === 1)
-            {
-                $postId = $ids[1];
-                $post = $postRepository->item($postId);
-                if (is_null($post))
-                {
-                    continue;
-                }
-                $about = [
-                    'resource' => $item['about_id'],
-                    'title' => $post['title'],
-                    'link' => '/post/'.$postId . '?reply=' . $ids[0],
-                ];
-                $model = 'post';
-            }
-            else if ($type === 2)
-            {
-                $commentId = $ids[0];
-                $replyId = $ids[1];
-                $postId = $ids[2];
-                $post = $postRepository->item($postId);
-                if (is_null($post))
-                {
-                    continue;
-                }
-                $about = [
-                    'resource' => $item['about_id'],
-                    'title' => $post['title'],
-                    'link' => '/post/'.$postId.'?reply='.$replyId.'&comment='.$commentId,
-                ];
-                $model = 'post';
-            }
-            else if ($type === 3)
-            {
-                $post = $postRepository->item($item['about_id']);
-                if (is_null($post))
-                {
-                    continue;
-                }
-                $about = [
-                    'resource' => $item['about_id'],
-                    'title' => $post['title'],
-                    'link' => '/post/'.$ids[0]
-                ];
-                $model = 'post';
-            }
-            else if ($type === 4)
-            {
-                $post = $postRepository->item($ids[1]);
-                if (is_null($post))
-                {
-                    continue;
-                }
-                $about = [
-                    'resource' => $item['about_id'],
-                    'title' => $post['title'],
-                    'link' => '/post/'.$ids[1].'?reply='.$ids[0]
-                ];
-                $model = 'post';
-            }
-            else if ($type === 5)
-            {
-                $model = 'image';
-                $about = [
-                    'resource' => '',
-                    'title' => '',
-                    'link' => ''
-                ];
-            }
-
-            $result[] = [
-                'id' => $item['id'],
-                'model' => $model,
-                'type' => $type,
-                'user' => $user,
-                'data' => $about,
-                'checked' => $item['checked']
+            return [
+                'list' => [],
+                'noMore' => true,
+                'total' => 0
             ];
         }
 
-        return $transformer->notification($result);
+        $idsObj = $this->filterIdsByMaxId($list, $minId, $take);
+        if (empty($idsObj['ids']))
+        {
+            return [
+                'list' => [],
+                'noMore' => true,
+                'total' => 0
+            ];
+        }
+
+        $notifies = Notifications
+            ::whereIn('id', $idsObj['ids'])
+            ->get()
+            ->toArray();
+
+        $result = [];
+        foreach ($notifies as $item)
+        {
+            $result[] = $this->Cache('notification-' . $item['id'], function () use ($item)
+            {
+                $type = $item['type'];
+                $link = $this->computeNotificationLink($type, $item['model_id'], $item['comment_id'], $item['reply_id']);
+                $template = $this->computeNotificationMessage($type);
+
+                $notification = [
+                    'id' => (int)$item['id'],
+                    'checked' => (boolean)$item['checked'],
+                    'type' => $type,
+                    'user' => null,
+                    'message' => '',
+                    'model' => '',
+                    'created_at' => $item['created_at']
+                ];
+
+                if ($item['from_user_id'])
+                {
+                    $user = $this->item($item['from_user_id']);
+                    $template = str_replace('${user}', '<a class="user" href="'. $user['zone'] .'">' . $user['nickname'] . '</a>', $template);
+
+                    $notification['user'] = [
+                        'id' => $user['id'],
+                        'zone' => $user['zone'],
+                        'avatar' => $user['avatar'],
+                        'nickname' => $user['nickname']
+                    ];
+                }
+                if ($item['model_id'])
+                {
+                    $repository = $this->computeNotificationRepository($type);
+                    $model = $repository->item($item['model_id']);
+                    $title = $this->computeNotificationMessageTitle($model);
+                    $template = str_replace('${title}', '<a class="title" href="'. $link .'">' . $title . '</a>', $template);
+
+                    $notification['model'] = [
+                        'id' => $model['id'],
+                        'title' => $title
+                    ];
+                }
+
+                $notification['message'] = $template;
+                $notification['link'] = $link;
+
+                return $notification;
+            }, 'm');
+        }
+
+        return [
+            'list' => $result,
+            'noMore' => $idsObj['noMore'],
+            'total' => $idsObj['total']
+        ];
     }
 
     public function followedBangumis($userId, $page = -1, $count = 10)
@@ -433,57 +414,87 @@ class UserRepository extends Repository
         }
     }
 
-    protected function computeNotificationLink()
+    protected function computeNotificationLink($type, $modalId, $commentId = 0, $replyId = 0)
     {
-        switch ($this->type)
+        switch ($type)
         {
             case 0:
                 return '';
                 break;
             case 1:
-                return '/post/' . $this->modelId;
+                return '/post/' . $modalId;
                 break;
             case 2:
-                return '/post/' . $this->modelId;
+                return '/post/' . $modalId;
                 break;
             case 3:
-                return '/post/' . $this->modelId;
+                return '/post/' . $modalId;
                 break;
             case 4:
-                return '/post/' . $this->modelId . '?comment-id=' . $this->commentId;
+                return '/post/' . $modalId . '?comment-id=' . $commentId;
                 break;
             case 5:
-                return '/post/' . $this->modelId . '?comment-id=' . $this->commentId . '&reply-id=' . $this->replyId;
+                return '/post/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
                 break;
             case 6:
-                return '/pins/' . $this->modelId;
+                return '/pins/' . $modalId;
                 break;
             case 7:
-                return '/pins/' . $this->modelId;
+                return '/pins/' . $modalId;
                 break;
             case 8:
-                return '/pins/' . $this->modelId;
+                return '/pins/' . $modalId;
                 break;
             case 9:
-                return '/pins/' . $this->modelId . '?comment-id=' . $this->commentId;
+                return '/pins/' . $modalId . '?comment-id=' . $commentId;
                 break;
             case 10:
-                return '/pins/' . $this->modelId . '?comment-id=' . $this->commentId . '&reply-id=' . $this->replyId;
+                return '/pins/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
                 break;
             case 11:
-                return '/review/' . $this->modelId;
+                return '/review/' . $modalId;
                 break;
             case 12:
-                return '/review/' . $this->modelId;
+                return '/review/' . $modalId;
                 break;
             case 13:
-                return '/review/' . $this->modelId;
+                return '/review/' . $modalId;
                 break;
             case 14:
-                return '/review/' . $this->modelId . '?comment-id=' . $this->commentId;
+                return '/review/' . $modalId . '?comment-id=' . $commentId;
                 break;
             case 15:
-                return '/review/' . $this->modelId . '?comment-id=' . $this->commentId . '&reply-id=' . $this->replyId;
+                return '/review/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
+                break;
+            case 16:
+                return '/video/' . $modalId . '?comment-id=' . $commentId;
+                break;
+            case 17:
+                return '/video/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
+                break;
+            case 18:
+                return '/post/' . $modalId . '?comment-id=' . $commentId;
+                break;
+            case 19:
+                return '/post/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
+                break;
+            case 20:
+                return '/image/' . $modalId . '?comment-id=' . $commentId;
+                break;
+            case 21:
+                return '/image/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
+                break;
+            case 22:
+                return '/score/' . $modalId . '?comment-id=' . $commentId;
+                break;
+            case 23:
+                return '/score/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
+                break;
+            case 24:
+                return '/video/' . $modalId . '?comment-id=' . $commentId;
+                break;
+            case 25:
+                return '/video/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
                 break;
             default:
                 return '';
@@ -491,9 +502,9 @@ class UserRepository extends Repository
         }
     }
 
-    protected function computeNotificationMessage()
+    protected function computeNotificationMessage($type)
     {
-        switch ($this->type)
+        switch ($type)
         {
             case 0:
                 return '';
@@ -543,9 +554,147 @@ class UserRepository extends Repository
             case 15:
                 return '${user}回复了你在的漫评${title}下的评论';
                 break;
+            case 16:
+                return '${user}评论了你的视频${title}';
+                break;
+            case 17:
+                return '${user}回复了你在的视频${title}下的评论';
+                break;
+            case 18:
+                return '${user}赞了你在的帖子${title}下的评论';
+                break;
+            case 19:
+                return '${user}赞了你在的帖子${title}下的回复';
+                break;
+            case 20:
+                return '${user}赞了你在的图片${title}下的评论';
+                break;
+            case 21:
+                return '${user}赞了你在的图片${title}下的回复';
+                break;
+            case 22:
+                return '${user}赞了你在的评分${title}下的评论';
+                break;
+            case 23:
+                return '${user}赞了你在的评分${title}下的回复';
+                break;
+            case 24:
+                return '${user}赞了你在的视频${title}下的评论';
+                break;
+            case 25:
+                return '${user}赞了你在的视频${title}下的回复';
+                break;
             default:
                 return '';
                 break;
         }
+    }
+
+    protected function computeNotificationRepository($type)
+    {
+        switch ($type)
+        {
+            case 0:
+                return null;
+                break;
+            case 1:
+                return new PostRepository();
+                break;
+            case 2:
+                return new PostRepository();
+                break;
+            case 3:
+                return new PostRepository();
+                break;
+            case 4:
+                return new PostRepository();
+                break;
+            case 5:
+                return new PostRepository();
+                break;
+            case 6:
+                return new ImageRepository();
+                break;
+            case 7:
+                return new ImageRepository();
+                break;
+            case 8:
+                return new ImageRepository();
+                break;
+            case 9:
+                return new ImageRepository();
+                break;
+            case 10:
+                return new ImageRepository();
+                break;
+            case 11:
+                return new ScoreRepository();
+                break;
+            case 12:
+                return new ScoreRepository();
+                break;
+            case 13:
+                return new ScoreRepository();
+                break;
+            case 14:
+                return new ScoreRepository();
+                break;
+            case 15:
+                return new ScoreRepository();
+                break;
+            case 16:
+                return new VideoRepository();
+                break;
+            case 17:
+                return new VideoRepository();
+                break;
+            case 18:
+                return new PostRepository();
+                break;
+            case 19:
+                return new PostRepository();
+                break;
+            case 20:
+                return new ImageRepository();
+                break;
+            case 21:
+                return new ImageRepository();
+                break;
+            case 22:
+                return new ScoreRepository();
+                break;
+            case 23:
+                return new ScoreRepository();
+                break;
+            case 24:
+                return new VideoRepository();
+                break;
+            case 25:
+                return new VideoRepository();
+                break;
+            default:
+                return null;
+                break;
+        }
+    }
+
+    protected function computeNotificationMessageTitle($model)
+    {
+        if (isset($model['title']))
+        {
+            return $model['title'];
+        }
+
+        if (isset($model['name']))
+        {
+            return $model['name'];
+        }
+
+        if (isset($model['nickname']))
+        {
+            return $model['nickname'];
+        }
+
+        return '';
     }
 }

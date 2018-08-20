@@ -4,8 +4,10 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Models\Notifications;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
+use Illuminate\Support\Facades\DB;
 use Mews\Purifier\Facades\Purifier;
 
 /**
@@ -59,5 +61,61 @@ class SearchController extends Controller
         }
 
         return $this->resOK($userRepository->item($userId, true));
+    }
+
+    public function migrate()
+    {
+        $notifications = DB::table('notifications')
+            ->get()
+            ->toArray();
+
+        foreach ($notifications as $item)
+        {
+            $type = intval($item->type);
+            $ids = explode(',', $item->about_id);
+            $modelId = 0;
+            $commentId = 0;
+            $replyId = 0;
+
+            $resultType = 0;
+            if ($type === 1)
+            {
+                $resultType = 4;
+                $modelId = $ids[1];
+                $commentId = $ids[0];
+            }
+            else if ($type === 2)
+            {
+                $resultType = 5;
+                $modelId = $ids[2];
+                $commentId = $ids[1];
+                $replyId = $ids[0];
+            }
+            else if ($type === 3)
+            {
+                $resultType = 1;
+                $modelId = $ids[0];
+            }
+            else if ($type === 4)
+            {
+                $resultType = 18;
+                $modelId = $ids[1];
+                $commentId = $ids[0];
+            }
+
+            Notifications::create([
+                'checked' => $item->checked,
+                'from_user_id' => $item->from_user_id,
+                'to_user_id' => $item->to_user_id,
+                'type' => $resultType,
+                'model_id' => $modelId,
+                'comment_id' => $commentId,
+                'reply_id' => $replyId,
+                'created_at' => $item->created_at,
+                'updated_at' => $item->updated_at
+            ]);
+        }
+
+        return $this->resOK('success');
     }
 }
