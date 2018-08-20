@@ -195,7 +195,7 @@ class UserRepository extends Repository
         {
             return Notifications
                 ::where('to_user_id', $userId)
-                ->orderBy('created_at', 'DESC')
+                ->orderBy('id', 'DESC')
                 ->pluck('id');
         });
 
@@ -220,6 +220,7 @@ class UserRepository extends Repository
 
         $notifies = Notifications
             ::whereIn('id', $idsObj['ids'])
+            ->orderBy('id', 'DESC')
             ->get()
             ->toArray();
 

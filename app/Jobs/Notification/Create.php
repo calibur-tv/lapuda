@@ -11,6 +11,7 @@ namespace App\Jobs\Notification;
 
 use App\Api\V1\Repositories\Repository;
 use App\Models\Notifications;
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -59,13 +60,16 @@ class Create implements ShouldQueue
             return;
         }
 
+        $now = Carbon::now();
         $id = Notifications::insertGetId([
             'type' => $this->convertStrTypeToInt(),
             'model_id' => $this->modelId,
             'comment_id' => $this->commentId,
             'reply_id' => $this->replyId,
             'to_user_id' => $this->toUserId,
-            'from_user_id' => $this->fromUserId
+            'from_user_id' => $this->fromUserId,
+            'created_at' => $now,
+            'updated_at' => $now
         ]);
 
         $repository = new Repository();

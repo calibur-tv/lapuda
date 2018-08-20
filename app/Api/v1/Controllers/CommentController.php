@@ -568,7 +568,7 @@ class CommentController extends Controller
         {
             $job = (new \App\Jobs\Notification\Create(
                 $type . '-comment-like',
-                $comment['user_id'],
+                $comment['from_user_id'],
                 $userId,
                 $comment['modal_id'],
                 $comment['id']
@@ -630,7 +630,7 @@ class CommentController extends Controller
         {
             $job = (new \App\Jobs\Notification\Create(
                 $type . '-reply-like',
-                $comment['user_id'],
+                $comment['from_user_id'],
                 $userId,
                 $comment['modal_id'],
                 $comment['parent_id'],
