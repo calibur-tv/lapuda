@@ -257,7 +257,7 @@ class ScoreRepository extends Repository
 
     public function deleteProcess($id, $state = 0)
     {
-        $score = $this->item($id);
+        $score = $this->item($id, true);
 
         DB::table('scores')
             ->where('id', $id)
@@ -283,21 +283,32 @@ class ScoreRepository extends Repository
 
     public function recoverProcess($id)
     {
-        $score = $this->item($id);
-        DB::table('scores')
-            ->where('id', $id)
-            ->update([
-                'state' => 0,
-                'deleted_at' => null
-            ]);
-
-        if ($score['deleted_at'])
+        $score = $this->item($id, true);
+        if ($score['state'] == 0 && $score['deleted_at'])
         {
-            $job = (new \App\Jobs\Search\Index('C', 'score', $id, $score['title'] . '|' . $score['intro']));
-            dispatch($job);
+            DB::table('scores')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0
+                ]);
         }
+        else
+        {
+            DB::table('scores')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => null
+                ]);
 
-        Redis::DEL($this->itemCacheKey($id));
+            if ($score['deleted_at'])
+            {
+                $job = (new \App\Jobs\Search\Index('C', 'score', $id, $score['title'] . '|' . $score['intro']));
+                dispatch($job);
+            }
+
+            Redis::DEL($this->itemCacheKey($id));
+        }
     }
 
     public function itemCacheKey($id)

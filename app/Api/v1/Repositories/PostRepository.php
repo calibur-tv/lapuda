@@ -194,7 +194,7 @@ class PostRepository extends Repository
 
     public function deleteProcess($id, $state = 0)
     {
-        $post = $this->item($id);
+        $post = $this->item($id, true);
 
         DB::table('posts')
             ->where('id', $id)
@@ -217,21 +217,32 @@ class PostRepository extends Repository
 
     public function recoverProcess($id)
     {
-        $post = $this->item($id);
-        DB::table('posts')
-            ->where('id', $id)
-            ->update([
-                'state' => 0,
-                'deleted_at' => null
-            ]);
-
-        if ($post['deleted_at'])
+        $post = $this->item($id, true);
+        if ($post['state'] == 0 && $post['deleted_at'])
         {
-            $job = (new \App\Jobs\Search\Index('C', 'post', $id, $post['title'] . '|' . $post['content']));
-            dispatch($job);
+            DB::table('posts')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0
+                ]);
         }
+        else
+        {
+            DB::table('posts')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => null
+                ]);
 
-        Redis::DEL($this->itemCacheKey($id));
+            if ($post['deleted_at'])
+            {
+                $job = (new \App\Jobs\Search\Index('C', 'post', $id, $post['title'] . '|' . $post['content']));
+                dispatch($job);
+            }
+
+            Redis::DEL($this->itemCacheKey($id));
+        }
     }
 
     public function itemCacheKey($id)
