@@ -432,4 +432,120 @@ class UserRepository extends Repository
             ]);
         }
     }
+
+    protected function computeNotificationLink()
+    {
+        switch ($this->type)
+        {
+            case 0:
+                return '';
+                break;
+            case 1:
+                return '/post/' . $this->modelId;
+                break;
+            case 2:
+                return '/post/' . $this->modelId;
+                break;
+            case 3:
+                return '/post/' . $this->modelId;
+                break;
+            case 4:
+                return '/post/' . $this->modelId . '?comment-id=' . $this->commentId;
+                break;
+            case 5:
+                return '/post/' . $this->modelId . '?comment-id=' . $this->commentId . '&reply-id=' . $this->replyId;
+                break;
+            case 6:
+                return '/pins/' . $this->modelId;
+                break;
+            case 7:
+                return '/pins/' . $this->modelId;
+                break;
+            case 8:
+                return '/pins/' . $this->modelId;
+                break;
+            case 9:
+                return '/pins/' . $this->modelId . '?comment-id=' . $this->commentId;
+                break;
+            case 10:
+                return '/pins/' . $this->modelId . '?comment-id=' . $this->commentId . '&reply-id=' . $this->replyId;
+                break;
+            case 11:
+                return '/review/' . $this->modelId;
+                break;
+            case 12:
+                return '/review/' . $this->modelId;
+                break;
+            case 13:
+                return '/review/' . $this->modelId;
+                break;
+            case 14:
+                return '/review/' . $this->modelId . '?comment-id=' . $this->commentId;
+                break;
+            case 15:
+                return '/review/' . $this->modelId . '?comment-id=' . $this->commentId . '&reply-id=' . $this->replyId;
+                break;
+            default:
+                return '';
+                break;
+        }
+    }
+
+    protected function computeNotificationMessage()
+    {
+        switch ($this->type)
+        {
+            case 0:
+                return '';
+                break;
+            case 1:
+                return '${user}喜欢了你的帖子${title}';
+                break;
+            case 2:
+                return '${user}打赏了你的帖子${title}';
+                break;
+            case 3:
+                return '${user}收藏了你的帖子${title}';
+                break;
+            case 4:
+                return '${user}评论了你的帖子${title}';
+                break;
+            case 5:
+                return '${user}回复了你在的帖子${title}下的评论';
+                break;
+            case 6:
+                return '${user}喜欢了你的图片${title}';
+                break;
+            case 7:
+                return '${user}打赏了你的图片${title}';
+                break;
+            case 8:
+                return '${user}收藏了你的图片${title}';
+                break;
+            case 9:
+                return '${user}评论了你的图片${title}';
+                break;
+            case 10:
+                return '${user}回复了你在的图片${title}下的评论';
+                break;
+            case 11:
+                return '${user}喜欢了你的漫评${title}';
+                break;
+            case 12:
+                return '${user}打赏了你的漫评${title}';
+                break;
+            case 13:
+                return '${user}收藏了你的漫评${title}';
+                break;
+            case 14:
+                return '${user}评论了你的漫评${title}';
+                break;
+            case 15:
+                return '${user}回复了你在的漫评${title}下的评论';
+                break;
+            default:
+                return '';
+                break;
+        }
+    }
 }
