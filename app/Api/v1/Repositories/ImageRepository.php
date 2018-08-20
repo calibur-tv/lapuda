@@ -254,9 +254,18 @@ class ImageRepository extends Repository
             ->count();
     }
 
-    public function createProcess($id)
+    public function createProcess($id, $state = 0)
     {
         $image = $this->item($id);
+
+        if ($state)
+        {
+            DB::table('images')
+                ->where('id', $id)
+                ->update([
+                    'state' => $state
+                ]);
+        }
 
         $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
         $imageTrendingService->create($id);
@@ -284,17 +293,6 @@ class ImageRepository extends Repository
         {
             Redis::DEL($this->cacheKeyCartoonParts($image['bangumi_id']));
         }
-    }
-
-    public function trialProcess($id, $state)
-    {
-        DB::table('images')
-            ->where('id', $id)
-            ->update([
-                'state' => $state
-            ]);
-
-        Redis::DEL($this->itemCacheKey($id));
     }
 
     public function deleteProcess($id, $state = 0)
@@ -336,31 +334,24 @@ class ImageRepository extends Repository
     public function recoverProcess($id)
     {
         $image = $this->item($id, true);
-        if ($image['state'] == 0 && $image['deleted_at'])
-        {
-            DB::table('images')
-                ->where('id', $id)
-                ->update([
-                    'state' => 0
-                ]);
-        }
-        else
-        {
-            DB::table('images')
-                ->where('id', $id)
-                ->update([
-                    'state' => 0,
-                    'deleted_at' => null
-                ]);
 
-            if ($image['deleted_at'])
-            {
-                $job = (new \App\Jobs\Search\Index('C', 'image', $id, $image['name']));
-                dispatch($job);
-            }
+        DB::table('images')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
 
-            Redis::DEL($this->itemCacheKey($id));
+        if ($image['deleted_at'])
+        {
+            $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
+            $imageTrendingService->create($id);
+
+            $job = (new \App\Jobs\Search\Index('C', 'image', $id, $image['name']));
+            dispatch($job);
         }
+
+        Redis::DEL($this->itemCacheKey($id));
     }
 
     public function itemCacheKey($id)

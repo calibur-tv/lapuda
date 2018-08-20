@@ -25,6 +25,7 @@ use App\Services\Trial\ImageFilter;
 use App\Services\Trial\WordsFilter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Mews\Purifier\Facades\Purifier;
@@ -1006,10 +1007,40 @@ class ImageController extends Controller
     public function ban(Request $request)
     {
         $id = $request->get('id');
-        $imageRepository = new ImageRepository();
+        $type = $request->get('type');
+        if ($type === 'album')
+        {
+            $imageRepository = new ImageRepository();
+            $imageRepository->deleteProcess($id);
+        }
+        else
+        {
+            $image = DB
+                ::table('album_images')
+                ->where('id', $id)
+                ->first();
 
-        Redis::DEL($imageRepository->itemCacheKey($id));
-        $imageRepository->deleteProcess($id);
+            if ($image['deleted_at'])
+            {
+                DB::table('album_images')
+                    ->where('id', $id)
+                    ->update([
+                        'state' => 0
+                    ]);
+            }
+            else
+            {
+                DB::table('album_images')
+                    ->where('id', $id)
+                    ->update([
+                        'state' => 0,
+                        'deleted_at' => Carbon::now()
+                    ]);
+
+                $totalImageCount = new TotalImageCount();
+                $totalImageCount->add(-1);
+            }
+        }
 
         return $this->resNoContent();
     }
@@ -1026,10 +1057,15 @@ class ImageController extends Controller
         }
         else
         {
-            AlbumImage::withTrashed()->where('id', $id)
+            DB::table('album_images')
+                ->where('id', $id)
                 ->update([
-                    'state' => 0
+                    'state' => 0,
+                    'deleted_at' => null
                 ]);
+
+            $totalImageCount = new TotalImageCount();
+            $totalImageCount->add();
         }
 
         return $this->resNoContent();

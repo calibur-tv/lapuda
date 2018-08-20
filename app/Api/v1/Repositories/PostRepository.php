@@ -158,9 +158,18 @@ class PostRepository extends Repository
         return $result;
     }
 
-    public function createProcess($id)
+    public function createProcess($id, $state = 0)
     {
         $post = $this->item($id);
+
+        if ($state)
+        {
+            DB::table('posts')
+                ->where('id', $id)
+                ->update([
+                    'state' => $state
+                ]);
+        }
 
         $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
         $postTrendingService->create($id);
@@ -179,17 +188,6 @@ class PostRepository extends Repository
 
         $job = (new \App\Jobs\Search\Index('U', 'post', $id, $post['title'] . '|' . $post['content']));
         dispatch($job);
-    }
-
-    public function trialProcess($id, $state)
-    {
-        DB::table('posts')
-            ->where('id', $id)
-            ->update([
-                'state' => $state
-            ]);
-
-        Redis::DEL($this->itemCacheKey($id));
     }
 
     public function deleteProcess($id, $state = 0)
@@ -218,31 +216,24 @@ class PostRepository extends Repository
     public function recoverProcess($id)
     {
         $post = $this->item($id, true);
-        if ($post['state'] == 0 && $post['deleted_at'])
-        {
-            DB::table('posts')
-                ->where('id', $id)
-                ->update([
-                    'state' => 0
-                ]);
-        }
-        else
-        {
-            DB::table('posts')
-                ->where('id', $id)
-                ->update([
-                    'state' => 0,
-                    'deleted_at' => null
-                ]);
 
-            if ($post['deleted_at'])
-            {
-                $job = (new \App\Jobs\Search\Index('C', 'post', $id, $post['title'] . '|' . $post['content']));
-                dispatch($job);
-            }
+        DB::table('posts')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
 
-            Redis::DEL($this->itemCacheKey($id));
+        if ($post['deleted_at'])
+        {
+            $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
+            $postTrendingService->create($id);
+
+            $job = (new \App\Jobs\Search\Index('C', 'post', $id, $post['title'] . '|' . $post['content']));
+            dispatch($job);
         }
+
+        Redis::DEL($this->itemCacheKey($id));
     }
 
     public function itemCacheKey($id)

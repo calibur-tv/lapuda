@@ -218,13 +218,22 @@ class ScoreRepository extends Repository
         return Purifier::clean(json_encode($result));
     }
 
-    public function createProcess($id)
+    public function createProcess($id, $state = 0)
     {
         $score = $this->item($id);
 
         $bangumiScoreService = new BangumiScoreService();
         $bangumiScoreService->do($score['user_id'], $score['bangumi_id']);
         Redis::DEL($this->cacheKeyBangumiScore($score['bangumi_id']));
+
+        if ($state)
+        {
+            DB::table('scores')
+                ->where('id', $id)
+                ->update([
+                    'state' => $state
+                ]);
+        }
 
         $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
         $scoreTrendingService->create($id);
@@ -242,17 +251,6 @@ class ScoreRepository extends Repository
 
         $job = (new \App\Jobs\Search\Index('U', 'score', $id, $score['title'] . '|' . $score['intro']));
         dispatch($job);
-    }
-
-    public function trialProcess($id, $state)
-    {
-        DB::table('scores')
-            ->where('id', $id)
-            ->update([
-                'state' => $state
-            ]);
-
-        Redis::DEL($this->itemCacheKey($id));
     }
 
     public function deleteProcess($id, $state = 0)
@@ -284,31 +282,24 @@ class ScoreRepository extends Repository
     public function recoverProcess($id)
     {
         $score = $this->item($id, true);
-        if ($score['state'] == 0 && $score['deleted_at'])
-        {
-            DB::table('scores')
-                ->where('id', $id)
-                ->update([
-                    'state' => 0
-                ]);
-        }
-        else
-        {
-            DB::table('scores')
-                ->where('id', $id)
-                ->update([
-                    'state' => 0,
-                    'deleted_at' => null
-                ]);
 
-            if ($score['deleted_at'])
-            {
-                $job = (new \App\Jobs\Search\Index('C', 'score', $id, $score['title'] . '|' . $score['intro']));
-                dispatch($job);
-            }
+        DB::table('scores')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
 
-            Redis::DEL($this->itemCacheKey($id));
+        if ($score['deleted_at'])
+        {
+            $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
+            $scoreTrendingService->create($id);
+
+            $job = (new \App\Jobs\Search\Index('C', 'score', $id, $score['title'] . '|' . $score['intro']));
+            dispatch($job);
         }
+
+        Redis::DEL($this->itemCacheKey($id));
     }
 
     public function itemCacheKey($id)
