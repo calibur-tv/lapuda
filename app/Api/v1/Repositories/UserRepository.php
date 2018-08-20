@@ -245,7 +245,7 @@ class UserRepository extends Repository
                 if ($item['from_user_id'])
                 {
                     $user = $this->item($item['from_user_id']);
-                    $template = str_replace('${user}', '<a class="user" href="'. $user['zone'] .'">' . $user['nickname'] . '</a>', $template);
+                    $template = str_replace('${user}', '<a class="user" href="/user/'. $user['zone'] .'">' . $user['nickname'] . '</a>', $template);
 
                     $notification['user'] = [
                         'id' => $user['id'],
