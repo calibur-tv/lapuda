@@ -10,6 +10,8 @@ namespace App\Api\V1\Repositories;
 
 
 use App\Models\Video;
+use App\Services\BaiduSearch\BaiduPush;
+use App\Services\OpenSearch\Search;
 
 class VideoRepository extends Repository
 {
@@ -81,6 +83,26 @@ class VideoRepository extends Repository
         }
 
         return $result;
+    }
+
+    public function migrateSearchIndex($type, $id, $async = true)
+    {
+        $type = $type === 'C' ? 'C' : 'U';
+        $video = $this->item($id);
+        $content = $video['name'];
+
+        if ($async)
+        {
+            $job = (new \App\Jobs\Search\Index($type, 'video', $id, $content));
+            dispatch($job);
+        }
+        else
+        {
+            $search = new Search();
+            $search->create($id, $content, 'video');
+            $baiduPush = new BaiduPush();
+            $baiduPush->create($id, 'video');
+        }
     }
 
     protected function computeVideoSrc($src)

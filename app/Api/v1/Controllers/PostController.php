@@ -16,6 +16,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Models\Post;
 use App\Models\PostImages;
+use App\Services\OpenSearch\Search;
 use App\Services\Trial\WordsFilter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -207,6 +208,13 @@ class PostController extends Controller
 
         $postTransformer = new PostTransformer();
         $userTransformer = new UserTransformer();
+
+        $searchService = new Search();
+        if ($searchService->checkNeedMigrate('post', $id))
+        {
+            $job = (new \App\Jobs\Search\UpdateWeight('post', $id));
+            dispatch($job);
+        }
 
         return $this->resOK([
             'bangumi' => $bangumi,

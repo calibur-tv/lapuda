@@ -12,6 +12,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Counter\ScoreViewCounter;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
 use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
@@ -20,6 +21,7 @@ use App\Api\V1\Services\Trending\ScoreTrendingService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\ScoreTransformer;
 use App\Models\Score;
+use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -97,7 +99,18 @@ class ScoreController extends Controller
         $score['marked'] = $scoreMarkService->check($visitorId, $id);
         $score['mark_users'] = $scoreMarkService->users($id);
 
+        $scoreViewCounter = new ScoreViewCounter();
+        $score['view_count'] = $scoreViewCounter->add($id);
+
         $transformer = new ScoreTransformer();
+
+        $searchService = new Search();
+        if ($searchService->checkNeedMigrate('score', $id))
+        {
+            $job = (new \App\Jobs\Search\UpdateWeight('score', $id));
+            dispatch($job);
+        }
+
         return $this->resOK($transformer->show($score));
     }
 

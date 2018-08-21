@@ -21,6 +21,7 @@ use App\Models\AlbumImage;
 use App\Models\Banner;
 use App\Models\Image;
 use App\Services\Geetest\Captcha;
+use App\Services\OpenSearch\Search;
 use App\Services\Trial\ImageFilter;
 use App\Services\Trial\WordsFilter;
 use Carbon\Carbon;
@@ -777,9 +778,16 @@ class ImageController extends Controller
         $image['mark_users'] = $imageMarkService->users($id);
 
         $imageViewCounter = new ImageViewCounter();
-        $imageViewCounter->add($id);
+        $image['view_count'] = $imageViewCounter->add($id);
 
         $imageTransformer = new ImageTransformer();
+
+        $searchService = new Search();
+        if ($searchService->checkNeedMigrate('image', $id))
+        {
+            $job = (new \App\Jobs\Search\UpdateWeight('image', $id));
+            dispatch($job);
+        }
 
         return $this->resOK($imageTransformer->show($image));
     }

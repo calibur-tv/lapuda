@@ -15,6 +15,7 @@ use App\Models\AlbumImage;
 use App\Models\Banner;
 use App\Models\Image;
 use App\Services\BaiduSearch\BaiduPush;
+use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -278,16 +279,14 @@ class ImageRepository extends Repository
             Redis::DEL($this->cacheKeyCartoonParts($image['bangumi_id']));
         }
 
-        $job = (new \App\Jobs\Search\Index('C', 'image', $id, $image['name']));
-        dispatch($job);
+        $this->migrateSearchIndex('C', $id, false);
     }
 
     public function updateProcess($id)
     {
         $image = $this->item($id);
 
-        $job = (new \App\Jobs\Search\Index('U', 'image', $id, $image['name']));
-        dispatch($job);
+        $this->migrateSearchIndex('U', $id, false);
 
         if ($image['is_cartoon'])
         {
@@ -347,8 +346,7 @@ class ImageRepository extends Repository
             $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
             $imageTrendingService->create($id);
 
-            $job = (new \App\Jobs\Search\Index('C', 'image', $id, $image['name']));
-            dispatch($job);
+            $this->migrateSearchIndex('C', $id, false);
         }
 
         Redis::DEL($this->itemCacheKey($id));
@@ -367,5 +365,25 @@ class ImageRepository extends Repository
     public function cacheKeyCartoonParts($bangumiId)
     {
         return 'bangumi_' . $bangumiId . '_cartoon_parts';
+    }
+
+    public function migrateSearchIndex($type, $id, $async = true)
+    {
+        $type = $type === 'C' ? 'C' : 'U';
+        $image = $this->item($id);
+        $content = $image['name'];
+
+        if ($async)
+        {
+            $job = (new \App\Jobs\Search\Index($type, 'image', $id, $content));
+            dispatch($job);
+        }
+        else
+        {
+            $search = new Search();
+            $search->create($id, $content, 'image');
+            $baiduPush = new BaiduPush();
+            $baiduPush->create($id, 'image');
+        }
     }
 }

@@ -8,6 +8,8 @@ use App\Api\V1\Transformers\BangumiTransformer;
 use App\Models\Bangumi;
 use App\Models\Post;
 use App\Models\Video;
+use App\Services\BaiduSearch\BaiduPush;
+use App\Services\OpenSearch\Search;
 use Illuminate\Support\Facades\DB;
 
 class BangumiRepository extends Repository
@@ -339,5 +341,25 @@ class BangumiRepository extends Repository
         }
 
         return $result;
+    }
+
+    public function migrateSearchIndex($type, $id, $async = true)
+    {
+        $type = $type === 'C' ? 'C' : 'U';
+        $bangumi = $this->item($id);
+        $content = $bangumi['alias'];
+
+        if ($async)
+        {
+            $job = (new \App\Jobs\Search\Index($type, 'bangumi', $id, $content));
+            dispatch($job);
+        }
+        else
+        {
+            $search = new Search();
+            $search->create($id, $content, 'bangumi');
+            $baiduPush = new BaiduPush();
+            $baiduPush->create($id, 'bangumi');
+        }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Trial\User;
 
+use App\Api\V1\Repositories\UserRepository;
 use App\Models\User;
 use App\Services\Trial\WordsFilter;
 use Illuminate\Bus\Queueable;
@@ -32,9 +33,11 @@ class Text implements ShouldQueue
      */
     public function handle()
     {
-        $user = User::find($this->userId);
-        $nickname = $user->nickname;
-        $signature = $user->signature;
+        $userRepository = new UserRepository();
+        $user = $userRepository->item($this->userId, true);
+
+        $nickname = $user['nickname'];
+        $signature = $user['signature'];
 
         $filter = new WordsFilter();
         $nameCount = $filter->count($nickname);
@@ -63,7 +66,6 @@ class Text implements ShouldQueue
             }
         }
 
-        $job = (new \App\Jobs\Search\Index('U', 'user', $user->id, $nickname . '|' . $signature));
-        dispatch($job);
+        $userRepository->migrateSearchIndex('U', $this->userId, false);
     }
 }

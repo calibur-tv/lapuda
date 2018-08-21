@@ -9,18 +9,23 @@ namespace App\Services\OpenSearch;
  */
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
+use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
+use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\PostTransformer;
+use App\Api\V1\Transformers\ScoreTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Api\V1\Transformers\VideoTransformer;
 use App\Services\OpenSearch\Client\OpenSearchClient;
 use App\Services\OpenSearch\Client\SearchClient;
 use App\Services\OpenSearch\Util\SearchParamsBuilder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class Search
 {
@@ -202,77 +207,50 @@ class Search
         ];
     }
 
-    public function weight($id, $modal, $score = 1)
+    public function weight($id, $modal, $score)
     {
         if (config('app.env') !== 'production')
         {
-            return 0;
+            return;
         }
 
         $modalId = $this->computeModalIdByStr($modal);
         if (!$modalId)
         {
-            return 0;
+            return;
         }
 
-        return DB::table($this->table)
+        DB::table($this->table)
             ->whereRaw('type_id = ? and modal_id = ?', [$id, $modalId])
-            ->increment('score', $score);
+            ->update([
+                'score' => $score
+            ]);
     }
 
-    protected function getRepositoryByType($type)
+    public function checkNeedMigrate($modal, $id)
     {
-        if ($type === 1)
+        $result = false;
+        $cacheKey = $this->migrateWeightKey($modal, $id);
+        if (!Redis::EXISTS($cacheKey))
         {
-            return new UserRepository();
-        }
-        else if ($type === 2)
-        {
-            return new BangumiRepository();
-        }
-        else if ($type === 3)
-        {
-            return new VideoRepository();
-        }
-        else if ($type === 4)
-        {
-            return new PostRepository();
-        }
-        else if ($type === 5)
-        {
-            return new CartoonRoleRepository();
+            $result = true;
         }
 
-        return null;
+        if (time() - Redis::GET($cacheKey) > 86400)
+        {
+            $result = true;
+        }
+
+        if ($result)
+        {
+            Redis::SET($cacheKey, time());
+            Redis::EXPIRE($cacheKey, 86400);
+        }
+
+        return $result;
     }
 
-    protected function getTransformerByType($type)
-    {
-        if ($type === 1)
-        {
-            return new UserTransformer();
-        }
-        else if ($type === 2)
-        {
-            return new BangumiTransformer();
-        }
-        else if ($type === 3)
-        {
-            return new VideoTransformer();
-        }
-        else if ($type === 4)
-        {
-            return new PostTransformer();
-        }
-        else if ($type === 5)
-        {
-            return new CartoonRoleTransformer();
-        }
-
-        return null;
-    }
-
-    protected function computeModalIdByStr($modal)
+    public function computeModalIdByStr($modal)
     {
         if ($modal === 'user')
         {
@@ -304,5 +282,78 @@ class Search
         }
 
         return 0;
+    }
+
+    public function getRepositoryByType($type)
+    {
+        if ($type === 1)
+        {
+            return new UserRepository();
+        }
+        else if ($type === 2)
+        {
+            return new BangumiRepository();
+        }
+        else if ($type === 3)
+        {
+            return new VideoRepository();
+        }
+        else if ($type === 4)
+        {
+            return new PostRepository();
+        }
+        else if ($type === 5)
+        {
+            return new CartoonRoleRepository();
+        }
+        else if ($type === 6)
+        {
+            return new ImageRepository();
+        }
+        else if ($type === 7)
+        {
+            return new ScoreRepository();
+        }
+
+        return null;
+    }
+
+    protected function getTransformerByType($type)
+    {
+        if ($type === 1)
+        {
+            return new UserTransformer();
+        }
+        else if ($type === 2)
+        {
+            return new BangumiTransformer();
+        }
+        else if ($type === 3)
+        {
+            return new VideoTransformer();
+        }
+        else if ($type === 4)
+        {
+            return new PostTransformer();
+        }
+        else if ($type === 5)
+        {
+            return new CartoonRoleTransformer();
+        }
+        else if ($type === 6)
+        {
+            return new ImageTransformer();
+        }
+        else if ($type === 7)
+        {
+            return new ScoreTransformer();
+        }
+
+        return null;
+    }
+
+    protected function migrateWeightKey($modal, $id)
+    {
+        return $modal . '-' . $id . '-last-migrate-search-ts';
     }
 }

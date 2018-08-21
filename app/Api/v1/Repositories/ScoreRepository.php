@@ -14,6 +14,7 @@ use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
 use App\Models\Score;
 use App\Services\BaiduSearch\BaiduPush;
+use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -241,16 +242,12 @@ class ScoreRepository extends Repository
         $baiduPush = new BaiduPush();
         $baiduPush->trending('score');
 
-        $job = (new \App\Jobs\Search\Index('C', 'score', $id, $score['title'] . '|' . $score['intro']));
-        dispatch($job);
+        $this->migrateSearchIndex('C', $id, false);
     }
 
     public function updateProcess($id)
     {
-        $score = $this->item($id);
-
-        $job = (new \App\Jobs\Search\Index('U', 'score', $id, $score['title'] . '|' . $score['intro']));
-        dispatch($job);
+        $this->migrateSearchIndex('U', $id, false);
     }
 
     public function deleteProcess($id, $state = 0)
@@ -295,8 +292,7 @@ class ScoreRepository extends Repository
             $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
             $scoreTrendingService->create($id);
 
-            $job = (new \App\Jobs\Search\Index('C', 'score', $id, $score['title'] . '|' . $score['intro']));
-            dispatch($job);
+            $this->migrateSearchIndex('C', $id, false);
         }
 
         Redis::DEL($this->itemCacheKey($id));
@@ -305,5 +301,25 @@ class ScoreRepository extends Repository
     public function itemCacheKey($id)
     {
         return 'score_' . $id;
+    }
+
+    public function migrateSearchIndex($type, $id, $async = true)
+    {
+        $type = $type === 'C' ? 'C' : 'U';
+        $score = $this->item($id);
+        $content = $score['title'] . '|' . $score['intro'];
+
+        if ($async)
+        {
+            $job = (new \App\Jobs\Search\Index($type, 'score', $id, $content));
+            dispatch($job);
+        }
+        else
+        {
+            $search = new Search();
+            $search->create($id, $content, 'score');
+            $baiduPush = new BaiduPush();
+            $baiduPush->create($id, 'score');
+        }
     }
 }

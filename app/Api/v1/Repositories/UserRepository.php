@@ -26,6 +26,8 @@ use App\Models\User;
 use App\Models\UserCoin;
 use App\Models\UserSign;
 use App\Models\Video;
+use App\Services\BaiduSearch\BaiduPush;
+use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -400,6 +402,26 @@ class UserRepository extends Repository
                 break;
             default:
                 return -1;
+        }
+    }
+
+    public function migrateSearchIndex($type, $id, $async = true)
+    {
+        $type = $type === 'C' ? 'C' : 'U';
+        $user = $this->item($id);
+        $content = $user['nickname'] . ',' . $user['zone'];
+
+        if ($async)
+        {
+            $job = (new \App\Jobs\Search\Index($type, 'user', $id, $content));
+            dispatch($job);
+        }
+        else
+        {
+            $search = new Search();
+            $search->create($id, $content, 'user');
+            $baiduPush = new BaiduPush();
+            $baiduPush->create($user['zone'], 'user');
         }
     }
 

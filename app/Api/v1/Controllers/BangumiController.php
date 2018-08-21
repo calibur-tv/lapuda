@@ -11,6 +11,7 @@ use App\Api\V1\Transformers\BangumiTransformer;
 use App\Models\Bangumi;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Models\Video;
+use App\Services\OpenSearch\Search;
 use App\Services\Trial\ImageFilter;
 use App\Services\Trial\WordsFilter;
 use Carbon\Carbon;
@@ -205,6 +206,13 @@ class BangumiController extends Controller
 
         $bangumiTransformer = new BangumiTransformer();
 
+        $searchService = new Search();
+        if ($searchService->checkNeedMigrate('bangumi', $id))
+        {
+            $job = (new \App\Jobs\Search\UpdateWeight('bangumi', $id));
+            dispatch($job);
+        }
+
         return $this->resOK($bangumiTransformer->show($bangumi));
     }
 
@@ -353,8 +361,8 @@ class BangumiController extends Controller
         }
         Redis::DEL('bangumi_all_list');
 
-        $job = (new \App\Jobs\Search\Index('C', 'bangumi', $bangumiId, $request->get('alias')));
-        dispatch($job);
+        $bangumiRepository = new BangumiRepository();
+        $bangumiRepository->migrateSearchIndex('C', $bangumiId);
 
         return $this->resCreated($bangumiId);
     }
@@ -411,8 +419,8 @@ class BangumiController extends Controller
             Redis::DEL('bangumi_'.$bangumiId);
             Redis::DEL('bangumi_'.$bangumiId.'_videos');
 
-            $job = (new \App\Jobs\Search\Index('U', 'bangumi', $bangumiId, $request->get('alias')));
-            dispatch($job);
+            $bangumiRepository = new BangumiRepository();
+            $bangumiRepository->migrateSearchIndex('U', $bangumiId);
 
             return $this->resNoContent();
         }
@@ -579,8 +587,8 @@ class BangumiController extends Controller
             Redis::DEL('bangumi_' . $id);
             Redis::DEL('bangumi_'. $id .'_tags');
 
-            $job = (new \App\Jobs\Search\Index('U', 'bangumi', $id, $bangumi['alias']));
-            dispatch($job);
+            $bangumiRepository = new BangumiRepository();
+            $bangumiRepository->migrateSearchIndex('U', $id);
 
             return $this->resNoContent();
         }

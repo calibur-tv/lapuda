@@ -14,6 +14,7 @@ use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Models\Post;
 use App\Models\PostImages;
 use App\Services\BaiduSearch\BaiduPush;
+use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -178,16 +179,12 @@ class PostRepository extends Repository
         $baiduPush->trending('post');
         $baiduPush->bangumi($post['bangumi_id']);
 
-        $job = (new \App\Jobs\Search\Index('C', 'post', $id, $post['title'] . '|' . $post['desc']));
-        dispatch($job);
+        $this->migrateSearchIndex('C', $id, false);
     }
 
     public function updateProcess($id)
     {
-        $post = $this->item($id);
-
-        $job = (new \App\Jobs\Search\Index('U', 'post', $id, $post['title'] . '|' . $post['desc']));
-        dispatch($job);
+        $this->migrateSearchIndex('U', $id, false);
     }
 
     public function deleteProcess($id, $state = 0)
@@ -229,8 +226,7 @@ class PostRepository extends Repository
             $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
             $postTrendingService->create($id);
 
-            $job = (new \App\Jobs\Search\Index('C', 'post', $id, $post['title'] . '|' . $post['desc']));
-            dispatch($job);
+            $this->migrateSearchIndex('C', $id, false);
         }
 
         Redis::DEL($this->itemCacheKey($id));
@@ -239,5 +235,25 @@ class PostRepository extends Repository
     public function itemCacheKey($id)
     {
         return 'post_' . $id;
+    }
+
+    public function migrateSearchIndex($type, $id, $async = true)
+    {
+        $type = $type === 'C' ? 'C' : 'U';
+        $post = $this->item($id);
+        $content = $post['title'] . '|' . $post['desc'];
+
+        if ($async)
+        {
+            $job = (new \App\Jobs\Search\Index($type, 'post', $id, $content));
+            dispatch($job);
+        }
+        else
+        {
+            $search = new Search();
+            $search->create($id, $content, 'post');
+            $baiduPush = new BaiduPush();
+            $baiduPush->create($id, 'post');
+        }
     }
 }

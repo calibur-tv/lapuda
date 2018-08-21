@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Api\V1\Repositories\UserRepository;
 use App\Models\UserCoin;
 use App\Models\UserSign;
+use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -138,6 +139,13 @@ class UserController extends Controller
             }
 
             return $this->resErrNotFound('该用户不存在');
+        }
+
+        $searchService = new Search();
+        if ($searchService->checkNeedMigrate('user', $userId))
+        {
+            $job = (new \App\Jobs\Search\UpdateWeight('user', $userId));
+            dispatch($job);
         }
 
         return $this->resOK($userTransformer->show($user));
@@ -713,8 +721,7 @@ class UserController extends Controller
 
         User::withTrashed()->where('id', $userId)->restore();
 
-        $job = (new \App\Jobs\Search\Index('C', 'user', $userId, $user['nickname'] . ',' . $user['zone']));
-        dispatch($job);
+        $userRepository->migrateSearchIndex('C', $userId);
 
         return $this->resNoContent();
     }

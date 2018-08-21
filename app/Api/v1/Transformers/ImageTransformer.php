@@ -23,6 +23,7 @@ class ImageTransformer extends Transformer
                 'part' => (int)$image['part'],
                 'parts' => $image['parts'],
                 'images' => $image['images'],
+                'view_count' => (int)$image['view_count'],
                 'image_count' => (int)$image['image_count'],
                 'user' => $this->transformer($image['user'], function ($user)
                 {
