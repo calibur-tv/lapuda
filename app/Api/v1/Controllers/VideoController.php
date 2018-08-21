@@ -219,7 +219,7 @@ class VideoController extends Controller
         $take = $request->get('take') ?: 10;
 
         $list = Video::orderBy('count_played', 'DESC')
-            ->select('name', 'id', 'bangumi_id', 'count_played', 'comment_count')
+            ->select('name', 'id', 'bangumi_id', 'count_played')
             ->take(($toPage - $curPage) * $take)
             ->skip($curPage * $take)
             ->get();
