@@ -449,7 +449,7 @@ class ScoreController extends Controller
         }
 
         $scoreRepository = new ScoreRepository();
-        $list = $scoreRepository->list($ids);
+        $list = $scoreRepository->list($ids, true);
 
         return $this->resOK($list);
     }

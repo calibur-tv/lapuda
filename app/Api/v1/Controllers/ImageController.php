@@ -1004,6 +1004,7 @@ class ImageController extends Controller
             ->where('state', '<>', 0)
             ->get()
             ->toArray();
+
         $images = AlbumImage::withTrashed()
             ->where('state', '<>', 0)
             ->get()
