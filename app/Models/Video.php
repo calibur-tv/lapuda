@@ -16,18 +16,12 @@ class Video extends Model
         'bangumi_id',
         'part',
         'resource',
-        'count_played',
-        'comment_count'
+        'count_played'
     ];
 
     protected $casts = [
         'part' => 'integer'
     ];
-
-    public function bangumi()
-    {
-        return $this->belongsTo(Bangumi::class, 'id', 'bangumi_id');
-    }
 
     public function getUrlAttribute($url)
     {

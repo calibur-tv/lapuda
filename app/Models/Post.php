@@ -25,6 +25,7 @@ class Post extends Model
         'desc', // content 的纯文本，最多 200 个字
         'state', // 帖子状态，0 正常
         'floor_count', // 楼层数
+        'view_count',
         'is_nice',
         'top_at'
     ];

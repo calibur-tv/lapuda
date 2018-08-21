@@ -37,7 +37,8 @@ class Score extends Model
         'style',
         'state',
         'published_at',
-        'title'
+        'title',
+        'view_count'
     ];
 
     protected $casts = [
