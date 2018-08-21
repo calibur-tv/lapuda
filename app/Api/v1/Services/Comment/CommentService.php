@@ -139,11 +139,6 @@ class CommentService extends Repository
         return null;
     }
 
-    public function update($id, array $data)
-    {
-        // TODO
-    }
-
     public function changeCommentState($id, $state)
     {
         DB::table($this->table)

@@ -419,6 +419,13 @@ class ToggleController extends Controller
                 $item['id']
             ));
             dispatch($job);
+
+            $job = (new \App\Jobs\Trending\Active(
+                $id,
+                $type,
+                $item['bangumi_id']
+            ));
+            dispatch($job);
         }
 
         return $this->resCreated((boolean)$rewardId);

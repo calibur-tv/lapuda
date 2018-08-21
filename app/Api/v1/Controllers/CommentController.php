@@ -131,6 +131,13 @@ class CommentController extends Controller
         ));
         dispatch($job);
 
+        $job = (new \App\Jobs\Trending\Active(
+            $id,
+            $type,
+            $parent['bangumi_id']
+        ));
+        dispatch($job);
+
         $newComment['liked'] = false;
         $newComment['like_count'] = 0;
 
