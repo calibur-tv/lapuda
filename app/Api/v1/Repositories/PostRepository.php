@@ -178,7 +178,7 @@ class PostRepository extends Repository
         $baiduPush->trending('post');
         $baiduPush->bangumi($post['bangumi_id']);
 
-        $job = (new \App\Jobs\Search\Index('C', 'post', $id, $post['title'] . '|' . $post['content']));
+        $job = (new \App\Jobs\Search\Index('C', 'post', $id, $post['title'] . '|' . $post['desc']));
         dispatch($job);
     }
 
@@ -186,7 +186,7 @@ class PostRepository extends Repository
     {
         $post = $this->item($id);
 
-        $job = (new \App\Jobs\Search\Index('U', 'post', $id, $post['title'] . '|' . $post['content']));
+        $job = (new \App\Jobs\Search\Index('U', 'post', $id, $post['title'] . '|' . $post['desc']));
         dispatch($job);
     }
 
@@ -229,7 +229,7 @@ class PostRepository extends Repository
             $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
             $postTrendingService->create($id);
 
-            $job = (new \App\Jobs\Search\Index('C', 'post', $id, $post['title'] . '|' . $post['content']));
+            $job = (new \App\Jobs\Search\Index('C', 'post', $id, $post['title'] . '|' . $post['desc']));
             dispatch($job);
         }
 
