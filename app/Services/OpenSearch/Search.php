@@ -172,6 +172,10 @@ class Search
                     if (!is_null($source))
                     {
                         $source = $transformer->search($source);
+                        if (is_null($source))
+                        {
+                            continue;
+                        }
                         $source['type'] = $modalId;
                         $result[] = $source;
                     }
@@ -195,6 +199,10 @@ class Search
                 }
                 $transformer = $this->getTransformerByType($typeId);
                 $source = $transformer->search($source);
+                if (is_null($source))
+                {
+                    continue;
+                }
                 $source['type'] = $typeId;
                 $result[] = $source;
             }

@@ -150,6 +150,11 @@ class ImageTransformer extends Transformer
         });
     }
 
+    public function search()
+    {
+        return null;
+    }
+
     public function userFlow($list)
     {
         return $this->collection($list, function ($item)
