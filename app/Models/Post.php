@@ -24,11 +24,7 @@ class Post extends Model
         'content', // 帖子内容，富文本
         'desc', // content 的纯文本，最多 200 个字
         'state', // 帖子状态，0 正常
-        'comment_count', // 如果是 1 楼，就是回帖数量，否则就是回复数量
-        'like_count', // 喜欢或点赞的数量
-        'view_count', // 帖子的阅读数
         'floor_count', // 楼层数
-        'mark_count', // 收藏数
         'is_nice',
         'top_at'
     ];
@@ -36,11 +32,7 @@ class Post extends Model
     protected $casts = [
         'state' => 'integer',
         'is_nice' => 'integer',
-        'comment_count' => 'integer',
-        'like_count' => 'integer',
-        'view_count' => 'integer',
-        'floor_count' => 'integer',
-        'mark_count' => 'integer'
+        'floor_count' => 'integer'
     ];
 
     public function getUpdatedAtColumn()
