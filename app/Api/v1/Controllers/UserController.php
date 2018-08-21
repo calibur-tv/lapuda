@@ -125,6 +125,11 @@ class UserController extends Controller
 
         $userTransformer = new UserTransformer();
         $user = $userRepository->item($userId, true);
+        if (is_null($user))
+        {
+            return $this->resErrNotFound('该用户不存在');
+        }
+
         if ($user['deleted_at'])
         {
             if ($user['state'])
