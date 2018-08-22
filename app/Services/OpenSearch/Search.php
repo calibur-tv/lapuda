@@ -232,7 +232,9 @@ class Search
                     $trendingItems = $trendingService->getListByIds([$item['type_id']]);
                     if (!empty($trendingItems))
                     {
-                        $result[] = $trendingItems[0];
+                        $trendingItem = $trendingItems[0];
+                        $trendingItem['type'] = $this->convertModal($typeId);
+                        $result[] = $trendingItem;
                     }
                 }
             }
