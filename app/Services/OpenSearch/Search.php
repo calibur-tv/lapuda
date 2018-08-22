@@ -197,7 +197,12 @@ class Search
                     return $item['type_id'];
                 }, $list);
 
-                $result = $trendingService->getListByIds($ids);
+                $trendingList = $trendingService->getListByIds($ids);
+                foreach ($trendingList as $trendingItem)
+                {
+                    $trendingItem['type'] = $type;
+                    $result[] = $trendingItem;
+                }
             }
         }
         else
