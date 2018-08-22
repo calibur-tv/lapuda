@@ -116,7 +116,7 @@ class PostTrendingService extends TrendingService
             ->pluck('id');
     }
 
-    protected function getListByIds($ids)
+    public function getListByIds($ids)
     {
         $store = new PostRepository();
         if ($this->bangumiId)
@@ -130,6 +130,10 @@ class PostTrendingService extends TrendingService
         else
         {
             $list = $store->trendingFlow($ids);
+        }
+        if (empty($list))
+        {
+            return [];
         }
 
         $likeService = new PostLikeService();

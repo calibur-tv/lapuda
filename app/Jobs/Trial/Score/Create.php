@@ -58,7 +58,7 @@ class Create implements ShouldQueue
         }
         else if ($needTrial)
         {
-            $scoreRepository->trialProcess($this->scoreId, $score['user_id']);
+            $scoreRepository->createProcess($this->scoreId, $score['user_id']);
         }
         else
         {

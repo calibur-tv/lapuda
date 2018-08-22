@@ -73,7 +73,7 @@ class ScoreTrendingService extends TrendingService
             ->pluck('id');
     }
 
-    protected function getListByIds($ids)
+    public function getListByIds($ids)
     {
         $store = new ScoreRepository();
         if ($this->bangumiId)
@@ -87,6 +87,10 @@ class ScoreTrendingService extends TrendingService
         else
         {
             $list = $store->trendingFlow($ids);
+        }
+        if (empty($list))
+        {
+            return [];
         }
 
         $likeService = new ScoreLikeService();

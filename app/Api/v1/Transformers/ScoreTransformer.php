@@ -45,7 +45,8 @@ class ScoreTransformer extends Transformer
             'mark_users' => $score['mark_users'],
             'created_at' => $score['created_at'],
             'updated_at' => $score['updated_at'],
-            'published_at' => $score['published_at']
+            'published_at' => $score['published_at'],
+            'view_count' => $score['view_count']
         ];
     }
 
@@ -84,6 +85,11 @@ class ScoreTransformer extends Transformer
                 'intro' => $score['intro']
             ];
         });
+    }
+
+    public function search()
+    {
+        return null;
     }
 
     public function userFlow($list)

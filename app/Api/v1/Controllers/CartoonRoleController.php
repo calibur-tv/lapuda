@@ -11,6 +11,7 @@ use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
+use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
@@ -198,6 +199,14 @@ class CartoonRoleController extends Controller
         $role['hasStar'] = $cartoonRoleRepository->checkHasStar($role['id'], $userId);
 
         $cartoonTransformer = new CartoonRoleTransformer();
+
+        $searchService = new Search();
+        if ($searchService->checkNeedMigrate('role', $id))
+        {
+            $job = (new \App\Jobs\Search\UpdateWeight('role', $id));
+            dispatch($job);
+        }
+
         return $this->resOK($cartoonTransformer->show([
             'bangumi' => $bangumi,
             'data' => $role
@@ -249,8 +258,8 @@ class CartoonRoleController extends Controller
             'updated_at' => $time
         ]);
 
-        $job = (new \App\Jobs\Search\Index('C', 'role', $id, $alias));
-        dispatch($job);
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $cartoonRoleRepository->migrateSearchIndex('C', $id);
 
         $cartoonRoleTrendingService = new RoleTrendingService($bangumiId);
         $cartoonRoleTrendingService->create($id);
@@ -285,8 +294,8 @@ class CartoonRoleController extends Controller
             'state' => $userId
         ]);
 
-        $job = (new \App\Jobs\Search\Index('U', 'role', $id, $alias));
-        dispatch($job);
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $cartoonRoleRepository->migrateSearchIndex('U', $id);
 
         Redis::DEL('cartoon_role_' . $id);
 

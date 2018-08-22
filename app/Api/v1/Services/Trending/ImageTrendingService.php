@@ -134,7 +134,7 @@ class ImageTrendingService extends TrendingService
             ->pluck('id');
     }
 
-    protected function getListByIds($ids)
+    public function getListByIds($ids)
     {
         $store = new ImageRepository();
         if ($this->bangumiId)
@@ -148,6 +148,10 @@ class ImageTrendingService extends TrendingService
         else
         {
             $list = $store->trendingFlow($ids);
+        }
+        if (empty($list))
+        {
+            return [];
         }
 
         $likeService = new ImageLikeService();

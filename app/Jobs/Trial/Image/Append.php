@@ -10,6 +10,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class Append implements ShouldQueue
@@ -50,7 +51,7 @@ class Append implements ShouldQueue
                     ->where('id', $image['id'])
                     ->update([
                         'state' => $image['user_id'],
-                        'url' => ''
+                        'deleted_at' => Carbon::now()
                     ]);
                 $total--;
             }

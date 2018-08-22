@@ -30,7 +30,8 @@ class Image extends Model
         'size',
         'type',
         'part',
-        'state'
+        'state',
+        'view_count'
     ];
 
     protected $casts = [

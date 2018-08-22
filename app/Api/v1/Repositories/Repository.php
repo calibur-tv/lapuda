@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Cache;
 
 class Repository
 {
-    public function list($ids)
+    public function list($ids, $isShow = false)
     {
         if (empty($ids))
         {
@@ -25,7 +25,7 @@ class Repository
         $result = [];
         foreach ($ids as $id)
         {
-            $item = $this->item($id);
+            $item = $this->item($id, $isShow);
             if ($item)
             {
                 $result[] = $item;

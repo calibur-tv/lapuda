@@ -194,8 +194,8 @@ class DoorController extends Controller
             dispatch($job);
         }
 
-        $job = (new \App\Jobs\Search\Index('C', 'user', $userId, $nickname . ',' . $zone));
-        dispatch($job);
+        $userRepository = new UserRepository();
+        $userRepository->migrateSearchIndex('C', $userId);
 
         return $this->resCreated($this->responseUser($user));
     }
@@ -363,8 +363,8 @@ class DoorController extends Controller
             'faker' => 1
         ]);
 
-        $job = (new \App\Jobs\Search\Index('C', 'user', $user->id, $nickname . ',' . $zone));
-        dispatch($job);
+        $userRepository = new UserRepository();
+        $userRepository->migrateSearchIndex('C', $user->id);
 
         return $this->resCreated($user);
     }

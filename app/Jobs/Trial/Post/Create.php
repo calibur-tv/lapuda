@@ -71,7 +71,7 @@ class Create implements ShouldQueue
         }
         else if ($needTrial)
         {
-            $postRepository->trialProcess($this->postId, $post['user_id']);
+            $postRepository->createProcess($this->postId, $post['user_id']);
         }
         else
         {

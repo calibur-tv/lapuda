@@ -4,10 +4,8 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\UserRepository;
-use App\Models\Notifications;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
-use Illuminate\Support\Facades\DB;
 use Mews\Purifier\Facades\Purifier;
 
 /**
@@ -24,7 +22,7 @@ class SearchController extends Controller
             return $this->resOK();
         }
 
-        $type = intval($request->get('type')) ?: 0;
+        $type = $request->get('type') ?: 'all';
         $page = intval($request->get('page')) ?: 0;
 
         $search = new Search();

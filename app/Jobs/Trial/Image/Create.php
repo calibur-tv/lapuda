@@ -64,7 +64,7 @@ class Create implements ShouldQueue
         }
         else if ($needTrial)
         {
-            $imageRepository->trialProcess($this->imageId, $image['user_id']);
+            $imageRepository->createProcess($this->imageId, $image['user_id']);
         }
         else
         {

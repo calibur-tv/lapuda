@@ -9,6 +9,7 @@ use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\VideoTransformer;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Models\Video;
+use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
@@ -56,6 +57,13 @@ class VideoController extends Controller
 
         $videoTransformer = new VideoTransformer();
         $bangumiTransformer = new BangumiTransformer();
+
+        $searchService = new Search();
+        if ($searchService->checkNeedMigrate('video', $id))
+        {
+            $job = (new \App\Jobs\Search\UpdateWeight('video', $id));
+            dispatch($job);
+        }
 
         return $this->resOK([
             'info' => $videoTransformer->show($info),
@@ -134,8 +142,8 @@ class VideoController extends Controller
         Redis::DEL('video_' . $videoId);
         Redis::DEL('bangumi_' . $request->get('bangumi_id') . '_videos');
 
-        $job = (new \App\Jobs\Search\Index('U', 'video', $videoId, $name));
-        dispatch($job);
+        $videoRepository = new VideoRepository();
+        $videoRepository->migrateSearchIndex('U', $videoId);
 
         return $this->resNoContent();
     }
@@ -144,6 +152,8 @@ class VideoController extends Controller
     {
         $data = $request->all();
         $time = Carbon::now();
+        $videoRepository = new VideoRepository();
+
         foreach ($data as $video)
         {
             $id = Video::whereRaw('bangumi_id = ? and part = ?', [$video['bangumiId'], $video['part']])->pluck('id')->first();
@@ -160,8 +170,7 @@ class VideoController extends Controller
                     'updated_at' => $time
                 ]);
 
-                $job = (new \App\Jobs\Search\Index('C', 'video', $newId, $video['name']));
-                dispatch($job);
+                $videoRepository->migrateSearchIndex('C', $newId);
             }
             else
             {
@@ -175,10 +184,9 @@ class VideoController extends Controller
                     'updated_at' => $time
                 ]);
 
-                $job = (new \App\Jobs\Search\Index('U', 'video', $id, $video['name']));
-                dispatch($job);
-
                 Redis::DEL('video_' . $id);
+
+                $videoRepository->migrateSearchIndex('U', $id);
             }
             Redis::DEL('bangumi_'.$video['bangumiId'].'_videos');
         }
@@ -196,8 +204,7 @@ class VideoController extends Controller
         {
             Video::withTrashed()->where('id', $videoId)->restore();
 
-            $job = (new \App\Jobs\Search\Index('C', 'video', $videoId, $video['name']));
-            dispatch($job);
+            $videoRepository->migrateSearchIndex('C', $videoId);
         }
         else
         {
@@ -219,7 +226,7 @@ class VideoController extends Controller
         $take = $request->get('take') ?: 10;
 
         $list = Video::orderBy('count_played', 'DESC')
-            ->select('name', 'id', 'bangumi_id', 'count_played', 'comment_count')
+            ->select('name', 'id', 'bangumi_id', 'count_played')
             ->take(($toPage - $curPage) * $take)
             ->skip($curPage * $take)
             ->get();

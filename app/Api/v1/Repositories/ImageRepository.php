@@ -15,6 +15,7 @@ use App\Models\AlbumImage;
 use App\Models\Banner;
 use App\Models\Image;
 use App\Services\BaiduSearch\BaiduPush;
+use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -254,9 +255,18 @@ class ImageRepository extends Repository
             ->count();
     }
 
-    public function createProcess($id)
+    public function createProcess($id, $state = 0)
     {
         $image = $this->item($id);
+
+        if ($state)
+        {
+            DB::table('images')
+                ->where('id', $id)
+                ->update([
+                    'state' => $state
+                ]);
+        }
 
         $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
         $imageTrendingService->create($id);
@@ -269,16 +279,14 @@ class ImageRepository extends Repository
             Redis::DEL($this->cacheKeyCartoonParts($image['bangumi_id']));
         }
 
-        $job = (new \App\Jobs\Search\Index('C', 'image', $id, $image['name']));
-        dispatch($job);
+        $this->migrateSearchIndex('C', $id, false);
     }
 
     public function updateProcess($id)
     {
         $image = $this->item($id);
 
-        $job = (new \App\Jobs\Search\Index('U', 'image', $id, $image['name']));
-        dispatch($job);
+        $this->migrateSearchIndex('U', $id, false);
 
         if ($image['is_cartoon'])
         {
@@ -286,20 +294,9 @@ class ImageRepository extends Repository
         }
     }
 
-    public function trialProcess($id, $state)
-    {
-        DB::table('images')
-            ->where('id', $id)
-            ->update([
-                'state' => $state
-            ]);
-
-        Redis::DEL($this->itemCacheKey($id));
-    }
-
     public function deleteProcess($id, $state = 0)
     {
-        $image = $this->item($id);
+        $image = $this->item($id, true);
 
         DB::table('images')
             ->where('id', $id)
@@ -335,7 +332,8 @@ class ImageRepository extends Repository
 
     public function recoverProcess($id)
     {
-        $image = $this->item($id);
+        $image = $this->item($id, true);
+
         DB::table('images')
             ->where('id', $id)
             ->update([
@@ -345,8 +343,10 @@ class ImageRepository extends Repository
 
         if ($image['deleted_at'])
         {
-            $job = (new \App\Jobs\Search\Index('C', 'image', $id, $image['name']));
-            dispatch($job);
+            $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
+            $imageTrendingService->create($id);
+
+            $this->migrateSearchIndex('C', $id, false);
         }
 
         Redis::DEL($this->itemCacheKey($id));
@@ -365,5 +365,25 @@ class ImageRepository extends Repository
     public function cacheKeyCartoonParts($bangumiId)
     {
         return 'bangumi_' . $bangumiId . '_cartoon_parts';
+    }
+
+    public function migrateSearchIndex($type, $id, $async = true)
+    {
+        $type = $type === 'C' ? 'C' : 'U';
+        $image = $this->item($id);
+        $content = $image['name'];
+
+        if ($async)
+        {
+            $job = (new \App\Jobs\Search\Index($type, 'image', $id, $content));
+            dispatch($job);
+        }
+        else
+        {
+            $search = new Search();
+            $search->create($id, $content, 'image');
+            $baiduPush = new BaiduPush();
+            $baiduPush->create($id, 'image');
+        }
     }
 }

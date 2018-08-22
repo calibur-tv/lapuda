@@ -14,6 +14,7 @@ use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
 use App\Models\Score;
 use App\Services\BaiduSearch\BaiduPush;
+use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -218,7 +219,7 @@ class ScoreRepository extends Repository
         return Purifier::clean(json_encode($result));
     }
 
-    public function createProcess($id)
+    public function createProcess($id, $state = 0)
     {
         $score = $this->item($id);
 
@@ -226,38 +227,32 @@ class ScoreRepository extends Repository
         $bangumiScoreService->do($score['user_id'], $score['bangumi_id']);
         Redis::DEL($this->cacheKeyBangumiScore($score['bangumi_id']));
 
+        if ($state)
+        {
+            DB::table('scores')
+                ->where('id', $id)
+                ->update([
+                    'state' => $state
+                ]);
+        }
+
         $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
         $scoreTrendingService->create($id);
 
         $baiduPush = new BaiduPush();
         $baiduPush->trending('score');
 
-        $job = (new \App\Jobs\Search\Index('C', 'score', $id, $score['title'] . '|' . $score['intro']));
-        dispatch($job);
+        $this->migrateSearchIndex('C', $id, false);
     }
 
     public function updateProcess($id)
     {
-        $score = $this->item($id);
-
-        $job = (new \App\Jobs\Search\Index('U', 'score', $id, $score['title'] . '|' . $score['intro']));
-        dispatch($job);
-    }
-
-    public function trialProcess($id, $state)
-    {
-        DB::table('scores')
-            ->where('id', $id)
-            ->update([
-                'state' => $state
-            ]);
-
-        Redis::DEL($this->itemCacheKey($id));
+        $this->migrateSearchIndex('U', $id, false);
     }
 
     public function deleteProcess($id, $state = 0)
     {
-        $score = $this->item($id);
+        $score = $this->item($id, true);
 
         DB::table('scores')
             ->where('id', $id)
@@ -283,7 +278,8 @@ class ScoreRepository extends Repository
 
     public function recoverProcess($id)
     {
-        $score = $this->item($id);
+        $score = $this->item($id, true);
+
         DB::table('scores')
             ->where('id', $id)
             ->update([
@@ -293,8 +289,10 @@ class ScoreRepository extends Repository
 
         if ($score['deleted_at'])
         {
-            $job = (new \App\Jobs\Search\Index('C', 'score', $id, $score['title'] . '|' . $score['intro']));
-            dispatch($job);
+            $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
+            $scoreTrendingService->create($id);
+
+            $this->migrateSearchIndex('C', $id, false);
         }
 
         Redis::DEL($this->itemCacheKey($id));
@@ -303,5 +301,25 @@ class ScoreRepository extends Repository
     public function itemCacheKey($id)
     {
         return 'score_' . $id;
+    }
+
+    public function migrateSearchIndex($type, $id, $async = true)
+    {
+        $type = $type === 'C' ? 'C' : 'U';
+        $score = $this->item($id);
+        $content = $score['title'] . '|' . $score['intro'];
+
+        if ($async)
+        {
+            $job = (new \App\Jobs\Search\Index($type, 'score', $id, $content));
+            dispatch($job);
+        }
+        else
+        {
+            $search = new Search();
+            $search->create($id, $content, 'score');
+            $baiduPush = new BaiduPush();
+            $baiduPush->create($id, 'score');
+        }
     }
 }
