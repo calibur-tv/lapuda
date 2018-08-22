@@ -70,6 +70,11 @@ class RoleTrendingService extends TrendingService
         $store = new CartoonRoleRepository();
         $userRepository = new UserRepository();
         $list = $store->userFlow($ids);
+        if (empty($list))
+        {
+            return [];
+        }
+
         foreach ($list as $i => $role)
         {
             $hasLover = intval($role['loverId']);

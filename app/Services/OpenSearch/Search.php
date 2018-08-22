@@ -14,6 +14,10 @@ use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Repositories\VideoRepository;
+use App\Api\V1\Services\Trending\ImageTrendingService;
+use App\Api\V1\Services\Trending\PostTrendingService;
+use App\Api\V1\Services\Trending\RoleTrendingService;
+use App\Api\V1\Services\Trending\ScoreTrendingService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
@@ -63,7 +67,7 @@ class Search
             return 0;
         }
 
-        $modalId = $this->computeModalIdByStr($modal);
+        $modalId = $this->convertModal($modal);
         if (!$modalId)
         {
             return 0;
@@ -87,7 +91,7 @@ class Search
             return 0;
         }
 
-        $modalId = $this->computeModalIdByStr($modal);
+        $modalId = $this->convertModal($modal);
         if (!$modalId)
         {
             return 0;
@@ -105,7 +109,7 @@ class Search
             return 0;
         }
 
-        $modalId = $this->computeModalIdByStr($modal);
+        $modalId = $this->convertModal($modal);
         if (!$modalId)
         {
             return 0;
@@ -119,9 +123,10 @@ class Search
             ]);
     }
 
-    public function retrieve($key, $modalId = 0, $page = 0, $count = 15)
+    public function retrieve($key, $type = 'all', $page = 0, $count = 15)
     {
         $repository = null;
+        $modalId = $this->convertModal($type);
         if ($modalId)
         {
             $repository = $this->getRepositoryByType($modalId);
@@ -163,23 +168,36 @@ class Search
         $result = [];
         if ($modalId)
         {
-            $transformer = $this->getTransformerByType($modalId);
-            if (!is_null($transformer))
+            $trendingService = $this->getTrendingServiceByType($modalId);
+            if (is_null($trendingService))
             {
-                foreach ($list as $item)
+                $transformer = $this->getTransformerByType($modalId);
+                if (!is_null($transformer))
                 {
-                    $source = $repository->item($item['type_id']);
-                    if (!is_null($source))
+                    foreach ($list as $item)
                     {
-                        $source = $transformer->search($source);
-                        if (is_null($source))
+                        $source = $repository->item($item['type_id']);
+                        if (!is_null($source))
                         {
-                            continue;
+                            $source = $transformer->search($source);
+                            if (is_null($source))
+                            {
+                                continue;
+                            }
+                            $source['type'] = $type;
+                            $result[] = $source;
                         }
-                        $source['type'] = $modalId;
-                        $result[] = $source;
                     }
                 }
+            }
+            else
+            {
+                $ids = array_map(function ($item)
+                {
+                    return $item['type_id'];
+                }, $list);
+
+                $result = $trendingService->getListByIds($ids);
             }
         }
         else
@@ -187,24 +205,36 @@ class Search
             foreach ($list as $item)
             {
                 $typeId = intval($item['modal_id']);
-                $repository = $this->getRepositoryByType($typeId);
-                if (is_null($repository))
+                $trendingService = $this->getTrendingServiceByType($typeId);
+                if (is_null($trendingService))
                 {
-                    continue;
+                    $repository = $this->getRepositoryByType($typeId);
+                    if (is_null($repository))
+                    {
+                        continue;
+                    }
+                    $source = $repository->item($item['type_id']);
+                    if (is_null($source))
+                    {
+                        continue;
+                    }
+                    $transformer = $this->getTransformerByType($typeId);
+                    $source = $transformer->search($source);
+                    if (is_null($source))
+                    {
+                        continue;
+                    }
+                    $source['type'] = $this->convertModal($typeId);
+                    $result[] = $source;
                 }
-                $source = $repository->item($item['type_id']);
-                if (is_null($source))
+                else
                 {
-                    continue;
+                    $trendingItems = $trendingService->getListByIds([$item['type_id']]);
+                    if (!empty($trendingItems))
+                    {
+                        $result[] = $trendingItems[0];
+                    }
                 }
-                $transformer = $this->getTransformerByType($typeId);
-                $source = $transformer->search($source);
-                if (is_null($source))
-                {
-                    continue;
-                }
-                $source['type'] = $typeId;
-                $result[] = $source;
             }
         }
 
@@ -222,7 +252,7 @@ class Search
             return;
         }
 
-        $modalId = $this->computeModalIdByStr($modal);
+        $modalId = $this->convertModal($modal);
         if (!$modalId)
         {
             return;
@@ -258,38 +288,25 @@ class Search
         return $result;
     }
 
-    public function computeModalIdByStr($modal)
+    public function convertModal($modal)
     {
-        if ($modal === 'user')
+        $arr = [
+            'all' => 0,
+            'user' => 1,
+            'bangumi' => 2,
+            'video' => 3,
+            'post' => 4,
+            'role' => 5,
+            'image' => 6,
+            'score' => 7
+        ];
+
+        if (gettype($modal) === 'string')
         {
-            return 1;
-        }
-        else if ($modal === 'bangumi')
-        {
-            return 2;
-        }
-        else if ($modal === 'video')
-        {
-            return 3;
-        }
-        else if ($modal === 'post')
-        {
-            return 4;
-        }
-        else if ($modal === 'role')
-        {
-            return 5;
-        }
-        else if ($modal === 'image')
-        {
-            return 6;
-        }
-        else if ($modal === 'score')
-        {
-            return 7;
+            return $arr[$modal] ?: 0;
         }
 
-        return 0;
+        return array_flip($arr)[$modal] ?: 'all';
     }
 
     public function getRepositoryByType($type)
@@ -363,5 +380,39 @@ class Search
     protected function migrateWeightKey($modal, $id)
     {
         return $modal . '-' . $id . '-last-migrate-search-ts';
+    }
+
+    protected function getTrendingServiceByType($type)
+    {
+        if ($type === 1)
+        {
+            return null;
+        }
+        else if ($type === 2)
+        {
+            return null;
+        }
+        else if ($type === 3)
+        {
+            return null;
+        }
+        else if ($type === 4)
+        {
+            return new PostTrendingService();
+        }
+        else if ($type === 5)
+        {
+            return new RoleTrendingService();
+        }
+        else if ($type === 6)
+        {
+            return new ImageTrendingService();
+        }
+        else if ($type === 7)
+        {
+            return new ScoreTrendingService();
+        }
+
+        return null;
     }
 }

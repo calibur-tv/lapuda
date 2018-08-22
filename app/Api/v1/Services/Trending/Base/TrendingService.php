@@ -157,7 +157,7 @@ class TrendingService extends Repository
         $this->ListRemove($this->trendingFlowUsersKey(), $id);
     }
 
-    protected function getListByIds($ids)
+    public function getListByIds($ids)
     {
         return [];
     }

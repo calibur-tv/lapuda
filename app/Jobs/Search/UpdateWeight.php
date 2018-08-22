@@ -55,7 +55,7 @@ class UpdateWeight implements ShouldQueue
     public function handle()
     {
         $search = new Search();
-        $searchType = $search->computeModalIdByStr($this->model);
+        $searchType = $search->convertModal($this->model);
         if (!$searchType)
         {
             return;
