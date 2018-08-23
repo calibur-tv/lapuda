@@ -93,19 +93,22 @@ $api->version(['v1', 'latest'], function ($api)
     {
         $api->group(['prefix' => '/qaq'], function ($api)
         {
-            $api->post('/create', 'App\Api\V1\Controllers\QuestionController@createQuestion')->middleware(['geetest', 'jwt.auth']);
+            $api->post('/create', 'App\Api\V1\Controllers\QuestionController@create')->middleware(['geetest', 'jwt.auth']);
 
             $api->group(['prefix' => '/{id}'], function ($api)
             {
-                $api->get('/show', 'App\Api\V1\Controllers\QuestionController@showQuestion');
+                $api->get('/show', 'App\Api\V1\Controllers\QuestionController@show');
             });
         });
 
         $api->group(['prefix' => '/soga'], function ($api)
         {
-            $api->get('/show', 'App\Api\V1\Controllers\QuestionController@showAnswer');
+            $api->post('/create', 'App\Api\V1\Controllers\AnswerController@create')->middleware(['geetest', 'jwt.auth']);
 
-            $api->post('/create', 'App\Api\V1\Controllers\QuestionController@createAnswer')->middleware(['geetest', 'jwt.auth']);
+            $api->group(['prefix' => '/{id}'], function ($api)
+            {
+                $api->get('/show', 'App\Api\V1\Controllers\AnswerController@show');
+            });
         });
     });
 

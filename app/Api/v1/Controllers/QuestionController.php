@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Validator;
 
 class QuestionController extends Controller
 {
-    public function showQuestion($id)
+    public function show($id)
     {
         $questionRepository = new QuestionRepository();
         $question = $questionRepository->item($id, true);
@@ -63,7 +63,7 @@ class QuestionController extends Controller
         return $this->resOK($questionTransformer->show($question));
     }
 
-    public function createQuestion(Request $request)
+    public function create(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'tags' => 'required|Array',
@@ -114,16 +114,6 @@ class QuestionController extends Controller
     }
 
     public function delete()
-    {
-
-    }
-
-    public function usersQuestion()
-    {
-
-    }
-
-    public function usersAnswer()
     {
 
     }
