@@ -177,7 +177,12 @@ class Search
                     foreach ($list as $item)
                     {
                         $source = $repository->item($item['type_id']);
-                        if (!is_null($source))
+                        if (is_null($source))
+                        {
+                            $job = (new \App\Jobs\Search\Delete([$item['type_id']], $modalId));
+                            dispatch($job);
+                        }
+                        else
                         {
                             $source = $transformer->search($source);
                             if (is_null($source))
@@ -203,6 +208,18 @@ class Search
                     $trendingItem['type'] = $type;
                     $result[] = $trendingItem;
                 }
+
+                $resultIds = array_map(function ($item)
+                {
+                    return $item['id'];
+                }, $trendingList);
+
+                $emptyIds = array_diff($ids, $resultIds);
+                if (count($emptyIds))
+                {
+                    $job = (new \App\Jobs\Search\Delete($emptyIds, $modalId));
+                    dispatch($job);
+                }
             }
         }
         else
@@ -221,6 +238,8 @@ class Search
                     $source = $repository->item($item['type_id']);
                     if (is_null($source))
                     {
+                        $job = (new \App\Jobs\Search\Delete([$item['type_id']], $typeId));
+                        dispatch($job);
                         continue;
                     }
                     $transformer = $this->getTransformerByType($typeId);
@@ -235,7 +254,12 @@ class Search
                 else
                 {
                     $trendingItems = $trendingService->getListByIds([$item['type_id']]);
-                    if (!empty($trendingItems))
+                    if (empty($trendingItems))
+                    {
+                        $job = (new \App\Jobs\Search\Delete([$item['type_id']], $typeId));
+                        dispatch($job);
+                    }
+                    else
                     {
                         $trendingItem = $trendingItems[0];
                         $trendingItem['type'] = $this->convertModal($typeId);
@@ -305,7 +329,8 @@ class Search
             'post' => 4,
             'role' => 5,
             'image' => 6,
-            'score' => 7
+            'score' => 7,
+            'question' => 8
         ];
 
         if (gettype($modal) === 'string')

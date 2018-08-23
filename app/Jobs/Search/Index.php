@@ -56,7 +56,8 @@ class Index implements ShouldQueue
             'post',
             'image',
             'score',
-            'role'
+            'role',
+            'question'
         ]))
         {
             return;

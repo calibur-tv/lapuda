@@ -15,6 +15,6 @@ class QuestionLog extends OwnerService
 {
     public function __construct()
     {
-        parent::__construct('questions_changes');
+        parent::__construct('question_changes');
     }
 }
