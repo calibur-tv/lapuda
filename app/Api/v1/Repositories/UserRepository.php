@@ -502,10 +502,10 @@ class UserRepository extends Repository
                 return '/post/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
                 break;
             case 20:
-                return '/image/' . $modalId . '?comment-id=' . $commentId;
+                return '/pins/' . $modalId . '?comment-id=' . $commentId;
                 break;
             case 21:
-                return '/image/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
+                return '/pins/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
                 break;
             case 22:
                 return '/score/' . $modalId . '?comment-id=' . $commentId;
