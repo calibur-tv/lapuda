@@ -10,6 +10,7 @@ namespace App\Jobs\Trending;
  */
 use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Services\Trending\PostTrendingService;
+use App\Api\V1\Services\Trending\QuestionTrendingService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
@@ -73,6 +74,9 @@ class Active implements ShouldQueue
             case 'score':
                 return 'scores';
                 break;
+            case 'question':
+                return 'questions';
+                break;
             default:
                 return '';
                 break;
@@ -95,6 +99,8 @@ class Active implements ShouldQueue
             case 'score':
                 return new ScoreTrendingService($this->bangumiId);
                 break;
+            case 'question':
+                return new QuestionTrendingService($this->bangumiId);
             default:
                 return null;
                 break;

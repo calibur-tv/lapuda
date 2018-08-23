@@ -32,7 +32,7 @@ class CommentController extends Controller
 {
     public function __construct()
     {
-        $this->types = ['post', 'image', 'score', 'video'];
+        $this->types = ['post', 'image', 'score', 'video', 'question'];
     }
 
     /**
@@ -134,7 +134,9 @@ class CommentController extends Controller
         $job = (new \App\Jobs\Trending\Active(
             $id,
             $type,
-            $parent['bangumi_id']
+            isset($parent['bangumi_id'])
+                ? $parent['bangumi_id']
+                : $parent['tag_ids']
         ));
         dispatch($job);
 
@@ -651,9 +653,8 @@ class CommentController extends Controller
 
     public function trials()
     {
-        $types = ['post', 'video', 'image', 'score'];
         $result = [];
-        foreach ($types as $modal)
+        foreach ($this->types as $modal)
         {
             $list = DB::table($modal . '_comments')
                 ->where('state', '<>', 0)
@@ -679,7 +680,7 @@ class CommentController extends Controller
 
         return $this->resOK([
             'comments' => $result,
-            'types' => $types
+            'types' => $this->types
         ]);
     }
 

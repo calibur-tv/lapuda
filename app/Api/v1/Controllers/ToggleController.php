@@ -11,6 +11,7 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Owner\BangumiManager;
@@ -21,6 +22,7 @@ use App\Api\V1\Services\Toggle\Image\ImageRewardService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Services\Toggle\Post\PostRewardService;
+use App\Api\V1\Services\Toggle\Question\QuestionFollowService;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
 use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
 use App\Api\V1\Services\Toggle\Score\ScoreRewardService;
@@ -461,7 +463,7 @@ class ToggleController extends Controller
                 return null;
                 break;
             case 'question':
-                return null;
+                return new QuestionFollowService();
                 break;
             default:
                 return null;
@@ -537,10 +539,15 @@ class ToggleController extends Controller
                 break;
             case 'bangumi':
                 return new BangumiRepository();
+                break;
             case 'user':
                 return new UserRepository();
+                break;
+            case 'question':
+                return new QuestionRepository();
             default:
                 return null;
+                break;
         }
     }
 }

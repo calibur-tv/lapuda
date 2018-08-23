@@ -10,6 +10,7 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Services\Comment\QuestionCommentService;
+use App\Api\V1\Services\Counter\QuestionAnswerCounter;
 use App\Api\V1\Services\Counter\QuestionViewCounter;
 use App\Api\V1\Services\Tag\QuestionTagService;
 use App\Api\V1\Services\Toggle\Question\QuestionFollowService;
@@ -53,6 +54,9 @@ class QuestionController extends Controller
 
         $questionViewCounter = new QuestionViewCounter();
         $question['view_count'] = $questionViewCounter->add($id);
+
+        $questionAnswerCounter = new QuestionAnswerCounter();
+        $question['answer_count'] = $questionAnswerCounter->get($id);
 
         $questionTransformer = new QuestionTransformer();
 

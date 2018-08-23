@@ -32,8 +32,10 @@ class QuestionTransformer extends Transformer
                     ];
                 }),
                 'tags' => $question['tags'],
+                'user_id' => (int)$question['user_id'],
                 'view_count' => (int)$question['view_count'],
                 'commented' => $question['commented'],
+                'answer_count' => $question['answer_count'],
                 'comment_count' => (int)$question['comment_count'],
                 'followed' => $question['followed'],
                 'follow_users' => $question['follow_users'],
