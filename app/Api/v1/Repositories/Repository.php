@@ -12,6 +12,7 @@ namespace App\Api\V1\Repositories;
 use App\Models\User;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Cache;
+use Mews\Purifier\Facades\Purifier;
 
 class Repository
 {
@@ -414,5 +415,33 @@ class Repository
         }
 
         return $result;
+    }
+
+    public function filterJsonContent(array $content)
+    {
+        $result = [];
+        foreach ($content as $item)
+        {
+            if ($item['type'] === 'txt')
+            {
+                $result[] = [
+                    'type' => $item['type'],
+                    'text' => $item['text']
+                ];
+            }
+            else if ($item['type'] === 'img')
+            {
+                $result[] = [
+                    'type' => $item['type'],
+                    'width' => $item['width'],
+                    'height' => $item['height'],
+                    'size' => $item['size'],
+                    'mime' => $item['mime'],
+                    'text' => $item['text'],
+                    'url' => $this->convertImagePath($item['url'])
+                ];
+            }
+        }
+        return Purifier::clean(json_encode($result));
     }
 }

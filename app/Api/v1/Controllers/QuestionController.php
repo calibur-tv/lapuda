@@ -9,12 +9,6 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\QuestionRepository;
-use App\Api\V1\Services\Comment\QuestionCommentService;
-use App\Api\V1\Services\Counter\QuestionAnswerCounter;
-use App\Api\V1\Services\Counter\QuestionViewCounter;
-use App\Api\V1\Services\Tag\QuestionTagService;
-use App\Api\V1\Services\Toggle\Question\QuestionFollowService;
-use App\Api\V1\Transformers\QuestionTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -39,28 +33,7 @@ class QuestionController extends Controller
             return $this->resErrNotFound();
         }
 
-        $userId = $this->getAuthUserId();
-
-        $questionCommentService = new QuestionCommentService();
-        $question['commented'] = $questionCommentService->checkCommented($userId, $id);
-        $question['comment_count'] = $questionCommentService->getCommentCount($id);
-
-        $questionFollowService = new QuestionFollowService();
-        $question['follow_users'] = $questionFollowService->users($id);
-        $question['followed'] = $questionFollowService->check($userId, $id);
-
-        $questionTagService = new QuestionTagService();
-        $question['tags'] = $questionTagService->tags($id);
-
-        $questionViewCounter = new QuestionViewCounter();
-        $question['view_count'] = $questionViewCounter->add($id);
-
-        $questionAnswerCounter = new QuestionAnswerCounter();
-        $question['answer_count'] = $questionAnswerCounter->get($id);
-
-        $questionTransformer = new QuestionTransformer();
-
-        return $this->resOK($questionTransformer->show($question));
+        return $this->resOK($questionRepository->show($id, $this->getAuthUserId()));
     }
 
     public function create(Request $request)

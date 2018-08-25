@@ -3,9 +3,11 @@
 namespace App\Jobs\Search;
 
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Counter\Stats\TotalAnswerCount;
 use App\Api\V1\Services\Counter\Stats\TotalBangumiCount;
 use App\Api\V1\Services\Counter\Stats\TotalImageAlbumCount;
 use App\Api\V1\Services\Counter\Stats\TotalPostCount;
+use App\Api\V1\Services\Counter\Stats\TotalQuestionCount;
 use App\Api\V1\Services\Counter\Stats\TotalRoleCount;
 use App\Api\V1\Services\Counter\Stats\TotalScoreCount;
 use App\Api\V1\Services\Counter\Stats\TotalUserCount;
@@ -57,7 +59,8 @@ class Index implements ShouldQueue
             'image',
             'score',
             'role',
-            'question'
+            'question',
+            'answer'
         ]))
         {
             return;
@@ -135,6 +138,12 @@ class Index implements ShouldQueue
                 break;
             case 'role':
                 return new TotalRoleCount();
+                break;
+            case 'question':
+                return new TotalQuestionCount();
+                break;
+            case 'answer':
+                return new TotalAnswerCount();
                 break;
             default:
                 return null;

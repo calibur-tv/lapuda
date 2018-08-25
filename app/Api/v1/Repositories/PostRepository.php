@@ -14,7 +14,6 @@ use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Models\Post;
 use App\Models\PostImages;
 use App\Services\BaiduSearch\BaiduPush;
-use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -243,17 +242,7 @@ class PostRepository extends Repository
         $post = $this->item($id);
         $content = $post['title'] . '|' . $post['desc'];
 
-        if ($async)
-        {
-            $job = (new \App\Jobs\Search\Index($type, 'post', $id, $content));
-            dispatch($job);
-        }
-        else
-        {
-            $search = new Search();
-            $search->create($id, $content, 'post');
-            $baiduPush = new BaiduPush();
-            $baiduPush->create($id, 'post');
-        }
+        $job = (new \App\Jobs\Search\Index($type, 'post', $id, $content));
+        dispatch($job);
     }
 }

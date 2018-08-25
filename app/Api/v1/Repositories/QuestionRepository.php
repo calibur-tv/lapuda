@@ -9,13 +9,17 @@
 namespace App\Api\V1\Repositories;
 
 
+use App\Api\V1\Services\Comment\QuestionCommentService;
+use App\Api\V1\Services\Counter\QuestionAnswerCounter;
+use App\Api\V1\Services\Counter\QuestionViewCounter;
 use App\Api\V1\Services\Owner\QuestionLog;
 use App\Api\V1\Services\Tag\QuestionTagService;
 use App\Api\V1\Services\Toggle\Question\QuestionFollowService;
 use App\Api\V1\Services\Trending\QuestionTrendingService;
+use App\Api\V1\Transformers\QuestionTransformer;
+use App\Models\Answer;
 use App\Models\Question;
 use App\Services\BaiduSearch\BaiduPush;
-use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -100,6 +104,73 @@ class QuestionRepository extends Repository
         return $result;
     }
 
+    public function show($questionId, $userId)
+    {
+        $question = $this->item($questionId);
+
+        $questionCommentService = new QuestionCommentService();
+        $question['commented'] = $questionCommentService->checkCommented($userId, $questionId);
+        $question['comment_count'] = $questionCommentService->getCommentCount($questionId);
+
+        $questionFollowService = new QuestionFollowService();
+        $question['follow_users'] = $questionFollowService->users($questionId);
+        $question['followed'] = $questionFollowService->check($userId, $questionId);
+
+        $questionTagService = new QuestionTagService();
+        $question['tags'] = $questionTagService->tags($questionId);
+
+        $questionViewCounter = new QuestionViewCounter();
+        $question['view_count'] = $questionViewCounter->add($questionId);
+
+        $questionAnswerCounter = new QuestionAnswerCounter();
+        $question['answer_count'] = $questionAnswerCounter->get($questionId);
+        $question['my_answer'] = $this->getMyAnswerMeta($questionId, $userId);
+
+        $questionTransformer = new QuestionTransformer();
+
+        return $questionTransformer->show($question);
+    }
+
+    public function checkHasAnswer($questionId, $userId)
+    {
+        if (!$userId)
+        {
+            return false;
+        }
+
+        return Answer
+            ::where('user_id', $userId)
+            ->where('question_id', $questionId)
+            ->pluck('id')
+            ->first();
+    }
+
+    public function getMyAnswerMeta($questionId, $userId)
+    {
+        if (!$userId)
+        {
+            return null;
+        }
+
+        return Answer
+            ::where('user_id', $userId)
+            ->where('question_id', $questionId)
+            ->select('id', 'published_at')
+            ->first();
+    }
+
+    public function publishAnswer($userId, $answerId, $questionId)
+    {
+        $questionFollowService = new QuestionFollowService();
+        if (!$questionFollowService->check($userId, $questionId))
+        {
+            $questionFollowService->do($userId, $questionId);
+        }
+
+        $job = (new \App\Jobs\Trial\Answer\Create($answerId));
+        dispatch($job);
+    }
+
     public function createProcess($id, $state = 0)
     {
         $question = $this->item($id);
@@ -178,18 +249,8 @@ class QuestionRepository extends Repository
         $question = $this->item($id);
         $content = $question['title'] . '|' . $question['intro'];
 
-        if ($async)
-        {
-            $job = (new \App\Jobs\Search\Index($type, 'question', $id, $content));
-            dispatch($job);
-        }
-        else
-        {
-            $search = new Search();
-            $search->create($id, $content, 'question');
-            $baiduPush = new BaiduPush();
-            $baiduPush->create($id, 'question');
-        }
+        $job = (new \App\Jobs\Search\Index($type, 'question', $id, $content));
+        dispatch($job);
     }
 
     public function itemCacheKey($id)

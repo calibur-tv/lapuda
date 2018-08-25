@@ -17,18 +17,20 @@ class TrendingService extends Repository
     protected $bangumiId;
     protected $userId;
     protected $timeout = 1800; // 30 分钟重算一次
+    protected $cachePrefix;
 
-    public function __construct($table, $bangumiId, $userId)
+    public function __construct($table, $bangumiId, $userId, $cachePrefix = 'bangumi')
     {
         $this->table = $table;
         $this->bangumiId = $bangumiId;
         $this->userId = $userId;
+        $this->cachePrefix = $cachePrefix;
     }
 
     public function news($minId, $take)
     {
         $idsObject = $this->getNewsIds($minId, $take);
-        $list = $this->getListByIds($idsObject['ids']);
+        $list = $this->getListByIds($idsObject['ids'], $this->bangumiId ? 'bangumi' : 'trending');
 
         return [
             'list' => $list,
@@ -40,7 +42,7 @@ class TrendingService extends Repository
     public function active($seenIds, $take)
     {
         $idsObject = $this->getActiveIds($seenIds, $take);
-        $list = $this->getListByIds($idsObject['ids']);
+        $list = $this->getListByIds($idsObject['ids'], $this->bangumiId ? 'bangumi' : 'trending');
 
         return [
             'list' => $list,
@@ -52,7 +54,7 @@ class TrendingService extends Repository
     public function hot($seenIds, $take)
     {
         $idsObject = $this->getHotIds($seenIds, $take);
-        $list = $this->getListByIds($idsObject['ids']);
+        $list = $this->getListByIds($idsObject['ids'], $this->bangumiId ? 'bangumi' : 'trending');
 
         return [
             'list' => $list,
@@ -64,7 +66,7 @@ class TrendingService extends Repository
     public function users($page, $take)
     {
         $idsObject = $this->getUserIds($page, $take);
-        $list = $this->getListByIds($idsObject['ids']);
+        $list = $this->getListByIds($idsObject['ids'], 'user');
 
         return [
             'list' => $list,
@@ -190,7 +192,7 @@ class TrendingService extends Repository
         $this->ListRemove($this->trendingFlowUsersKey(), $id);
     }
 
-    public function getListByIds($ids)
+    public function getListByIds($ids, $flowType)
     {
         return [];
     }
@@ -241,11 +243,11 @@ class TrendingService extends Repository
 
     protected function trendingIdsCacheKey($type, $bangumiId)
     {
-        return 'trending_' . $this->table . '_bangumi_' . $bangumiId . '_' . $type . '_ids';
+        return 'trending_' . $this->table . '_' . $this->cachePrefix . '_' . $bangumiId . '_' . $type . '_ids';
     }
 
     protected function checkTimeoutCacheKey($type, $bangumiId)
     {
-        return 'trending_' . $this->table . '_bangumi_' . $bangumiId . '_' . $type . '_timeout';
+        return 'trending_' . $this->table . '_' . $this->cachePrefix . '_' . $bangumiId . '_' . $type . '_timeout';
     }
 }

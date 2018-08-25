@@ -8,6 +8,7 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\AnswerRepository;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
@@ -15,6 +16,7 @@ use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Owner\BangumiManager;
+use App\Api\V1\Services\Owner\QuestionLog;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Services\Toggle\Image\ImageMarkService;
@@ -22,10 +24,14 @@ use App\Api\V1\Services\Toggle\Image\ImageRewardService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Services\Toggle\Post\PostRewardService;
+use App\Api\V1\Services\Toggle\Question\AnswerLikeService;
+use App\Api\V1\Services\Toggle\Question\AnswerMarkService;
+use App\Api\V1\Services\Toggle\Question\AnswerRewardService;
 use App\Api\V1\Services\Toggle\Question\QuestionFollowService;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
 use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
 use App\Api\V1\Services\Toggle\Score\ScoreRewardService;
+use App\Api\V1\Services\Vote\AnswerVoteService;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -242,7 +248,7 @@ class ToggleController extends Controller
             return $this->resErrNotFound();
         }
 
-        if ($item['is_creator'])
+        if (isset($item['is_creator']) ? $item['is_creator'] : !$item['source_url'])
         {
             return $this->resErrRole('原创内容只能打赏，不能喜欢');
         }
@@ -375,7 +381,7 @@ class ToggleController extends Controller
             return $this->resErrNotFound();
         }
 
-        if (!$item['is_creator'])
+        if (isset($item['is_creator']) ? !$item['is_creator'] : $item['source_url'])
         {
             return $this->resErrRole('非原创内容只能喜欢，不能打赏');
         }
@@ -425,12 +431,68 @@ class ToggleController extends Controller
             $job = (new \App\Jobs\Trending\Active(
                 $id,
                 $type,
-                $item['bangumi_id']
+                isset($item['bangumi_id']) ? $item['bangumi_id'] : $item['question_id']
             ));
             dispatch($job);
         }
 
         return $this->resCreated((boolean)$rewardId);
+    }
+
+    public function vote(Request $request)
+    {
+        $id = $request->get('id');
+        $type = $request->get('type');
+        $isAgree = $request->get('is_agree');
+        $userId = $this->getAuthUserId();
+
+        if ($type !== 'answer')
+        {
+            return $this->resErrBad();
+        }
+
+        $answerRepisotry = new AnswerRepository();
+        $anwer = $answerRepisotry->item($id);
+        if (is_null($anwer))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($anwer['user_id'] === $userId)
+        {
+            return $this->resErrRole('不能给自己点赞');
+        }
+
+        $answerVoteService = new AnswerVoteService();
+        if ($isAgree)
+        {
+            $result = $answerVoteService->toggleLike($userId, $id);
+            if ($result > 0)
+            {
+                $job = (new \App\Jobs\Notification\Create(
+                    'answer-vote',
+                    $anwer['user_id'],
+                    $userId,
+                    $anwer['id']
+                ));
+                dispatch($job);
+            }
+            else
+            {
+                // TODO：remove notification
+            }
+        }
+        else
+        {
+            $result = $answerVoteService->toggleDislike($userId, $id);
+        }
+
+        $total = $answerVoteService->getVoteCount($id);
+
+        return $this->resOK([
+            'total' => $total,
+            'result' => $result
+        ]);
     }
 
     protected function getContributorsServiceByType($type)
@@ -441,7 +503,7 @@ class ToggleController extends Controller
                 return new BangumiManager();
                 break;
             case 'question':
-                return null;
+                return new QuestionLog();
                 break;
             case 'word':
                 return null;
@@ -483,6 +545,9 @@ class ToggleController extends Controller
             case 'score':
                 return new ScoreMarkService();
                 break;
+            case 'answer':
+                return new AnswerMarkService();
+                break;
             default:
                 return null;
         }
@@ -501,6 +566,8 @@ class ToggleController extends Controller
             case 'score':
                 return new ScoreRewardService();
                 break;
+            case 'answer':
+                return new AnswerRewardService();
             default:
                 return null;
         }
@@ -518,6 +585,9 @@ class ToggleController extends Controller
                 break;
             case 'score':
                 return new ScoreLikeService();
+                break;
+            case 'answer':
+                return new AnswerLikeService();
                 break;
             default:
                 return null;
@@ -545,6 +615,10 @@ class ToggleController extends Controller
                 break;
             case 'question':
                 return new QuestionRepository();
+                break;
+            case 'answer':
+                return new AnswerRepository();
+                break;
             default:
                 return null;
                 break;

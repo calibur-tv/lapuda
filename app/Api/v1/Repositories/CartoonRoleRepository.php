@@ -10,8 +10,6 @@ namespace App\Api\V1\Repositories;
 
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
-use App\Services\BaiduSearch\BaiduPush;
-use App\Services\OpenSearch\Search;
 
 class CartoonRoleRepository extends Repository
 {
@@ -91,17 +89,7 @@ class CartoonRoleRepository extends Repository
         $role = $this->item($id);
         $content = $role['name'] . '|' . $role['intro'];
 
-        if ($async)
-        {
-            $job = (new \App\Jobs\Search\Index($type, 'role', $id, $content));
-            dispatch($job);
-        }
-        else
-        {
-            $search = new Search();
-            $search->create($id, $content, 'role');
-            $baiduPush = new BaiduPush();
-            $baiduPush->create($id, 'role');
-        }
+        $job = (new \App\Jobs\Search\Index($type, 'role', $id, $content));
+        dispatch($job);
     }
 }

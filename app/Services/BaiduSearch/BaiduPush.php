@@ -144,6 +144,11 @@ class BaiduPush
         {
             $prefix = 'qaq';
         }
+        else if ($model === 'answer')
+        {
+            $prefix = 'soga';
+        }
+
         $url = '/' . $prefix . '/' . $id;
 
         $result = [

@@ -36,6 +36,7 @@ class QuestionTransformer extends Transformer
                 'view_count' => (int)$question['view_count'],
                 'commented' => $question['commented'],
                 'answer_count' => $question['answer_count'],
+                'my_answer' => $question['my_answer'],
                 'comment_count' => (int)$question['comment_count'],
                 'followed' => $question['followed'],
                 'follow_users' => $question['follow_users'],
@@ -45,16 +46,16 @@ class QuestionTransformer extends Transformer
         });
     }
 
-    public function search($post)
+    public function search($question)
     {
-        return $this->transformer($post, function ($post)
+        return $this->transformer($question, function ($question)
         {
             return [
-                'id' => (int)$post['id'],
-                'title' => $post['title'],
-                'desc' => $post['desc'],
-                'images' => $post['images'],
-                'created_at' => $post['created_at']
+                'id' => (int)$question['id'],
+                'title' => $question['title'],
+                'desc' => $question['desc'],
+                'images' => $question['images'],
+                'created_at' => $question['created_at']
             ];
         });
     }
@@ -66,35 +67,9 @@ class QuestionTransformer extends Transformer
             return array_merge(
                 $this->baseFlow($item),
                 [
-                    'bangumi' => $this->transformer($item['bangumi'], function ($bangumi)
-                    {
-                        return [
-                            'id' => (int)$bangumi['id'],
-                            'name' => $bangumi['name'],
-                            'avatar' => $bangumi['avatar']
-                        ];
-                    })
-                ]
-            );
-        });
-    }
-
-    public function bangumiFlow($list)
-    {
-        return $this->collection($list, function ($item)
-        {
-            return array_merge(
-                $this->baseFlow($item),
-                [
-                    'user' => $this->transformer($item['user'], function ($user)
-                    {
-                        return [
-                            'id' => (int)$user['id'],
-                            'nickname' => $user['nickname'],
-                            'avatar' => $user['avatar'],
-                            'zone' => $user['zone']
-                        ];
-                    })
+                    'answer_count' => $item['answer_count'],
+                    'follow_count' => $item['follow_count'],
+                    'comment_count' => $item['comment_count']
                 ]
             );
         });
@@ -107,23 +82,22 @@ class QuestionTransformer extends Transformer
             return array_merge(
                 $this->baseFlow($item),
                 [
-                    'bangumi' => $this->transformer($item['bangumi'], function ($bangumi)
+                    'answer' => $item['answer'] ? $this->transformer($item['answer'], function ($answer)
                     {
+                        $images = array_filter($answer['content'], function ($item)
+                        {
+                            return $item['type'] === 'img';
+                        });
+
                         return [
-                            'id' => (int)$bangumi['id'],
-                            'name' => $bangumi['name'],
-                            'avatar' => $bangumi['avatar']
+                            'id' => (int)$answer['id'],
+                            'intro' => $answer['intro'],
+                            'poster' => empty($images) ? null : current($images),
+                            'is_creator' => !(boolean)$answer['source_url'],
+                            'vote_count' => $answer['vote_count'],
+                            'comment_count' => $answer['comment_count']
                         ];
-                    }),
-                    'user' => $this->transformer($item['user'], function ($user)
-                    {
-                        return [
-                            'id' => (int)$user['id'],
-                            'nickname' => $user['nickname'],
-                            'avatar' => $user['avatar'],
-                            'zone' => $user['zone']
-                        ];
-                    })
+                    }) : null
                 ]
             );
         });
@@ -135,27 +109,20 @@ class QuestionTransformer extends Transformer
         {
             return [
                 'id' => (int)$item['id'],
-                //
-                'title' => $item['title'] ? $item['title'] : '标题什么的不重要',
-                'desc' => $item['desc'],
-                'images' => $this->collection($item['images'], function ($image)
+                'title' => $item['title'],
+                'intro' => $item['intro'],
+                'user' => $this->transformer($item['user'], function ($user)
                 {
                     return [
-                        'width' => (int)$image['width'],
-                        'height' => (int)$image['height'],
-                        'size' => (int)$image['size'],
-                        'type' => $image['type'],
-                        'url' => config('website.image'). $image['url']
+                        'id' => (int)$user['id'],
+                        'nickname' => $user['nickname'],
+                        'avatar' => $user['avatar'],
+                        'zone' => $user['zone']
                     ];
                 }),
-                'top_at' => $item['top_at'],
-                'is_nice' => (boolean)$item['is_nice'],
-                //
-                'is_creator' => (boolean)$item['is_creator'],
-                'like_count' => $item['like_count'],
-                'reward_count' => $item['reward_count'],
+                'answer_count' => $item['answer_count'],
+                'follow_count' => $item['follow_count'],
                 'comment_count' => $item['comment_count'],
-                'mark_count' => $item['mark_count'],
                 'created_at' => $item['created_at'],
                 'updated_at' => $item['updated_at']
             ];

@@ -58,7 +58,6 @@ class PostTrendingService extends TrendingService
                     ->whereNull('top_at');
             })
             ->orderBy('updated_at', 'desc')
-            ->latest()
             ->take(100)
             ->pluck('updated_at', 'id');
     }
@@ -116,14 +115,14 @@ class PostTrendingService extends TrendingService
             ->pluck('id');
     }
 
-    public function getListByIds($ids)
+    public function getListByIds($ids, $flowType)
     {
         $store = new PostRepository();
-        if ($this->bangumiId)
+        if ($flowType === 'bangumi')
         {
             $list = $store->bangumiFlow($ids);
         }
-        else if ($this->userId)
+        else if ($flowType === 'user')
         {
             $list = $store->userFlow($ids);
         }
@@ -159,14 +158,15 @@ class PostTrendingService extends TrendingService
         }
 
         $transformer = new PostTransformer();
-        if ($this->bangumiId)
+        if ($flowType === 'bangumi')
         {
             return $transformer->bangumiFlow($list);
         }
-        else if ($this->userId)
+        else if ($flowType === 'user')
         {
             return $transformer->userFlow($list);
         }
+
         return $transformer->trendingFlow($list);
     }
 }

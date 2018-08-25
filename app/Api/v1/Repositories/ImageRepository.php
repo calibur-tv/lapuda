@@ -15,7 +15,6 @@ use App\Models\AlbumImage;
 use App\Models\Banner;
 use App\Models\Image;
 use App\Services\BaiduSearch\BaiduPush;
-use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -373,17 +372,7 @@ class ImageRepository extends Repository
         $image = $this->item($id);
         $content = $image['name'];
 
-        if ($async)
-        {
-            $job = (new \App\Jobs\Search\Index($type, 'image', $id, $content));
-            dispatch($job);
-        }
-        else
-        {
-            $search = new Search();
-            $search->create($id, $content, 'image');
-            $baiduPush = new BaiduPush();
-            $baiduPush->create($id, 'image');
-        }
+        $job = (new \App\Jobs\Search\Index($type, 'image', $id, $content));
+        dispatch($job);
     }
 }

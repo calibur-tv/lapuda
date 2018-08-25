@@ -7,21 +7,27 @@ namespace App\Services\OpenSearch;
  * Date: 2018/2/11
  * Time: 上午11:02
  */
+use App\Api\V1\Repositories\AnswerRepository;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Repositories\VideoRepository;
+use App\Api\V1\Services\Trending\AnswerTrendingService;
 use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Services\Trending\PostTrendingService;
+use App\Api\V1\Services\Trending\QuestionTrendingService;
 use App\Api\V1\Services\Trending\RoleTrendingService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
+use App\Api\V1\Transformers\AnswerTransformer;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\PostTransformer;
+use App\Api\V1\Transformers\QuestionTransformer;
 use App\Api\V1\Transformers\ScoreTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Api\V1\Transformers\VideoTransformer;
@@ -202,7 +208,7 @@ class Search
                     return $item['type_id'];
                 }, $list);
 
-                $trendingList = $trendingService->getListByIds($ids);
+                $trendingList = $trendingService->getListByIds($ids, 'trending');
                 foreach ($trendingList as $trendingItem)
                 {
                     $trendingItem['type'] = $type;
@@ -253,7 +259,7 @@ class Search
                 }
                 else
                 {
-                    $trendingItems = $trendingService->getListByIds([$item['type_id']]);
+                    $trendingItems = $trendingService->getListByIds([$item['type_id']], 'trending');
                     if (empty($trendingItems))
                     {
                         $job = (new \App\Jobs\Search\Delete([$item['type_id']], $typeId));
@@ -330,7 +336,8 @@ class Search
             'role' => 5,
             'image' => 6,
             'score' => 7,
-            'question' => 8
+            'question' => 8,
+            'answer' => 9
         ];
 
         if (gettype($modal) === 'string')
@@ -371,6 +378,14 @@ class Search
         {
             return new ScoreRepository();
         }
+        else if ($type === 8)
+        {
+            return new QuestionRepository();
+        }
+        else if ($type === 9)
+        {
+            return new AnswerRepository();
+        }
 
         return null;
     }
@@ -404,6 +419,14 @@ class Search
         else if ($type === 7)
         {
             return new ScoreTransformer();
+        }
+        else if ($type === 8)
+        {
+            return new QuestionTransformer();
+        }
+        else if ($type === 9)
+        {
+            return new AnswerTransformer();
         }
 
         return null;
@@ -443,6 +466,14 @@ class Search
         else if ($type === 7)
         {
             return new ScoreTrendingService();
+        }
+        else if ($type === 8)
+        {
+            return new QuestionTrendingService();
+        }
+        else if ($type === 9)
+        {
+            return new AnswerTrendingService();
         }
 
         return null;

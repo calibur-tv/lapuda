@@ -46,6 +46,11 @@ class User extends Authenticatable
         );
     }
 
+    public function getSignatureAttribute($text)
+    {
+        return $text ? $text : '这个人还很神秘...';
+    }
+
     public function getBannerAttribute($banner)
     {
         return (
