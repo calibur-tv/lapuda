@@ -50,7 +50,7 @@ class RoleTrendingService extends TrendingService
     public function users($page, $take)
     {
         $idsObject = $this->getUserIds($page, $take);
-        $list = $this->getListByIds($idsObject['ids']);
+        $list = $this->getListByIds($idsObject['ids'], '');
 
         $cartoonRoleRepository = new CartoonRoleRepository();
         foreach ($list as $i => $item)
@@ -65,7 +65,7 @@ class RoleTrendingService extends TrendingService
         ];
     }
 
-    public function getListByIds($ids)
+    public function getListByIds($ids, $flowType)
     {
         $store = new CartoonRoleRepository();
         $userRepository = new UserRepository();

@@ -13,7 +13,7 @@ class Geetest
 
         $time = $request->headers->get('X-Auth-Time');
         $value = $request->headers->get('X-Auth-Value');
-        if ($time && $value && md5($time . config('app.md5_salt') === $value))
+        if ($time && $value && time() - $time < 3600 && md5($time . config('app.md5_salt') === $value))
         {
             return $next($request);
         }

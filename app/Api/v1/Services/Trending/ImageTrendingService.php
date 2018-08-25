@@ -68,7 +68,7 @@ class ImageTrendingService extends TrendingService
                 ['image_ids', '<>', null],
                 ['is_cartoon', 0]
             ])
-            ->latest()
+            ->orderBy('updated_at', 'desc')
             ->take(100)
             ->pluck('updated_at', 'id');
     }
@@ -134,14 +134,14 @@ class ImageTrendingService extends TrendingService
             ->pluck('id');
     }
 
-    public function getListByIds($ids)
+    public function getListByIds($ids, $flowType)
     {
         $store = new ImageRepository();
-        if ($this->bangumiId)
+        if ($flowType === 'bangumi')
         {
             $list = $store->bangumiFlow($ids);
         }
-        else if ($this->userId)
+        else if ($flowType === 'user')
         {
             $list = $store->userFlow($ids);
         }
@@ -177,14 +177,15 @@ class ImageTrendingService extends TrendingService
         }
 
         $transformer = new ImageTransformer();
-        if ($this->bangumiId)
+        if ($flowType === 'bangumi')
         {
             return $transformer->bangumiFlow($list);
         }
-        else if ($this->userId)
+        else if ($flowType === 'user')
         {
             return $transformer->userFlow($list);
         }
+
         return $transformer->trendingFlow($list);
     }
 }

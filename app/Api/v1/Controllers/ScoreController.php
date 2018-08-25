@@ -274,9 +274,9 @@ class ScoreController extends Controller
         $express = $request->get('express');
         $style = $request->get('style');
         $total = $lol + $cry + $fight + $moe + $sound + $vision + $role + $story + $express + $style;
-        $content = $scoreRepository->filterContent($request->get('content'));
+        $content = $scoreRepository->filterJsonContent($request->get('content'));
         $title = Purifier::clean($request->get('title'));
-        $intro = $request->get('intro');
+        $intro = Purifier::clean($request->get('intro'));
         $now = Carbon::now();
 
         $newId = DB::table('scores')

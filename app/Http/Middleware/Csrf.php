@@ -13,57 +13,26 @@ class Csrf
         'https://t-m.calibur.tv',
         'http://www.calibur.tv',
         'http://m.calibur.tv',
+        'https://android.calibur.tv',
+        'https://ios.calibur.tv',
         ''
     ];
 
-    protected $methods = [
-        'HEAD', 'GET', 'OPTIONS'
-    ];
-
-    protected $apps = [
-        'innocence',
-        'geass'
-    ];
-
-    protected $versions = [
-
-    ];
-
-    protected $except = [];
-
     public function handle($request, Closure $next)
     {
-//        if (config('app.env') === 'local')
-//        {
-//            return $next($request);
-//        }
-//
-//        if (in_array($request->method(), $this->methods))
-//        {
-//            return $next($request);
-//        }
-//
-//        if (in_array($request->headers->get('Origin'), $this->domains))
-//        {
-//            return $next($request);
-//        }
-//
-//        if (in_array($request->url(), $this->except))
-//        {
-//            return $next($request);
-//        }
+        if (config('app.env') === 'local')
+        {
+            return $next($request);
+        }
 
-//        if (
-//            time() - intval($request->headers->get('X-Auth-Timestamp')) < 60 &&
-//            md5(config('app.md5_salt') . $request->headers->get('X-Auth-Timestamp')) === $request->headers->get('X-Auth-Token')
-//        ) {
-//            return $next($request);
-//        }
+        if (in_array($request->headers->get('Origin'), $this->domains))
+        {
+            return $next($request);
+        }
 
-        return $next($request);
-//        return response([
-//            'code' => 40101,
-//            'message' => config('error.40101')
-//        ], 401);
+        return response([
+            'code' => 40301,
+            'message' => config('error.40301')
+        ], 403);
     }
 }

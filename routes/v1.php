@@ -91,9 +91,28 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/question'], function ($api)
     {
-        $api->group(['prefix' => '/create'], function ($api)
+        $api->group(['prefix' => '/qaq'], function ($api)
         {
-            $api->post('/q', 'App\Api\V1\Controllers\QuestionController@createQuestion')->middleware(['geetest']);
+            $api->post('/create', 'App\Api\V1\Controllers\QuestionController@create')->middleware(['geetest', 'jwt.auth']);
+
+            $api->group(['prefix' => '/{id}'], function ($api)
+            {
+                $api->get('/show', 'App\Api\V1\Controllers\QuestionController@show');
+            });
+        });
+
+        $api->group(['prefix' => '/soga'], function ($api)
+        {
+            $api->post('/create', 'App\Api\V1\Controllers\AnswerController@create')->middleware(['geetest', 'jwt.auth']);
+
+            $api->group(['prefix' => '/{id}'], function ($api)
+            {
+                $api->get('/show', 'App\Api\V1\Controllers\AnswerController@show');
+
+                $api->get('/resource', 'App\Api\V1\Controllers\AnswerController@editData')->middleware(['jwt.auth']);
+
+                $api->post('/update', 'App\Api\V1\Controllers\AnswerController@update')->middleware(['jwt.auth']);
+            });
         });
     });
 
@@ -271,6 +290,8 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/follow', 'App\Api\V1\Controllers\ToggleController@follow');
 
             $api->post('/reward', 'App\Api\V1\Controllers\ToggleController@reward');
+
+            $api->post('/vote', 'App\Api\V1\Controllers\ToggleController@vote');
 
             $api->post('/{type}/check', 'App\Api\V1\Controllers\ToggleController@mixinCheck');
         });

@@ -60,9 +60,15 @@ class Create implements ShouldQueue
             return;
         }
 
+        $type = $this->convertStrTypeToInt();
+        if (!$type)
+        {
+            return;
+        }
+
         $now = Carbon::now();
         $id = Notifications::insertGetId([
-            'type' => $this->convertStrTypeToInt(),
+            'type' => $type,
             'model_id' => $this->modelId,
             'comment_id' => $this->commentId,
             'reply_id' => $this->replyId,
@@ -154,6 +160,48 @@ class Create implements ShouldQueue
                 break;
             case 'video-reply-like':
                 return 25;
+                break;
+            case 'question-follow':
+                return 26;
+                break;
+            case 'question-comment':
+                return 27;
+                break;
+            case 'question-comment-like':
+                return 28;
+                break;
+            case 'question-reply':
+                return 29;
+                break;
+            case 'question-reply-like':
+                return 30;
+                break;
+            case 'question-answer':
+                return 31;
+                break;
+            case 'answer-vote':
+                return 32;
+                break;
+            case 'answer-like':
+                return 33;
+                break;
+            case 'answer-reward':
+                return 34;
+                break;
+            case 'answer-mark':
+                return 35;
+                break;
+            case 'answer-comment':
+                return 36;
+                break;
+            case 'answer-reply':
+                return 37;
+                break;
+            case 'answer-comment-like':
+                return 38;
+                break;
+            case 'answer-reply-like':
+                return 39;
                 break;
             default:
                 return 0;

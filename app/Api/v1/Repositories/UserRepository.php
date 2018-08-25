@@ -10,15 +10,11 @@ namespace App\Api\V1\Repositories;
 
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
-use App\Api\V1\Services\Toggle\Post\PostLikeService;
-use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\PostTransformer;
-use App\Api\V1\Transformers\UserTransformer;
 use App\Models\DayStats;
 use App\Models\Bangumi;
 use App\Models\CartoonRole;
-use App\Models\CartoonRoleFans;
 use App\Models\Image;
 use App\Models\Notifications;
 use App\Models\Post;
@@ -26,8 +22,6 @@ use App\Models\User;
 use App\Models\UserCoin;
 use App\Models\UserSign;
 use App\Models\Video;
-use App\Services\BaiduSearch\BaiduPush;
-use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -229,10 +223,14 @@ class UserRepository extends Repository
         $result = [];
         foreach ($notifies as $item)
         {
-            $result[] = $this->Cache('notification-' . $item['id'], function () use ($item)
+            $notify = $this->Cache('notification-' . $item['id'], function () use ($item)
             {
                 $type = $item['type'];
                 $link = $this->computeNotificationLink($type, $item['model_id'], $item['comment_id'], $item['reply_id']);
+                if (!$link)
+                {
+                    return null;
+                }
                 $template = $this->computeNotificationMessage($type);
 
                 $notification = [
@@ -261,6 +259,7 @@ class UserRepository extends Repository
                 {
                     $repository = $this->computeNotificationRepository($type);
                     $model = $repository->item($item['model_id']);
+                    $model = $this->convertModel($model, $type);
                     $title = $this->computeNotificationMessageTitle($model);
                     $template = str_replace('${title}', '<a class="title" href="'. $link .'">' . $title . '</a>', $template);
 
@@ -275,6 +274,10 @@ class UserRepository extends Repository
 
                 return $notification;
             }, 'm');
+            if ($notify)
+            {
+                $result[] = $notify;
+            }
         }
 
         return [
@@ -400,6 +403,9 @@ class UserRepository extends Repository
             case 'score':
                 return 6;
                 break;
+            case 'answer':
+                return 7;
+                break;
             default:
                 return -1;
         }
@@ -411,18 +417,8 @@ class UserRepository extends Repository
         $user = $this->item($id);
         $content = $user['nickname'] . ',' . $user['zone'];
 
-        if ($async)
-        {
-            $job = (new \App\Jobs\Search\Index($type, 'user', $id, $content));
-            dispatch($job);
-        }
-        else
-        {
-            $search = new Search();
-            $search->create($id, $content, 'user');
-            $baiduPush = new BaiduPush();
-            $baiduPush->create($user['zone'], 'user');
-        }
+        $job = (new \App\Jobs\Search\Index($type, 'user', $id, $content));
+        dispatch($job);
     }
 
     protected function setDayStats($type, $day, $count)
@@ -502,22 +498,64 @@ class UserRepository extends Repository
                 return '/post/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
                 break;
             case 20:
-                return '/image/' . $modalId . '?comment-id=' . $commentId;
+                return '/pins/' . $modalId . '?comment-id=' . $commentId;
                 break;
             case 21:
-                return '/image/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
+                return '/pins/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
                 break;
             case 22:
-                return '/score/' . $modalId . '?comment-id=' . $commentId;
+                return '/review/' . $modalId . '?comment-id=' . $commentId;
                 break;
             case 23:
-                return '/score/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
+                return '/review/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
                 break;
             case 24:
                 return '/video/' . $modalId . '?comment-id=' . $commentId;
                 break;
             case 25:
                 return '/video/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
+                break;
+            case 26:
+                return '/qaq/' . $modalId;
+                break;
+            case 27:
+                return '/qaq/' . $modalId . '?comment-id=' . $commentId;
+                break;
+            case 28:
+                return '/qaq/' . $modalId . '?comment-id=' . $commentId;
+                break;
+            case 29:
+                return '/qaq/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
+                break;
+            case 30:
+                return '/qaq/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
+                break;
+            case 31:
+                return '/soga/' . $modalId;
+                break;
+            case 32:
+                return '/soga/' . $modalId;
+                break;
+            case 33:
+                return '/soga/' . $modalId;
+                break;
+            case 34:
+                return '/soga/' . $modalId;
+                break;
+            case 35:
+                return '/soga/' . $modalId;
+                break;
+            case 36:
+                return '/soga/' . $modalId . '?comment-id=' . $commentId;
+                break;
+            case 37:
+                return '/soga/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
+                break;
+            case 38:
+                return '/soga/' . $modalId . '?comment-id=' . $commentId;
+                break;
+            case 39:
+                return '/soga/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
                 break;
             default:
                 return '';
@@ -607,6 +645,34 @@ class UserRepository extends Repository
             case 25:
                 return '${user}赞了你在的视频${title}下的回复';
                 break;
+            case 26:
+                return '${user}关注了你提的问题${title}';
+            case 27:
+                return '${user}评论了你提的问题${title}';
+            case 28:
+                return '${user}赞了你在问题${title}下的评论';
+            case 29:
+                return '${user}回复了你在问题${title}下的评论';
+            case 30:
+                return '${user}赞了你在问题${title}下的回复';
+            case 31:
+                return '${user}回答了你的问题${title}';
+            case 32:
+                return '${user}赞同了你在问题${title}下的回答';
+            case 33:
+                return '${user}喜欢了你在问题${title}下的回答';
+            case 34:
+                return '${user}打赏了你在问题${title}下的回答';
+            case 35:
+                return '${user}收藏了你在问题${title}下的回答';
+            case 36:
+                return '${user}评论了你在问题${title}下的回答';
+            case 37:
+                return '${user}回复了你在问题${title}下的评论';
+            case 38:
+                return '${user}赞了你在问题${title}下的评论';
+            case 39:
+                return '${user}赞了你在问题${title}下的回复';
             default:
                 return '';
                 break;
@@ -695,6 +761,48 @@ class UserRepository extends Repository
             case 25:
                 return new VideoRepository();
                 break;
+            case 26:
+                return new QuestionRepository();
+                break;
+            case 27:
+                return new QuestionRepository();
+                break;
+            case 28:
+                return new QuestionRepository();
+                break;
+            case 29:
+                return new QuestionRepository();
+                break;
+            case 30:
+                return new QuestionRepository();
+                break;
+            case 31:
+                return new QuestionRepository();
+                break;
+            case 32:
+                return new QuestionRepository();
+                break;
+            case 33:
+                return new QuestionRepository();
+                break;
+            case 34:
+                return new AnswerRepository();
+                break;
+            case 35:
+                return new AnswerRepository();
+                break;
+            case 36:
+                return new AnswerRepository();
+                break;
+            case 37:
+                return new AnswerRepository();
+                break;
+            case 38:
+                return new AnswerRepository();
+                break;
+            case 39:
+                return new AnswerRepository();
+                break;
             default:
                 return null;
                 break;
@@ -718,6 +826,22 @@ class UserRepository extends Repository
             return $model['nickname'];
         }
 
+        if (isset($model['intro']))
+        {
+            return $model['intro'];
+        }
+
         return '';
+    }
+
+    protected function convertModel($model, $type)
+    {
+        if (isset($model['question_id']))
+        {
+            $questionRepository = new QuestionRepository();
+            return $questionRepository->item($model['question_id']);
+        }
+
+        return $model;
     }
 }

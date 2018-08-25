@@ -41,12 +41,12 @@ class PostTransformer extends Transformer
                         'url' => config('website.image') . $image['url']
                     ];
                 }),
-                'comment_count' => (int)$post['comment_count'],
                 'view_count' => (int)$post['view_count'],
+                'comment_count' => (int)$post['comment_count'],
+                'commented' => $post['commented'],
                 'liked' => $post['liked'],
                 'rewarded' => $post['rewarded'],
                 'marked' => $post['marked'],
-                'commented' => $post['commented'],
                 'like_users' => $post['like_users'],
                 'mark_users' => $post['mark_users'],
                 'reward_users' => $post['reward_users'],

@@ -14,11 +14,9 @@ use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
 use App\Models\Score;
 use App\Services\BaiduSearch\BaiduPush;
-use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
-use Mews\Purifier\Facades\Purifier;
 
 class ScoreRepository extends Repository
 {
@@ -191,34 +189,6 @@ class ScoreRepository extends Repository
         return 'bangumi_' . $bangumiId . '_score';
     }
 
-    public function filterContent(array $content)
-    {
-        $result = [];
-        foreach ($content as $item)
-        {
-            if ($item['type'] === 'txt')
-            {
-                $result[] = [
-                    'type' => $item['type'],
-                    'text' => $item['text']
-                ];
-            }
-            else if ($item['type'] === 'img')
-            {
-                $result[] = [
-                    'type' => $item['type'],
-                    'width' => $item['width'],
-                    'height' => $item['height'],
-                    'size' => $item['size'],
-                    'mime' => $item['mime'],
-                    'text' => $item['text'],
-                    'url' => $this->convertImagePath($item['url'])
-                ];
-            }
-        }
-        return Purifier::clean(json_encode($result));
-    }
-
     public function createProcess($id, $state = 0)
     {
         $score = $this->item($id);
@@ -309,17 +279,7 @@ class ScoreRepository extends Repository
         $score = $this->item($id);
         $content = $score['title'] . '|' . $score['intro'];
 
-        if ($async)
-        {
-            $job = (new \App\Jobs\Search\Index($type, 'score', $id, $content));
-            dispatch($job);
-        }
-        else
-        {
-            $search = new Search();
-            $search->create($id, $content, 'score');
-            $baiduPush = new BaiduPush();
-            $baiduPush->create($id, 'score');
-        }
+        $job = (new \App\Jobs\Search\Index($type, 'score', $id, $content));
+        dispatch($job);
     }
 }

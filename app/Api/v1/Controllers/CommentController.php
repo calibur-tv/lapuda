@@ -8,11 +8,13 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\AnswerRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\VideoRepository;
+use App\Api\V1\Services\Comment\AnswerCommentService;
 use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Comment\QuestionCommentService;
@@ -32,7 +34,14 @@ class CommentController extends Controller
 {
     public function __construct()
     {
-        $this->types = ['post', 'image', 'score', 'video'];
+        $this->types = [
+            'post',
+            'image',
+            'score',
+            'video',
+            'question',
+            'answer'
+        ];
     }
 
     /**
@@ -131,12 +140,17 @@ class CommentController extends Controller
         ));
         dispatch($job);
 
-        $job = (new \App\Jobs\Trending\Active(
-            $id,
-            $type,
-            $parent['bangumi_id']
-        ));
-        dispatch($job);
+        if (!in_array($type, ['question', 'answer']))
+        {
+            $job = (new \App\Jobs\Trending\Active(
+                $id,
+                $type,
+                isset($parent['bangumi_id'])
+                    ? $parent['bangumi_id']
+                    : $parent['tag_ids']
+            ));
+            dispatch($job);
+        }
 
         $newComment['liked'] = false;
         $newComment['like_count'] = 0;
@@ -334,8 +348,7 @@ class CommentController extends Controller
             ],
         ]);
 
-        if ($validator->fails())
-        {
+        if ($validator->fails()) {
             return $this->resErrParams($validator);
         }
 
@@ -343,14 +356,12 @@ class CommentController extends Controller
         $id = $request->get('id');
 
         $commentService = $this->getCommentServiceByType($type);
-        if (is_null($commentService))
-        {
+        if (is_null($commentService)) {
             return $this->resErrBad('错误的类型');
         }
 
         $comment = $commentService->getMainCommentItem($id);
-        if (is_null($comment))
-        {
+        if (is_null($comment)) {
             return $this->resErrNotFound('内容已删除');
         }
 
@@ -365,20 +376,22 @@ class CommentController extends Controller
             'parent_id' => $id
         ]);
 
-        if (is_null($newComment))
-        {
+        if (is_null($newComment)) {
             return $this->resErrServiceUnavailable();
         }
 
-        $job = (new \App\Jobs\Notification\Create(
-            $type . '-reply',
-            $targetUserId,
-            $userId,
-            $comment['modal_id'],
-            $id,
-            $newComment['id']
-        ));
-        dispatch($job);
+        if (!in_array($type, ['question', 'answer']))
+        {
+            $job = (new \App\Jobs\Notification\Create(
+                $type . '-reply',
+                $targetUserId,
+                $userId,
+                $comment['modal_id'],
+                $id,
+                $newComment['id']
+            ));
+            dispatch($job);
+        }
 
         $totalCommentCount = new TotalCommentCount();
         $totalCommentCount->add();
@@ -651,9 +664,8 @@ class CommentController extends Controller
 
     public function trials()
     {
-        $types = ['post', 'video', 'image', 'score'];
         $result = [];
-        foreach ($types as $modal)
+        foreach ($this->types as $modal)
         {
             $list = DB::table($modal . '_comments')
                 ->where('state', '<>', 0)
@@ -679,7 +691,7 @@ class CommentController extends Controller
 
         return $this->resOK([
             'comments' => $result,
-            'types' => $types
+            'types' => $this->types
         ]);
     }
 
@@ -734,6 +746,10 @@ class CommentController extends Controller
         {
             return new QuestionCommentService();
         }
+        else if ($type === 'answer')
+        {
+            return new AnswerCommentService();
+        }
         else
         {
             return null;
@@ -761,6 +777,10 @@ class CommentController extends Controller
         else if ($type === 'question')
         {
             return new QuestionRepository();
+        }
+        else if ($type === 'answer')
+        {
+            return new AnswerRepository();
         }
         else
         {

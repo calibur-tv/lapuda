@@ -41,7 +41,7 @@ class BaiduPush
             return;
         }
 
-        if (!in_array($table, ['post', 'image', 'score']))
+        if (!in_array($table, ['post', 'image', 'score', 'question']))
         {
             return;
         }
@@ -58,6 +58,10 @@ class BaiduPush
         else if ($table === 'score')
         {
             $prefix = 'review';
+        }
+        else if ($table === 'question')
+        {
+            $prefix = 'qaq';
         }
 
         $urls = [
@@ -136,6 +140,15 @@ class BaiduPush
         {
             $prefix = 'role';
         }
+        else if ($model === 'question')
+        {
+            $prefix = 'qaq';
+        }
+        else if ($model === 'answer')
+        {
+            $prefix = 'soga';
+        }
+
         $url = '/' . $prefix . '/' . $id;
 
         $result = [
