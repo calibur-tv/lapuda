@@ -54,8 +54,10 @@ class AnswerController extends Controller
 
         if (!$isDeleted)
         {
+            $state = $answer['state'];
             $answerTrendingService = new AnswerTrendingService($questionId, $userId);
             $answer = $answerTrendingService->getListByIds([$id], '')[0];
+            $answer['state'] = $state;
         }
 
         return $this->resOK([
