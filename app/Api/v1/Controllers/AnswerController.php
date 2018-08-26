@@ -29,6 +29,7 @@ class AnswerController extends Controller
             return $this->resErrNotFound();
         }
 
+        $isDeleted = false;
         if ($answer['deleted_at'])
         {
             if ($answer['state'])
@@ -36,7 +37,7 @@ class AnswerController extends Controller
                 return $this->resErrLocked();
             }
 
-            return $this->resErrNotFound();
+            $isDeleted = true;
         }
 
         $questionRepository = new QuestionRepository();
@@ -51,12 +52,15 @@ class AnswerController extends Controller
         $userId = $this->getAuthUserId();
         $question = $questionRepository->show($questionId, $userId);
 
-        $answerTrendingService = new AnswerTrendingService($questionId, $userId);
-        $answer = $answerTrendingService->getListByIds([$id], '')[0];
+        if (!$isDeleted)
+        {
+            $answerTrendingService = new AnswerTrendingService($questionId, $userId);
+            $answer = $answerTrendingService->getListByIds([$id], '')[0];
+        }
 
         return $this->resOK([
             'question' => $question,
-            'answer' => $answer
+            'answer' => $isDeleted ? null : $answer
         ]);
     }
 
@@ -190,9 +194,22 @@ class AnswerController extends Controller
         return $this->resNoContent();
     }
 
-    public function delete()
+    public function delete($id)
     {
+        $answerRepository = new AnswerRepository();
+        $answer = $answerRepository->item($id);
+        if (is_null($answer))
+        {
+            return $this->resErrNotFound();
+        }
+        if ($answer['user_id'] !== $this->getAuthUserId())
+        {
+            return $this->resErrRole();
+        }
 
+        $answerRepository->deleteProcess($id);
+
+        return $this->resNoContent();
     }
 
     public function trials()

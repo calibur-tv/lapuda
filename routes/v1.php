@@ -112,6 +112,8 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->get('/resource', 'App\Api\V1\Controllers\AnswerController@editData')->middleware(['jwt.auth']);
 
                 $api->post('/update', 'App\Api\V1\Controllers\AnswerController@update')->middleware(['jwt.auth']);
+
+                $api->post('/delete', 'App\Api\V1\Controllers\AnswerController@delete')->middleware(['jwt.auth']);
             });
         });
     });

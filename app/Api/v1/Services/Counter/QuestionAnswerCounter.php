@@ -23,6 +23,8 @@ class QuestionAnswerCounter extends RelationCounterService
     {
         return DB::table($this->table)
             ->where($this->field, $id)
+            ->where('state', 0)
+            ->whereNull('deleted_at')
             ->whereNotNull('published_at')
             ->count();
     }

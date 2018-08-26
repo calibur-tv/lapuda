@@ -23,11 +23,13 @@ class Answer extends Model
         'content',
         'intro',
         'published_at',
+        'state',
         'source_url'
     ];
 
     protected $casts = [
         'user_id' => 'integer',
-        'question_id' => 'integer'
+        'question_id' => 'integer',
+        'state' => 'integer'
     ];
 }

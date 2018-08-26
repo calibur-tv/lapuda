@@ -75,8 +75,8 @@ class TrendingController extends Controller
             }
             if ($userZone)
             {
-                $visitUserId = $repository->getUserIdByZone($userZone);
-                if (!$visitUserId)
+                $userId = $repository->getUserIdByZone($userZone);
+                if (!$userId)
                 {
                     return $this->resErrNotFound();
                 }

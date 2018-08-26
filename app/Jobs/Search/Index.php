@@ -37,11 +37,6 @@ class Index implements ShouldQueue
 
     public function __construct($type, $model, $id, $text = '')
     {
-        if (config('app.env') !== 'production')
-        {
-            return;
-        }
-
         if (!in_array($type, [
             'C', // create
             'U', // update

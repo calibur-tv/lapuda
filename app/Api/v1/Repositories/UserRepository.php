@@ -777,13 +777,13 @@ class UserRepository extends Repository
                 return new QuestionRepository();
                 break;
             case 31:
-                return new QuestionRepository();
+                return new AnswerRepository();
                 break;
             case 32:
-                return new QuestionRepository();
+                return new AnswerRepository();
                 break;
             case 33:
-                return new QuestionRepository();
+                return new AnswerRepository();
                 break;
             case 34:
                 return new AnswerRepository();
