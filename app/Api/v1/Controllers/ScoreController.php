@@ -454,22 +454,22 @@ class ScoreController extends Controller
         return $this->resOK($list);
     }
 
-    public function pass(Request $request)
-    {
-        $id = $request->get('id');
-
-        $scoreRepository = new ScoreRepository();
-        $scoreRepository->recoverProcess($id);
-
-        return $this->resNoContent();
-    }
-
     public function ban(Request $request)
     {
         $id = $request->get('id');
 
         $scoreRepository = new ScoreRepository();
         $scoreRepository->deleteProcess($id);
+
+        return $this->resNoContent();
+    }
+
+    public function pass(Request $request)
+    {
+        $id = $request->get('id');
+
+        $scoreRepository = new ScoreRepository();
+        $scoreRepository->recoverProcess($id);
 
         return $this->resNoContent();
     }

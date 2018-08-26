@@ -9,6 +9,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\QuestionRepository;
+use App\Models\Question;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -93,16 +94,40 @@ class QuestionController extends Controller
 
     public function trials()
     {
+        $ids = Question
+            ::withTrashed()
+            ->where('state', '<>', 0)
+            ->pluck('id')
+            ->toArray();
 
+        if (empty($ids))
+        {
+            return $this->resOK([]);
+        }
+
+        $questionRepository = new QuestionRepository();
+        $list = $questionRepository->list($ids, true);
+
+        return $this->resOK($list);
     }
 
-    public function ban()
+    public function ban(Request $request)
     {
+        $id = $request->get('id');
 
+        $questionRepository = new QuestionRepository();
+        $questionRepository->deleteProcess($id);
+
+        return $this->resNoContent();
     }
 
-    public function pass()
+    public function pass(Request $request)
     {
+        $id = $request->get('id');
 
+        $questionRepository = new QuestionRepository();
+        $questionRepository->recoverProcess($id);
+
+        return $this->resNoContent();
     }
 }
