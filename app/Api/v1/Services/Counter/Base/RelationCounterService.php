@@ -63,7 +63,6 @@ class RelationCounterService extends Repository
     {
         return DB::table($this->table)
             ->where($this->field, $id)
-            ->whereNull('deleted_at')
             ->count();
     }
 
