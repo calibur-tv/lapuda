@@ -161,6 +161,11 @@ class BaiduPush
 
     protected function push($url, $content)
     {
+        if (config('app.env') !== 'production')
+        {
+            return;
+        }
+
         $ch = curl_init();
         curl_setopt_array($ch, array(
             CURLOPT_URL => $url,

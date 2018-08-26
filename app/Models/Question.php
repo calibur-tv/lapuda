@@ -18,4 +18,9 @@ class Question extends Model
     protected $table = 'questions';
 
     protected $fillable = ['user_id', 'title', 'content', 'intro', 'state'];
+
+    protected $casts = [
+        'user_id' => 'integer',
+        'state' => 'integer'
+    ];
 }

@@ -16,6 +16,7 @@ use App\Models\Answer;
 use App\Services\BaiduSearch\BaiduPush;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class AnswerRepository extends Repository
 {
@@ -96,19 +97,48 @@ class AnswerRepository extends Repository
         $this->migrateSearchIndex('C', $id, false);
     }
 
-    public function updateProcess()
+    public function updateProcess($id)
     {
-
+        $this->migrateSearchIndex('U', $id, false);
     }
 
-    public function deleteProcess()
+    public function deleteProcess($id, $state = 0)
     {
-        
+        $answer = $this->item($id, true);
+
+        DB::table('question_answers')
+            ->where('id', $id)
+            ->update([
+                'state' => $state,
+                'deleted_at' => Carbon::now()
+            ]);
+
+        if ($state === 0 || $answer['created_at'] !== $answer['updated_at'])
+        {
+            $job = (new \App\Jobs\Search\Index('D', 'answer', $id));
+            dispatch($job);
+        }
+
+        Redis::DEL($this->itemCacheKey($id));
     }
 
-    public function recoverProcess()
+    public function recoverProcess($id)
     {
+        $answer = $this->item($id, true);
 
+        DB::table('question_answers')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
+
+        if ($answer['deleted_at'])
+        {
+            $this->migrateSearchIndex('C', $id, false);
+        }
+
+        Redis::DEL($this->itemCacheKey($id));
     }
 
     public function migrateSearchIndex($type, $id, $async = true)

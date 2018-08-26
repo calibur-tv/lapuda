@@ -41,7 +41,8 @@ class Image extends Model
         'width' => 'integer',
         'height' => 'integer',
         'size' => 'integer',
-        'part' => 'integer'
+        'part' => 'integer',
+        'state' => 'integer'
     ];
 
     public function getUrlAttribute($url)
