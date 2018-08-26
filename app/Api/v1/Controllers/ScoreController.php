@@ -382,7 +382,7 @@ class ScoreController extends Controller
         $express = $request->get('express');
         $style = $request->get('style');
         $total = $lol + $cry + $fight + $moe + $sound + $vision + $role + $story + $express + $style;
-        $content = $scoreRepository->filterContent($request->get('content'));
+        $content = $scoreRepository->filterJsonContent($request->get('content'));
         $intro = $request->get('intro');
         $title = Purifier::clean($request->get('title'));
 
