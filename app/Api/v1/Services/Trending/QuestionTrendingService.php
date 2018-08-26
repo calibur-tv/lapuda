@@ -44,6 +44,7 @@ class QuestionTrendingService extends TrendingService
                     return $query
                         ->leftJoin('question_tag_relations AS tag', 'tag.tag_id', '=', $this->bangumiId);
                 })
+                ->whereNull('deleted_at')
                 ->orderBy('qaq.updated_at', 'desc')
                 ->take(100)
                 ->pluck('qaq.updated_at', 'qaq.id');
@@ -55,6 +56,7 @@ class QuestionTrendingService extends TrendingService
             Question
                 ::where('state', 0)
                 ->where('user_id', $this->userId)
+                ->whereNull('deleted_at')
                 ->orderBy('created_at', 'desc')
                 ->pluck('id');
     }
