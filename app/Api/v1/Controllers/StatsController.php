@@ -10,6 +10,7 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Services\Counter\Stats\TotalAnswerCount;
 use App\Api\V1\Services\Counter\Stats\TotalCommentCount;
+use App\Api\V1\Services\Counter\Stats\TotalImageAlbumCount;
 use App\Api\V1\Services\Counter\Stats\TotalImageCount;
 use App\Api\V1\Services\Counter\Stats\TotalPostCount;
 use App\Api\V1\Services\Counter\Stats\TotalQuestionCount;
@@ -31,12 +32,14 @@ class StatsController extends Controller
         $totalScoreCount = new TotalScoreCount();
         $totalQuestionCount = new TotalQuestionCount();
         $totalAnswerCount = new TotalAnswerCount();
+        $totalAlbumCount = new TotalImageAlbumCount();
 
         return $this->resOK([
             'user' => $totalUserCount->today(),
             'post' => $totalPostCount->today(),
             'comment' => $totalCommentCount->today(),
             'image' => $totalImageCount->today(),
+            'image_album' => $totalAlbumCount->today(),
             'score' => $totalScoreCount->today(),
             'question' => $totalQuestionCount->today(),
             'answer' => $totalAnswerCount->today()
