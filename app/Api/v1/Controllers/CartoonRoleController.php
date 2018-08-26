@@ -37,7 +37,9 @@ class CartoonRoleController extends Controller
      */
     public function star($id)
     {
-        if (!CartoonRole::where('id', $id)->count())
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $cartoonRole = $cartoonRoleRepository->item($id);
+        if (is_null($cartoonRole))
         {
             return $this->resErrNotFound();
         }
@@ -50,21 +52,17 @@ class CartoonRoleController extends Controller
             return $this->resErrRole('没有足够的金币');
         }
 
-        $cartoonRoleRepository = new CartoonRoleRepository();
+        $cartoonRoleTrendingService = new RoleTrendingService($cartoonRole['bangumi_id'], $userId);
 
         if ($cartoonRoleRepository->checkHasStar($id, $userId))
         {
-            CartoonRoleFans::whereRaw('role_id = ? and user_id = ?', [$id, $userId])->increment('star_count');
-
-            $trendingKey = 'cartoon_role_trending_' . $id;
+            CartoonRoleFans
+                ::whereRaw('role_id = ? and user_id = ?', [$id, $userId])
+                ->increment('star_count');
 
             if (Redis::EXISTS('cartoon_role_'.$id))
             {
                 Redis::HINCRBYFLOAT('cartoon_role_'.$id, 'star_count', 1);
-            }
-            if (Redis::EXISTS($trendingKey))
-            {
-                Redis::HINCRBYFLOAT($trendingKey, 'star_count', 1);
             }
         }
         else
@@ -77,18 +75,13 @@ class CartoonRoleController extends Controller
 
             CartoonRole::where('id', $id)->increment('fans_count');
 
-            $trendingKey = 'cartoon_role_trending_' . $id;
-
             if (Redis::EXISTS('cartoon_role_'.$id))
             {
                 Redis::HINCRBYFLOAT('cartoon_role_'.$id, 'fans_count', 1);
                 Redis::HINCRBYFLOAT('cartoon_role_'.$id, 'star_count', 1);
             }
-            if (Redis::EXISTS($trendingKey))
-            {
-                Redis::HINCRBYFLOAT($trendingKey, 'fans_count', 1);
-                Redis::HINCRBYFLOAT($trendingKey, 'star_count', 1);
-            }
+
+            $cartoonRoleTrendingService->create($id);
         }
 
         $newCacheKey = 'cartoon_role_' . $id . '_new_fans_ids';
@@ -103,7 +96,9 @@ class CartoonRoleController extends Controller
             Redis::ZINCRBY($hotCacheKey, 1, $userId);
         }
 
-        CartoonRole::where('id', $id)->increment('star_count');
+        CartoonRole
+            ::where('id', $id)
+            ->increment('star_count');
 
         return $this->resNoContent();
     }

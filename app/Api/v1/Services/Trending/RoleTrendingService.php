@@ -65,6 +65,11 @@ class RoleTrendingService extends TrendingService
         ];
     }
 
+    public function create($id)
+    {
+        $this->ListInsertBefore($this->trendingFlowUsersKey(), $id);
+    }
+
     public function getListByIds($ids, $flowType)
     {
         $store = new CartoonRoleRepository();
