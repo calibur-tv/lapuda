@@ -8,9 +8,12 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Services\Counter\Stats\TotalAnswerCount;
 use App\Api\V1\Services\Counter\Stats\TotalCommentCount;
 use App\Api\V1\Services\Counter\Stats\TotalImageCount;
 use App\Api\V1\Services\Counter\Stats\TotalPostCount;
+use App\Api\V1\Services\Counter\Stats\TotalQuestionCount;
+use App\Api\V1\Services\Counter\Stats\TotalScoreCount;
 use App\Api\V1\Services\Counter\Stats\TotalUserCount;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -21,16 +24,22 @@ class StatsController extends Controller
 {
     public function realtime()
     {
-        $totalUserCounter = new TotalUserCount();
-        $totalPostCounter = new TotalPostCount();
-        $totalCommentCounter = new TotalCommentCount();
-        $totalImageCounter = new TotalImageCount();
+        $totalUserCount = new TotalUserCount();
+        $totalPostCount = new TotalPostCount();
+        $totalCommentCount = new TotalCommentCount();
+        $totalImageCount = new TotalImageCount();
+        $totalScoreCount = new TotalScoreCount();
+        $totalQuestionCount = new TotalQuestionCount();
+        $totalAnswerCount = new TotalAnswerCount();
 
         return $this->resOK([
-            'user' => $totalUserCounter->today(),
-            'post' => $totalPostCounter->today(),
-            'comment' => $totalCommentCounter->today(),
-            'image' => $totalImageCounter->today()
+            'user' => $totalUserCount->today(),
+            'post' => $totalPostCount->today(),
+            'comment' => $totalCommentCount->today(),
+            'image' => $totalImageCount->today(),
+            'score' => $totalScoreCount->today(),
+            'question' => $totalQuestionCount->today(),
+            'answer' => $totalAnswerCount->today()
         ]);
     }
 
