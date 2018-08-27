@@ -281,7 +281,7 @@ class DoorController extends Controller
     public function refresh()
     {
         $user = $this->getAuthUser();
-        if (is_null($user))
+        if (!$user)
         {
             return $this->resErrAuth();
         }

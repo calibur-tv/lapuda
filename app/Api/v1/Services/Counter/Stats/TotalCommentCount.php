@@ -18,7 +18,11 @@ class TotalCommentCount extends TotalCounterService
         parent::__construct([
             'post_comments',
             'video_comments',
-            'image_comments'
+            'image_comments',
+            'video_comments',
+            'score_comments',
+            'question_comments',
+            'answer_comments'
         ], 'comment');
     }
 }

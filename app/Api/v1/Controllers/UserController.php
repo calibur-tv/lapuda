@@ -668,6 +668,8 @@ class UserController extends Controller
             'count' => $money
         ]);
 
+        Redis::DEL('user_' . $userId);
+
         return $this->resNoContent();
     }
 

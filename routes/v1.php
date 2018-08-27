@@ -513,6 +513,24 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/pass', 'App\Api\V1\Controllers\ScoreController@pass');
             });
 
+            $api->group(['prefix' => '/question'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\QuestionController@trials');
+
+                $api->post('/ban', 'App\Api\V1\Controllers\QuestionController@ban');
+
+                $api->post('/pass', 'App\Api\V1\Controllers\QuestionController@pass');
+            });
+
+            $api->group(['prefix' => '/answer'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\AnswerController@trials');
+
+                $api->post('/ban', 'App\Api\V1\Controllers\AnswerController@ban');
+
+                $api->post('/pass', 'App\Api\V1\Controllers\AnswerController@pass');
+            });
+
             $api->group(['prefix' => '/cartoon_role'], function ($api)
             {
                 $api->get('/list', 'App\Api\V1\Controllers\CartoonRoleController@trials');

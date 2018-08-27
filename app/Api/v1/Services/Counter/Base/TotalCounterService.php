@@ -79,12 +79,17 @@ class TotalCounterService extends Repository
 
     protected function computeTotal($table)
     {
-        return DB::table($table)->count();
+        return DB
+            ::table($table)
+            ->whereNull('deleted_at')
+            ->count();
     }
 
     protected function computeToday($table)
     {
-        return DB::table($table)
+        return DB
+            ::table($table)
+            ->whereNull('deleted_at')
             ->where('created_at', '>', Carbon::now()->today())
             ->count();
     }

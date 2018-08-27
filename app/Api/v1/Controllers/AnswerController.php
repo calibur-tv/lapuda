@@ -214,16 +214,40 @@ class AnswerController extends Controller
 
     public function trials()
     {
+        $ids = Answer
+            ::withTrashed()
+            ->where('state', '<>', 0)
+            ->pluck('id')
+            ->toArray();
 
+        if (empty($ids))
+        {
+            return $this->resOK([]);
+        }
+
+        $answerRepository = new AnswerRepository();
+        $list = $answerRepository->list($ids, true);
+
+        return $this->resOK($list);
     }
 
-    public function ban()
+    public function ban(Request $request)
     {
+        $id = $request->get('id');
 
+        $answerRepository = new AnswerRepository();
+        $answerRepository->deleteProcess($id);
+
+        return $this->resNoContent();
     }
 
-    public function pass()
+    public function pass(Request $request)
     {
+        $id = $request->get('id');
 
+        $answerRepository = new AnswerRepository();
+        $answerRepository->recoverProcess($id);
+
+        return $this->resNoContent();
     }
 }

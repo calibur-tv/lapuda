@@ -46,7 +46,10 @@ class CartoonRoleRepository extends Repository
             return 0;
         }
 
-        $count = CartoonRoleFans::whereRaw('role_id = ? and user_id = ?', [$roleId, $userId])->pluck('star_count')->first();
+        $count = CartoonRoleFans
+            ::whereRaw('role_id = ? and user_id = ?', [$roleId, $userId])
+            ->pluck('star_count')
+            ->first();
 
         return is_null($count) ? 0 : intval($count);
     }

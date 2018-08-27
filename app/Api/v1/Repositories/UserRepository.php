@@ -647,32 +647,46 @@ class UserRepository extends Repository
                 break;
             case 26:
                 return '${user}关注了你提的问题${title}';
+                break;
             case 27:
                 return '${user}评论了你提的问题${title}';
+                break;
             case 28:
                 return '${user}赞了你在问题${title}下的评论';
+                break;
             case 29:
                 return '${user}回复了你在问题${title}下的评论';
+                break;
             case 30:
                 return '${user}赞了你在问题${title}下的回复';
+                break;
             case 31:
                 return '${user}回答了你的问题${title}';
+                break;
             case 32:
                 return '${user}赞同了你在问题${title}下的回答';
+                break;
             case 33:
                 return '${user}喜欢了你在问题${title}下的回答';
+                break;
             case 34:
                 return '${user}打赏了你在问题${title}下的回答';
+                break;
             case 35:
                 return '${user}收藏了你在问题${title}下的回答';
+                break;
             case 36:
                 return '${user}评论了你在问题${title}下的回答';
+                break;
             case 37:
                 return '${user}回复了你在问题${title}下的评论';
+                break;
             case 38:
                 return '${user}赞了你在问题${title}下的评论';
+                break;
             case 39:
                 return '${user}赞了你在问题${title}下的回复';
+                break;
             default:
                 return '';
                 break;
