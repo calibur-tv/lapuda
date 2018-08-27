@@ -535,7 +535,8 @@ class ImageController extends Controller
         $albumId = $request->get('album_id');
         $imageRepository = new ImageRepository();
 
-        foreach ($images as $i => $image)
+        $saveImages = [];
+        foreach ($images as $image)
         {
             $validator = Validator::make($image, [
                 'url' => 'required|string',
@@ -550,11 +551,17 @@ class ImageController extends Controller
                 return $this->resErrParams($validator);
             }
 
-            $images[$i]['url'] = $imageRepository->convertImagePath($image['url']);
-            $images[$i]['user_id'] = $userId;
-            $images[$i]['album_id'] = $albumId;
-            $images[$i]['created_at'] = $now;
-            $images[$i]['updated_at'] = $now;
+            $saveImages[] = [
+                'url' => $imageRepository->convertImagePath($image['url']),
+                'width' => $image['width'],
+                'height' => $image['height'],
+                'size' => $image['size'],
+                'type' => $image['type'],
+                'user_id' => $userId,
+                'album_id' => $albumId,
+                'created_at' => $now,
+                'updated_at' => $now
+            ];
         }
 
         $album = $imageRepository->item($albumId);
@@ -573,7 +580,7 @@ class ImageController extends Controller
             }
         }
 
-        AlbumImage::insert($images);
+        AlbumImage::insert($saveImages);
         $nowIds = AlbumImage::where('album_id', $albumId)
             ->pluck('id')
             ->toArray();
@@ -604,7 +611,7 @@ class ImageController extends Controller
         if ($album['is_cartoon'])
         {
             $totalImageCount = new TotalImageCount();
-            $totalImageCount->add(count($images));
+            $totalImageCount->add(count($saveImages));
         }
         else
         {
