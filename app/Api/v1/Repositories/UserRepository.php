@@ -187,7 +187,7 @@ class UserRepository extends Repository
 
     public function getNotifications($userId, $minId, $take)
     {
-        $list = $this->RedisList('user-' . $userId . '-notification-ids', function () use ($userId)
+        $ids = $this->RedisList('user-' . $userId . '-notification-ids', function () use ($userId)
         {
             return Notifications
                 ::where('to_user_id', $userId)
@@ -195,7 +195,7 @@ class UserRepository extends Repository
                 ->pluck('id');
         });
 
-        if (empty($list))
+        if (empty($ids))
         {
             return [
                 'list' => [],
@@ -204,7 +204,7 @@ class UserRepository extends Repository
             ];
         }
 
-        $idsObj = $this->filterIdsByMaxId($list, $minId, $take);
+        $idsObj = $this->filterIdsByMaxId($ids, $minId, $take);
         if (empty($idsObj['ids']))
         {
             return [

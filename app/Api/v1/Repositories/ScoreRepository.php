@@ -193,8 +193,6 @@ class ScoreRepository extends Repository
     {
         $score = $this->item($id);
 
-        $bangumiScoreService = new BangumiScoreService();
-        $bangumiScoreService->do($score['user_id'], $score['bangumi_id']);
         Redis::DEL($this->cacheKeyBangumiScore($score['bangumi_id']));
 
         if ($state)
@@ -206,13 +204,19 @@ class ScoreRepository extends Repository
                 ]);
         }
 
-        $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
-        $scoreTrendingService->create($id);
+        if ($score['created_at'] == $score['updated_at'])
+        {
+            $bangumiScoreService = new BangumiScoreService();
+            $bangumiScoreService->do($score['user_id'], $score['bangumi_id']);
 
-        $baiduPush = new BaiduPush();
-        $baiduPush->trending('score');
+            $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
+            $scoreTrendingService->create($id);
 
-        $this->migrateSearchIndex('C', $id, false);
+            $baiduPush = new BaiduPush();
+            $baiduPush->trending('score');
+
+            $this->migrateSearchIndex('C', $id, false);
+        }
     }
 
     public function updateProcess($id)
