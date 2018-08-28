@@ -8,6 +8,7 @@
 
 namespace App\Api\V1\Repositories;
 
+use App\Api\V1\Presenter\NotificationPresenter;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Transformers\BangumiTransformer;
@@ -187,7 +188,7 @@ class UserRepository extends Repository
 
     public function getNotifications($userId, $minId, $take)
     {
-        $list = $this->RedisList('user-' . $userId . '-notification-ids', function () use ($userId)
+        $ids = $this->RedisList('user-' . $userId . '-notification-ids', function () use ($userId)
         {
             return Notifications
                 ::where('to_user_id', $userId)
@@ -195,7 +196,7 @@ class UserRepository extends Repository
                 ->pluck('id');
         });
 
-        if (empty($list))
+        if (empty($ids))
         {
             return [
                 'list' => [],
@@ -204,7 +205,7 @@ class UserRepository extends Repository
             ];
         }
 
-        $idsObj = $this->filterIdsByMaxId($list, $minId, $take);
+        $idsObj = $this->filterIdsByMaxId($ids, $minId, $take);
         if (empty($idsObj['ids']))
         {
             return [
@@ -221,17 +222,18 @@ class UserRepository extends Repository
             ->toArray();
 
         $result = [];
+        $notificationPresenter = new NotificationPresenter();
         foreach ($notifies as $item)
         {
-            $notify = $this->Cache('notification-' . $item['id'], function () use ($item)
+            $notify = $this->Cache('notification-' . $item['id'], function () use ($item, $notificationPresenter)
             {
                 $type = $item['type'];
-                $link = $this->computeNotificationLink($type, $item['model_id'], $item['comment_id'], $item['reply_id']);
+                $link = $notificationPresenter->computeNotificationLink($type, $item['model_id'], $item['comment_id'], $item['reply_id']);
                 if (!$link)
                 {
                     return null;
                 }
-                $template = $this->computeNotificationMessage($type);
+                $template = $notificationPresenter->computeNotificationMessage($type);
 
                 $notification = [
                     'id' => (int)$item['id'],
@@ -257,10 +259,10 @@ class UserRepository extends Repository
                 }
                 if ($item['model_id'])
                 {
-                    $repository = $this->computeNotificationRepository($type);
+                    $repository = $notificationPresenter->computeNotificationRepository($type);
                     $model = $repository->item($item['model_id']);
-                    $model = $this->convertModel($model, $type);
-                    $title = $this->computeNotificationMessageTitle($model);
+                    $model = $notificationPresenter->convertModel($model, $type);
+                    $title = $notificationPresenter->computeNotificationMessageTitle($model);
                     $template = str_replace('${title}', '<a class="title" href="'. $link .'">' . $title . '</a>', $template);
 
                     $notification['model'] = [
@@ -431,431 +433,5 @@ class UserRepository extends Repository
                 'count' => $count
             ]);
         }
-    }
-
-    protected function computeNotificationLink($type, $modalId, $commentId = 0, $replyId = 0)
-    {
-        switch ($type)
-        {
-            case 0:
-                return '';
-                break;
-            case 1:
-                return '/post/' . $modalId;
-                break;
-            case 2:
-                return '/post/' . $modalId;
-                break;
-            case 3:
-                return '/post/' . $modalId;
-                break;
-            case 4:
-                return '/post/' . $modalId . '?comment-id=' . $commentId;
-                break;
-            case 5:
-                return '/post/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
-                break;
-            case 6:
-                return '/pins/' . $modalId;
-                break;
-            case 7:
-                return '/pins/' . $modalId;
-                break;
-            case 8:
-                return '/pins/' . $modalId;
-                break;
-            case 9:
-                return '/pins/' . $modalId . '?comment-id=' . $commentId;
-                break;
-            case 10:
-                return '/pins/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
-                break;
-            case 11:
-                return '/review/' . $modalId;
-                break;
-            case 12:
-                return '/review/' . $modalId;
-                break;
-            case 13:
-                return '/review/' . $modalId;
-                break;
-            case 14:
-                return '/review/' . $modalId . '?comment-id=' . $commentId;
-                break;
-            case 15:
-                return '/review/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
-                break;
-            case 16:
-                return '/video/' . $modalId . '?comment-id=' . $commentId;
-                break;
-            case 17:
-                return '/video/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
-                break;
-            case 18:
-                return '/post/' . $modalId . '?comment-id=' . $commentId;
-                break;
-            case 19:
-                return '/post/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
-                break;
-            case 20:
-                return '/pins/' . $modalId . '?comment-id=' . $commentId;
-                break;
-            case 21:
-                return '/pins/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
-                break;
-            case 22:
-                return '/review/' . $modalId . '?comment-id=' . $commentId;
-                break;
-            case 23:
-                return '/review/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
-                break;
-            case 24:
-                return '/video/' . $modalId . '?comment-id=' . $commentId;
-                break;
-            case 25:
-                return '/video/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
-                break;
-            case 26:
-                return '/qaq/' . $modalId;
-                break;
-            case 27:
-                return '/qaq/' . $modalId . '?comment-id=' . $commentId;
-                break;
-            case 28:
-                return '/qaq/' . $modalId . '?comment-id=' . $commentId;
-                break;
-            case 29:
-                return '/qaq/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
-                break;
-            case 30:
-                return '/qaq/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
-                break;
-            case 31:
-                return '/soga/' . $modalId;
-                break;
-            case 32:
-                return '/soga/' . $modalId;
-                break;
-            case 33:
-                return '/soga/' . $modalId;
-                break;
-            case 34:
-                return '/soga/' . $modalId;
-                break;
-            case 35:
-                return '/soga/' . $modalId;
-                break;
-            case 36:
-                return '/soga/' . $modalId . '?comment-id=' . $commentId;
-                break;
-            case 37:
-                return '/soga/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
-                break;
-            case 38:
-                return '/soga/' . $modalId . '?comment-id=' . $commentId;
-                break;
-            case 39:
-                return '/soga/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
-                break;
-            default:
-                return '';
-                break;
-        }
-    }
-
-    protected function computeNotificationMessage($type)
-    {
-        switch ($type)
-        {
-            case 0:
-                return '';
-                break;
-            case 1:
-                return '${user}喜欢了你的帖子${title}';
-                break;
-            case 2:
-                return '${user}打赏了你的帖子${title}';
-                break;
-            case 3:
-                return '${user}收藏了你的帖子${title}';
-                break;
-            case 4:
-                return '${user}评论了你的帖子${title}';
-                break;
-            case 5:
-                return '${user}回复了你在的帖子${title}下的评论';
-                break;
-            case 6:
-                return '${user}喜欢了你的图片${title}';
-                break;
-            case 7:
-                return '${user}打赏了你的图片${title}';
-                break;
-            case 8:
-                return '${user}收藏了你的图片${title}';
-                break;
-            case 9:
-                return '${user}评论了你的图片${title}';
-                break;
-            case 10:
-                return '${user}回复了你在的图片${title}下的评论';
-                break;
-            case 11:
-                return '${user}喜欢了你的漫评${title}';
-                break;
-            case 12:
-                return '${user}打赏了你的漫评${title}';
-                break;
-            case 13:
-                return '${user}收藏了你的漫评${title}';
-                break;
-            case 14:
-                return '${user}评论了你的漫评${title}';
-                break;
-            case 15:
-                return '${user}回复了你在的漫评${title}下的评论';
-                break;
-            case 16:
-                return '${user}评论了你的视频${title}';
-                break;
-            case 17:
-                return '${user}回复了你在的视频${title}下的评论';
-                break;
-            case 18:
-                return '${user}赞了你在的帖子${title}下的评论';
-                break;
-            case 19:
-                return '${user}赞了你在的帖子${title}下的回复';
-                break;
-            case 20:
-                return '${user}赞了你在的图片${title}下的评论';
-                break;
-            case 21:
-                return '${user}赞了你在的图片${title}下的回复';
-                break;
-            case 22:
-                return '${user}赞了你在的评分${title}下的评论';
-                break;
-            case 23:
-                return '${user}赞了你在的评分${title}下的回复';
-                break;
-            case 24:
-                return '${user}赞了你在的视频${title}下的评论';
-                break;
-            case 25:
-                return '${user}赞了你在的视频${title}下的回复';
-                break;
-            case 26:
-                return '${user}关注了你提的问题${title}';
-                break;
-            case 27:
-                return '${user}评论了你提的问题${title}';
-                break;
-            case 28:
-                return '${user}赞了你在问题${title}下的评论';
-                break;
-            case 29:
-                return '${user}回复了你在问题${title}下的评论';
-                break;
-            case 30:
-                return '${user}赞了你在问题${title}下的回复';
-                break;
-            case 31:
-                return '${user}回答了你的问题${title}';
-                break;
-            case 32:
-                return '${user}赞同了你在问题${title}下的回答';
-                break;
-            case 33:
-                return '${user}喜欢了你在问题${title}下的回答';
-                break;
-            case 34:
-                return '${user}打赏了你在问题${title}下的回答';
-                break;
-            case 35:
-                return '${user}收藏了你在问题${title}下的回答';
-                break;
-            case 36:
-                return '${user}评论了你在问题${title}下的回答';
-                break;
-            case 37:
-                return '${user}回复了你在问题${title}下的评论';
-                break;
-            case 38:
-                return '${user}赞了你在问题${title}下的评论';
-                break;
-            case 39:
-                return '${user}赞了你在问题${title}下的回复';
-                break;
-            default:
-                return '';
-                break;
-        }
-    }
-
-    protected function computeNotificationRepository($type)
-    {
-        switch ($type)
-        {
-            case 0:
-                return null;
-                break;
-            case 1:
-                return new PostRepository();
-                break;
-            case 2:
-                return new PostRepository();
-                break;
-            case 3:
-                return new PostRepository();
-                break;
-            case 4:
-                return new PostRepository();
-                break;
-            case 5:
-                return new PostRepository();
-                break;
-            case 6:
-                return new ImageRepository();
-                break;
-            case 7:
-                return new ImageRepository();
-                break;
-            case 8:
-                return new ImageRepository();
-                break;
-            case 9:
-                return new ImageRepository();
-                break;
-            case 10:
-                return new ImageRepository();
-                break;
-            case 11:
-                return new ScoreRepository();
-                break;
-            case 12:
-                return new ScoreRepository();
-                break;
-            case 13:
-                return new ScoreRepository();
-                break;
-            case 14:
-                return new ScoreRepository();
-                break;
-            case 15:
-                return new ScoreRepository();
-                break;
-            case 16:
-                return new VideoRepository();
-                break;
-            case 17:
-                return new VideoRepository();
-                break;
-            case 18:
-                return new PostRepository();
-                break;
-            case 19:
-                return new PostRepository();
-                break;
-            case 20:
-                return new ImageRepository();
-                break;
-            case 21:
-                return new ImageRepository();
-                break;
-            case 22:
-                return new ScoreRepository();
-                break;
-            case 23:
-                return new ScoreRepository();
-                break;
-            case 24:
-                return new VideoRepository();
-                break;
-            case 25:
-                return new VideoRepository();
-                break;
-            case 26:
-                return new QuestionRepository();
-                break;
-            case 27:
-                return new QuestionRepository();
-                break;
-            case 28:
-                return new QuestionRepository();
-                break;
-            case 29:
-                return new QuestionRepository();
-                break;
-            case 30:
-                return new QuestionRepository();
-                break;
-            case 31:
-                return new AnswerRepository();
-                break;
-            case 32:
-                return new AnswerRepository();
-                break;
-            case 33:
-                return new AnswerRepository();
-                break;
-            case 34:
-                return new AnswerRepository();
-                break;
-            case 35:
-                return new AnswerRepository();
-                break;
-            case 36:
-                return new AnswerRepository();
-                break;
-            case 37:
-                return new AnswerRepository();
-                break;
-            case 38:
-                return new AnswerRepository();
-                break;
-            case 39:
-                return new AnswerRepository();
-                break;
-            default:
-                return null;
-                break;
-        }
-    }
-
-    protected function computeNotificationMessageTitle($model)
-    {
-        if (isset($model['title']))
-        {
-            return $model['title'];
-        }
-
-        if (isset($model['name']))
-        {
-            return $model['name'];
-        }
-
-        if (isset($model['nickname']))
-        {
-            return $model['nickname'];
-        }
-
-        if (isset($model['intro']))
-        {
-            return $model['intro'];
-        }
-
-        return '';
-    }
-
-    protected function convertModel($model, $type)
-    {
-        if (isset($model['question_id']))
-        {
-            $questionRepository = new QuestionRepository();
-            return $questionRepository->item($model['question_id']);
-        }
-
-        return $model;
     }
 }

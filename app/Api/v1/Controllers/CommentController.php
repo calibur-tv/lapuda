@@ -461,6 +461,15 @@ class CommentController extends Controller
 
         $commentService->deleteSubComment($id, $comment['parent_id']);
 
+        $job = (new \App\Jobs\Notification\Delete(
+            $type . '-reply',
+            $comment['to_user_id'],
+            $comment['from_user_id'],
+            $comment['parent_id'],
+            $comment['id']
+        ));
+        dispatch($job);
+
         return $this->resNoContent();
     }
 
@@ -530,7 +539,16 @@ class CommentController extends Controller
             }
         }
 
-        $commentService->deleteMainComment($id, $comment['modal_id'], $userId, $isMaster);
+        $commentService->deleteMainComment($id, $comment['modal_id'], $comment['from_user_id'], $isMaster);
+
+        $job = (new \App\Jobs\Notification\Delete(
+            $type . '-comment',
+            $comment['to_user_id'],
+            $comment['from_user_id'],
+            $comment['parent_id'],
+            $comment['id']
+        ));
+        dispatch($job);
 
         return $this->resNoContent();
     }
@@ -595,6 +613,17 @@ class CommentController extends Controller
             ));
             dispatch($job);
         }
+        else
+        {
+            $job = (new \App\Jobs\Notification\Delete(
+                $type . '-comment-like',
+                $comment['from_user_id'],
+                $userId,
+                $comment['modal_id'],
+                $comment['id']
+            ));
+            dispatch($job);
+        }
 
         return $this->resCreated((boolean)$result);
     }
@@ -649,6 +678,18 @@ class CommentController extends Controller
         if ($result)
         {
             $job = (new \App\Jobs\Notification\Create(
+                $type . '-reply-like',
+                $comment['from_user_id'],
+                $userId,
+                $comment['modal_id'],
+                $comment['parent_id'],
+                $comment['id']
+            ));
+            dispatch($job);
+        }
+        else
+        {
+            $job = (new \App\Jobs\Notification\Delete(
                 $type . '-reply-like',
                 $comment['from_user_id'],
                 $userId,
