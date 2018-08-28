@@ -11,11 +11,15 @@ namespace App\Api\V1\Services\Trending;
 
 use App\Api\V1\Repositories\AnswerRepository;
 use App\Api\V1\Services\Comment\AnswerCommentService;
+use App\Api\V1\Services\Comment\QuestionCommentService;
+use App\Api\V1\Services\Counter\QuestionAnswerCounter;
 use App\Api\V1\Services\Toggle\Question\AnswerLikeService;
 use App\Api\V1\Services\Toggle\Question\AnswerMarkService;
 use App\Api\V1\Services\Toggle\Question\AnswerRewardService;
+use App\Api\V1\Services\Toggle\Question\QuestionFollowService;
 use App\Api\V1\Services\Trending\Base\TrendingService;
 use App\Api\V1\Transformers\AnswerTransformer;
+use App\Api\V1\Transformers\QuestionTransformer;
 use App\Models\Answer;
 
 class AnswerTrendingService extends TrendingService
@@ -65,73 +69,81 @@ class AnswerTrendingService extends TrendingService
             Answer
             ::where('user_id', $this->userId)
             ->orderBy('created_at', 'desc')
+            ->whereNotNull('published_at')
             ->pluck('id');
     }
 
     public function getListByIds($ids, $flowType)
     {
         $store = new AnswerRepository();
-        if ($flowType === 'trending')
+        $qaqFlow = $flowType !== 'trending' && $flowType !== 'user';
+        if ($qaqFlow)
         {
-            $list = $store->trendingFlow($ids);
-        }
-        else if ($flowType === 'user')
-        {
-            $list = $store->userFlow($ids);
+            $list = $store->questionFlow($ids, $this->userId);
         }
         else
         {
-            $list = $store->questionFlow($ids, $this->userId);
+            $list = $store->trendingFlow($ids);
         }
         if (empty($list))
         {
             return [];
         }
 
-        $likeService = new AnswerLikeService();
-        $rewardService = new AnswerRewardService();
-        $markService = new AnswerMarkService();
-        $commentService = new AnswerCommentService();
-
-        foreach ($list as $i => $item)
+        if ($qaqFlow)
         {
-            if ($item['source_url'])
+            $likeService = new AnswerLikeService();
+            $rewardService = new AnswerRewardService();
+            $markService = new AnswerMarkService();
+            $commentService = new AnswerCommentService();
+
+            foreach ($list as $i => $item)
             {
-                $list[$i]['like_users'] = $likeService->users($item['id']);
-                $list[$i]['reward_users'] = [
-                    'list' => [],
-                    'total' => 0,
-                    'noMore' => true
-                ];
+                if ($item['source_url'])
+                {
+                    $list[$i]['like_users'] = $likeService->users($item['id']);
+                    $list[$i]['reward_users'] = [
+                        'list' => [],
+                        'total' => 0,
+                        'noMore' => true
+                    ];
+                }
+                else
+                {
+                    $list[$i]['reward_users'] = $rewardService->users($item['id']);
+                    $list[$i]['like_users'] = [
+                        'list' => [],
+                        'total' => 0,
+                        'noMore' => true
+                    ];
+                }
+
+                $list[$i]['mark_users'] = $markService->users($item['id']);
             }
-            else
-            {
-                $list[$i]['reward_users'] = $rewardService->users($item['id']);
-                $list[$i]['like_users'] = [
-                    'list' => [],
-                    'total' => 0,
-                    'noMore' => true
-                ];
-            }
 
-            $list[$i]['mark_users'] = $markService->users($item['id']);
+            $list = $commentService->batchGetCommentCount($list);
+            $list = $rewardService->batchCheck($list, $this->userId, 'rewarded');
+            $list = $likeService->batchCheck($list, $this->userId, 'liked');
+            $list = $markService->batchCheck($list, $this->userId, 'marked');
         }
-
-        $list = $commentService->batchGetCommentCount($list);
-        $list = $rewardService->batchCheck($list, $this->userId, 'rewarded');
-        $list = $likeService->batchCheck($list, $this->userId, 'liked');
-        $list = $markService->batchCheck($list, $this->userId, 'marked');
-
-        $transformer = new AnswerTransformer();
-        if ($flowType === 'trending')
+        else
         {
-            return $transformer->trendingFlow($list);
-        }
-        else if ($flowType === 'user')
-        {
-            return $transformer->userFlow($list);
+            $questionAnswerCounter = new QuestionAnswerCounter();
+            $questionFollowService = new QuestionFollowService();
+            $questionCommentService = new QuestionCommentService();
+
+            $list = $questionAnswerCounter->batchGet($list, 'answer_count');
+            $list = $questionFollowService->batchTotal($list, 'follow_count');
+            $list = $questionCommentService->batchGetCommentCount($list);
         }
 
-        return $transformer->questionFlow($list);
+        if ($qaqFlow)
+        {
+            $answerTransformer = new AnswerTransformer();
+            return $answerTransformer->questionFlow($list);
+        }
+
+        $questionTransformer = new QuestionTransformer();
+        return $questionTransformer->trendingFlow($list);
     }
 }

@@ -78,7 +78,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/users', 'App\Api\V1\Controllers\ScoreController@users');
 
-        $api->get('/drafts', 'App\Api\V1\Controllers\ScoreController@drafts');
+        $api->get('/drafts', 'App\Api\V1\Controllers\ScoreController@drafts')->middleware(['jwt.auth']);
 
         $api->get('/check', 'App\Api\V1\Controllers\ScoreController@check')->middleware(['jwt.auth']);
 
@@ -104,6 +104,8 @@ $api->version(['v1', 'latest'], function ($api)
         $api->group(['prefix' => '/soga'], function ($api)
         {
             $api->post('/create', 'App\Api\V1\Controllers\AnswerController@create')->middleware(['geetest', 'jwt.auth']);
+
+            $api->get('/drafts', 'App\Api\V1\Controllers\AnswerController@drafts')->middleware(['jwt.auth']);
 
             $api->group(['prefix' => '/{id}'], function ($api)
             {

@@ -66,8 +66,7 @@ class ScoreTrendingService extends TrendingService
     public function computeUserIds()
     {
         return Score
-            ::where('state', 0)
-            ->where('user_id', $this->userId)
+            ::where('user_id', $this->userId)
             ->orderBy('created_at', 'desc')
             ->whereNotNull('published_at')
             ->pluck('id');

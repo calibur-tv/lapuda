@@ -172,30 +172,25 @@ class AnswerRepository extends Repository
         return $userRepository->appendUserToList($list);
     }
 
-    public function userFlow($ids)
-    {
-        $list = $this->list($ids);
-
-        $questionRepository = new QuestionRepository();
-        foreach ($list as $i => $item)
-        {
-            $list[$i]['question'] = $questionRepository->item($item['question_id']);
-        }
-
-        return $list;
-    }
-
     public function trendingFlow($ids)
     {
         $list = $this->list($ids);
         $userRepository = new UserRepository();
         $questionRepository = new QuestionRepository();
+        $answerVoteService = new AnswerVoteService();
 
-        $list = $userRepository->appendUserToList($list);
         foreach ($list as $i => $item)
         {
-            $list[$i]['question'] = $questionRepository->item($item['question_id']);
+            $question = $questionRepository->item($item['question_id']);
+            if (is_null($question))
+            {
+                continue;
+            }
+            $item['vote_count'] = $answerVoteService->getVoteCount($item['id']);
+            $question['answer'] = $item;
+            $list[$i] = $question;
         }
+        $list = $userRepository->appendUserToList($list);
 
         return $list;
     }

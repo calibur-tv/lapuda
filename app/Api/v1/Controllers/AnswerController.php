@@ -11,6 +11,7 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\AnswerRepository;
 use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Services\Trending\AnswerTrendingService;
+use App\Api\V1\Transformers\AnswerTransformer;
 use App\Models\Answer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -210,6 +211,40 @@ class AnswerController extends Controller
         $answerRepository->deleteProcess($id);
 
         return $this->resNoContent();
+    }
+
+    public function drafts()
+    {
+        $userId = $this->getAuthUserId();
+        $ids = Answer
+            ::where('user_id', $userId)
+            ->whereNull('published_at')
+            ->orderBy('updated_at', 'DESC')
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($ids))
+        {
+            return $this->resOK([]);
+        }
+
+        $answerRepository = new AnswerRepository();
+        $questionRepository = new QuestionRepository();
+
+        $list = $answerRepository->list($ids);
+        foreach ($list as $i => $item)
+        {
+            $question = $questionRepository->item($item['question_id']);
+            if (is_null($question))
+            {
+                continue;
+            }
+            $list[$i]['question'] = $question;
+        }
+
+        $answerTransformer = new AnswerTransformer();
+
+        return $this->resOK($answerTransformer->drafts($list));
     }
 
     public function trials()
