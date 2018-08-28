@@ -42,7 +42,8 @@ class QuestionTrendingService extends TrendingService
                 ->when($this->bangumiId, function ($query)
                 {
                     return $query
-                        ->leftJoin('question_tag_relations AS tag', 'tag.tag_id', '=', $this->bangumiId);
+                        ->leftJoin('question_tag_relations AS tag', 'tag.model_id', '=', 'qaq.id')
+                        ->where('tag.tag_id', $this->bangumiId);
                 })
                 ->whereNull('deleted_at')
                 ->orderBy('qaq.updated_at', 'desc')
@@ -54,8 +55,7 @@ class QuestionTrendingService extends TrendingService
     {
         return
             Question
-                ::where('state', 0)
-                ->where('user_id', $this->userId)
+                ::where('user_id', $this->userId)
                 ->whereNull('deleted_at')
                 ->orderBy('created_at', 'desc')
                 ->pluck('id');
@@ -81,6 +81,8 @@ class QuestionTrendingService extends TrendingService
         if ($flowType !== 'user')
         {
             $answerRepository = new AnswerRepository();
+            $answerVoteService = new AnswerVoteService();
+
             foreach ($list as $i => $item)
             {
                 $idsObj = $this->getQAQNewAnswerIds($item['id']);
@@ -96,11 +98,8 @@ class QuestionTrendingService extends TrendingService
                     $list[$i]['answer'] = null;
                     continue;
                 }
-                $answerVoteService = new AnswerVoteService();
-                $answerCommentService = new AnswerCommentService();
 
                 $answer['vote_count'] = $answerVoteService->getVoteCount($answer['id']);
-                $answer['comment_count'] = $answerCommentService->getCommentCount($answer['id']);
 
                 $list[$i]['answer'] = $answer;
             }

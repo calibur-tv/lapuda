@@ -127,8 +127,7 @@ class ImageTrendingService extends TrendingService
     public function computeUserIds()
     {
         return Image
-            ::where('state', 0)
-            ->where('user_id', $this->userId)
+            ::where('user_id', $this->userId)
             ->where('is_cartoon', 0)
             ->latest()
             ->pluck('id');

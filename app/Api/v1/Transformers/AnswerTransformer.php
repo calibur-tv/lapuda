@@ -25,23 +25,23 @@ class AnswerTransformer extends Transformer
         });
     }
 
-    public function userFlow($list)
+    public function drafts($list)
     {
-        return $this->collection($list, function ($item)
+        return $this->collection($list, function ($answer)
         {
-            return array_merge(
-                $this->baseFlow($item),
-                [
-                    'question' => $this->transformer($item['question'], function ($bangumi)
-                    {
-                        return [
-                            'id' => (int)$bangumi['id'],
-                            'title' => $bangumi['title'],
-                            'intro' => $bangumi['intro']
-                        ];
-                    })
-                ]
-            );
+            return [
+                'id' => (int)$answer['id'],
+                'intro' => $answer['intro'],
+                'question' => $this->transformer($answer['question'], function ($question)
+                {
+                    return [
+                        'id' => $question['id'],
+                        'title' => $question['title']
+                    ];
+                }),
+                'updated_at' => $answer['updated_at'],
+                'created_at' => $answer['created_at']
+            ];
         });
     }
 
@@ -65,35 +65,6 @@ class AnswerTransformer extends Transformer
                     'vote_count' => $item['vote_count'],
                     'voted' => $item['voted'],
                     'content' => $item['content']
-                ]
-            );
-        });
-    }
-
-    public function trendingFlow($list)
-    {
-        return $this->collection($list, function ($item)
-        {
-            return array_merge(
-                $this->baseFlow($item),
-                [
-                    'question' => $this->transformer($item['question'], function ($bangumi)
-                    {
-                        return [
-                            'id' => (int)$bangumi['id'],
-                            'title' => $bangumi['title'],
-                            'intro' => $bangumi['intro']
-                        ];
-                    }),
-                    'user' => $this->transformer($item['user'], function ($user)
-                    {
-                        return [
-                            'id' => (int)$user['id'],
-                            'nickname' => $user['nickname'],
-                            'avatar' => $user['avatar'],
-                            'zone' => $user['zone']
-                        ];
-                    })
                 ]
             );
         });

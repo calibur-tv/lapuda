@@ -109,8 +109,7 @@ class PostTrendingService extends TrendingService
     public function computeUserIds()
     {
         return Post
-            ::where('state', 0)
-            ->where('user_id', $this->userId)
+            ::where('user_id', $this->userId)
             ->orderBy('created_at', 'desc')
             ->pluck('id');
     }

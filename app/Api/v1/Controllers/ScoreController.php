@@ -168,7 +168,8 @@ class ScoreController extends Controller
     public function drafts()
     {
         $userId = $this->getAuthUserId();
-        $ids = Score::where('user_id', $userId)
+        $ids = Score
+            ::where('user_id', $userId)
             ->whereNull('published_at')
             ->orderBy('updated_at', 'DESC')
             ->pluck('id')

@@ -94,8 +94,7 @@ class QuestionTransformer extends Transformer
                             'intro' => $answer['intro'],
                             'poster' => empty($images) ? null : current($images),
                             'is_creator' => !(boolean)$answer['source_url'],
-                            'vote_count' => $answer['vote_count'],
-                            'comment_count' => $answer['comment_count']
+                            'vote_count' => $answer['vote_count']
                         ];
                     }) : null
                 ]
