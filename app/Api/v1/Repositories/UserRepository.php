@@ -227,7 +227,7 @@ class UserRepository extends Repository
         {
             $notify = $this->Cache('notification-' . $item['id'], function () use ($item, $notificationPresenter)
             {
-                $type = $item['type'];
+                $type = (int)$item['type'];
                 $link = $notificationPresenter->computeNotificationLink($type, $item['model_id'], $item['comment_id'], $item['reply_id']);
                 if (!$link)
                 {
