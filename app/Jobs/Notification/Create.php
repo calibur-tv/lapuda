@@ -9,6 +9,7 @@ namespace App\Jobs\Notification;
  * Time: 上午6:21
  */
 
+use App\Api\V1\Presenter\NotificationPresenter;
 use App\Api\V1\Repositories\Repository;
 use App\Models\Notifications;
 use Carbon\Carbon;
@@ -60,7 +61,8 @@ class Create implements ShouldQueue
             return;
         }
 
-        $type = $this->convertStrTypeToInt();
+        $notificationPresenter = new NotificationPresenter();
+        $type = $notificationPresenter->convertStrTypeToInt($this->type);
         if (!$type)
         {
             return;

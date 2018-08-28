@@ -269,6 +269,16 @@ class ToggleController extends Controller
             ));
             dispatch($job);
         }
+        else
+        {
+            $job = (new \App\Jobs\Notification\Delete(
+                $type . '-like',
+                $item['user_id'],
+                $userId,
+                $item['id']
+            ));
+            dispatch($job);
+        }
 
         return $this->resCreated((boolean)$result);
     }
@@ -326,6 +336,16 @@ class ToggleController extends Controller
         if ($result)
         {
             $job = (new \App\Jobs\Notification\Create(
+                $type . '-mark',
+                $item['user_id'],
+                $userId,
+                $item['id']
+            ));
+            dispatch($job);
+        }
+        else
+        {
+            $job = (new \App\Jobs\Notification\Delete(
                 $type . '-mark',
                 $item['user_id'],
                 $userId,
@@ -435,6 +455,16 @@ class ToggleController extends Controller
             ));
             dispatch($job);
         }
+        else
+        {
+            $job = (new \App\Jobs\Notification\Delete(
+                $type . '-reward',
+                $item['user_id'],
+                $userId,
+                $item['id']
+            ));
+            dispatch($job);
+        }
 
         return $this->resCreated((boolean)$rewardId);
     }
@@ -477,14 +507,21 @@ class ToggleController extends Controller
                 ));
                 dispatch($job);
             }
-            else
-            {
-                // TODO：remove notification
-            }
         }
         else
         {
             $result = $answerVoteService->toggleDislike($userId, $id);
+        }
+
+        if ($result <= 0)
+        {
+            $job = (new \App\Jobs\Notification\Delete(
+                'answer-vote',
+                $anwer['user_id'],
+                $userId,
+                $anwer['id']
+            ));
+            dispatch($job);
         }
 
         $total = $answerVoteService->getVoteCount($id);
