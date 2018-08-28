@@ -35,5 +35,7 @@ class DayStats extends Command
     {
         $repository = new UserRepository();
         $repository->statsByDate(time());
+
+        return true;
     }
 }
