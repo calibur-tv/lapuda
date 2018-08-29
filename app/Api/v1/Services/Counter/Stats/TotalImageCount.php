@@ -23,9 +23,11 @@ class TotalImageCount extends TotalCounterService
     {
         $normalImages = DB::table('images')
             ->where('is_album', 0)
+            ->whereNull('deleted_at')
             ->count();
 
         $albumImage = DB::table('album_images')
+            ->whereNull('deleted_at')
             ->count();
 
         return $normalImages + $albumImage;
@@ -36,10 +38,12 @@ class TotalImageCount extends TotalCounterService
         $normalImages = DB::table('images')
             ->where('is_album', 0)
             ->where('created_at', '>', Carbon::now()->today())
+            ->whereNull('deleted_at')
             ->count();
 
         $albumImage = DB::table('album_images')
             ->where('created_at', '>', Carbon::now()->today())
+            ->whereNull('deleted_at')
             ->count();
 
         return $normalImages + $albumImage;

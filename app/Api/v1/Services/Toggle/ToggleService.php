@@ -127,13 +127,17 @@ class ToggleService extends Repository
         return $relationCounterService->batchGet($list, $key);
     }
 
-    public function users($modalId, $page = 0, $count = 10)
+    public function users($modalId, $lastId = 0, $count = 10)
     {
-        $ids = $this->doUsersIds($modalId, $page, $count);
-
+        $idsObj = $this->doUsersIds($modalId, $lastId, $count);
+        $ids = $idsObj['ids'];
         if (empty($ids))
         {
-            return [];
+            return [
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ];
         }
 
         $userRepository = new UserRepository();
@@ -152,14 +156,22 @@ class ToggleService extends Repository
 
         $userTransformer = new UserTransformer();
 
-        return $userTransformer->toggleUsers($users);
+        return [
+            'list' => $userTransformer->toggleUsers($users),
+            'total' => $idsObj['total'],
+            'noMore' => $idsObj['noMore']
+        ];
     }
     // 某个用户的文章收藏列表
     public function usersDoIds($userId, $page = 0, $count = 10)
     {
         if (!$this->needCacheList)
         {
-            return [];
+            return [
+                'ids' => [],
+                'total' => 0,
+                'noMore' => true
+            ];
         }
 
         $ids = $this->RedisSort($this->usersDoCacheKey($userId), function () use ($userId)
@@ -173,19 +185,34 @@ class ToggleService extends Repository
 
         if (empty($ids))
         {
-            return [];
+            return [
+                'ids' => [],
+                'total' => 0,
+                'noMore' => true
+            ];
         }
 
-        return $page === -1
-            ? $ids
-            : array_slice($ids, $page * $count, $count, true);
+        if ($page === -1)
+        {
+            return [
+                'ids' => $ids,
+                'total' => count($ids),
+                'noMore' => true
+            ];
+        }
+
+        return $this->filterIdsByPage($ids, $page, $count, true);
     }
     // 谋篇文章的收藏者们
-    protected function doUsersIds($modalId, $page, $count)
+    protected function doUsersIds($modalId, $lastId, $count)
     {
         if (!$this->needCacheList)
         {
-            return [];
+            return [
+                'ids' => [],
+                'moMore' => true,
+                'total' => 0
+            ];
         }
 
         $ids = $this->RedisSort($this->doUsersCacheKey($modalId), function () use ($modalId)
@@ -199,10 +226,14 @@ class ToggleService extends Repository
 
         if (empty($ids))
         {
-            return [];
+            return [
+                'ids' => [],
+                'total' => 0,
+                'noMore' => true
+            ];
         }
 
-        return array_slice($ids, $page * $count, $count, true);
+        return $this->filterIdsByMaxId($ids, $lastId, $count, true);
     }
 
     protected function usersDoCacheKey($userId)

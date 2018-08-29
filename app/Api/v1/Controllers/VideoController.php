@@ -9,6 +9,7 @@ use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\VideoTransformer;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Models\Video;
+use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
@@ -56,6 +57,13 @@ class VideoController extends Controller
 
         $videoTransformer = new VideoTransformer();
         $bangumiTransformer = new BangumiTransformer();
+
+        $searchService = new Search();
+        if ($searchService->checkNeedMigrate('video', $id))
+        {
+            $job = (new \App\Jobs\Search\UpdateWeight('video', $id));
+            dispatch($job);
+        }
 
         return $this->resOK([
             'info' => $videoTransformer->show($info),
@@ -120,9 +128,10 @@ class VideoController extends Controller
     public function edit(Request $request)
     {
         $videoId = $request->get('id');
+        $name = $request->get('name');
         Video::withTrashed()->where('id', $videoId)
             ->update([
-                'name' => $request->get('name'),
+                'name' => $name,
                 'bangumi_id' => $request->get('bangumi_id'),
                 'part' => $request->get('part'),
                 'poster' => $request->get('poster'),
@@ -133,8 +142,8 @@ class VideoController extends Controller
         Redis::DEL('video_' . $videoId);
         Redis::DEL('bangumi_' . $request->get('bangumi_id') . '_videos');
 
-        $job = (new \App\Jobs\Push\Baidu('video/' . $videoId, 'update'));
-        dispatch($job);
+        $videoRepository = new VideoRepository();
+        $videoRepository->migrateSearchIndex('U', $videoId);
 
         return $this->resNoContent();
     }
@@ -143,6 +152,8 @@ class VideoController extends Controller
     {
         $data = $request->all();
         $time = Carbon::now();
+        $videoRepository = new VideoRepository();
+
         foreach ($data as $video)
         {
             $id = Video::whereRaw('bangumi_id = ? and part = ?', [$video['bangumiId'], $video['part']])->pluck('id')->first();
@@ -158,8 +169,8 @@ class VideoController extends Controller
                     'created_at' => $time,
                     'updated_at' => $time
                 ]);
-                $job = (new \App\Jobs\Push\Baidu('video/' . $newId));
-                dispatch($job);
+
+                $videoRepository->migrateSearchIndex('C', $newId);
             }
             else
             {
@@ -172,9 +183,10 @@ class VideoController extends Controller
                     'poster' => $video['poster'],
                     'updated_at' => $time
                 ]);
+
                 Redis::DEL('video_' . $id);
-                $job = (new \App\Jobs\Push\Baidu('video/' . $id, 'update'));
-                dispatch($job);
+
+                $videoRepository->migrateSearchIndex('U', $id);
             }
             Redis::DEL('bangumi_'.$video['bangumiId'].'_videos');
         }
@@ -185,21 +197,23 @@ class VideoController extends Controller
     public function delete(Request $request)
     {
         $videoId = $request->get('id');
-        $video = Video::find($videoId);
+        $videoRepository = new VideoRepository();
+        $video = $videoRepository->item($videoId, true);
 
-        if (is_null($video))
+        if ($video['deleted_at'])
         {
             Video::withTrashed()->where('id', $videoId)->restore();
-            $job = (new \App\Jobs\Push\Baidu('video/' . $videoId));
-            dispatch($job);
+
+            $videoRepository->migrateSearchIndex('C', $videoId);
         }
         else
         {
             $video->delete();
-            $job = (new \App\Jobs\Push\Baidu('video/' . $videoId, 'del'));
+
+            $job = (new \App\Jobs\Search\Index('D', 'video', $videoId));
             dispatch($job);
-            Redis::DEL('video_' . $videoId);
         }
+
         Redis::DEL('bangumi_' . $video['bangumi_id'] . '_videos');
 
         return $this->resNoContent();
@@ -212,7 +226,7 @@ class VideoController extends Controller
         $take = $request->get('take') ?: 10;
 
         $list = Video::orderBy('count_played', 'DESC')
-            ->select('name', 'id', 'bangumi_id', 'count_played', 'comment_count')
+            ->select('name', 'id', 'bangumi_id', 'count_played')
             ->take(($toPage - $curPage) * $take)
             ->skip($curPage * $take)
             ->get();

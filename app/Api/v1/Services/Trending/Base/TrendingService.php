@@ -17,18 +17,20 @@ class TrendingService extends Repository
     protected $bangumiId;
     protected $userId;
     protected $timeout = 1800; // 30 分钟重算一次
+    protected $cachePrefix;
 
-    public function __construct($table, $bangumiId, $userId)
+    public function __construct($table, $bangumiId, $userId, $cachePrefix = 'bangumi')
     {
         $this->table = $table;
         $this->bangumiId = $bangumiId;
         $this->userId = $userId;
+        $this->cachePrefix = $cachePrefix;
     }
 
     public function news($minId, $take)
     {
         $idsObject = $this->getNewsIds($minId, $take);
-        $list = $this->getListByIds($idsObject['ids']);
+        $list = $this->getListByIds($idsObject['ids'], $this->bangumiId ? 'bangumi' : 'trending');
 
         return [
             'list' => $list,
@@ -40,7 +42,7 @@ class TrendingService extends Repository
     public function active($seenIds, $take)
     {
         $idsObject = $this->getActiveIds($seenIds, $take);
-        $list = $this->getListByIds($idsObject['ids']);
+        $list = $this->getListByIds($idsObject['ids'], $this->bangumiId ? 'bangumi' : 'trending');
 
         return [
             'list' => $list,
@@ -52,7 +54,7 @@ class TrendingService extends Repository
     public function hot($seenIds, $take)
     {
         $idsObject = $this->getHotIds($seenIds, $take);
-        $list = $this->getListByIds($idsObject['ids']);
+        $list = $this->getListByIds($idsObject['ids'], $this->bangumiId ? 'bangumi' : 'trending');
 
         return [
             'list' => $list,
@@ -64,7 +66,7 @@ class TrendingService extends Repository
     public function users($page, $take)
     {
         $idsObject = $this->getUserIds($page, $take);
-        $list = $this->getListByIds($idsObject['ids']);
+        $list = $this->getListByIds($idsObject['ids'], 'user');
 
         return [
             'list' => $list,
@@ -133,31 +135,64 @@ class TrendingService extends Repository
 
     public function create($id)
     {
-        $this->ListInsertBefore($this->trendingIdsCacheKey('news', $this->bangumiId), $id);
+        if (gettype($this->bangumiId) === 'array')
+        {
+            foreach ($this->bangumiId as $bid)
+            {
+                $this->ListInsertBefore($this->trendingIdsCacheKey('news', $bid), $id);
+                $this->SortAdd($this->trendingIdsCacheKey('active', $bid), $id);
+            }
+        }
+        else
+        {
+            $this->ListInsertBefore($this->trendingIdsCacheKey('news', $this->bangumiId), $id);
+            $this->SortAdd($this->trendingIdsCacheKey('active', $this->bangumiId), $id);
+        }
         $this->ListInsertBefore($this->trendingIdsCacheKey('news', 0), $id);
-        $this->SortAdd($this->trendingIdsCacheKey('active', $this->bangumiId), $id);
         $this->SortAdd($this->trendingIdsCacheKey('active', 0), $id);
         $this->ListInsertBefore($this->trendingFlowUsersKey(), $id);
     }
 
     public function update($id)
     {
-        $this->SortAdd($this->trendingIdsCacheKey('active', $this->bangumiId), $id);
+        if (gettype($this->bangumiId) === 'array')
+        {
+            foreach ($this->bangumiId as $bid)
+            {
+                $this->SortAdd($this->trendingIdsCacheKey('active', $bid), $id);
+            }
+        }
+        else
+        {
+            $this->SortAdd($this->trendingIdsCacheKey('active', $this->bangumiId), $id);
+        }
         $this->SortAdd($this->trendingIdsCacheKey('active', 0), $id);
     }
 
     public function delete($id)
     {
-        $this->ListRemove($this->trendingIdsCacheKey('news', $this->bangumiId), $id);
+        if (gettype($this->bangumiId) === 'array')
+        {
+            foreach ($this->bangumiId as $bid)
+            {
+                $this->ListRemove($this->trendingIdsCacheKey('news', $bid), $id);
+                $this->SortRemove($this->trendingIdsCacheKey('active', $bid), $id);
+                $this->SortRemove($this->trendingIdsCacheKey('hot', $bid), $id);
+            }
+        }
+        else
+        {
+            $this->ListRemove($this->trendingIdsCacheKey('news', $this->bangumiId), $id);
+            $this->SortRemove($this->trendingIdsCacheKey('active', $this->bangumiId), $id);
+            $this->SortRemove($this->trendingIdsCacheKey('hot', $this->bangumiId), $id);
+        }
         $this->ListRemove($this->trendingIdsCacheKey('news', 0), $id);
-        $this->SortRemove($this->trendingIdsCacheKey('active', $this->bangumiId), $id);
         $this->SortRemove($this->trendingIdsCacheKey('active', 0), $id);
-        $this->SortRemove($this->trendingIdsCacheKey('hot', $this->bangumiId), $id);
         $this->SortRemove($this->trendingIdsCacheKey('hot', 0), $id);
         $this->ListRemove($this->trendingFlowUsersKey(), $id);
     }
 
-    protected function getListByIds($ids)
+    public function getListByIds($ids, $flowType)
     {
         return [];
     }
@@ -208,11 +243,11 @@ class TrendingService extends Repository
 
     protected function trendingIdsCacheKey($type, $bangumiId)
     {
-        return 'trending_' . $this->table . '_bangumi_' . $bangumiId . '_' . $type . '_ids';
+        return 'trending_' . $this->table . '_' . $this->cachePrefix . '_' . $bangumiId . '_' . $type . '_ids';
     }
 
     protected function checkTimeoutCacheKey($type, $bangumiId)
     {
-        return 'trending_' . $this->table . '_bangumi_' . $bangumiId . '_' . $type . '_timeout';
+        return 'trending_' . $this->table . '_' . $this->cachePrefix . '_' . $bangumiId . '_' . $type . '_timeout';
     }
 }

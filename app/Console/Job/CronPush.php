@@ -34,5 +34,7 @@ class CronPush extends Command
     {
         $job = (new \App\Jobs\Push\Baidu('bangumi/news', 'update'));
         dispatch($job);
+
+        return true;
     }
 }

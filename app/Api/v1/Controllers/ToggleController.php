@@ -8,12 +8,15 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\AnswerRepository;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Owner\BangumiManager;
+use App\Api\V1\Services\Owner\QuestionLog;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Services\Toggle\Image\ImageMarkService;
@@ -21,9 +24,14 @@ use App\Api\V1\Services\Toggle\Image\ImageRewardService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Services\Toggle\Post\PostRewardService;
+use App\Api\V1\Services\Toggle\Question\AnswerLikeService;
+use App\Api\V1\Services\Toggle\Question\AnswerMarkService;
+use App\Api\V1\Services\Toggle\Question\AnswerRewardService;
+use App\Api\V1\Services\Toggle\Question\QuestionFollowService;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
 use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
 use App\Api\V1\Services\Toggle\Score\ScoreRewardService;
+use App\Api\V1\Services\Vote\AnswerVoteService;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -82,17 +90,16 @@ class ToggleController extends Controller
     /**
      * 获取发起操作的用户列表
      *
-     * > 目前支持的 type：like, follow，contributors
-     * 如果是 like，modal 支持：post、image、score
+     * > 目前支持的 type：like, follow，mark, reward, contributors
      * 如果是 follow，modal 支持：bangumi
-     * 如果是 contributors，bangumi 支持：bangumi（就是吧主列表）
+     * 如果是 contributors，modal 支持：bangumi（就是吧主列表）
      *
      * @Get("/toggle/{type}/users")
      *
      * @Parameters({
      *      @Parameter("modal", description="要请求的模型", type="string", required=true),
      *      @Parameter("id", description="要请求的id", type="integer", required=true),
-     *      @Parameter("page", description="页码", type="integer", required=true, default=0),
+     *      @Parameter("last_id", description="已获取列表里的最后一个 item 的 id", type="integer", required=true, default=0),
      *      @Parameter("take", description="获取的个数", type="integer", default=10)
      * })
      *
@@ -105,9 +112,9 @@ class ToggleController extends Controller
     public function mixinUsers(Request $request, $type)
     {
         $id = $request->get('id');
-        $page = $request->get('page') ?: 0;
         $take = $request->get('take') ?: 10;
         $model = $request->get('model');
+        $lastId = $request->get('last_id') ?: 0;
 
         if ($type === 'like')
         {
@@ -116,6 +123,14 @@ class ToggleController extends Controller
         else if ($type === 'follow')
         {
             $service = $this->getFollowServiceByType($model);
+        }
+        else if ($type === 'reward')
+        {
+            $service = $this->getRewardServiceByType($model);
+        }
+        else if ($type === 'mark')
+        {
+            $service = $this->getMarkServiceByType($model);
         }
         else if ($type === 'contributors')
         {
@@ -131,74 +146,7 @@ class ToggleController extends Controller
             return $this->resErrBad();
         }
 
-        $users = $service->users($id, $page, $take);
-        $total = $service->total($id);
-        $noMore = $total === 0 ? true : ($total - (($page + 1) * $take) <= 0);
-
-        return $this->resOK([
-            'list' => $users,
-            'noMore' => $noMore,
-            'total' => $total === 0 ? count($users) : $total
-        ]);
-    }
-
-    /**
-     * 喜欢或取消喜欢
-     *
-     * > 目前支持的 type：post、image、score
-     *
-     * @Post("/toggle/like")
-     *
-     * @Parameters({
-     *      @Parameter("type", description="要请求的类型", type="string", required=true),
-     *      @Parameter("id", description="要请求的id", type="integer", required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(200, body="一个boolean值"),
-     *      @Response(400, body={"code": 40003, "message": "请求参数错"}),
-     *      @Response(403, body={"code": 40303, "message": "原创内容只能打赏，不能喜欢 | 不能喜欢自己的内容"}),
-     *      @Response(404, body={"code": 40401, "message": "检测的对象不存在"})
-     * })
-     */
-    public function like(Request $request)
-    {
-        $id = $request->get('id');
-        $type = $request->get('type');
-        $userId = $this->getAuthUserId();
-
-        $likeService = $this->getLikeServiceByType($type);
-        if (is_null($likeService))
-        {
-            return $this->resErrBad();
-        }
-
-        $repository = $this->getRepositoryByType($type);
-        if (is_null($likeService))
-        {
-            return $this->resErrBad();
-        }
-
-        $item = $repository->item($id);
-        if (is_null($item))
-        {
-            return $this->resErrNotFound();
-        }
-
-        if ($item['is_creator'])
-        {
-            return $this->resErrRole('原创内容只能打赏，不能喜欢');
-        }
-
-        if ($item['user_id'] == $userId)
-        {
-            return $this->resErrRole('不能喜欢自己的内容');
-        }
-
-        $result = $likeService->toggle($userId, $id);
-
-        return $this->resCreated((boolean)$result);
+        return $this->resOK($service->users($id, $lastId, $take));
     }
 
     /**
@@ -257,6 +205,85 @@ class ToggleController extends Controller
     }
 
     /**
+     * 喜欢或取消喜欢
+     *
+     * > 目前支持的 type：post、image、score
+     *
+     * @Post("/toggle/like")
+     *
+     * @Parameters({
+     *      @Parameter("type", description="要请求的类型", type="string", required=true),
+     *      @Parameter("id", description="要请求的id", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body="一个boolean值"),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错"}),
+     *      @Response(403, body={"code": 40303, "message": "原创内容只能打赏，不能喜欢 | 不能喜欢自己的内容"}),
+     *      @Response(404, body={"code": 40401, "message": "检测的对象不存在"})
+     * })
+     */
+    public function like(Request $request)
+    {
+        $id = $request->get('id');
+        $type = $request->get('type');
+        $userId = $this->getAuthUserId();
+
+        $likeService = $this->getLikeServiceByType($type);
+        if (is_null($likeService))
+        {
+            return $this->resErrBad();
+        }
+
+        $repository = $this->getRepositoryByType($type);
+        if (is_null($likeService))
+        {
+            return $this->resErrBad();
+        }
+
+        $item = $repository->item($id);
+        if (is_null($item))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if (isset($item['is_creator']) ? $item['is_creator'] : !$item['source_url'])
+        {
+            return $this->resErrRole('原创内容只能打赏，不能喜欢');
+        }
+
+        if ($item['user_id'] == $userId)
+        {
+            return $this->resErrRole('不能喜欢自己的内容');
+        }
+
+        $result = $likeService->toggle($userId, $id);
+        if ($result)
+        {
+            $job = (new \App\Jobs\Notification\Create(
+                $type . '-like',
+                $item['user_id'],
+                $userId,
+                $item['id']
+            ));
+            dispatch($job);
+        }
+        else
+        {
+            $job = (new \App\Jobs\Notification\Delete(
+                $type . '-like',
+                $item['user_id'],
+                $userId,
+                $item['id']
+            ));
+            dispatch($job);
+        }
+
+        return $this->resCreated((boolean)$result);
+    }
+
+    /**
      * 收藏或取消收藏
      *
      * > 目前支持的 type：post、image、score
@@ -306,6 +333,27 @@ class ToggleController extends Controller
         }
 
         $result = $markService->toggle($userId, $id);
+        if ($result)
+        {
+            $job = (new \App\Jobs\Notification\Create(
+                $type . '-mark',
+                $item['user_id'],
+                $userId,
+                $item['id']
+            ));
+            dispatch($job);
+        }
+        else
+        {
+            $job = (new \App\Jobs\Notification\Delete(
+                $type . '-mark',
+                $item['user_id'],
+                $userId,
+                $item['id']
+            ));
+            dispatch($job);
+        }
+
         return $this->resCreated((boolean)$result);
     }
 
@@ -353,7 +401,7 @@ class ToggleController extends Controller
             return $this->resErrNotFound();
         }
 
-        if (!$item['is_creator'])
+        if (isset($item['is_creator']) ? !$item['is_creator'] : $item['source_url'])
         {
             return $this->resErrRole('非原创内容只能喜欢，不能打赏');
         }
@@ -390,8 +438,98 @@ class ToggleController extends Controller
         }
 
         $rewardId = $rewardService->toggle($userId, $id);
+        if ($rewardId)
+        {
+            $job = (new \App\Jobs\Notification\Create(
+                $type . '-reward',
+                $item['user_id'],
+                $userId,
+                $item['id']
+            ));
+            dispatch($job);
+
+            $job = (new \App\Jobs\Trending\Active(
+                $id,
+                $type,
+                isset($item['bangumi_id']) ? $item['bangumi_id'] : $item['question_id']
+            ));
+            dispatch($job);
+        }
+        else
+        {
+            $job = (new \App\Jobs\Notification\Delete(
+                $type . '-reward',
+                $item['user_id'],
+                $userId,
+                $item['id']
+            ));
+            dispatch($job);
+        }
 
         return $this->resCreated((boolean)$rewardId);
+    }
+
+    public function vote(Request $request)
+    {
+        $id = $request->get('id');
+        $type = $request->get('type');
+        $isAgree = $request->get('is_agree');
+        $userId = $this->getAuthUserId();
+
+        if ($type !== 'answer')
+        {
+            return $this->resErrBad();
+        }
+
+        $answerRepisotry = new AnswerRepository();
+        $anwer = $answerRepisotry->item($id);
+        if (is_null($anwer))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($anwer['user_id'] === $userId)
+        {
+            return $this->resErrRole('不能给自己点赞');
+        }
+
+        $answerVoteService = new AnswerVoteService();
+        if ($isAgree)
+        {
+            $result = $answerVoteService->toggleLike($userId, $id);
+            if ($result > 0)
+            {
+                $job = (new \App\Jobs\Notification\Create(
+                    'answer-vote',
+                    $anwer['user_id'],
+                    $userId,
+                    $anwer['id']
+                ));
+                dispatch($job);
+            }
+        }
+        else
+        {
+            $result = $answerVoteService->toggleDislike($userId, $id);
+        }
+
+        if ($result <= 0)
+        {
+            $job = (new \App\Jobs\Notification\Delete(
+                'answer-vote',
+                $anwer['user_id'],
+                $userId,
+                $anwer['id']
+            ));
+            dispatch($job);
+        }
+
+        $total = $answerVoteService->getVoteCount($id);
+
+        return $this->resOK([
+            'total' => $total,
+            'result' => $result
+        ]);
     }
 
     protected function getContributorsServiceByType($type)
@@ -402,11 +540,14 @@ class ToggleController extends Controller
                 return new BangumiManager();
                 break;
             case 'question':
-                return null;
+                return new QuestionLog();
+                break;
             case 'word':
                 return null;
+                break;
             default:
                 return null;
+                break;
         }
     }
 
@@ -421,7 +562,7 @@ class ToggleController extends Controller
                 return null;
                 break;
             case 'question':
-                return null;
+                return new QuestionFollowService();
                 break;
             default:
                 return null;
@@ -441,6 +582,9 @@ class ToggleController extends Controller
             case 'score':
                 return new ScoreMarkService();
                 break;
+            case 'answer':
+                return new AnswerMarkService();
+                break;
             default:
                 return null;
         }
@@ -459,6 +603,8 @@ class ToggleController extends Controller
             case 'score':
                 return new ScoreRewardService();
                 break;
+            case 'answer':
+                return new AnswerRewardService();
             default:
                 return null;
         }
@@ -476,6 +622,9 @@ class ToggleController extends Controller
                 break;
             case 'score':
                 return new ScoreLikeService();
+                break;
+            case 'answer':
+                return new AnswerLikeService();
                 break;
             default:
                 return null;
@@ -497,10 +646,19 @@ class ToggleController extends Controller
                 break;
             case 'bangumi':
                 return new BangumiRepository();
+                break;
             case 'user':
                 return new UserRepository();
+                break;
+            case 'question':
+                return new QuestionRepository();
+                break;
+            case 'answer':
+                return new AnswerRepository();
+                break;
             default:
                 return null;
+                break;
         }
     }
 }

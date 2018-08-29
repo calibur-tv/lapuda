@@ -36,22 +36,31 @@ class BanPickService extends Repository
 
         if (!$voteId) // 没投过票
         {
-            // 第一次点了赞同
-            $voteId = $this->firstVoteIt($userId, $modalId, $this->score);
+            // 第一次点了赞同 -> 赞
+            $this->firstVoteIt($userId, $modalId, $this->score);
 
             $this->ListInsertBefore($this->newsCacheListKey($modalId), $userId);
+
+            $result = $this->score;
         }
         else // 已经投过票了
         {
             $votedScore = $this->getVotedScore($voteId);
-            if ($votedScore > 0) // 连续点了两次赞同
+            if ($votedScore > 0) // 连续点了两次赞同 -> 取消赞
             {
                 DB::table($this->table)->delete($voteId);
 
                 $this->ListRemove($this->newsCacheListKey($modalId), $userId);
-                $this->changeModalScore($modalId, -$this->score);
+
+                $banPickShowCounter = new BanPickShowCounter($this->table);
+                $banPickShowCounter->add($modalId, -$this->score);
+
+                $banPickReallyCounter = new BanPickReallyCounter($this->table);
+                $banPickReallyCounter->add($modalId, -$this->score);
+
+                $result = 0;
             }
-            else  // 先点反对，再点赞同
+            else  // 先点反对，再点赞同 -> 赞
             {
                 DB::table($this->table)
                     ->where('id', $voteId)
@@ -61,32 +70,43 @@ class BanPickService extends Repository
                     ]);
 
                 $this->ListInsertBefore($this->newsCacheListKey($modalId), $userId);
-                $this->changeModalScore($modalId, 2 * $this->score);
+
+                $banPickShowCounter = new BanPickShowCounter($this->table);
+                $banPickShowCounter->add($modalId, $this->score);
+
+                $banPickReallyCounter = new BanPickReallyCounter($this->table);
+                $banPickReallyCounter->add($modalId, 2 * $this->score);
+
+                $result = $this->score;
             }
         }
 
-        return $voteId;
+        return $result;
     }
 
     public function toggleDislike($userId, $modalId)
     {
         $voteId = $this->getVotedId($userId, $modalId);
 
-        if (!$voteId) // 第一次点了反对
+        if (!$voteId) // 第一次点了反对 -> 反对
         {
-            $voteId = $this->firstVoteIt($userId, $modalId, -$this->score);
+            $this->firstVoteIt($userId, $modalId, -$this->score);
+            $result = -$this->score;
         }
         else // 投过票了
         {
             $votedScore = $this->getVotedScore($voteId);
 
-            if ($votedScore < 0) // 连续点了两次反对
+            if ($votedScore < 0) // 连续点了两次反对 -> 取消反对
             {
                 DB::table($this->table)->delete($voteId);
 
-                $this->changeModalScore($modalId, $this->score);
+                $banPickReallyCounter = new BanPickReallyCounter($this->table);
+                $banPickReallyCounter->add($modalId, $this->score);
+
+                $result = 0;
             }
-            else // 先点赞同，再点反对
+            else // 先点赞同，再点反对 -> 取消赞
             {
                 DB::table($this->table)
                     ->where('id', $voteId)
@@ -96,11 +116,18 @@ class BanPickService extends Repository
                     ]);
 
                 $this->ListRemove($this->newsCacheListKey($modalId), $userId);
-                $this->changeModalScore($modalId, -2 * $this->score);
+
+                $banPickShowCounter = new BanPickShowCounter($this->table);
+                $banPickShowCounter->add($modalId, -$this->score);
+
+                $banPickReallyCounter = new BanPickReallyCounter($this->table);
+                $banPickReallyCounter->add($modalId, -2 * $this->score);
+
+                $result = -$this->score;
             }
         }
 
-        return $voteId;
+        return $result;
     }
 
     public function check($userId, $modalId)
@@ -116,8 +143,25 @@ class BanPickService extends Repository
             ->first();
     }
 
+    public function getVoteCount($id)
+    {
+        $banPickShowCount = new BanPickShowCounter($this->table);
+
+        return $banPickShowCount->get($id);
+    }
+
     public function batchCheck($list, $userId, $key = 'voted')
     {
+        if (!$userId)
+        {
+            foreach ($list as $i => $item)
+            {
+                $list[$i][$key] = 0;
+            }
+
+            return $list;
+        }
+
         $ids = array_map(function ($item)
         {
             return $item['id'];
@@ -126,7 +170,8 @@ class BanPickService extends Repository
         $results = DB::table($this->table)
             ->where('user_id', $userId)
             ->whereIn('modal_id', $ids)
-            ->pluck('modal_id AS id', 'score')
+            ->select('modal_id AS id', 'score')
+            ->get()
             ->toArray();
 
         foreach ($list as $i => $item)
@@ -138,9 +183,9 @@ class BanPickService extends Repository
         {
             foreach ($list as $i => $item)
             {
-                if ($item['id'] === $row['id'])
+                if ($item['id'] == $row->id)
                 {
-                    $list[$i][$key] = $row['score'];
+                    $list[$i][$key] = (int)$row->score;
                 }
             }
         }
@@ -178,27 +223,24 @@ class BanPickService extends Repository
                 'created_at' => Carbon::now()
             ]);
 
-        $this->changeModalScore($modalId, $score);
+        $banPickReallyCounter = new BanPickReallyCounter($this->table);
+        $banPickReallyCounter->add($modalId, $score);
 
-        return $newId;
-    }
-
-    protected function changeModalScore($modalId, $score)
-    {
         if ($score > 0)
         {
             $banPickShowCounter = new BanPickShowCounter($this->table);
             $banPickShowCounter->add($modalId, $score);
         }
-        $banPickReallyCounter = new BanPickReallyCounter($this->table);
-        $banPickReallyCounter->add($modalId, $score);
+
+        return $newId;
     }
 
     protected function getVotedScore($id)
     {
         return (int)DB::table($this->table)
             ->where('id', $id)
-            ->pluck('score');
+            ->pluck('score')
+            ->first();
     }
 
     protected function newsCacheListKey($modalId)
@@ -215,6 +257,7 @@ class BanPickService extends Repository
 
         return (int)DB::table($this->table)
             ->whereRaw('modal_id = ? and user_id = ?', [$modalId, $userId])
-            ->pluck('id');
+            ->pluck('id')
+            ->first();
     }
 }

@@ -42,15 +42,15 @@ class TagService extends Repository
 
     public function tags($modelId)
     {
-        $tagIds = $this->getModalTagIds($modelId);
-
-        if (empty($tagIds))
+        return $this->Cache($this->modalTagsCacheKey($modelId), function () use ($modelId)
         {
-            return [];
-        }
+            $tagIds = $this->getModalTagIds($modelId);
 
-        return $this->Cache($this->modalTagsCacheKey($modelId), function () use ($tagIds)
-        {
+            if (empty($tagIds))
+            {
+                return [];
+            }
+
             return DB::table($this->tag_table)
                 ->whereIn('id', $tagIds)
                 ->select('id', 'name')

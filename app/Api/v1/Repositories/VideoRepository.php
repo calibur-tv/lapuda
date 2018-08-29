@@ -13,16 +13,19 @@ use App\Models\Video;
 
 class VideoRepository extends Repository
 {
-    public function item($id)
+    public function item($id, $isShow = false)
     {
         if (!$id)
         {
             return null;
         }
 
-        return $this->Cache('video_'.$id, function () use ($id)
+        $result = $this->Cache('video_'.$id, function () use ($id)
         {
-            $video = Video::find($id);
+            $video = Video
+                ::withTrashed()
+                ->where('id', $id)
+                ->first();
 
             if (is_null($video))
             {
@@ -30,22 +33,64 @@ class VideoRepository extends Repository
             }
 
             $video = $video->toArray();
-            $resource = $video['resource'] === 'null' ? null : json_decode($video['resource'], true);
+            $bangumiRepository = new BangumiRepository();
+            $bangumi = $bangumiRepository->item($video['bangumi_id']);
 
-            if (isset($resource['video'][720]) && isset($resource['video'][720]['src']) && $resource['video'][720]['src'])
+            if ($bangumi['others_site_video'] == 1)
             {
-                $resource['video'][720]['src'] = $this->computeVideoSrc($resource['video'][720]['src']);
+                $src = $video['url'];
+                $other_site = 1;
+            }
+            else
+            {
+                $resource = $video['resource'] === 'null' ? null : json_decode($video['resource'], true);
+
+                if (isset($resource['video'][720]) && isset($resource['video'][720]['src']) && $resource['video'][720]['src'])
+                {
+                    $src = $this->computeVideoSrc($resource['video'][720]['src']);
+                    $other_site = 0;
+                }
+                else if (isset($resource['video'][1080]) && isset($resource['video'][1080]['src']) && $resource['video'][1080]['src'])
+                {
+                    $src = $this->computeVideoSrc($resource['video'][1080]['src']);
+                    $other_site = 0;
+                }
+                else
+                {
+                    $src = $video['url'];
+                    $other_site = 1;
+                }
             }
 
-            if (isset($resource['video'][1080]) && isset($resource['video'][1080]['src']) && $resource['video'][1080]['src'])
-            {
-                $resource['video'][1080]['src'] = $this->computeVideoSrc($resource['video'][1080]['src']);
-            }
-
-            $video['resource'] = $resource;
-
-            return $video;
+            return [
+                'id' => $video['id'],
+                'src' => $src,
+                'poster' => $video['poster'],
+                'other_site' => $other_site,
+                'part' => $video['part'],
+                'name' => $video['name'],
+                'bangumi_id' => $video['bangumi_id'],
+                'user_id' => $video['user_id'],
+                'deleted_at' => $video['deleted_at']
+            ];
         }, 'h');
+
+        if (!$result || ($result['deleted_at'] && !$isShow))
+        {
+            return null;
+        }
+
+        return $result;
+    }
+
+    public function migrateSearchIndex($type, $id, $async = true)
+    {
+        $type = $type === 'C' ? 'C' : 'U';
+        $video = $this->item($id);
+        $content = $video['name'];
+
+        $job = (new \App\Jobs\Search\Index($type, 'video', $id, $content));
+        dispatch($job);
     }
 
     protected function computeVideoSrc($src)

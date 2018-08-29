@@ -31,7 +31,8 @@ class ImageTrendingService extends TrendingService
 
     public function computeNewsIds()
     {
-        return Image::where('state', 0)
+        return Image
+            ::where('state', 0)
             ->when($this->bangumiId, function ($query)
             {
                 return $query->where('bangumi_id', $this->bangumiId);
@@ -52,7 +53,8 @@ class ImageTrendingService extends TrendingService
 
     public function computeActiveIds()
     {
-        return Image::where('state', 0)
+        return Image
+            ::where('state', 0)
             ->when($this->bangumiId, function ($query)
             {
                 return $query->where('bangumi_id', $this->bangumiId);
@@ -66,14 +68,16 @@ class ImageTrendingService extends TrendingService
                 ['image_ids', '<>', null],
                 ['is_cartoon', 0]
             ])
-            ->latest()
+            ->orderBy('updated_at', 'desc')
             ->take(100)
             ->pluck('updated_at', 'id');
     }
 
     public function computeHotIds()
     {
-        $ids = Image::where('created_at', '>', Carbon::now()->addDays(-30))
+        $ids = Image
+            ::where('state', 0)
+            ->where('created_at', '>', Carbon::now()->addDays(-30))
             ->when($this->bangumiId, function ($query)
             {
                 return $query->where('bangumi_id', $this->bangumiId);
@@ -123,27 +127,30 @@ class ImageTrendingService extends TrendingService
     public function computeUserIds()
     {
         return Image
-            ::where('state', 0)
-            ->where('user_id', $this->userId)
+            ::where('user_id', $this->userId)
             ->where('is_cartoon', 0)
             ->latest()
             ->pluck('id');
     }
 
-    protected function getListByIds($ids)
+    public function getListByIds($ids, $flowType)
     {
         $store = new ImageRepository();
-        if ($this->bangumiId)
+        if ($flowType === 'bangumi')
         {
             $list = $store->bangumiFlow($ids);
         }
-        else if ($this->userId)
+        else if ($flowType === 'user')
         {
             $list = $store->userFlow($ids);
         }
         else
         {
             $list = $store->trendingFlow($ids);
+        }
+        if (empty($list))
+        {
+            return [];
         }
 
         $likeService = new ImageLikeService();
@@ -169,14 +176,15 @@ class ImageTrendingService extends TrendingService
         }
 
         $transformer = new ImageTransformer();
-        if ($this->bangumiId)
+        if ($flowType === 'bangumi')
         {
             return $transformer->bangumiFlow($list);
         }
-        else if ($this->userId)
+        else if ($flowType === 'user')
         {
             return $transformer->userFlow($list);
         }
+
         return $transformer->trendingFlow($list);
     }
 }

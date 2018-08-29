@@ -7,7 +7,6 @@ use App\Api\V1\Transformers\UserTransformer;
 use App\Models\User;
 use App\Models\UserZone;
 use App\Api\V1\Repositories\ImageRepository;
-use App\Services\OpenSearch\Search;
 use App\Services\Sms\Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -195,11 +194,8 @@ class DoorController extends Controller
             dispatch($job);
         }
 
-        $job = (new \App\Jobs\Search\User\Register($userId));
-        dispatch($job);
-
-        $job = (new \App\Jobs\Push\Baidu('user/' . $zone));
-        dispatch($job);
+        $userRepository = new UserRepository();
+        $userRepository->migrateSearchIndex('C', $userId);
 
         return $this->resCreated($this->responseUser($user));
     }
@@ -285,7 +281,7 @@ class DoorController extends Controller
     public function refresh()
     {
         $user = $this->getAuthUser();
-        if (is_null($user))
+        if (!$user)
         {
             return $this->resErrAuth();
         }
@@ -358,7 +354,6 @@ class DoorController extends Controller
         $phone = $request->get('phone');
         $password = '$2y$10$zMAtJKR6iQyKyCJVItFBI.lJiVw/EN.nkvMawnFjMz2TOaW5gDSry';
         $zone = $this->createUserZone($nickname);
-        $searchService = new Search();
 
         $user = User::create([
             'nickname' => $nickname,
@@ -368,11 +363,8 @@ class DoorController extends Controller
             'faker' => 1
         ]);
 
-        $searchService->create(
-            $user->id,
-            $user->nickname . ',' . $zone,
-            'user'
-        );
+        $userRepository = new UserRepository();
+        $userRepository->migrateSearchIndex('C', $user->id);
 
         return $this->resCreated($user);
     }

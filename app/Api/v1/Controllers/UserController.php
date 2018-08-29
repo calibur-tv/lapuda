@@ -8,24 +8,9 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Api\V1\Repositories\BangumiRepository;
-use App\Api\V1\Repositories\CartoonRoleRepository;
-use App\Api\V1\Repositories\ImageRepository;
-use App\Api\V1\Repositories\PostRepository;
-use App\Api\V1\Services\Comment\PostCommentService;
-use App\Api\V1\Services\Counter\PostViewCounter;
 use App\Api\V1\Services\Counter\Stats\TotalUserCount;
-use App\Api\V1\Services\Toggle\Image\ImageLikeService;
-use App\Api\V1\Services\Toggle\Post\PostLikeService;
-use App\Api\V1\Services\Toggle\Post\PostMarkService;
-use App\Api\V1\Services\Trending\PostTrendingService;
-use App\Api\V1\Services\Trending\RoleTrendingService;
-use App\Api\V1\Transformers\CartoonRoleTransformer;
-use App\Api\V1\Transformers\ImageTransformer;
-use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
-use App\Models\Image;
 use App\Models\Notifications;
 use App\Models\User;
 use App\Api\V1\Repositories\UserRepository;
@@ -112,15 +97,9 @@ class UserController extends Controller
             $key => $val
         ]);
 
-        $cache = 'user_'.$userId;
-        if (Redis::EXISTS($cache))
-        {
-            Redis::HSET($cache, $key, config('website.image') . $val);
-        }
-        $job = (new \App\Jobs\Trial\User\Image($userId, $key));
-        dispatch($job);
+        Redis::DEL('user_'.$userId);
 
-        $job = (new \App\Jobs\Push\Baidu('user/' . User::where('id', $userId)->pluck('zone')->first(), 'update'));
+        $job = (new \App\Jobs\Trial\User\Image($userId, $key));
         dispatch($job);
 
         return $this->resNoContent();
@@ -138,17 +117,38 @@ class UserController extends Controller
      */
     public function show($zone)
     {
-        $userId = User::where('zone', $zone)->pluck('id')->first();
+        $userRepository = new UserRepository();
+        $userId = $userRepository->getUserIdByZone($zone);
         if (is_null($userId))
         {
             return $this->resErrNotFound('该用户不存在');
         }
 
-        $repository = new UserRepository();
-        $transformer = new UserTransformer();
-        $user = $repository->item($userId);
+        $userTransformer = new UserTransformer();
+        $user = $userRepository->item($userId, true);
+        if (is_null($user))
+        {
+            return $this->resErrNotFound('该用户不存在');
+        }
 
-        return $this->resOK($transformer->show($user));
+        if ($user['deleted_at'])
+        {
+            if ($user['state'])
+            {
+                return $this->resErrLocked();
+            }
+
+            return $this->resErrNotFound('该用户不存在');
+        }
+
+        $searchService = new Search();
+        if ($searchService->checkNeedMigrate('user', $userId))
+        {
+            $job = (new \App\Jobs\Search\UpdateWeight('user', $userId));
+            dispatch($job);
+        }
+
+        return $this->resOK($userTransformer->show($user));
     }
 
     // TODO：API Doc
@@ -180,10 +180,8 @@ class UserController extends Controller
         ]);
 
         Redis::DEL('user_'.$userId);
-        $job = (new \App\Jobs\Trial\User\Text($userId));
-        dispatch($job);
 
-        $job = (new \App\Jobs\Push\Baidu('user/' . User::where('id', $userId)->pluck('zone')->first(), 'update'));
+        $job = (new \App\Jobs\Trial\User\Text($userId));
         dispatch($job);
 
         return $this->resNoContent();
@@ -212,37 +210,6 @@ class UserController extends Controller
         $bangumis = $userRepository->followedBangumis($userId);
 
         return $this->resOK($bangumis);
-    }
-
-    /**
-     * 用户发布的帖子列表
-     *
-     * @Get("/user/`zone`/posts/mine")
-     *
-     * @Parameters({
-     *      @Parameter("page", description="页码", type="integer", default=0, required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": "帖子列表"}),
-     *      @Response(404, body={"code": 40401, "message": "找不到用户"})
-     * })
-     */
-    public function postsOfMine(Request $request, $zone)
-    {
-        $userRepository = new UserRepository();
-        $userId = $userRepository->getUserIdByZone($zone);
-        if (!$userId)
-        {
-            return $this->resErrNotFound('找不到用户');
-        }
-
-        $postTrendingService = new PostTrendingService(0, $userId);
-
-        $page = $request->get('page') ?: 0;
-        $take = 10;
-
-        return $this->resOK($postTrendingService->users($page, $take));
     }
 
     /**
@@ -275,9 +242,9 @@ class UserController extends Controller
             ]);
         }
 
-        $minId = $request->get('minId') ?: 0;
+        $page = $request->get('page') ?: 0;
         $take = 10;
-        $idsObject = $this->filterIdsByMaxId($ids, $minId, $take);
+        $idsObject = $this->filterIdsByPage($ids, $page, $take);
 
         $data = [];
         foreach ($idsObject['ids'] as $id)
@@ -299,50 +266,6 @@ class UserController extends Controller
             'total' => $idsObject['total'],
             'noMore' => $idsObject['noMore']
         ]);
-    }
-
-    /**
-     * 用户喜欢的帖子列表
-     *
-     * @Get("/user/`zone`/posts/like")
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": "帖子列表"}),
-     *      @Response(404, body={"code": 40401, "message": "找不到用户"})
-     * })
-     */
-    public function postsOfLiked(Request $request, $zone)
-    {
-        $userRepository = new UserRepository();
-        $userId = $userRepository->getUserIdByZone($zone);
-        if (!$userId)
-        {
-            return $this->resErrNotFound('找不到用户');
-        }
-
-        return $this->resOK($userRepository->likedPost($userId));
-    }
-
-    /**
-     * 用户收藏的帖子列表
-     *
-     * @Get("/user/`zone`/posts/mark")
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": "帖子列表"}),
-     *      @Response(404, body={"code": 40401, "message": "找不到用户"})
-     * })
-     */
-    public function postsOfMarked(Request $request, $zone)
-    {
-        $userRepository = new UserRepository();
-        $userId = $userRepository->getUserIdByZone($zone);
-        if (!$userId)
-        {
-            return $this->resErrNotFound('找不到用户');
-        }
-
-        return $this->resOK($userRepository->markedPost($userId));
     }
 
     /**
@@ -396,14 +319,12 @@ class UserController extends Controller
     public function notifications(Request $request)
     {
         $userId = $this->getAuthUserId();
-
         $minId = $request->get('minId') ?: 0;
         $take = 10;
 
         $repository = new UserRepository();
-        $data = $repository->getNotifications($userId, $minId, $take);
 
-        return $this->resOK($data);
+        return $this->resOK($repository->getNotifications($userId, $minId, $take));
     }
 
     /**
@@ -454,6 +375,8 @@ class UserController extends Controller
             'checked' => true
         ]);
 
+        Redis::DEL('notification-' . $id);
+
         return $this->resNoContent();
     }
 
@@ -469,48 +392,17 @@ class UserController extends Controller
      */
     public function clearNotification()
     {
-        Notifications::where('to_user_id', $this->getAuthUserId())->update([
+        $userId = $this->getAuthUserId();
+
+        Notifications
+        ::where('to_user_id', $userId)
+        ->update([
             'checked' => true
         ]);
 
+        Redis::DEL('user-' . $userId . '-notification-ids');
+
         return $this->resNoContent();
-    }
-
-    /**
-     * 用户应援的角色列表
-     *
-     * @Get("/user/`zone`/followed/role")
-     *
-     * @Parameters({
-     *      @Parameter("page", description="页码", type="integer", default=0, required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"list": "角色列表", "total": "总数", "noMore": "没有更多"}}),
-     *      @Response(404, body={"code": 40401, "message": "该用户不存在"})
-     * })
-     */
-    public function followedRoles(Request $request, $zone)
-    {
-        $cartoonRoleRepository = new CartoonRoleRepository();
-        $userId = $cartoonRoleRepository->getUserIdByZone($zone);
-        if (is_null($userId))
-        {
-            return $this->resErrNotFound('该用户不存在');
-        }
-
-        $page = $request->get('page') ?: 0;
-        $take = 10;
-
-        $cartoonRoleTrendingService = new RoleTrendingService(0 ,$userId);
-        $result = $cartoonRoleTrendingService->users($page, $take);
-
-        foreach ($result['list'] as $i => $item)
-        {
-            $result['list'][$i]['has_star'] = $cartoonRoleRepository->checkHasStar($item['id'], $userId);
-        }
-
-        return $this->resOK($result);
     }
 
     public function fakers()
@@ -584,41 +476,6 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
-    public function blockUser(Request $request)
-    {
-        $userId = $request->get('id');
-        DB::table('users')
-            ->where('id', $userId)
-            ->update([
-                'state' => 0,
-                'deleted_at' => Carbon::now()
-            ]);
-
-        $searchService = new Search();
-        $searchService->delete($userId, 'user');
-
-        Redis::DEL('user_' . $userId);
-
-        return $this->resNoContent();
-    }
-
-    public function recoverUser(Request $request)
-    {
-        $userId = $request->get('id');
-
-        User::withTrashed()->where('id', $userId)->restore();
-        $user = User::withTrashed()->where('id', $userId)->first();
-
-        $searchService = new Search();
-        $searchService->create(
-            $userId,
-            $user->nickname . ',' . $user->zone,
-            'user'
-        );
-
-        return $this->resNoContent();
-    }
-
     public function feedbackList()
     {
         $list = Feedback::where('stage', 0)->get();
@@ -675,46 +532,6 @@ class UserController extends Controller
             ->update([
                 'is_admin' => 1
             ]);
-
-        return $this->resNoContent();
-    }
-
-    public function trials()
-    {
-        $users = User
-            ::withTrashed()
-            ->where('state', '<>', 0)
-            ->orderBy('updated_at', 'DESC')
-            ->get();
-
-        return $this->resOK($users);
-    }
-
-    public function deleteUserInfo(Request $request)
-    {
-        $userId = $request->get('id');
-        User::where('id', $userId)
-            ->update([
-                $request->get('key') => $request->get('value') ?: ''
-            ]);
-
-        $user = User::where('id', $userId)->first();
-
-        $searchService = new Search();
-        $searchService->update(
-            $userId,
-            $user->nickname . ',' . $user->zone,
-            'user'
-        );
-
-        return $this->resNoContent();
-    }
-
-    public function passUser(Request $request)
-    {
-        User::where('id', $request->get('id'))->update([
-            'state' => 0
-        ]);
 
         return $this->resNoContent();
     }
@@ -850,6 +667,74 @@ class UserController extends Controller
             'type' => 5,
             'count' => $money
         ]);
+
+        Redis::DEL('user_' . $userId);
+
+        return $this->resNoContent();
+    }
+
+    public function trials()
+    {
+        $users = User
+            ::withTrashed()
+            ->where('state', '<>', 0)
+            ->orderBy('updated_at', 'DESC')
+            ->get();
+
+        return $this->resOK($users);
+    }
+
+    public function ban(Request $request)
+    {
+        $userId = $request->get('id');
+        DB::table('users')
+            ->where('id', $userId)
+            ->update([
+                'state' => 0,
+                'deleted_at' => Carbon::now()
+            ]);
+
+        $job = (new \App\Jobs\Search\Index('D', 'user', $userId));
+        dispatch($job);
+
+        Redis::DEL('user_' . $userId);
+
+        return $this->resNoContent();
+    }
+
+    public function pass(Request $request)
+    {
+        User::where('id', $request->get('id'))->update([
+            'state' => 0
+        ]);
+
+        return $this->resNoContent();
+    }
+
+    public function recover(Request $request)
+    {
+        $userId = $request->get('id');
+        $userRepository = new UserRepository();
+        $user = $userRepository->item($userId, true);
+        if (is_null($user))
+        {
+            return $this->resErrNotFound();
+        }
+
+        User::withTrashed()->where('id', $userId)->restore();
+
+        $userRepository->migrateSearchIndex('C', $userId);
+
+        return $this->resNoContent();
+    }
+
+    public function deleteUserInfo(Request $request)
+    {
+        $userId = $request->get('id');
+        User::where('id', $userId)
+            ->update([
+                $request->get('key') => $request->get('value') ?: ''
+            ]);
 
         return $this->resNoContent();
     }

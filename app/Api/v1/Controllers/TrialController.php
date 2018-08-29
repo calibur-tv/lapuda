@@ -9,11 +9,13 @@
 namespace App\Api\V1\Controllers;
 
 use App\Models\AlbumImage;
+use App\Models\Answer;
 use App\Models\Bangumi;
 use App\Models\CartoonRole;
 use App\Models\Feedback;
 use App\Models\Image;
 use App\Models\Post;
+use App\Models\Question;
 use App\Models\Score;
 use App\Models\User;
 use App\Services\Trial\ImageFilter;
@@ -30,6 +32,9 @@ class TrialController extends Controller
         $comments = $comments + DB::table('post_comments')->where('state', '<>', 0)->count();
         $comments = $comments + DB::table('image_comments')->where('state', '<>', 0)->count();
         $comments = $comments + DB::table('video_comments')->where('state', '<>', 0)->count();
+        $comments = $comments + DB::table('score_comments')->where('state', '<>', 0)->count();
+        $comments = $comments + DB::table('question_comments')->where('state', '<>', 0)->count();
+        $comments = $comments + DB::table('answer_comments')->where('state', '<>', 0)->count();
 
         $images = Image::withTrashed()->where('state', '<>', 0)->count() + AlbumImage::withTrashed()->where('state', '<>', 0)->count();
 
@@ -41,7 +46,9 @@ class TrialController extends Controller
             'comments' => $comments,
             'bangumi' => Bangumi::withTrashed()->where('state', '<>', 0)->count(),
             'role' => CartoonRole::withTrashed()->where('state', '<>', 0)->count(),
-            'score' => Score::withTrashed()->where('state', '<>', 0)->count()
+            'score' => Score::withTrashed()->where('state', '<>', 0)->count(),
+            'question' => Question::withTrashed()->where('state', '<>', 0)->count(),
+            'answer' => Answer::withTrashed()->where('state', '<>', 0)->count()
         ];
 
         return $this->resOK($result);

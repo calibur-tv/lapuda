@@ -926,7 +926,7 @@ FORMAT: 1A
                 "message": "不存在的番剧"
             }
 
-## 给角色应援 [POST /bangumi/`bangumiId`/role/`roleId`/star]
+## 给角色应援 [POST /cartoon_role/`roleId`/star]
 
 
 + Request (application/json)
@@ -951,6 +951,9 @@ FORMAT: 1A
                 "code": 40301,
                 "message": "没有足够的金币"
             }
+
+## 角色的粉丝列表 [POST /cartoon_role/`roleId`/fans]
+
 
 ## 角色详情 [GET /cartoon_role/`roleId`/show]
 
@@ -1578,24 +1581,6 @@ FORMAT: 1A
             {
                 "code": 40003,
                 "message": "参数错误"
-            }
-
-# 排行相关接口
-
-## 动漫角色排行榜 [GET /trending/cartoon_role]
-
-
-+ Parameters
-    + seenIds: (string, required) - 看过的帖子的`ids`, 用','号分割的字符串
-
-+ Response 200 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "0": {
-                    "data": "角色列表"
-                }
             }
 
 # 用户社交点击相关接口

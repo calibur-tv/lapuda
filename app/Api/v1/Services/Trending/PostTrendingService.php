@@ -33,7 +33,8 @@ class PostTrendingService extends TrendingService
 
     public function computeNewsIds()
     {
-        return Post::where('state', 0)
+        return Post
+            ::where('state', 0)
             ->when($this->bangumiId, function ($query)
             {
                 return $query
@@ -48,7 +49,8 @@ class PostTrendingService extends TrendingService
 
     public function computeActiveIds()
     {
-        return Post::where('state', 0)
+        return Post
+            ::where('state', 0)
             ->when($this->bangumiId, function ($query)
             {
                 return $query
@@ -56,14 +58,15 @@ class PostTrendingService extends TrendingService
                     ->whereNull('top_at');
             })
             ->orderBy('updated_at', 'desc')
-            ->latest()
             ->take(100)
             ->pluck('updated_at', 'id');
     }
 
     public function computeHotIds()
     {
-        $ids = Post::where('created_at', '>', Carbon::now()->addDays(-30))
+        $ids = Post
+            ::where('state', 0)
+            ->where('created_at', '>', Carbon::now()->addDays(-30))
             ->when($this->bangumiId, function ($query)
             {
                 return $query
@@ -106,26 +109,29 @@ class PostTrendingService extends TrendingService
     public function computeUserIds()
     {
         return Post
-            ::where('state', 0)
-            ->where('user_id', $this->userId)
+            ::where('user_id', $this->userId)
             ->orderBy('created_at', 'desc')
             ->pluck('id');
     }
 
-    protected function getListByIds($ids)
+    public function getListByIds($ids, $flowType)
     {
         $store = new PostRepository();
-        if ($this->bangumiId)
+        if ($flowType === 'bangumi')
         {
             $list = $store->bangumiFlow($ids);
         }
-        else if ($this->userId)
+        else if ($flowType === 'user')
         {
             $list = $store->userFlow($ids);
         }
         else
         {
             $list = $store->trendingFlow($ids);
+        }
+        if (empty($list))
+        {
+            return [];
         }
 
         $likeService = new PostLikeService();
@@ -151,14 +157,15 @@ class PostTrendingService extends TrendingService
         }
 
         $transformer = new PostTransformer();
-        if ($this->bangumiId)
+        if ($flowType === 'bangumi')
         {
             return $transformer->bangumiFlow($list);
         }
-        else if ($this->userId)
+        else if ($flowType === 'user')
         {
             return $transformer->userFlow($list);
         }
+
         return $transformer->trendingFlow($list);
     }
 }

@@ -18,17 +18,8 @@ class PostTransformer extends Transformer
         {
             return [
                 'id' => (int)$post['id'],
-                'comment_count' => (int)$post['comment_count'],
-                'like_count' => (int)$post['like_count'],
-                'reward_count' => (int)$post['reward_count'],
-                'view_count' => (int)$post['view_count'],
-                'mark_count' => (int)$post['mark_count'],
                 'title' => $post['title'],
                 'desc' => $post['desc'],
-                'liked' => $post['liked'],
-                'rewarded' => $post['rewarded'],
-                'marked' => $post['marked'],
-                'commented' => $post['commented'],
                 'content' => $post['content'],
                 'images' => $this->collection($post['images'], function ($image)
                 {
@@ -50,117 +41,19 @@ class PostTransformer extends Transformer
                         'url' => config('website.image') . $image['url']
                     ];
                 }),
+                'view_count' => (int)$post['view_count'],
+                'comment_count' => (int)$post['comment_count'],
+                'commented' => $post['commented'],
+                'liked' => $post['liked'],
+                'rewarded' => $post['rewarded'],
+                'marked' => $post['marked'],
                 'like_users' => $post['like_users'],
+                'mark_users' => $post['mark_users'],
                 'reward_users' => $post['reward_users'],
                 'is_nice' => (boolean)$post['is_nice'],
                 'is_creator' => (boolean)$post['is_creator'],
                 'created_at' => $post['created_at'],
                 'updated_at' => $post['updated_at']
-            ];
-        });
-    }
-
-    public function reply($list)
-    {
-        return $this->collection($list, function ($post)
-        {
-            return [
-                'id' => (int)$post['id'],
-                'comment_count' => (int)$post['comment_count'],
-                'like_count' => (int)$post['like_count'],
-                'content' => $post['content'],
-                'images' => $post['images'],
-                'floor_count' => (int)$post['floor_count'],
-                'liked' => $post['liked'],
-                'user' => [
-                    'id' => (int)$post['user']['id'],
-                    'zone' => $post['user']['zone'],
-                    'avatar' => $post['user']['avatar'],
-                    'nickname' => $post['user']['nickname']
-                ],
-                'comments' => $post['comments'],
-                'created_at' => $post['created_at']
-            ];
-        });
-    }
-
-    public function comments($list)
-    {
-        return $this->collection($list, function ($comment)
-        {
-            return [
-                'id' => (int)$comment['id'],
-                'content' => $comment['content'],
-                'created_at' => $comment['created_at'],
-                'from_user_id' => (int)$comment['from_user_id'],
-                'from_user_name' => $comment['from_user_name'],
-                'from_user_zone' => $comment['from_user_zone'],
-                'from_user_avatar' => config('website.image'). ($comment['from_user_avatar'] ? $comment['from_user_avatar'] : 'default/user-avatar'),
-                'to_user_name' => $comment['to_user_name'] ? $comment['to_user_name'] : null,
-                'to_user_zone' => $comment['to_user_zone'] ? $comment['to_user_zone'] : null
-            ];
-        });
-    }
-
-    public function bangumi($list)
-    {
-        return $this->collection($list, function ($post)
-        {
-           return [
-               'id' => (int)$post['id'],
-               'title' => $post['title'],
-               'desc' => $post['desc'],
-               'images' => $post['images'],
-               'created_at' => $post['created_at'],
-               'updated_at' => $post['updated_at'],
-               'view_count' => (int)$post['view_count'],
-               'like_count' => (int)$post['like_count'],
-               'comment_count' => (int)$post['comment_count'],
-               'mark_count' => (int)$post['mark_count'],
-               'user' => $this->transformer($post['user'], function ($user)
-               {
-                   return [
-                       'id' => (int)$user['id'],
-                       'zone' => $user['zone'],
-                       'avatar' => $user['avatar'],
-                       'nickname' => $user['nickname']
-                   ];
-               }),
-               'liked' => $post['liked'],
-               'marked' => $post['marked'],
-               'commented' => $post['commented'],
-               'is_nice' => (boolean)$post['is_nice'],
-               'is_creator' => (boolean)$post['is_creator'],
-               'top_at' => $post['top_at']
-           ];
-        });
-    }
-
-    public function usersMine($list)
-    {
-        return $this->collection($list, function ($post)
-        {
-            return [
-                'id' => (int)$post['id'],
-                'title' => $post['title'],
-                'desc' => $post['desc'],
-                'images' => $post['images'],
-                'created_at' => $post['created_at'],
-                'view_count' => (int)$post['view_count'],
-                'like_count' => (int)$post['like_count'],
-                'mark_count' => (int)$post['mark_count'],
-                'comment_count' => (int)$post['comment_count'],
-                'bangumi' => $this->transformer($post['bangumi'], function ($bangumi)
-                {
-                    return [
-                        'id' => (int)$bangumi['id'],
-                        'name' => $bangumi['name'],
-                        'avatar' => $bangumi['avatar']
-                    ];
-                }),
-                'is_nice' => (boolean)$post['is_nice'],
-                'is_creator' => (boolean)$post['is_creator'],
-                'top_at' => $post['top_at']
             ];
         });
     }
@@ -192,30 +85,6 @@ class PostTransformer extends Transformer
                         'images' => $post['images']
                     ];
                 })
-            ];
-        });
-    }
-
-    public function userMark($list)
-    {
-        return $this->collection($list, function ($post)
-        {
-            return [
-                'id' => (int)$post['id'],
-                'title' => $post['title'],
-                'created_at' => (int)$post['created_at']
-            ];
-        });
-    }
-
-    public function userLike($posts)
-    {
-        return $this->collection($posts, function ($post)
-        {
-            return [
-                'id' => (int)$post['id'],
-                'title' => $post['title'],
-                'created_at' => (int)$post['created_at']
             ];
         });
     }
@@ -323,6 +192,7 @@ class PostTransformer extends Transformer
                         'url' => config('website.image'). $image['url']
                     ];
                 }),
+                'top_at' => $item['top_at'],
                 'is_nice' => (boolean)$item['is_nice'],
                 //
                 'is_creator' => (boolean)$item['is_creator'],

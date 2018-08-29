@@ -23,6 +23,7 @@ class ImageTransformer extends Transformer
                 'part' => (int)$image['part'],
                 'parts' => $image['parts'],
                 'images' => $image['images'],
+                'view_count' => (int)$image['view_count'],
                 'image_count' => (int)$image['image_count'],
                 'user' => $this->transformer($image['user'], function ($user)
                 {
@@ -49,9 +50,7 @@ class ImageTransformer extends Transformer
                 'rewarded' => $image['rewarded'],
                 'like_users' => $image['like_users'],
                 'reward_users' => $image['reward_users'],
-                'mark_count' => (int)$image['mark_count'],
-                'like_count' => (int)$image['like_count'],
-                'reward_count' => (int)$image['reward_count'],
+                'mark_users' => $image['mark_users'],
                 'created_at' => $image['created_at'],
                 'updated_at' => $image['updated_at']
             ];
@@ -122,48 +121,6 @@ class ImageTransformer extends Transformer
         });
     }
 
-    public function roleShow($list)
-    {
-        return $this->collection($list, function ($image)
-        {
-            return [
-                'id' => (int)$image['id'],
-                'width' => (int)$image['width'],
-                'height' => (int)$image['height'],
-                'url' => $image['url'],
-                'name' => $image['name'] ?: '',
-                'user_id' => (int)$image['user_id'],
-                'album_id' => (int)$image['album_id'],
-                'bangumi_id' => (int)$image['bangumi_id'],
-                'size' => $image['size'],
-                'tags' => $image['tags'],
-                'creator' => (boolean)$image['creator'],
-                'is_cartoon' => (boolean)$image['is_cartoon'],
-                'liked' => (boolean)$image['liked'],
-                'like_count' => (int)$image['like_count'],
-                'image_count' => (int)$image['image_count'],
-                'user' => $image['user'] ? $this->transformer($image['user'], function ($user)
-                {
-                    return [
-                        'id' => (int)$user['id'],
-                        'zone' => $user['zone'],
-                        'nickname' => $user['nickname'],
-                        'avatar' => $user['avatar']
-                    ];
-                }) : null,
-                'bangumi' => $image['bangumi_id'] ? $this->transformer($image['bangumi'], function ($bangumi)
-                {
-                    return [
-                        'id' => (int)$bangumi['id'],
-                        'name' => $bangumi['name'],
-                        'avatar' => $bangumi['avatar']
-                    ];
-                }) : null,
-                'created_at' => $image['created_at']
-            ];
-        });
-    }
-
     public function indexBanner($list)
     {
         return $this->collection($list, function ($data)
@@ -191,6 +148,11 @@ class ImageTransformer extends Transformer
                 'bangumi_name' => $data['bangumi_name']
             ];
         });
+    }
+
+    public function search()
+    {
+        return null;
     }
 
     public function userFlow($list)

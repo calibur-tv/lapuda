@@ -35,7 +35,8 @@ class User extends Authenticatable
     protected $hidden = ['password'];
 
     protected $casts = [
-        'sex' => 'integer'
+        'sex' => 'integer',
+        'state' => 'integer'
     ];
 
     public function getAvatarAttribute($avatar)
@@ -44,6 +45,11 @@ class User extends Authenticatable
             config('website.image') .
             ($avatar ? $avatar : 'default/user-avatar')
         );
+    }
+
+    public function getSignatureAttribute($text)
+    {
+        return $text ? $text : '这个人还很神秘...';
     }
 
     public function getBannerAttribute($banner)

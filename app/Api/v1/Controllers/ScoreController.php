@@ -12,8 +12,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
-use App\Api\V1\Services\Comment\ScoreCommentService;
-use App\Api\V1\Services\Counter\Stats\TotalScoreCount;
+use App\Api\V1\Services\Counter\ScoreViewCounter;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
 use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
@@ -22,6 +21,7 @@ use App\Api\V1\Services\Trending\ScoreTrendingService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\ScoreTransformer;
 use App\Models\Score;
+use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -34,9 +34,19 @@ class ScoreController extends Controller
     public function show($id)
     {
         $scoreRepository = new ScoreRepository();
-        $score = $scoreRepository->item($id);
+        $score = $scoreRepository->item($id, true);
         if (is_null($score) || !$score['published_at'])
         {
+            return $this->resErrNotFound();
+        }
+
+        if ($score['deleted_at'])
+        {
+            if ($score['state'])
+            {
+                return $this->resErrLocked();
+            }
+
             return $this->resErrNotFound();
         }
 
@@ -63,33 +73,44 @@ class ScoreController extends Controller
         if ($score['is_creator'])
         {
             $scoreRewardService = new ScoreRewardService();
-            $score['reward_count'] = $scoreRewardService->total($id);
             $score['reward_users'] = $scoreRewardService->users($id);
             $score['rewarded'] = $scoreRewardService->check($visitorId, $id, $userId);
-            $score['like_count'] = 0;
-            $score['like_users'] = [];
+            $score['like_users'] = [
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ];;
             $score['liked'] = false;
         }
         else
         {
             $scoreLikeService = new ScoreLikeService();
-            $score['like_count'] = $scoreLikeService->total($id);
             $score['like_users'] = $scoreLikeService->users($id);
             $score['liked'] = $scoreLikeService->check($visitorId, $id, $userId);
-            $score['reward_count'] = 0;
-            $score['reward_users'] = [];
+            $score['reward_users'] = [
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ];;
             $score['rewarded'] = false;
         }
 
         $scoreMarkService = new ScoreMarkService();
         $score['marked'] = $scoreMarkService->check($visitorId, $id);
-        $score['mark_count'] = $scoreMarkService->total($id);
+        $score['mark_users'] = $scoreMarkService->users($id);
 
-        $commentService = new ScoreCommentService();
-        $score['commented'] = $commentService->checkCommented($visitorId, $id);
-        $score['comment_count'] = $commentService->getCommentCount($id);
+        $scoreViewCounter = new ScoreViewCounter();
+        $score['view_count'] = $scoreViewCounter->add($id);
 
         $transformer = new ScoreTransformer();
+
+        $searchService = new Search();
+        if ($searchService->checkNeedMigrate('score', $id))
+        {
+            $job = (new \App\Jobs\Search\UpdateWeight('score', $id));
+            dispatch($job);
+        }
+
         return $this->resOK($transformer->show($score));
     }
 
@@ -147,7 +168,8 @@ class ScoreController extends Controller
     public function drafts()
     {
         $userId = $this->getAuthUserId();
-        $ids = Score::where('user_id', $userId)
+        $ids = Score
+            ::where('user_id', $userId)
             ->whereNull('published_at')
             ->orderBy('updated_at', 'DESC')
             ->pluck('id')
@@ -253,9 +275,9 @@ class ScoreController extends Controller
         $express = $request->get('express');
         $style = $request->get('style');
         $total = $lol + $cry + $fight + $moe + $sound + $vision + $role + $story + $express + $style;
-        $content = $scoreRepository->filterContent($request->get('content'));
+        $content = $scoreRepository->filterJsonContent($request->get('content'));
         $title = Purifier::clean($request->get('title'));
-        $intro = $request->get('intro');
+        $intro = Purifier::clean($request->get('intro'));
         $now = Carbon::now();
 
         $newId = DB::table('scores')
@@ -361,7 +383,7 @@ class ScoreController extends Controller
         $express = $request->get('express');
         $style = $request->get('style');
         $total = $lol + $cry + $fight + $moe + $sound + $vision + $role + $story + $express + $style;
-        $content = $scoreRepository->filterContent($request->get('content'));
+        $content = $scoreRepository->filterJsonContent($request->get('content'));
         $intro = $request->get('intro');
         $title = Purifier::clean($request->get('title'));
 
@@ -390,7 +412,7 @@ class ScoreController extends Controller
         {
             $scoreRepository->doPublish($userId, $newId, $bangumiId);;
         }
-        Redis::DEL($scoreRepository->cacheKeyScoreItem($newId));
+        Redis::DEL($scoreRepository->itemCacheKey($newId));
 
         return $this->resNoContent();
     }
@@ -410,21 +432,7 @@ class ScoreController extends Controller
             return $this->resErrRole();
         }
 
-        DB::table('scores')
-            ->where('id', $id)
-            ->update([
-                'state' => 0,
-                'deleted_at' => Carbon::now()
-            ]);
-
-        Redis::DEL($scoreRepository->cacheKeyScoreItem($id));
-        Redis::DEL($scoreRepository->cacheKeyBangumiScore($score['bangumi_id']));
-
-        $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
-        $scoreTrendingService->delete($id);
-
-        $totalScoreCount = new TotalScoreCount();
-        $totalScoreCount->add(-1);
+        $scoreRepository->deleteProcess($id);
 
         return $this->resNoContent();
     }
@@ -442,33 +450,27 @@ class ScoreController extends Controller
         }
 
         $scoreRepository = new ScoreRepository();
-        $list = $scoreRepository->list($ids);
+        $list = $scoreRepository->list($ids, true);
 
         return $this->resOK($list);
-    }
-
-    public function pass(Request $request)
-    {
-        $id = $request->get('id');
-        DB::table('scores')
-            ->where('id', $id)
-            ->update([
-                'state' => 0,
-                'deleted_at' => null
-            ]);
-
-        return $this->resNoContent();
     }
 
     public function ban(Request $request)
     {
         $id = $request->get('id');
-        DB::table('scores')
-            ->where('id', $id)
-            ->update([
-                'state' => 0,
-                'deleted_at' => Carbon::now()
-            ]);
+
+        $scoreRepository = new ScoreRepository();
+        $scoreRepository->deleteProcess($id);
+
+        return $this->resNoContent();
+    }
+
+    public function pass(Request $request)
+    {
+        $id = $request->get('id');
+
+        $scoreRepository = new ScoreRepository();
+        $scoreRepository->recoverProcess($id);
 
         return $this->resNoContent();
     }

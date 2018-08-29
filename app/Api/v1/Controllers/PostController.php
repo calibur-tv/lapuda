@@ -5,13 +5,11 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Counter\PostViewCounter;
-use App\Api\V1\Services\Counter\Stats\TotalPostCount;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Services\Toggle\Post\PostRewardService;
-use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Api\V1\Repositories\BangumiRepository;
@@ -22,7 +20,6 @@ use App\Services\OpenSearch\Search;
 use App\Services\Trial\WordsFilter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Mews\Purifier\Facades\Purifier;
@@ -65,12 +62,30 @@ class PostController extends Controller
             'bangumiId' => 'required|integer',
             'desc' => 'required|max:120',
             'content' => 'required|max:1200',
-            'images' => 'array'
+            'images' => 'array',
+            'is_creator' => 'required|boolean'
         ]);
 
         if ($validator->fails())
         {
             return $this->resErrParams($validator);
+        }
+
+        $images = $request->get('images');
+        foreach ($images as $i => $image)
+        {
+            $validator = Validator::make($image, [
+                'key' => 'required|string',
+                'width' => 'required|integer',
+                'height' => 'required|integer',
+                'size' => 'required|integer',
+                'type' => 'required|string',
+            ]);
+
+            if ($validator->fails())
+            {
+                return $this->resErrParams($validator);
+            }
         }
 
         $bangumiId = $request->get('bangumiId');
@@ -92,15 +107,10 @@ class PostController extends Controller
             'desc' => Purifier::clean($request->get('desc')),
             'bangumi_id' => $bangumiId,
             'user_id' => $userId,
+            'is_creator' => $request->get('is_creator'),
             'created_at' => $now,
             'updated_at' => $now
-        ], $request->get('images'));
-
-        $postTrendingService = new PostTrendingService($bangumiId, $userId);
-        $postTrendingService->create($id);
-
-        $job = (new \App\Jobs\Trial\Post\Create($id));
-        dispatch($job);
+        ], $images);
 
         return $this->resCreated($id);
     }
@@ -123,10 +133,20 @@ class PostController extends Controller
     public function show(Request $request, $id)
     {
         $postRepository = new PostRepository();
-        $post = $postRepository->item($id);
+        $post = $postRepository->item($id, true);
         if (is_null($post))
         {
             return $this->resErrNotFound('不存在的帖子');
+        }
+
+        if ($post['deleted_at'])
+        {
+            if ($post['state'])
+            {
+                return $this->resErrLocked();
+            }
+
+            return $this->resErrNotFound();
         }
 
         $userRepository = new UserRepository();
@@ -146,33 +166,36 @@ class PostController extends Controller
 
         $postCommentService = new PostCommentService();
         $post['commented'] = $postCommentService->checkCommented($userId, $id);
-
         $post['comment_count'] = $postCommentService->getCommentCount($id);
 
         if ($post['is_creator'])
         {
             $postRewardService = new PostRewardService();
             $post['rewarded'] = $postRewardService->check($userId, $id);
-            $post['reward_count'] = $postRewardService->total($id);
             $post['reward_users'] = $postRewardService->users($id);
             $post['liked'] = false;
-            $post['like_count'] = 0;
-            $post['like_users'] = [];
+            $post['like_users'] = [
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ];
         }
         else
         {
             $postLikeService = new PostLikeService();
             $post['liked'] = $postLikeService->check($userId, $id);
-            $post['like_count'] = $postLikeService->total($id);
             $post['like_users'] = $postLikeService->users($id);
             $post['rewarded'] = false;
-            $post['reward_count'] = 0;
-            $post['reward_users'] = [];
+            $post['reward_users'] = [
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ];
         }
 
         $postMarkService = new PostMarkService();
         $post['marked'] = $postMarkService->check($userId, $id);
-        $post['mark_count'] = $postMarkService->total($id);
+        $post['mark_users'] = $postMarkService->users($id);
 
         $post['preview_images'] = $postRepository->previewImages(
             $id,
@@ -185,6 +208,13 @@ class PostController extends Controller
 
         $postTransformer = new PostTransformer();
         $userTransformer = new UserTransformer();
+
+        $searchService = new Search();
+        if ($searchService->checkNeedMigrate('post', $id))
+        {
+            $job = (new \App\Jobs\Search\UpdateWeight('post', $id));
+            dispatch($job);
+        }
 
         return $this->resOK([
             'bangumi' => $bangumi,
@@ -203,37 +233,34 @@ class PostController extends Controller
             return $this->resOK([]);
         }
 
-        $userId = $this->getAuthUserId();
         $postRepository = new PostRepository();
-        $list = $postRepository->list($ids);
+        $list = $postRepository->bangumiFlow($ids);
 
         $postCommentService = new PostCommentService();
         $postLikeService = new PostLikeService();
         $postMarkService = new PostMarkService();
-        $postViewCounter = new PostViewCounter();
-        $userRepository = new UserRepository();
-        $bangumiRepository = new BangumiRepository();
+        $postRewardService = new PostRewardService();
 
         foreach ($list as $i => $item)
         {
-            $id = $item['id'];
-
-            $authorId = $item['user_id'];
-            $list[$i]['view_count'] = $postViewCounter->get($id);
-
-            $list[$i]['user'] = $userRepository->item($authorId);
-            $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
+            if ($item['is_creator'])
+            {
+                $list[$i]['like_count'] = 0;
+                $list[$i]['reward_count'] = $postRewardService->total($item['id']);
+            }
+            else
+            {
+                $list[$i]['like_count'] = $postLikeService->total($item['id']);
+                $list[$i]['reward_count'] = 0;
+            }
         }
-        $list = $postLikeService->batchCheck($list, $userId, 'liked');
-        $list = $postLikeService->batchTotal($list, 'like_count');
-        $list = $postMarkService->batchCheck($list, $userId, 'marked');
+
         $list = $postMarkService->batchTotal($list, 'mark_count');
-        $list = $postCommentService->batchCheckCommented($list, $userId);
         $list = $postCommentService->batchGetCommentCount($list);
 
         $transformer = new PostTransformer();
 
-        return $this->resOK($transformer->bangumi($list));
+        return $this->resOK($transformer->bangumiFlow($list));
     }
 
     /**
@@ -265,137 +292,10 @@ class PostController extends Controller
             return $this->resErrRole('权限不足');
         }
 
-        DB::table('posts')
-            ->where('id', $postId)
-            ->update([
-                'deleted_at' => Carbon::now()
-            ]);
-        /*
-         * 删除主题帖
-         * 删除 bangumi-cache-ids-list 中的这个帖子 id
-         * 删除用户帖子列表的id
-         * 删除最新和热门帖子下该帖子的缓存
-         * 删掉主题帖的缓存
-         */
-        Redis::DEL('post_'.$postId);
-        $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
-        $postTrendingService->delete($postId);
-
-        $job = (new \App\Jobs\Search\Post\Delete($postId));
-        dispatch($job);
-
-        $job = (new \App\Jobs\Push\Baidu('post/' . $postId, 'del'));
-        dispatch($job);
-
-        $totalPostCount = new TotalPostCount();
-        $totalPostCount->add(-1);
+        $postRepository->deleteProcess($postId, 0);
 
         return $this->resNoContent();
     }
-
-    public function trialList()
-    {
-        $list = Post::withTrashed()
-            ->where('state', '<>', 0)
-            ->get();
-
-        if (empty($list))
-        {
-            return $this->resOK([]);
-        }
-
-        $filter = new WordsFilter();
-        $userRepository = new UserRepository();
-
-        foreach ($list as $i =>$row)
-        {
-            $list[$i]['f_title'] = $filter->filter($row['title']);
-            $list[$i]['f_content'] = $filter->filter($row['content']);
-            $list[$i]['words'] = $filter->filter($row['title'] . $row['content']);
-            $list[$i]['images'] = PostImages::where('post_id', $row['id'])->get();
-            $list[$i]['user'] = $userRepository->item($row['user_id']);
-        }
-
-        return $this->resOK($list);
-    }
-
-    public function deletePostImage(Request $request)
-    {
-        $id = $request->get('id');
-        $postId = PostImages::where('id', $id)->pluck('post_id')->first();
-        PostImages::where('id', $id)
-            ->update([
-                'src' => '',
-                'origin_url' => $request->get('src')
-            ]);
-
-        Redis::DEL('post_'.$postId.'_images');
-
-        return $this->resNoContent();
-    }
-
-    public function trialDelete(Request $request)
-    {
-        $id = $request->get('id');
-        $post = Post::withTrashed()
-            ->where('id', $id)
-            ->first();
-
-        if (is_null($post))
-        {
-            return $this->resErrNotFound();
-        }
-
-        Redis::DEL('post_'.$id);
-        Redis::ZREM('post_how_ids', $id);
-        Redis::ZREM('post_new_ids', $id);
-        Redis::ZREM('bangumi_'.$post->bangumi_id.'_posts_new_ids', $id);
-
-        $post->update([
-            'state' => 0
-        ]);
-        $post->delete();
-
-        $searchService = new Search();
-        $searchService->delete($id, 'post');
-        // TODO：百度
-        return $this->resNoContent();
-    }
-
-    public function trialPass(Request $request)
-    {
-        $postId = $request->get('id');
-
-        $post = Post::withTrashed()
-            ->where('id', $postId)
-            ->first();
-
-        if (is_null($post))
-        {
-            return $this->resErrNotFound();
-        }
-
-        if ($post->deleted_at)
-        {
-            $post->restore();
-            $postRepository = new PostRepository();
-            $postRepository->trialPass($post);
-        }
-        $post->update([
-            'state' => 0
-        ]);
-
-        $searchService = new Search();
-        $searchService->create(
-            $postId,
-            $post->title . ',' . $post->desc,
-            'post',
-            strtotime($post->created_at)
-        );
-
-        return $this->resNoContent();
-    }
-
     // TODO：doc
     public function setNice(Request $request)
     {
@@ -431,7 +331,6 @@ class PostController extends Controller
 
         return $this->resNoContent();
     }
-
     // TODO：doc
     public function removeNice(Request $request)
     {
@@ -466,7 +365,6 @@ class PostController extends Controller
 
         return $this->resNoContent();
     }
-
     // TODO：doc
     public function setTop(Request $request)
     {
@@ -506,7 +404,6 @@ class PostController extends Controller
 
         return $this->resNoContent();
     }
-
     // TODO：doc
     public function removeTop(Request $request)
     {
@@ -538,6 +435,78 @@ class PostController extends Controller
             ]);
 
         Redis::DEL('post_' . $postId);
+
+        return $this->resNoContent();
+    }
+
+    public function trials()
+    {
+        $list = Post::withTrashed()
+            ->where('state', '<>', 0)
+            ->get();
+
+        if (empty($list))
+        {
+            return $this->resOK([]);
+        }
+
+        $filter = new WordsFilter();
+        $userRepository = new UserRepository();
+
+        foreach ($list as $i =>$row)
+        {
+            $list[$i]['f_title'] = $filter->filter($row['title']);
+            $list[$i]['f_content'] = $filter->filter($row['content']);
+            $list[$i]['words'] = $filter->filter($row['title'] . $row['content']);
+            $list[$i]['images'] = PostImages::where('post_id', $row['id'])->get();
+            $list[$i]['user'] = $userRepository->item($row['user_id']);
+        }
+
+        return $this->resOK($list);
+    }
+
+    public function ban(Request $request)
+    {
+        $id = $request->get('id');
+        $postRepository = new PostRepository();
+        $post = $postRepository->item($id, true);
+        if (is_null($post))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $postRepository->deleteProcess($post['id'], 0);
+
+        return $this->resNoContent();
+    }
+
+    public function pass(Request $request)
+    {
+        $postId = $request->get('id');
+        $postRepository = new PostRepository();
+        $post = $postRepository->item($postId, true);
+
+        if (is_null($post))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $postRepository->recoverProcess($postId);
+
+        return $this->resNoContent();
+    }
+
+    public function deletePostImage(Request $request)
+    {
+        $id = $request->get('id');
+        $postId = PostImages::where('id', $id)->pluck('post_id')->first();
+        PostImages::where('id', $id)
+            ->update([
+                'src' => '',
+                'origin_url' => $request->get('src')
+            ]);
+
+        Redis::DEL('post_'.$postId.'_images');
 
         return $this->resNoContent();
     }

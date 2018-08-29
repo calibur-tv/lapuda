@@ -32,7 +32,8 @@ class ScoreTrendingService extends TrendingService
 
     public function computeNewsIds()
     {
-        return Score::where('state', 0)
+        return Score
+            ::where('state', 0)
             ->when($this->bangumiId, function ($query)
             {
                 return $query->where('bangumi_id', $this->bangumiId);
@@ -45,7 +46,8 @@ class ScoreTrendingService extends TrendingService
 
     public function computeActiveIds()
     {
-        return Score::where('state', 0)
+        return Score
+            ::where('state', 0)
             ->when($this->bangumiId, function ($query)
             {
                 return $query->where('bangumi_id', $this->bangumiId);
@@ -64,27 +66,30 @@ class ScoreTrendingService extends TrendingService
     public function computeUserIds()
     {
         return Score
-            ::where('state', 0)
-            ->where('user_id', $this->userId)
+            ::where('user_id', $this->userId)
             ->orderBy('created_at', 'desc')
             ->whereNotNull('published_at')
             ->pluck('id');
     }
 
-    protected function getListByIds($ids)
+    public function getListByIds($ids, $flowType)
     {
         $store = new ScoreRepository();
-        if ($this->bangumiId)
+        if ($flowType === 'bangumi')
         {
             $list = $store->bangumiFlow($ids);
         }
-        else if ($this->userId)
+        else if ($flowType === 'user')
         {
             $list = $store->userFlow($ids);
         }
         else
         {
             $list = $store->trendingFlow($ids);
+        }
+        if (empty($list))
+        {
+            return [];
         }
 
         $likeService = new ScoreLikeService();
@@ -110,14 +115,15 @@ class ScoreTrendingService extends TrendingService
         }
 
         $transformer = new ScoreTransformer();
-        if ($this->bangumiId)
+        if ($flowType === 'bangumi')
         {
             return $transformer->bangumiFlow($list);
         }
-        else if ($this->userId)
+        else if ($flowType === 'user')
         {
             return $transformer->userFlow($list);
         }
+
         return $transformer->trendingFlow($list);
     }
 }

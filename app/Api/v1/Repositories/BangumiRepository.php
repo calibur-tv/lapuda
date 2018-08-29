@@ -5,20 +5,13 @@ namespace App\Api\V1\Repositories;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Transformers\BangumiTransformer;
-use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Bangumi;
-use App\Models\BangumiFollow;
 use App\Models\Post;
-use App\Models\User;
 use App\Models\Video;
-use App\Services\OpenSearch\Search;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 
 class BangumiRepository extends Repository
 {
-    protected $bangumiAllCacheKey = 'bangumi_all_list';
-
     public function item($id)
     {
         if (!$id)
@@ -129,19 +122,6 @@ class BangumiRepository extends Repository
         return $bangumi;
     }
 
-    public function list($ids)
-    {
-        $result = [];
-        foreach ($ids as $id)
-        {
-            $item = $this->item($id);
-            if ($item) {
-                $result[] = $item;
-            }
-        }
-        return $result;
-    }
-
     public function timeline($year)
     {
         return $this->Cache('bangumi_news_' . $year, function () use ($year)
@@ -188,67 +168,6 @@ class BangumiRepository extends Repository
         });
     }
 
-    public function checkUserFollowed($user_id, $bangumi_id)
-    {
-        if (!$user_id)
-        {
-            return false;
-        }
-        return (Boolean)BangumiFollow::whereRaw('user_id = ? and bangumi_id = ?', [$user_id, $bangumi_id])->count();
-    }
-
-    public function toggleFollow($user_id, $bangumi_id)
-    {
-        $followed = BangumiFollow::whereRaw('user_id = ? and bangumi_id = ?', [$user_id, $bangumi_id])
-            ->pluck('id')
-            ->first();
-
-        if (is_null($followed))
-        {
-            BangumiFollow::create([
-                'user_id' => $user_id,
-                'bangumi_id' => $bangumi_id
-            ]);
-
-            $result = true;
-            $num = 1;
-
-            $job = (new \App\Jobs\Push\Baidu('bangumi/' . $bangumi_id, 'update'));
-            dispatch($job);
-
-            $job = (new \App\Jobs\Push\Baidu('user/' . User::where('id', $user_id)->pluck('zone')->first(), 'update'));
-            dispatch($job);
-        }
-        else
-        {
-            BangumiFollow::find($followed)->delete();
-
-            $result = false;
-            $num = -1;
-        }
-
-        Bangumi::where('id', $bangumi_id)->increment('count_like', $num);
-        if (Redis::EXISTS('bangumi_'.$bangumi_id))
-        {
-            Redis::HINCRBYFLOAT('bangumi_'.$bangumi_id, 'count_like', $num);
-        }
-
-        $bangumiFollowsCacheKey = 'bangumi_'.$bangumi_id.'_followersIds';
-        $userFollowsCacheKey = 'user_'.$user_id.'_followBangumiIds';
-        if ($result)
-        {
-            Redis::LPUSHX($userFollowsCacheKey, $bangumi_id);
-            Redis::ZADD($bangumiFollowsCacheKey, strtotime('now'), $user_id);
-        }
-        else
-        {
-            Redis::LREM($userFollowsCacheKey, 1, $bangumi_id);
-            Redis::ZREM($bangumiFollowsCacheKey, $user_id);
-        }
-
-        return $result;
-    }
-
     public function videos($id, $season)
     {
         return $this->Cache('bangumi_'.$id.'_videos', function () use ($id, $season)
@@ -288,7 +207,14 @@ class BangumiRepository extends Repository
             }
             else
             {
-                $videos = $list;
+                $videos = [
+                    [
+                        'data' => $list,
+                        'base' => 0,
+                        'time' => '',
+                        'name' => ''
+                    ]
+                ];
             }
 
             return [
@@ -297,65 +223,6 @@ class BangumiRepository extends Repository
                 'total' => count($list)
             ];
         });
-    }
-
-    public function getFollowers($bangumiId, $seenIds, $take = 10)
-    {
-        $ids = $this->RedisSort('bangumi_'.$bangumiId.'_followersIds', function () use ($bangumiId)
-        {
-            return BangumiFollow::where('bangumi_id', $bangumiId)
-                ->orderBy('id', 'DESC')
-                ->pluck('created_at', 'user_id AS id');
-        }, true, true);
-
-        if (empty($ids))
-        {
-            return [];
-        }
-
-        foreach ($ids as $key => $val)
-        {
-            if (in_array($key, $seenIds))
-            {
-                unset($ids[$key]);
-            }
-        }
-
-        if (empty($ids))
-        {
-            return [];
-        }
-
-        $ids = array_slice($ids, 0, $take, true);
-
-        if (empty($ids))
-        {
-            return [];
-        }
-
-        $repository = new UserRepository();
-        $transformer = new UserTransformer();
-        $users = [];
-        $i = 0;
-        foreach ($ids as $id => $score)
-        {
-            $users[] = $transformer->item($repository->item($id));
-            $users[$i]['score'] = (int)$score;
-            $i++;
-        }
-
-        return $users;
-    }
-
-    public function getPostIds($id, $type)
-    {
-        return $this->RedisSort('bangumi_'.$id.'_posts_'.$type.'_ids', function () use ($id)
-        {
-            return Post::where('bangumi_id', $id)
-                ->whereNull('top_at')
-                ->orderBy('id', 'DESC')
-                ->pluck('updated_at', 'id');
-        }, true);
     }
 
     public function getTopPostIds($id)
@@ -441,7 +308,7 @@ class BangumiRepository extends Repository
 
     public function searchAll()
     {
-        return $this->Cache($this->bangumiAllCacheKey, function ()
+        return $this->Cache('bangumi_all_list', function ()
         {
             $bangumis = Bangumi::select('id', 'name', 'avatar', 'alias')
                 ->orderBy('id', 'DESC')
@@ -455,28 +322,6 @@ class BangumiRepository extends Repository
 
             return $bangumis;
         });
-    }
-
-    public function deleteBangumi($id)
-    {
-        $bangumi = Bangumi::find($id);
-        if (is_null($bangumi))
-        {
-            return false;
-        }
-
-        $bangumi->delete();
-
-        $searchService = new Search();
-        $searchService->delete($id, 'bangumi');
-
-        $job = (new \App\Jobs\Push\Baidu('bangumi/' . $id, 'del'));
-        dispatch($job);
-
-        Redis::DEL('bangumi_'.$id);
-        Redis::DEL($this->bangumiAllCacheKey);
-
-        return true;
     }
 
     public function appendBangumiToList($list)
@@ -494,5 +339,15 @@ class BangumiRepository extends Repository
         }
 
         return $result;
+    }
+
+    public function migrateSearchIndex($type, $id, $async = true)
+    {
+        $type = $type === 'C' ? 'C' : 'U';
+        $bangumi = $this->item($id);
+        $content = $bangumi['alias'];
+
+        $job = (new \App\Jobs\Search\Index($type, 'bangumi', $id, $content));
+        dispatch($job);
     }
 }

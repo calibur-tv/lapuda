@@ -51,20 +51,7 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->get('/cartoon', 'App\Api\V1\Controllers\ImageController@cartoon');
 
-            $api->get('/followers', 'App\Api\V1\Controllers\BangumiController@followers');
-
-            $api->get('/managers', 'App\Api\V1\Controllers\BangumiController@managers');
-
-            $api->get('/roles', 'App\Api\V1\Controllers\CartoonRoleController@listOfBangumi');
-
             $api->post('/edit', 'App\Api\V1\Controllers\BangumiController@editBangumiInfo')->middleware(['jwt.auth']);
-
-            $api->group(['prefix' => '/role/{roleId}'], function ($api)
-            {
-                $api->get('/fans', 'App\Api\V1\Controllers\CartoonRoleController@fans');
-
-                $api->post('/star', 'App\Api\V1\Controllers\CartoonRoleController@star')->middleware(['jwt.auth']);
-            });
         });
     });
 
@@ -91,7 +78,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/users', 'App\Api\V1\Controllers\ScoreController@users');
 
-        $api->get('/drafts', 'App\Api\V1\Controllers\ScoreController@drafts');
+        $api->get('/drafts', 'App\Api\V1\Controllers\ScoreController@drafts')->middleware(['jwt.auth']);
 
         $api->get('/check', 'App\Api\V1\Controllers\ScoreController@check')->middleware(['jwt.auth']);
 
@@ -104,9 +91,32 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/question'], function ($api)
     {
-        $api->group(['prefix' => '/create'], function ($api)
+        $api->group(['prefix' => '/qaq'], function ($api)
         {
-            $api->post('/q', 'App\Api\V1\Controllers\QuestionController@createQuestion')->middleware(['geetest']);
+            $api->post('/create', 'App\Api\V1\Controllers\QuestionController@create')->middleware(['geetest', 'jwt.auth']);
+
+            $api->group(['prefix' => '/{id}'], function ($api)
+            {
+                $api->get('/show', 'App\Api\V1\Controllers\QuestionController@show');
+            });
+        });
+
+        $api->group(['prefix' => '/soga'], function ($api)
+        {
+            $api->post('/create', 'App\Api\V1\Controllers\AnswerController@create')->middleware(['geetest', 'jwt.auth']);
+
+            $api->get('/drafts', 'App\Api\V1\Controllers\AnswerController@drafts')->middleware(['jwt.auth']);
+
+            $api->group(['prefix' => '/{id}'], function ($api)
+            {
+                $api->get('/show', 'App\Api\V1\Controllers\AnswerController@show');
+
+                $api->get('/resource', 'App\Api\V1\Controllers\AnswerController@editData')->middleware(['jwt.auth']);
+
+                $api->post('/update', 'App\Api\V1\Controllers\AnswerController@update')->middleware(['jwt.auth']);
+
+                $api->post('/delete', 'App\Api\V1\Controllers\AnswerController@delete')->middleware(['jwt.auth']);
+            });
         });
     });
 
@@ -141,19 +151,11 @@ $api->version(['v1', 'latest'], function ($api)
             $api->group(['prefix' => '/followed'], function ($api)
             {
                 $api->get('/bangumi', 'App\Api\V1\Controllers\UserController@followedBangumis');
-
-                $api->get('/role', 'App\Api\V1\Controllers\UserController@followedRoles');
             });
 
             $api->group(['prefix' => '/posts'], function ($api)
             {
-                $api->get('/mine', 'App\Api\V1\Controllers\UserController@postsOfMine');
-
                 $api->get('/reply', 'App\Api\V1\Controllers\UserController@postsOfReply');
-
-                $api->get('/like', 'App\Api\V1\Controllers\UserController@postsOfLiked');
-
-                $api->get('/mark', 'App\Api\V1\Controllers\UserController@postsOfMarked');
             });
         });
     });
@@ -225,11 +227,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/uptoken', 'App\Api\V1\Controllers\ImageController@uptoken')->middleware(['jwt.auth']);
 
-        $api->post('/report', 'App\Api\V1\Controllers\ImageController@report');
-
         $api->post('/editAlbum', 'App\Api\V1\Controllers\ImageController@editAlbum')->middleware(['jwt.auth']);
-
-        $api->get('/users', 'App\Api\V1\Controllers\ImageController@users');
 
         $api->group(['prefix' => '/album/{id}'], function ($api)
         {
@@ -272,17 +270,15 @@ $api->version(['v1', 'latest'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\CartoonRoleController@show');
 
-            $api->get('/images', 'App\Api\V1\Controllers\CartoonRoleController@images');
+            $api->get('/fans', 'App\Api\V1\Controllers\CartoonRoleController@fans');
+
+            $api->post('/star', 'App\Api\V1\Controllers\CartoonRoleController@star')->middleware(['jwt.auth']);
         });
     });
 
-    $api->group(['prefix' => '/trending'], function ($api)
+    $api->group(['prefix' => '/flow'], function ($api)
     {
-        $api->get('/news', 'App\Api\V1\Controllers\TrendingController@news');
-
-        $api->get('/active', 'App\Api\V1\Controllers\TrendingController@active');
-
-        $api->get('/hot', 'App\Api\V1\Controllers\TrendingController@hot');
+        $api->get('/list', 'App\Api\V1\Controllers\TrendingController@flowlist');
 
         $api->get('/meta', 'App\Api\V1\Controllers\TrendingController@meta');
     });
@@ -298,6 +294,8 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/follow', 'App\Api\V1\Controllers\ToggleController@follow');
 
             $api->post('/reward', 'App\Api\V1\Controllers\ToggleController@reward');
+
+            $api->post('/vote', 'App\Api\V1\Controllers\ToggleController@vote');
 
             $api->post('/{type}/check', 'App\Api\V1\Controllers\ToggleController@mixinCheck');
         });
@@ -425,10 +423,6 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/add_to_trial', 'App\Api\V1\Controllers\UserController@addUserToTrial');
 
-            $api->post('/block', 'App\Api\V1\Controllers\UserController@blockUser');
-
-            $api->post('/recover', 'App\Api\V1\Controllers\UserController@recoverUser');
-
             $api->post('/transactions', 'App\Api\V1\Controllers\UserController@getUserCoinTransactions');
 
             $api->post('/withdrawal', 'App\Api\V1\Controllers\UserController@withdrawal');
@@ -467,45 +461,49 @@ $api->version(['v1', 'latest'], function ($api)
             {
                 $api->get('/list', 'App\Api\V1\Controllers\UserController@trials');
 
-                $api->post('/delete_info', 'App\Api\V1\Controllers\UserController@deleteUserInfo');
+                $api->post('/ban', 'App\Api\V1\Controllers\UserController@ban');
 
-                $api->post('/pass', 'App\Api\V1\Controllers\UserController@passUser');
+                $api->post('/pass', 'App\Api\V1\Controllers\UserController@pass');
+
+                $api->post('/recover', 'App\Api\V1\Controllers\UserController@recover');
+
+                $api->post('/delete_info', 'App\Api\V1\Controllers\UserController@deleteUserInfo');
             });
 
             $api->group(['prefix' => '/image'], function ($api)
             {
-                $api->get('/list', 'App\Api\V1\Controllers\ImageController@trialList');
+                $api->get('/list', 'App\Api\V1\Controllers\ImageController@trials');
 
-                $api->post('/delete', 'App\Api\V1\Controllers\ImageController@trialDelete');
+                $api->post('/ban', 'App\Api\V1\Controllers\ImageController@ban');
 
-                $api->post('/pass', 'App\Api\V1\Controllers\ImageController@trialPass');
+                $api->post('/pass', 'App\Api\V1\Controllers\ImageController@pass');
             });
 
             $api->group(['prefix' => '/comment'], function ($api)
             {
-                $api->get('/list', 'App\Api\V1\Controllers\CommentController@trialList');
+                $api->get('/list', 'App\Api\V1\Controllers\CommentController@trials');
 
-                $api->post('/delete', 'App\Api\V1\Controllers\CommentController@trialDelete');
+                $api->post('/ban', 'App\Api\V1\Controllers\CommentController@ban');
 
-                $api->post('/pass', 'App\Api\V1\Controllers\CommentController@trialPass');
+                $api->post('/pass', 'App\Api\V1\Controllers\CommentController@pass');
             });
 
             $api->group(['prefix' => '/bangumi'], function ($api)
             {
-                $api->get('/list', 'App\Api\V1\Controllers\BangumiController@trialList');
+                $api->get('/list', 'App\Api\V1\Controllers\BangumiController@trials');
 
-                $api->post('/pass', 'App\Api\V1\Controllers\BangumiController@trialPass');
+                $api->post('/pass', 'App\Api\V1\Controllers\BangumiController@pass');
             });
 
             $api->group(['prefix' => '/post'], function ($api)
             {
-                $api->get('/list', 'App\Api\V1\Controllers\PostController@trialList');
+                $api->get('/list', 'App\Api\V1\Controllers\PostController@trials');
+
+                $api->post('/ban', 'App\Api\V1\Controllers\PostController@ban');
+
+                $api->post('/pass', 'App\Api\V1\Controllers\PostController@pass');
 
                 $api->post('/delete_image', 'App\Api\V1\Controllers\PostController@deletePostImage');
-
-                $api->post('/delete', 'App\Api\V1\Controllers\PostController@trialDelete');
-
-                $api->post('/pass', 'App\Api\V1\Controllers\PostController@trialPass');
             });
 
             $api->group(['prefix' => '/score'], function ($api)
@@ -517,13 +515,31 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/pass', 'App\Api\V1\Controllers\ScoreController@pass');
             });
 
+            $api->group(['prefix' => '/question'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\QuestionController@trials');
+
+                $api->post('/ban', 'App\Api\V1\Controllers\QuestionController@ban');
+
+                $api->post('/pass', 'App\Api\V1\Controllers\QuestionController@pass');
+            });
+
+            $api->group(['prefix' => '/answer'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\AnswerController@trials');
+
+                $api->post('/ban', 'App\Api\V1\Controllers\AnswerController@ban');
+
+                $api->post('/pass', 'App\Api\V1\Controllers\AnswerController@pass');
+            });
+
             $api->group(['prefix' => '/cartoon_role'], function ($api)
             {
-                $api->get('/list', 'App\Api\V1\Controllers\CartoonRoleController@trialList');
+                $api->get('/list', 'App\Api\V1\Controllers\CartoonRoleController@trials');
 
-                $api->post('/ban', 'App\Api\V1\Controllers\CartoonRoleController@trialBan');
+                $api->post('/ban', 'App\Api\V1\Controllers\CartoonRoleController@ban');
 
-                $api->post('/pass', 'App\Api\V1\Controllers\CartoonRoleController@trialPass');
+                $api->post('/pass', 'App\Api\V1\Controllers\CartoonRoleController@pass');
             });
         });
     });

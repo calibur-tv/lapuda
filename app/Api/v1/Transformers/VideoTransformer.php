@@ -16,17 +16,14 @@ class VideoTransformer extends Transformer
         return $this->transformer($video, function ($video)
         {
             return [
+                'id' => (int)$video['id'],
                 'user_id' => (int)$video['user_id'],
                 'bangumi_id' => (int)$video['bangumi_id'],
-                'comment_count' => (int)$video['comment_count'],
-                'count_played' => (int)$video['count_played'],
-                'created_at' => $video['created_at'],
+                'src' => $video['src'],
                 'name' => $video['name'],
                 'part' => (int)$video['part'],
-                'id' => (int)$video['id'],
                 'poster' => $video['poster'],
-                'url' => $video['url'],
-                'resource' => $video['resource']
+                'other_site' => (boolean)$video['other_site']
             ];
         });
     }
@@ -36,8 +33,8 @@ class VideoTransformer extends Transformer
         return $this->transformer($video, function ($video)
         {
             return [
-                'name' => $video['name'],
                 'id' => (int)$video['id'],
+                'name' => $video['name'],
                 'poster' => $video['poster']
             ];
         });

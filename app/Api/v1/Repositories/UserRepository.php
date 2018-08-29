@@ -8,17 +8,14 @@
 
 namespace App\Api\V1\Repositories;
 
+use App\Api\V1\Presenter\NotificationPresenter;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
-use App\Api\V1\Services\Toggle\Post\PostLikeService;
-use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\PostTransformer;
-use App\Api\V1\Transformers\UserTransformer;
 use App\Models\DayStats;
 use App\Models\Bangumi;
 use App\Models\CartoonRole;
-use App\Models\CartoonRoleFans;
 use App\Models\Image;
 use App\Models\Notifications;
 use App\Models\Post;
@@ -31,21 +28,20 @@ use Illuminate\Support\Facades\DB;
 
 class UserRepository extends Repository
 {
-    public function item($id, $force = false)
+    public function item($id, $isShow = false)
     {
         if (!$id)
         {
             return null;
         }
 
-        if ($force)
+        $result = $this->RedisHash('user_'.$id, function () use ($id)
         {
-            return User::withTrashed()->find($id);
-        }
+            $user = User
+                ::withTrashed()
+                ->where('id', $id)
+                ->first();
 
-        return $this->RedisHash('user_'.$id, function () use ($id)
-        {
-            $user = User::where('id', $id)->first();
             if (is_null($user))
             {
                 return null;
@@ -55,22 +51,12 @@ class UserRepository extends Repository
 
             return $user;
         });
-    }
 
-    public function list($ids)
-    {
-        if (empty($ids))
+        if (!$result || ($result['deleted_at'] && !$isShow))
         {
-            return [];
+            return null;
         }
-        $result = [];
-        foreach ($ids as $id)
-        {
-            $item = $this->item($id);
-            if ($item) {
-                $result[] = $item;
-            }
-        }
+
         return $result;
     }
 
@@ -108,92 +94,11 @@ class UserRepository extends Repository
         return UserSign::whereRaw('user_id = ? and created_at > ?', [$userId, Carbon::now()->startOfDay()])->count() !== 0;
     }
 
-    public function minePostIds($userId)
-    {
-        return $this->RedisList('user_'.$userId.'_minePostIds', function () use ($userId)
-        {
-           return Post::where('user_id', $userId)
-               ->orderBy('created_at', 'DESC')
-               ->pluck('id');
-        });
-    }
-
     public function replyPostIds($userId)
     {
         $postCommentService = new PostCommentService();
 
         return $postCommentService->getUserCommentIds($userId);
-    }
-
-    public function likedPostIds($userId)
-    {
-        $postLikeService = new PostLikeService();
-
-        return $postLikeService->usersDoIds($userId, -1);
-    }
-
-    public function likedPost($userId)
-    {
-        $postLikeService = new PostLikeService();
-        $ids = $postLikeService->usersDoIds($userId, -1);
-
-        if (empty($ids))
-        {
-            return [];
-        }
-
-        $postRepository = new PostRepository();
-        $posts = [];
-
-        foreach ($ids as $id => $time)
-        {
-            $post = $postRepository->item($id);
-            if(is_null($post) || !$post['title'])
-            {
-                continue;
-            }
-            $post['created_at'] = $time;
-            $posts[] = $post;
-        }
-
-        $postTransformer = new PostTransformer();
-        return [
-            'list' => $postTransformer->userLike($posts),
-            'total' => count($ids),
-            'noMore' => true
-        ];
-    }
-
-    public function markedPost($userId)
-    {
-        $postMarkService = new PostMarkService();
-        $ids = $postMarkService->usersDoIds($userId, -1);
-
-        if (empty($ids))
-        {
-            return [];
-        }
-
-        $postRepository = new PostRepository();
-        $posts = [];
-
-        foreach ($ids as $id => $time)
-        {
-            $post = $postRepository->item($id);
-            if(is_null($post))
-            {
-                continue;
-            }
-            $post['created_at'] = $time;
-            $posts[] = $post;
-        }
-
-        $postTransformer = new PostTransformer();
-        return [
-            'list' => $postTransformer->userMark($posts),
-            'total' => count($ids),
-            'noMore' => true
-        ];
     }
 
     public function replyPostItem($userId, $postId)
@@ -283,140 +188,112 @@ class UserRepository extends Repository
 
     public function getNotifications($userId, $minId, $take)
     {
-        $list = Notifications::where('to_user_id', $userId)
-            ->when($minId, function ($query) use ($minId) {
-                return $query->where('id', '<', $minId);
-            })
-            ->orderBy('id', 'DESC')
-            ->take($take)
-            ->get()
-            ->toArray();
-
-        if (empty($list))
+        $ids = $this->RedisList('user-' . $userId . '-notification-ids', function () use ($userId)
         {
-            return [];
-        }
+            return Notifications
+                ::where('to_user_id', $userId)
+                ->orderBy('id', 'DESC')
+                ->pluck('id');
+        });
 
-        $userRepository = new UserRepository();
-        $postRepository = new PostRepository();
-        $transformer = new UserTransformer();
-
-        $result = [];
-
-        foreach ($list as $item)
+        if (empty($ids))
         {
-            $type = intval($item['type']);
-            $user = $userRepository->item($item['from_user_id']);
-            $ids = explode(',', $item['about_id']);
-
-            if ($type === 1)
-            {
-                $postId = $ids[1];
-                $post = $postRepository->item($postId);
-                if (is_null($post))
-                {
-                    continue;
-                }
-                $about = [
-                    'resource' => $item['about_id'],
-                    'title' => $post['title'],
-                    'link' => '/post/'.$postId . '?reply=' . $ids[0],
-                ];
-                $model = 'post';
-            }
-            else if ($type === 2)
-            {
-                $commentId = $ids[0];
-                $replyId = $ids[1];
-                $postId = $ids[2];
-                $post = $postRepository->item($postId);
-                if (is_null($post))
-                {
-                    continue;
-                }
-                $about = [
-                    'resource' => $item['about_id'],
-                    'title' => $post['title'],
-                    'link' => '/post/'.$postId.'?reply='.$replyId.'&comment='.$commentId,
-                ];
-                $model = 'post';
-            }
-            else if ($type === 3)
-            {
-                $post = $postRepository->item($item['about_id']);
-                if (is_null($post))
-                {
-                    continue;
-                }
-                $about = [
-                    'resource' => $item['about_id'],
-                    'title' => $post['title'],
-                    'link' => '/post/'.$ids[0]
-                ];
-                $model = 'post';
-            }
-            else if ($type === 4)
-            {
-                $post = $postRepository->item($ids[1]);
-                if (is_null($post))
-                {
-                    continue;
-                }
-                $about = [
-                    'resource' => $item['about_id'],
-                    'title' => $post['title'],
-                    'link' => '/post/'.$ids[1].'?reply='.$ids[0]
-                ];
-                $model = 'post';
-            }
-            else if ($type === 5)
-            {
-                $model = 'image';
-                $about = [
-                    'resource' => '',
-                    'title' => '',
-                    'link' => ''
-                ];
-            }
-
-            $result[] = [
-                'id' => $item['id'],
-                'model' => $model,
-                'type' => $type,
-                'user' => $user,
-                'data' => $about,
-                'checked' => $item['checked']
+            return [
+                'list' => [],
+                'noMore' => true,
+                'total' => 0
             ];
         }
 
-        return $transformer->notification($result);
-    }
-
-    public function rolesIds($userId)
-    {
-        return $this->RedisList('user_'.$userId.'_followRoleIds', function () use ($userId)
+        $idsObj = $this->filterIdsByMaxId($ids, $minId, $take);
+        if (empty($idsObj['ids']))
         {
-            return CartoonRoleFans::where('user_id', $userId)
-                ->orderBy('updated_at', 'DESC')
-                ->pluck('role_id');
-        });
-    }
+            return [
+                'list' => [],
+                'noMore' => true,
+                'total' => 0
+            ];
+        }
 
-    public function imageAlbums($userId)
-    {
-        return $this->Cache('user_' . $userId . '_image_albums', function () use ($userId)
+        $notifies = Notifications
+            ::whereIn('id', $idsObj['ids'])
+            ->orderBy('id', 'DESC')
+            ->get()
+            ->toArray();
+
+        $result = [];
+        $notificationPresenter = new NotificationPresenter();
+        foreach ($notifies as $item)
         {
-            return Image::whereRaw('user_id = ? and album_id = 0 and image_count <> 0', [$userId])
-                ->get()
-                ->toArray();
-        }, 'm');
+            $notify = $this->Cache('notification-' . $item['id'], function () use ($item, $notificationPresenter)
+            {
+                $type = (int)$item['type'];
+                $link = $notificationPresenter->computeNotificationLink($type, $item['model_id'], $item['comment_id'], $item['reply_id']);
+                if (!$link)
+                {
+                    return null;
+                }
+                $template = $notificationPresenter->computeNotificationMessage($type);
+
+                $notification = [
+                    'id' => (int)$item['id'],
+                    'checked' => (boolean)$item['checked'],
+                    'type' => $type,
+                    'user' => null,
+                    'message' => '',
+                    'model' => '',
+                    'created_at' => $item['created_at']
+                ];
+
+                if ($item['from_user_id'])
+                {
+                    $user = $this->item($item['from_user_id']);
+                    $template = str_replace('${user}', '<a class="user" href="/user/'. $user['zone'] .'">' . $user['nickname'] . '</a>', $template);
+
+                    $notification['user'] = [
+                        'id' => $user['id'],
+                        'zone' => $user['zone'],
+                        'avatar' => $user['avatar'],
+                        'nickname' => $user['nickname']
+                    ];
+                }
+                if ($item['model_id'])
+                {
+                    $repository = $notificationPresenter->computeNotificationRepository($type);
+                    $model = $repository->item($item['model_id']);
+                    $model = $notificationPresenter->convertModel($model, $type);
+                    $title = $notificationPresenter->computeNotificationMessageTitle($model);
+                    $template = str_replace('${title}', '<a class="title" href="'. $link .'">' . $title . '</a>', $template);
+
+                    $notification['model'] = [
+                        'id' => $model['id'],
+                        'title' => $title
+                    ];
+                }
+
+                $notification['message'] = $template;
+                $notification['link'] = $link;
+
+                return $notification;
+            }, 'm');
+            if ($notify)
+            {
+                $result[] = $notify;
+            }
+        }
+
+        return [
+            'list' => $result,
+            'noMore' => $idsObj['noMore'],
+            'total' => $idsObj['total']
+        ];
     }
 
     public function followedBangumis($userId, $page = -1, $count = 10)
     {
         $bangumiFollowService = new BangumiFollowService();
-        $bangumiIds = $bangumiFollowService->usersDoIds($userId, $page, $count);
-
+        $idsObj = $bangumiFollowService->usersDoIds($userId, $page, $count);
+        $bangumiIds = $idsObj['ids'];
         if (empty($bangumiIds))
         {
             return [];
@@ -528,9 +405,22 @@ class UserRepository extends Repository
             case 'score':
                 return 6;
                 break;
+            case 'answer':
+                return 7;
+                break;
             default:
                 return -1;
         }
+    }
+
+    public function migrateSearchIndex($type, $id, $async = true)
+    {
+        $type = $type === 'C' ? 'C' : 'U';
+        $user = $this->item($id);
+        $content = $user['nickname'] . ',' . $user['zone'];
+
+        $job = (new \App\Jobs\Search\Index($type, 'user', $id, $content));
+        dispatch($job);
     }
 
     protected function setDayStats($type, $day, $count)

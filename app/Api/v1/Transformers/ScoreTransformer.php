@@ -37,19 +37,16 @@ class ScoreTransformer extends Transformer
             'intro' => $score['intro'],
             'content' => $score['content'],
             'is_creator' => (boolean)$score['is_creator'],
-            'commented' => (int)$score['commented'],
-            'comment_count' => (int)$score['comment_count'],
             'liked' => $score['liked'],
-            'like_count' => (int)$score['like_count'],
             'like_users' => $score['like_users'],
             'rewarded' => $score['rewarded'],
-            'reward_count' => (int)$score['reward_count'],
             'reward_users' => $score['reward_users'],
             'marked' => $score['marked'],
-            'mark_count' => (int)$score['mark_count'],
+            'mark_users' => $score['mark_users'],
             'created_at' => $score['created_at'],
             'updated_at' => $score['updated_at'],
-            'published_at' => $score['published_at']
+            'published_at' => $score['published_at'],
+            'view_count' => $score['view_count']
         ];
     }
 
@@ -88,6 +85,11 @@ class ScoreTransformer extends Transformer
                 'intro' => $score['intro']
             ];
         });
+    }
+
+    public function search()
+    {
+        return null;
     }
 
     public function userFlow($list)

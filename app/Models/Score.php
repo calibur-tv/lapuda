@@ -37,7 +37,8 @@ class Score extends Model
         'style',
         'state',
         'published_at',
-        'title'
+        'title',
+        'view_count'
     ];
 
     protected $casts = [
@@ -51,6 +52,7 @@ class Score extends Model
         'role' => 'integer',
         'story' => 'integer',
         'express' => 'integer',
-        'style' => 'integer'
+        'style' => 'integer',
+        'state' => 'integer'
     ];
 }

@@ -25,6 +25,7 @@ class TotalImageAlbumCount extends TotalCounterService
         return DB::table($table)
             ->where('is_cartoon', 0)
             ->where('is_album', 1)
+            ->whereNull('deleted_at')
             ->count();
     }
 
@@ -34,6 +35,7 @@ class TotalImageAlbumCount extends TotalCounterService
             ->where('is_cartoon', 0)
             ->where('is_album', 1)
             ->where('created_at', '>', Carbon::now()->today())
+            ->whereNull('deleted_at')
             ->count();
     }
 }

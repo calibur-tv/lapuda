@@ -4,14 +4,11 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
-use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Owner\BangumiManager;
-use App\Api\V1\Services\Toggle\Image\ImageLikeService;
+use App\Api\V1\Services\Trending\RoleTrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
-use App\Api\V1\Transformers\ImageTransformer;
 use App\Api\V1\Transformers\UserTransformer;
-use App\Models\Bangumi;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
 use App\Services\OpenSearch\Search;
@@ -26,58 +23,9 @@ use Mews\Purifier\Facades\Purifier;
 class CartoonRoleController extends Controller
 {
     /**
-     * 番剧角色列表
-     *
-     * @Get("/bangumi/`bangumiId`/roles")
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": "角色列表"}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的番剧"})
-     * })
-     */
-    public function listOfBangumi(Request $request, $bangumiId)
-    {
-        if (!Bangumi::where('id', $bangumiId)->count())
-        {
-            return $this->resErrNotFound('不存在的番剧');
-        }
-
-        $cartoonRoleRepository = new CartoonRoleRepository();
-        $ids = $cartoonRoleRepository->bangumiOfIds($bangumiId);
-
-        if (empty($ids))
-        {
-            return $this->resOK([]);
-        }
-
-        $roles = $cartoonRoleRepository->list($ids);
-        $userRepository = new UserRepository();
-        $userId = $this->getAuthUserId();
-
-        foreach ($roles as $i => $item)
-        {
-            if ($item['loverId'])
-            {
-                $roles[$i]['lover'] = $userRepository->item($item['loverId']);
-                $roles[$i]['loveMe'] = $userId === intval($item['loverId']);
-            }
-            else
-            {
-                $roles[$i]['lover'] = null;
-                $roles[$i]['loveMe'] = false;
-            }
-            $roles[$i]['hasStar'] = $cartoonRoleRepository->checkHasStar($item['id'], $userId);
-        }
-
-        $transformer = new CartoonRoleTransformer();
-
-        return $this->resOK($transformer->bangumi($roles));
-    }
-
-    /**
      * 给角色应援
      *
-     * @Post("/bangumi/`bangumiId`/role/`roleId`/star")
+     * @Post("/cartoon_role/`roleId`/star")
      *
      * @Request(headers={"Authorization": "Bearer JWT-Token"})
      *
@@ -87,9 +35,11 @@ class CartoonRoleController extends Controller
      *      @Response(403, body={"code": 40301, "message": "没有足够的金币"})
      * })
      */
-    public function star(Request $request, $bangumiId, $roleId)
+    public function star($id)
     {
-        if (!CartoonRole::where('id', $roleId)->count())
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $cartoonRole = $cartoonRoleRepository->item($id);
+        if (is_null($cartoonRole))
         {
             return $this->resErrNotFound();
         }
@@ -97,54 +47,45 @@ class CartoonRoleController extends Controller
         $userId = $this->getAuthUserId();
         $userRepository = new UserRepository();
 
-        if (!$userRepository->toggleCoin(false, $userId, 0, 3, $roleId))
+        if (!$userRepository->toggleCoin(false, $userId, 0, 3, $id))
         {
             return $this->resErrRole('没有足够的金币');
         }
 
-        $cartoonRoleRepository = new CartoonRoleRepository();
+        $cartoonRoleTrendingService = new RoleTrendingService($cartoonRole['bangumi_id'], $userId);
 
-        if ($cartoonRoleRepository->checkHasStar($roleId, $userId))
+        if ($cartoonRoleRepository->checkHasStar($id, $userId))
         {
-            CartoonRoleFans::whereRaw('role_id = ? and user_id = ?', [$roleId, $userId])->increment('star_count');
+            CartoonRoleFans
+                ::whereRaw('role_id = ? and user_id = ?', [$id, $userId])
+                ->increment('star_count');
 
-            $trendingKey = 'cartoon_role_trending_' . $roleId;
-
-            if (Redis::EXISTS('cartoon_role_'.$roleId))
+            if (Redis::EXISTS('cartoon_role_'.$id))
             {
-                Redis::HINCRBYFLOAT('cartoon_role_'.$roleId, 'star_count', 1);
-            }
-            if (Redis::EXISTS($trendingKey))
-            {
-                Redis::HINCRBYFLOAT($trendingKey, 'star_count', 1);
+                Redis::HINCRBYFLOAT('cartoon_role_'.$id, 'star_count', 1);
             }
         }
         else
         {
             CartoonRoleFans::create([
-                'role_id' => $roleId,
+                'role_id' => $id,
                 'user_id' => $userId,
                 'star_count' => 1
             ]);
 
-            CartoonRole::where('id', $roleId)->increment('fans_count');
+            CartoonRole::where('id', $id)->increment('fans_count');
 
-            $trendingKey = 'cartoon_role_trending_' . $roleId;
+            if (Redis::EXISTS('cartoon_role_'.$id))
+            {
+                Redis::HINCRBYFLOAT('cartoon_role_'.$id, 'fans_count', 1);
+                Redis::HINCRBYFLOAT('cartoon_role_'.$id, 'star_count', 1);
+            }
 
-            if (Redis::EXISTS('cartoon_role_'.$roleId))
-            {
-                Redis::HINCRBYFLOAT('cartoon_role_'.$roleId, 'fans_count', 1);
-                Redis::HINCRBYFLOAT('cartoon_role_'.$roleId, 'star_count', 1);
-            }
-            if (Redis::EXISTS($trendingKey))
-            {
-                Redis::HINCRBYFLOAT($trendingKey, 'fans_count', 1);
-                Redis::HINCRBYFLOAT($trendingKey, 'star_count', 1);
-            }
+            $cartoonRoleTrendingService->create($id);
         }
 
-        $newCacheKey = 'cartoon_role_' . $roleId . '_new_fans_ids';
-        $hotCacheKey = 'cartoon_role_' . $roleId . '_hot_fans_ids';
+        $newCacheKey = 'cartoon_role_' . $id . '_new_fans_ids';
+        $hotCacheKey = 'cartoon_role_' . $id . '_hot_fans_ids';
 
         if (Redis::EXISTS($newCacheKey))
         {
@@ -155,16 +96,24 @@ class CartoonRoleController extends Controller
             Redis::ZINCRBY($hotCacheKey, 1, $userId);
         }
 
-        CartoonRole::where('id', $roleId)->increment('star_count');
+        CartoonRole
+            ::where('id', $id)
+            ->increment('star_count');
 
         return $this->resNoContent();
     }
 
-    // TODO：vote service
-    // TODO：API doc
-    public function fans(Request $request, $bangumiId, $roleId)
+    /**
+     * 角色的粉丝列表
+     *
+     * @Post("/cartoon_role/`roleId`/fans")
+     *
+     * 如果是 sort 传入 new，就再传 minId，如果 sort 传入 hot，就再传 seenIds
+     *
+     */
+    public function fans(Request $request, $id)
     {
-        if (!CartoonRole::where('id', $roleId)->count())
+        if (!CartoonRole::where('id', $id)->count())
         {
             return $this->resErrNotFound();
         }
@@ -173,26 +122,41 @@ class CartoonRoleController extends Controller
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
         $minId = $request->get('minId') ?: 0;
         $cartoonRoleRepository = new CartoonRoleRepository();
-        $ids = $sort === 'new' ? $cartoonRoleRepository->newFansIds($roleId, $minId) : $cartoonRoleRepository->hotFansIds($roleId, $seen);
+        $idsObj = $sort === 'new' ? $cartoonRoleRepository->newFansIds($id, $minId) : $cartoonRoleRepository->hotFansIds($id, $seen);
 
+        $ids = $idsObj['ids'];
         if (empty($ids))
         {
-            return $this->resOK([]);
+            return $this->resOK([
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ]);
         }
 
         $userRepository = new UserRepository();
         $users = [];
         $i = 0;
-        foreach ($ids as $id => $score)
+        foreach ($ids as $roleId => $score)
         {
-            $users[] = $userRepository->item($id);
+            $role = $userRepository->item($roleId);
+            if (is_null($role))
+            {
+                continue;
+            }
+            $users[] = $userRepository->item($roleId);
             $users[$i]['score'] = $score;
             $i++;
         }
 
         $transformer = new CartoonRoleTransformer();
+        $list = $transformer->fans($users);
 
-        return $this->resOK($transformer->fans($users));
+        return $this->resOK([
+            'list' => $list,
+            'total' => $idsObj['total'],
+            'noMore' => $idsObj['noMore']
+        ]);
     }
 
     /**
@@ -230,54 +194,18 @@ class CartoonRoleController extends Controller
         $role['hasStar'] = $cartoonRoleRepository->checkHasStar($role['id'], $userId);
 
         $cartoonTransformer = new CartoonRoleTransformer();
+
+        $searchService = new Search();
+        if ($searchService->checkNeedMigrate('role', $id))
+        {
+            $job = (new \App\Jobs\Search\UpdateWeight('role', $id));
+            dispatch($job);
+        }
+
         return $this->resOK($cartoonTransformer->show([
             'bangumi' => $bangumi,
             'data' => $role
         ]));
-    }
-
-    // TODO：trending service
-    // TODO：API doc
-    public function images(Request $request, $id)
-    {
-        if (!CartoonRole::where('id', $id)->count())
-        {
-            return $this->resErrNotFound();
-        }
-
-        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
-        $take = intval($request->get('take')) ?: 12;
-        $size = intval($request->get('size')) ?: 0;
-        $tags = $request->get('tags') ?: 0;
-        $creator = intval($request->get('creator'));
-        $sort = $request->get('sort') ?: 'new';
-
-        $repository = new ImageRepository();
-        $ids = $repository->getRoleImageIds($id, $seen, $take, $size, $tags, $creator, $sort);
-
-        if (empty($ids))
-        {
-            return $this->resOK([
-                'list' => [],
-                'type' => $repository->uploadImageTypes()
-            ]);
-        }
-
-        $imageTransformer = new ImageTransformer();
-
-        $visitorId = $this->getAuthUserId();
-        $list = $repository->list($ids);
-        $imageLikeService = new ImageLikeService();
-
-        foreach ($list as $i => $item)
-        {
-            $list[$i]['liked'] = $imageLikeService->check($visitorId, $item['id'], $item['user_id']);
-        }
-
-        return $this->resOK([
-            'list' => $imageTransformer->roleShow($list),
-            'type' => $repository->uploadImageTypes()
-        ]);
     }
 
     public function adminShow(Request $request)
@@ -325,17 +253,11 @@ class CartoonRoleController extends Controller
             'updated_at' => $time
         ]);
 
-        $searchService = new Search();
-        $searchService->create(
-            $id,
-            $alias,
-            'role'
-        );
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $cartoonRoleRepository->migrateSearchIndex('C', $id);
 
-        Redis::DEL('bangumi_'.$bangumiId.'_cartoon_role_ids');
-
-        $job = (new \App\Jobs\Push\Baidu('role/' . $id));
-        dispatch($job);
+        $cartoonRoleTrendingService = new RoleTrendingService($bangumiId);
+        $cartoonRoleTrendingService->create($id);
 
         return $this->resCreated($id);
     }
@@ -367,22 +289,15 @@ class CartoonRoleController extends Controller
             'state' => $userId
         ]);
 
-        $searchService = new Search();
-        $searchService->update(
-            $id,
-            $alias,
-            'role'
-        );
-
-        $job = (new \App\Jobs\Push\Baidu('role/' . $id, 'update'));
-        dispatch($job);
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $cartoonRoleRepository->migrateSearchIndex('U', $id);
 
         Redis::DEL('cartoon_role_' . $id);
 
         return $this->resNoContent();
     }
 
-    public function trialList()
+    public function trials()
     {
         $roles = CartoonRole::where('state', '<>', 0)
             ->select('id', 'state', 'name', 'bangumi_id')
@@ -391,23 +306,28 @@ class CartoonRoleController extends Controller
         return $this->resOK($roles);
     }
 
-    public function trialPass(Request $request)
-    {
-        CartoonRole::where('id', $request->get('id'))
-            ->update([
-                'state' => 0
-            ]);
-
-        return $this->resNoContent();
-    }
-
-    public function trialBan(Request $request)
+    public function ban(Request $request)
     {
         $id = $request->get('id');
         $bangumiId = $request->get('bangumi_id');
 
         CartoonRole::where('id', $id)->delete();
-        Redis::DEL('bangumi_'.$bangumiId.'_cartoon_role_ids');
+
+        $cartoonRoleTrendingService = new RoleTrendingService($bangumiId);
+        $cartoonRoleTrendingService->delete($id);
+
+        $job = (new \App\Jobs\Search\Index('D', 'role', $id));
+        dispatch($job);
+
+        return $this->resNoContent();
+    }
+
+    public function pass(Request $request)
+    {
+        CartoonRole::where('id', $request->get('id'))
+            ->update([
+                'state' => 0
+            ]);
 
         return $this->resNoContent();
     }

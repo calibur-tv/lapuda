@@ -3,7 +3,6 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Services\Counter\BangumiScoreCounter;
-use App\Api\V1\Services\Counter\Stats\TotalBangumiCount;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Tag\BangumiTagService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
@@ -189,8 +188,7 @@ class BangumiController extends Controller
         $userId = $this->getAuthUserId();
 
         $bangumiFollowService = new BangumiFollowService();
-        $bangumi['count_like'] = $bangumiFollowService->total($id);
-        $bangumi['followers'] = $bangumiFollowService->users($id);
+        $bangumi['follow_users'] = $bangumiFollowService->users($id);
         $bangumi['followed'] = $bangumiFollowService->check($userId, $id);
 
         $bangumiScoreService = new BangumiScoreService();
@@ -201,12 +199,19 @@ class BangumiController extends Controller
 
         $bangumiManager = new BangumiManager();
         $bangumi['is_master'] = $bangumiManager->isOwner($id, $userId);
-        $bangumi['managers'] = $bangumiManager->getOwners($id);
+        $bangumi['manager_users'] = $bangumiManager->users($id);
 
         $bangumiTagService = new BangumiTagService();
         $bangumi['tags'] = $bangumiTagService->tags($id);
 
         $bangumiTransformer = new BangumiTransformer();
+
+        $searchService = new Search();
+        if ($searchService->checkNeedMigrate('bangumi', $id))
+        {
+            $job = (new \App\Jobs\Search\UpdateWeight('bangumi', $id));
+            dispatch($job);
+        }
 
         return $this->resOK($bangumiTransformer->show($bangumi));
     }
@@ -232,30 +237,6 @@ class BangumiController extends Controller
         }
 
         return $this->resOK($repository->videos($id, json_decode($bangumi['season'])));
-    }
-
-    // TODO：remove
-    public function followers(Request $request, $bangumiId)
-    {
-        $take = intval($request->get('take')) ?: 10;
-        $page = intval($request->get('page')) ?: 0;
-
-        $bangumiFollowService = new BangumiFollowService();
-        $users = $bangumiFollowService->users($bangumiId, $page, $take);
-
-        return $this->resOK([
-            'list' => $users,
-            'noMore' => $bangumiFollowService->total($bangumiId) - (($page + 1) * $take) <= 0
-        ]);
-    }
-
-    // TODO：remove
-    public function managers($bangumiId)
-    {
-        $bangumiManager = new BangumiManager();
-        $managers = $bangumiManager->getOwners($bangumiId);
-
-        return $this->resOK($managers);
     }
 
     public function updateBangumiRelease(Request $request)
@@ -311,11 +292,12 @@ class BangumiController extends Controller
         {
             return $this->resErrNotFound();
         }
+
         if (is_null($bangumi->deleted_at))
         {
             $bangumi->delete();
 
-            $job = (new \App\Jobs\Push\Baidu('bangumi/' . $id, 'del'));
+            $job = (new \App\Jobs\Search\Index('D', 'bangumi', $id));
             dispatch($job);
 
             Redis::DEL('bangumi_'.$id);
@@ -352,7 +334,7 @@ class BangumiController extends Controller
     {
         $releasedId = $request->get('released_video_id') ?: 0;
         $time = Carbon::now();
-        $bangumi_id = Bangumi::insertGetId([
+        $bangumiId = Bangumi::insertGetId([
             'name' => $request->get('name'),
             'avatar' => $request->get('avatar'),
             'banner' => $request->get('banner'),
@@ -371,7 +353,7 @@ class BangumiController extends Controller
         ]);
 
         $bangumiTagService = new BangumiTagService();
-        $bangumiTagService->update($bangumi_id, $request->get('tags'));
+        $bangumiTagService->update($bangumiId, $request->get('tags'));
 
         if ($releasedId)
         {
@@ -379,38 +361,27 @@ class BangumiController extends Controller
         }
         Redis::DEL('bangumi_all_list');
 
-        $job = (new \App\Jobs\Push\Baidu('bangumi/' . $bangumi_id));
-        dispatch($job);
+        $bangumiRepository = new BangumiRepository();
+        $bangumiRepository->migrateSearchIndex('C', $bangumiId);
 
-        $searchService = new Search();
-
-        $searchService->create(
-            $bangumi_id,
-            $request->get('alias'),
-            'bangumi'
-        );
-
-        $totalBangumiCount = new TotalBangumiCount();
-        $totalBangumiCount->add();
-
-        return $this->resCreated($bangumi_id);
+        return $this->resCreated($bangumiId);
     }
 
     public function edit(Request $request)
     {
         $rollback = false;
-        $bangumi_id = $request->get('id');
+        $bangumiId = $request->get('id');
         DB::beginTransaction();
 
         $bangumiTagService = new BangumiTagService();
-        $result = $bangumiTagService->update($bangumi_id, $request->get('tags'));
+        $result = $bangumiTagService->update($bangumiId, $request->get('tags'));
 
         if (!$result)
         {
             $rollback = true;
         }
 
-        $bangumi = Bangumi::withTrashed()->where('id', $bangumi_id)->first();
+        $bangumi = Bangumi::withTrashed()->where('id', $bangumiId)->first();
         $arr = [
             'name' => $request->get('name'),
             'avatar' => $request->get('avatar'),
@@ -445,19 +416,11 @@ class BangumiController extends Controller
         {
             DB::commit();
 
-            $searchService = new Search();
+            Redis::DEL('bangumi_'.$bangumiId);
+            Redis::DEL('bangumi_'.$bangumiId.'_videos');
 
-            $searchService->update(
-                $bangumi_id,
-                $request->get('alias'),
-                'bangumi'
-            );
-
-            Redis::DEL('bangumi_'.$bangumi_id);
-            Redis::DEL('bangumi_'.$bangumi_id.'_videos');
-
-            $job = (new \App\Jobs\Push\Baidu('bangumi/' . $bangumi_id, 'update'));
-            dispatch($job);
+            $bangumiRepository = new BangumiRepository();
+            $bangumiRepository->migrateSearchIndex('U', $bangumiId);
 
             return $this->resNoContent();
         }
@@ -561,6 +524,13 @@ class BangumiController extends Controller
             return $this->resErrParams($validator);
         }
 
+        $bangumiRepository = new BangumiRepository();
+        $bangumi = $bangumiRepository->item($id);
+        if (is_null($bangumi))
+        {
+            return $this->resErrNotFound();
+        }
+
         $userId = $this->getAuthUserId();
         $bangumiManager = new BangumiManager();
         if (!$bangumiManager->isOwner($id, $userId))
@@ -613,13 +583,18 @@ class BangumiController extends Controller
         else
         {
             DB::commit();
+
             Redis::DEL('bangumi_' . $id);
             Redis::DEL('bangumi_'. $id .'_tags');
+
+            $bangumiRepository = new BangumiRepository();
+            $bangumiRepository->migrateSearchIndex('U', $id);
+
             return $this->resNoContent();
         }
     }
 
-    public function trialList()
+    public function trials()
     {
         $bangumiIds = Bangumi::where('state', '<>', 0)
             ->pluck('id');
@@ -636,7 +611,7 @@ class BangumiController extends Controller
         return $this->resOK($list);
     }
 
-    public function trialPass(Request $request)
+    public function pass(Request $request)
     {
         Bangumi::where('id', $request->get('id'))
             ->update([

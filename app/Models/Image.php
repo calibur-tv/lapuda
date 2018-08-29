@@ -30,7 +30,8 @@ class Image extends Model
         'size',
         'type',
         'part',
-        'state'
+        'state',
+        'view_count'
     ];
 
     protected $casts = [
@@ -40,7 +41,8 @@ class Image extends Model
         'width' => 'integer',
         'height' => 'integer',
         'size' => 'integer',
-        'part' => 'integer'
+        'part' => 'integer',
+        'state' => 'integer'
     ];
 
     public function getUrlAttribute($url)

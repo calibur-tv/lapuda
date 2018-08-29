@@ -9,21 +9,26 @@
 namespace App\Api\V1\Repositories;
 
 
-use App\Api\V1\Services\Counter\Stats\TotalScoreCount;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
 use App\Models\Score;
+use App\Services\BaiduSearch\BaiduPush;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
-use Mews\Purifier\Facades\Purifier;
 
 class ScoreRepository extends Repository
 {
-    public function item($id)
+    public function item($id, $isShow = false)
     {
-        return $this->Cache($this->cacheKeyScoreItem($id), function () use ($id)
+        $result = $this->Cache($this->itemCacheKey($id), function () use ($id)
         {
-            $score = Score::find($id);
+            $score = Score
+                ::withTrashed()
+                ->where('id', $id)
+                ->first();
+
             if (is_null($score))
             {
                 return null;
@@ -45,18 +50,12 @@ class ScoreRepository extends Repository
 
             return $score;
         });
-    }
 
-    public function list($ids)
-    {
-        $result = [];
-        foreach ($ids as $id)
+        if (!$result || ($result['deleted_at'] && !$isShow))
         {
-            $item = $this->item($id);
-            if ($item) {
-                $result[] = $item;
-            }
+            return null;
         }
+
         return $result;
     }
 
@@ -174,13 +173,6 @@ class ScoreRepository extends Repository
 
     public function doPublish($userId, $scoreId, $bangumiId)
     {
-        $bangumiScoreService = new BangumiScoreService();
-        $bangumiScoreService->do($userId, $bangumiId);
-        Redis::DEL($this->cacheKeyBangumiScore($bangumiId));
-
-        $scoreTrendingService = new ScoreTrendingService($bangumiId, $userId);
-        $scoreTrendingService->create($scoreId);
-
         $bangumiFollowService = new BangumiFollowService();
         if (!$bangumiFollowService->check($userId, $bangumiId))
         {
@@ -188,13 +180,8 @@ class ScoreRepository extends Repository
             $bangumiFollowService->do($userId, $bangumiId);
         }
 
-        $job = (new \App\Jobs\Trial\JsonContent\TrialScore($scoreId));
+        $job = (new \App\Jobs\Trial\Score\Create($scoreId));
         dispatch($job);
-
-        $totalScoreCount = new TotalScoreCount();
-        $totalScoreCount->add();
-        // TODO：SEO
-        // TODO：SEARCH
     }
 
     public function cacheKeyBangumiScore($bangumiId)
@@ -202,36 +189,101 @@ class ScoreRepository extends Repository
         return 'bangumi_' . $bangumiId . '_score';
     }
 
-    public function cacheKeyScoreItem($id)
+    public function createProcess($id, $state = 0)
+    {
+        $score = $this->item($id);
+
+        Redis::DEL($this->cacheKeyBangumiScore($score['bangumi_id']));
+
+        if ($state)
+        {
+            DB::table('scores')
+                ->where('id', $id)
+                ->update([
+                    'state' => $state
+                ]);
+        }
+
+        if ($score['created_at'] == $score['updated_at'])
+        {
+            $bangumiScoreService = new BangumiScoreService();
+            $bangumiScoreService->do($score['user_id'], $score['bangumi_id']);
+
+            $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
+            $scoreTrendingService->create($id);
+
+            $baiduPush = new BaiduPush();
+            $baiduPush->trending('score');
+
+            $this->migrateSearchIndex('C', $id, false);
+        }
+    }
+
+    public function updateProcess($id)
+    {
+        $this->migrateSearchIndex('U', $id, false);
+    }
+
+    public function deleteProcess($id, $state = 0)
+    {
+        $score = $this->item($id, true);
+
+        DB::table('scores')
+            ->where('id', $id)
+            ->update([
+                'state' => $state,
+                'deleted_at' => Carbon::now()
+            ]);
+
+        if ($state === 0 || $score['created_at'] !== $score['updated_at'])
+        {
+            $bangumiScoreService = new BangumiScoreService();
+            $bangumiScoreService->undo($score['user_id'], $score['bangumi_id']);
+
+            $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
+            $scoreTrendingService->delete($id);
+
+            $job = (new \App\Jobs\Search\Index('D', 'score', $id));
+            dispatch($job);
+        }
+
+        Redis::DEL($this->itemCacheKey($id));
+    }
+
+    public function recoverProcess($id)
+    {
+        $score = $this->item($id, true);
+
+        DB::table('scores')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
+
+        if ($score['deleted_at'])
+        {
+            $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
+            $scoreTrendingService->create($id);
+
+            $this->migrateSearchIndex('C', $id, false);
+        }
+
+        Redis::DEL($this->itemCacheKey($id));
+    }
+
+    public function itemCacheKey($id)
     {
         return 'score_' . $id;
     }
 
-    public function filterContent(array $content)
+    public function migrateSearchIndex($type, $id, $async = true)
     {
-        $result = [];
-        foreach ($content as $item)
-        {
-            if ($item['type'] === 'txt')
-            {
-                $result[] = [
-                    'type' => $item['type'],
-                    'text' => $item['text']
-                ];
-            }
-            else if ($item['type'] === 'img')
-            {
-                $result[] = [
-                    'type' => $item['type'],
-                    'width' => $item['width'],
-                    'height' => $item['height'],
-                    'size' => $item['size'],
-                    'mime' => $item['mime'],
-                    'text' => $item['text'],
-                    'url' => str_replace(config('website.image'), '', $item['url'])
-                ];
-            }
-        }
-        return Purifier::clean(json_encode($result));
+        $type = $type === 'C' ? 'C' : 'U';
+        $score = $this->item($id);
+        $content = $score['title'] . '|' . $score['intro'];
+
+        $job = (new \App\Jobs\Search\Index($type, 'score', $id, $content));
+        dispatch($job);
     }
 }

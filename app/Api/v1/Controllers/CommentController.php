@@ -8,11 +8,13 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\AnswerRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\VideoRepository;
+use App\Api\V1\Services\Comment\AnswerCommentService;
 use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Comment\QuestionCommentService;
@@ -32,7 +34,14 @@ class CommentController extends Controller
 {
     public function __construct()
     {
-        $this->types = ['post', 'image', 'score', 'video'];
+        $this->types = [
+            'post',
+            'image',
+            'score',
+            'video',
+            'question',
+            'answer'
+        ];
     }
 
     /**
@@ -122,18 +131,24 @@ class CommentController extends Controller
 
         $repository->applyAddComment($userId, $parent, $images, $newComment);
 
-        if ($type === 'post')
-        {
-            if ($userId !== $masterId)
-            {
-                $job = (new \App\Jobs\Notification\Post\Reply($newComment['id']));
-                dispatch($job);
-            }
-        }
+        $job = (new \App\Jobs\Notification\Create(
+            $type . '-comment',
+            $masterId,
+            $userId,
+            $id,
+            $newComment['id']
+        ));
+        dispatch($job);
 
-        if ($type === 'post')
+        if (!in_array($type, ['question', 'answer']))
         {
-            $job = (new \App\Jobs\Push\Baidu('post/' . $id, 'update'));
+            $job = (new \App\Jobs\Trending\Active(
+                $id,
+                $type,
+                isset($parent['bangumi_id'])
+                    ? $parent['bangumi_id']
+                    : $parent['tag_ids']
+            ));
             dispatch($job);
         }
 
@@ -333,8 +348,7 @@ class CommentController extends Controller
             ],
         ]);
 
-        if ($validator->fails())
-        {
+        if ($validator->fails()) {
             return $this->resErrParams($validator);
         }
 
@@ -342,14 +356,12 @@ class CommentController extends Controller
         $id = $request->get('id');
 
         $commentService = $this->getCommentServiceByType($type);
-        if (is_null($commentService))
-        {
+        if (is_null($commentService)) {
             return $this->resErrBad('错误的类型');
         }
 
         $comment = $commentService->getMainCommentItem($id);
-        if (is_null($comment))
-        {
+        if (is_null($comment)) {
             return $this->resErrNotFound('内容已删除');
         }
 
@@ -364,25 +376,22 @@ class CommentController extends Controller
             'parent_id' => $id
         ]);
 
-        if (is_null($newComment))
-        {
+        if (is_null($newComment)) {
             return $this->resErrServiceUnavailable();
         }
 
-        // 发通知
-        if ($targetUserId)
+        if (!in_array($type, ['question', 'answer']))
         {
-            // TODO：优化成多态，并在通知里展示content
-            if ($type === 'post')
-            {
-                $job = (new \App\Jobs\Notification\Post\Comment($newComment['id']));
-                dispatch($job);
-            }
+            $job = (new \App\Jobs\Notification\Create(
+                $type . '-reply',
+                $targetUserId,
+                $userId,
+                $comment['modal_id'],
+                $id,
+                $newComment['id']
+            ));
+            dispatch($job);
         }
-
-        // 更新百度索引
-        $job = (new \App\Jobs\Push\Baidu($type . '/' . $comment['modal_id'], 'update'));
-        dispatch($job);
 
         $totalCommentCount = new TotalCommentCount();
         $totalCommentCount->add();
@@ -451,6 +460,15 @@ class CommentController extends Controller
         }
 
         $commentService->deleteSubComment($id, $comment['parent_id']);
+
+        $job = (new \App\Jobs\Notification\Delete(
+            $type . '-reply',
+            $comment['to_user_id'],
+            $comment['from_user_id'],
+            $comment['parent_id'],
+            $comment['id']
+        ));
+        dispatch($job);
 
         return $this->resNoContent();
     }
@@ -521,7 +539,16 @@ class CommentController extends Controller
             }
         }
 
-        $commentService->deleteMainComment($id, $comment['modal_id'], $userId, $isMaster);
+        $commentService->deleteMainComment($id, $comment['modal_id'], $comment['from_user_id'], $isMaster);
+
+        $job = (new \App\Jobs\Notification\Delete(
+            $type . '-comment',
+            $comment['to_user_id'],
+            $comment['from_user_id'],
+            $comment['parent_id'],
+            $comment['id']
+        ));
+        dispatch($job);
 
         return $this->resNoContent();
     }
@@ -566,18 +593,37 @@ class CommentController extends Controller
             return $this->resErrBad('错误的类型');
         }
 
-        $result = $commentService->toggleLike($this->getAuthUserId(), $id);
+        $comment = $commentService->getMainCommentItem($id);
+        if (is_null($comment))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $userId = $this->getAuthUserId();
+        $result = $commentService->toggleLike($userId, $id);
 
         if ($result)
         {
-            if ($type === 'post')
-            {
-                $job = (new \App\Jobs\Notification\Post\Agree($result));
-                dispatch($job);
-            }
+            $job = (new \App\Jobs\Notification\Create(
+                $type . '-comment-like',
+                $comment['from_user_id'],
+                $userId,
+                $comment['modal_id'],
+                $comment['id']
+            ));
+            dispatch($job);
         }
-
-        // TODO：dispatch job to update open search weight
+        else
+        {
+            $job = (new \App\Jobs\Notification\Delete(
+                $type . '-comment-like',
+                $comment['from_user_id'],
+                $userId,
+                $comment['modal_id'],
+                $comment['id']
+            ));
+            dispatch($job);
+        }
 
         return $this->resCreated((boolean)$result);
     }
@@ -621,19 +667,46 @@ class CommentController extends Controller
         {
             return $this->resErrBad('错误的类型');
         }
+        $comment = $commentService->getSubCommentItem($id);
+        if (is_null($comment))
+        {
+            return $this->resErrNotFound();
+        }
 
-        $result = $commentService->toggleLike($this->getAuthUserId(), $id);
-
-        // TODO：dispatch job to update open search weight
+        $userId = $this->getAuthUserId();
+        $result = $commentService->toggleLike($userId, $id);
+        if ($result)
+        {
+            $job = (new \App\Jobs\Notification\Create(
+                $type . '-reply-like',
+                $comment['from_user_id'],
+                $userId,
+                $comment['modal_id'],
+                $comment['parent_id'],
+                $comment['id']
+            ));
+            dispatch($job);
+        }
+        else
+        {
+            $job = (new \App\Jobs\Notification\Delete(
+                $type . '-reply-like',
+                $comment['from_user_id'],
+                $userId,
+                $comment['modal_id'],
+                $comment['parent_id'],
+                $comment['id']
+            ));
+            dispatch($job);
+        }
 
         return $this->resCreated((boolean)$result);
     }
 
-    public function trialList()
+    public function trials()
     {
-        $types = ['post', 'video', 'image', 'score'];
         $result = [];
-        foreach ($types as $modal)
+        foreach ($this->types as $modal)
         {
             $list = DB::table($modal . '_comments')
                 ->where('state', '<>', 0)
@@ -659,11 +732,11 @@ class CommentController extends Controller
 
         return $this->resOK([
             'comments' => $result,
-            'types' => $types
+            'types' => $this->types
         ]);
     }
 
-    public function trialDelete(Request $request)
+    public function ban(Request $request)
     {
         $id = $request->get('id');
         $type = $request->get('type');
@@ -678,7 +751,7 @@ class CommentController extends Controller
         return $this->resNoContent();
     }
 
-    public function trialPass(Request $request)
+    public function pass(Request $request)
     {
         $id = $request->get('id');
         $type = $request->get('type');
@@ -714,6 +787,10 @@ class CommentController extends Controller
         {
             return new QuestionCommentService();
         }
+        else if ($type === 'answer')
+        {
+            return new AnswerCommentService();
+        }
         else
         {
             return null;
@@ -741,6 +818,10 @@ class CommentController extends Controller
         else if ($type === 'question')
         {
             return new QuestionRepository();
+        }
+        else if ($type === 'answer')
+        {
+            return new AnswerRepository();
         }
         else
         {

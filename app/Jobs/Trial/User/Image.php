@@ -2,7 +2,9 @@
 
 namespace App\Jobs\Trial\User;
 
+use App\Api\V1\Repositories\UserRepository;
 use App\Models\User;
+use App\Services\BaiduSearch\BaiduPush;
 use App\Services\Trial\ImageFilter;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
@@ -35,14 +37,14 @@ class Image implements ShouldQueue
      */
     public function handle()
     {
-        $user = User::find($this->userId);
+        $userRepository = new UserRepository();
+        $user = $userRepository->item($this->userId, true);
 
         if (is_null($user))
         {
             return;
         }
 
-        $user = $user->toArray();
         $url = $user[$this->type];
 
         $imageFilter = new ImageFilter();
@@ -51,8 +53,11 @@ class Image implements ShouldQueue
             DB::table('users')
                 ->where('id', $this->userId)
                 ->update([
-                    'state' => 1
+                    'state' => $this->userId
                 ]);
         }
+
+        $baiduPush = new BaiduPush();
+        $baiduPush->update($user['zone'], 'user');
     }
 }
