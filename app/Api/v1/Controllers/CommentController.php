@@ -710,7 +710,7 @@ class CommentController extends Controller
         {
             $list = DB::table($modal . '_comments')
                 ->where('state', '<>', 0)
-                ->select('id', 'user_id', 'content')
+                ->select('id', 'user_id', 'content', 'modal_id', 'parent_id')
                 ->get();
 
             if (is_null($list))
