@@ -545,7 +545,7 @@ class CommentController extends Controller
             $type . '-comment',
             $comment['to_user_id'],
             $comment['from_user_id'],
-            $comment['parent_id'],
+            $comment['modal_id'],
             $comment['id']
         ));
         dispatch($job);
