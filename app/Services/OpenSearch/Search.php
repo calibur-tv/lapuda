@@ -20,7 +20,7 @@ use App\Api\V1\Services\Trending\AnswerTrendingService;
 use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Services\Trending\QuestionTrendingService;
-use App\Api\V1\Services\Trending\RoleTrendingService;
+use App\Api\V1\Services\Trending\CartoonRoleTrendingService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
 use App\Api\V1\Transformers\AnswerTransformer;
 use App\Api\V1\Transformers\BangumiTransformer;
@@ -464,7 +464,7 @@ class Search
         }
         else if ($type === 5)
         {
-            return new RoleTrendingService();
+            return new CartoonRoleTrendingService();
         }
         else if ($type === 6)
         {

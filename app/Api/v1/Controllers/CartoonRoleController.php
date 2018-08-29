@@ -6,7 +6,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Owner\BangumiManager;
-use App\Api\V1\Services\Trending\RoleTrendingService;
+use App\Api\V1\Services\Trending\CartoonRoleTrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\CartoonRole;
@@ -52,7 +52,7 @@ class CartoonRoleController extends Controller
             return $this->resErrRole('没有足够的金币');
         }
 
-        $cartoonRoleTrendingService = new RoleTrendingService($cartoonRole['bangumi_id'], $userId);
+        $cartoonRoleTrendingService = new CartoonRoleTrendingService($cartoonRole['bangumi_id'], $userId);
 
         if ($cartoonRoleRepository->checkHasStar($id, $userId))
         {
@@ -256,7 +256,7 @@ class CartoonRoleController extends Controller
         $cartoonRoleRepository = new CartoonRoleRepository();
         $cartoonRoleRepository->migrateSearchIndex('C', $id);
 
-        $cartoonRoleTrendingService = new RoleTrendingService($bangumiId);
+        $cartoonRoleTrendingService = new CartoonRoleTrendingService($bangumiId);
         $cartoonRoleTrendingService->create($id);
 
         return $this->resCreated($id);
@@ -313,7 +313,7 @@ class CartoonRoleController extends Controller
 
         CartoonRole::where('id', $id)->delete();
 
-        $cartoonRoleTrendingService = new RoleTrendingService($bangumiId);
+        $cartoonRoleTrendingService = new CartoonRoleTrendingService($bangumiId);
         $cartoonRoleTrendingService->delete($id);
 
         $job = (new \App\Jobs\Search\Index('D', 'role', $id));

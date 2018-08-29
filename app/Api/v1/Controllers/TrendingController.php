@@ -15,7 +15,7 @@ use App\Api\V1\Services\Trending\AnswerTrendingService;
 use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Services\Trending\QuestionTrendingService;
-use App\Api\V1\Services\Trending\RoleTrendingService;
+use App\Api\V1\Services\Trending\CartoonRoleTrendingService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -160,7 +160,7 @@ class TrendingController extends Controller
         }
         else if ($type === 'role')
         {
-            return new RoleTrendingService($bangumiId, $userId);
+            return new CartoonRoleTrendingService($bangumiId, $userId);
         }
         else if ($type === 'question')
         {

@@ -49,8 +49,14 @@ class Delete implements ShouldQueue
     public function handle()
     {
         $notificationPresenter = new NotificationPresenter();
+        $type = $notificationPresenter->convertStrTypeToInt($this->type);
+        if (!$type)
+        {
+            return;
+        }
+
         Notifications
-            ::where('type', $notificationPresenter->convertStrTypeToInt($this->type))
+            ::where('type', $type)
             ->where('model_id', $this->modelId)
             ->where('comment_id', $this->commentId)
             ->where('reply_id', $this->replyId)

@@ -9,12 +9,14 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\AnswerRepository;
+use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Comment\AnswerCommentService;
+use App\Api\V1\Services\Comment\CartoonRoleCommentService;
 use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Comment\QuestionCommentService;
@@ -40,7 +42,8 @@ class CommentController extends Controller
             'score',
             'video',
             'question',
-            'answer'
+            'answer',
+            'role'
         ];
     }
 
@@ -103,7 +106,7 @@ class CommentController extends Controller
         $saveContent = [];
         $userId = $this->getAuthUserId();
         $images = $request->get('images');
-        $masterId = intval($parent['user_id']);
+        $masterId = isset($parent['user_id']) ? intval($parent['user_id']) : 0;
 
         foreach ($images as $image)
         {
@@ -140,7 +143,7 @@ class CommentController extends Controller
         ));
         dispatch($job);
 
-        if (!in_array($type, ['question', 'answer']))
+        if (!in_array($type, ['question', 'answer', 'role']))
         {
             $job = (new \App\Jobs\Trending\Active(
                 $id,
@@ -791,6 +794,10 @@ class CommentController extends Controller
         {
             return new AnswerCommentService();
         }
+        else if ($type === 'role')
+        {
+            return new CartoonRoleCommentService();
+        }
         else
         {
             return null;
@@ -822,6 +829,10 @@ class CommentController extends Controller
         else if ($type === 'answer')
         {
             return new AnswerRepository();
+        }
+        else if ($type === 'role')
+        {
+            return new CartoonRoleRepository();
         }
         else
         {
