@@ -112,7 +112,13 @@ class CommentController extends Controller
         {
             $saveContent[] = [
                 'type' => 'img',
-                'data' => $image
+                'data' => [
+                    'key' => $repository->convertImagePath($image['key']),
+                    'width' => $image['width'],
+                    'height' => $image['height'],
+                    'type' => $image['type'],
+                    'size' => $image['size']
+                ]
             ];
         }
         $saveContent[] = [
