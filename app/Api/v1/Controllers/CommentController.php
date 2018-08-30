@@ -43,7 +43,7 @@ class CommentController extends Controller
             'video',
             'question',
             'answer',
-            'cartoon_role'
+            'role'
         ];
     }
 
@@ -717,6 +717,10 @@ class CommentController extends Controller
         $result = [];
         foreach ($this->types as $modal)
         {
+            if ($modal === 'role')
+            {
+                $modal = 'cartoon_role';
+            }
             $list = DB::table($modal . '_comments')
                 ->where('state', '<>', 0)
                 ->select('id', 'user_id', 'content', 'modal_id', 'parent_id')
@@ -749,6 +753,10 @@ class CommentController extends Controller
     {
         $id = $request->get('id');
         $type = $request->get('type');
+        if ($type === 'role')
+        {
+            $type = 'cartoon_role';
+        }
         $now = Carbon::now();
 
         DB::table($type . '_comments')->where('id', $id)
@@ -764,6 +772,10 @@ class CommentController extends Controller
     {
         $id = $request->get('id');
         $type = $request->get('type');
+        if ($type === 'role')
+        {
+            $type = 'cartoon_role';
+        }
 
         DB::table($type . '_comments')->where('id', $id)
             ->update([
