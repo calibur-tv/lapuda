@@ -16,7 +16,7 @@ use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
 
-class RoleTrendingService extends TrendingService
+class CartoonRoleTrendingService extends TrendingService
 {
     protected $visitorId;
     protected $bangumiId;

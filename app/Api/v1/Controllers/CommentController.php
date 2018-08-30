@@ -9,12 +9,14 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\AnswerRepository;
+use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Comment\AnswerCommentService;
+use App\Api\V1\Services\Comment\CartoonRoleCommentService;
 use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Comment\QuestionCommentService;
@@ -40,7 +42,8 @@ class CommentController extends Controller
             'score',
             'video',
             'question',
-            'answer'
+            'answer',
+            'role'
         ];
     }
 
@@ -103,13 +106,19 @@ class CommentController extends Controller
         $saveContent = [];
         $userId = $this->getAuthUserId();
         $images = $request->get('images');
-        $masterId = intval($parent['user_id']);
+        $masterId = isset($parent['user_id']) ? intval($parent['user_id']) : 0;
 
         foreach ($images as $image)
         {
             $saveContent[] = [
                 'type' => 'img',
-                'data' => $image
+                'data' => [
+                    'key' => $repository->convertImagePath($image['key']),
+                    'width' => $image['width'],
+                    'height' => $image['height'],
+                    'type' => $image['type'],
+                    'size' => $image['size']
+                ]
             ];
         }
         $saveContent[] = [
@@ -140,7 +149,7 @@ class CommentController extends Controller
         ));
         dispatch($job);
 
-        if (!in_array($type, ['question', 'answer']))
+        if (!in_array($type, ['question', 'answer', 'role']))
         {
             $job = (new \App\Jobs\Trending\Active(
                 $id,
@@ -545,7 +554,7 @@ class CommentController extends Controller
             $type . '-comment',
             $comment['to_user_id'],
             $comment['from_user_id'],
-            $comment['parent_id'],
+            $comment['modal_id'],
             $comment['id']
         ));
         dispatch($job);
@@ -708,9 +717,13 @@ class CommentController extends Controller
         $result = [];
         foreach ($this->types as $modal)
         {
+            if ($modal === 'role')
+            {
+                $modal = 'cartoon_role';
+            }
             $list = DB::table($modal . '_comments')
                 ->where('state', '<>', 0)
-                ->select('id', 'user_id', 'content')
+                ->select('id', 'user_id', 'content', 'modal_id', 'parent_id')
                 ->get();
 
             if (is_null($list))
@@ -740,6 +753,10 @@ class CommentController extends Controller
     {
         $id = $request->get('id');
         $type = $request->get('type');
+        if ($type === 'role')
+        {
+            $type = 'cartoon_role';
+        }
         $now = Carbon::now();
 
         DB::table($type . '_comments')->where('id', $id)
@@ -755,6 +772,10 @@ class CommentController extends Controller
     {
         $id = $request->get('id');
         $type = $request->get('type');
+        if ($type === 'role')
+        {
+            $type = 'cartoon_role';
+        }
 
         DB::table($type . '_comments')->where('id', $id)
             ->update([
@@ -791,6 +812,10 @@ class CommentController extends Controller
         {
             return new AnswerCommentService();
         }
+        else if ($type === 'role')
+        {
+            return new CartoonRoleCommentService();
+        }
         else
         {
             return null;
@@ -822,6 +847,10 @@ class CommentController extends Controller
         else if ($type === 'answer')
         {
             return new AnswerRepository();
+        }
+        else if ($type === 'role')
+        {
+            return new CartoonRoleRepository();
         }
         else
         {
