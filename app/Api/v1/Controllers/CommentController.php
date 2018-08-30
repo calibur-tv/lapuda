@@ -43,7 +43,7 @@ class CommentController extends Controller
             'video',
             'question',
             'answer',
-            'role'
+            'cartoon_role'
         ];
     }
 
