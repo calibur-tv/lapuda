@@ -462,7 +462,7 @@ class CommentController extends Controller
         {
             $parent = $commentService->getMainCommentItem($comment['parent_id']);
             // 不是主评论作者
-            if ($parent['from_user_id'] !== $userId)
+            if ($parent['from_user_id'] != $userId)
             {
                 return $this->resErrRole();
             }
@@ -538,7 +538,7 @@ class CommentController extends Controller
             $repository = $this->getRepositoryByType($type);
             $parent = $repository->item($comment['modal_id']);
             // 不是主题的作者
-            if ($parent['user_id'] !== $userId)
+            if ($parent['user_id'] != $userId)
             {
                 return $this->resErrRole();
             }
