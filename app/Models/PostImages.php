@@ -24,7 +24,7 @@ class PostImages extends Model
         'height' => 'integer'
     ];
 
-    public function getSrcAttribute($url)
+    public function getUrlAttribute($url)
     {
         return config('website.image') . ($url ? $url : 'default/user-avatar');
     }
