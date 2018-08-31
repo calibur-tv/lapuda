@@ -164,16 +164,7 @@ class PostTransformer extends Transformer
                 //
                 'title' => $item['title'] ? $item['title'] : '标题什么的不重要',
                 'desc' => $item['desc'],
-                'images' => $this->collection($item['images'], function ($image)
-                {
-                    return [
-                        'width' => (int)$image['width'],
-                        'height' => (int)$image['height'],
-                        'size' => (int)$image['size'],
-                        'type' => $image['type'],
-                        'url' => config('website.image'). $image['url']
-                    ];
-                }),
+                'images' => $item['images'],
                 'top_at' => $item['top_at'],
                 'is_nice' => (boolean)$item['is_nice'],
                 //
