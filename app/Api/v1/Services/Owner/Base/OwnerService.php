@@ -177,32 +177,31 @@ class OwnerService extends Repository
             $users = DB::table($this->owner_table)
                 ->where('modal_id', $modalId)
                 ->select('user_id', 'is_leader', 'created_at')
-                ->get();
+                ->get()
+                ->toArray();
 
             if (is_null($users))
             {
                 return [];
             }
 
-            $users = $users->toArray();
-            $userRepository = new UserRepository();
-            $userTransformer = new UserTransformer();
-
-            foreach ($users as $i => $item)
-            {
-                $user = $userRepository->item($item->user_id);
-                if (is_null($user))
-                {
-                    continue;
-                }
-
-                $users[$i]->is_leader = (int)$item->is_leader;
-                $users[$i]->user = $userTransformer->item($user);
-                unset($users[$i]->user_id);
-            }
-
             return $users;
         });
+
+        $userRepository = new UserRepository();
+        $userTransformer = new UserTransformer();
+        foreach ($result as $i => $item)
+        {
+            $user = $userRepository->item($item->user_id);
+            if (is_null($user))
+            {
+                continue;
+            }
+
+            $result[$i]->is_leader = (boolean)$item->is_leader;
+            $result[$i]->user = $userTransformer->item($user);
+            unset($result[$i]->user_id);
+        }
 
         return [
             'list' => $result,
