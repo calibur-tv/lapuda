@@ -200,7 +200,7 @@ class PostController extends Controller
         $post['preview_images'] = $postRepository->previewImages(
             $id,
             $post['user_id'],
-            (boolean)(intval($request->get('only')) ?: 0)
+            intval($request->get('only')) ?: 0
         );
 
         $viewCounter = new PostViewCounter();

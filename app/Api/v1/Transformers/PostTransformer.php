@@ -31,16 +31,7 @@ class PostTransformer extends Transformer
                         'url' => config('website.image'). $image['url']
                     ];
                 }),
-                'preview_images' => $this->collection($post['preview_images'], function ($image)
-                {
-                    return [
-                        'width' => (int)$image['width'],
-                        'height' => (int)$image['height'],
-                        'size' => (int)$image['size'],
-                        'type' => $image['type'],
-                        'url' => config('website.image') . $image['url']
-                    ];
-                }),
+                'preview_images' => $post['preview_images'],
                 'view_count' => (int)$post['view_count'],
                 'comment_count' => (int)$post['comment_count'],
                 'commented' => $post['commented'],
