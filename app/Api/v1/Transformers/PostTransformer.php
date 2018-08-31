@@ -21,16 +21,7 @@ class PostTransformer extends Transformer
                 'title' => $post['title'],
                 'desc' => $post['desc'],
                 'content' => $post['content'],
-                'images' => $this->collection($post['images'], function ($image)
-                {
-                    return [
-                        'width' => (int)$image['width'],
-                        'height' => (int)$image['height'],
-                        'size' => (int)$image['size'],
-                        'type' => $image['type'],
-                        'url' => config('website.image'). $image['url']
-                    ];
-                }),
+                'images' => $post['images'],
                 'preview_images' => $post['preview_images'],
                 'view_count' => (int)$post['view_count'],
                 'comment_count' => (int)$post['comment_count'],
