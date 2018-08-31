@@ -43,7 +43,7 @@ class CommentController extends Controller
             'video',
             'question',
             'answer',
-            'cartoon_role'
+            'role'
         ];
     }
 
@@ -112,7 +112,13 @@ class CommentController extends Controller
         {
             $saveContent[] = [
                 'type' => 'img',
-                'data' => $image
+                'data' => [
+                    'key' => $repository->convertImagePath($image['key']),
+                    'width' => $image['width'],
+                    'height' => $image['height'],
+                    'type' => $image['type'],
+                    'size' => $image['size']
+                ]
             ];
         }
         $saveContent[] = [
@@ -456,7 +462,7 @@ class CommentController extends Controller
         {
             $parent = $commentService->getMainCommentItem($comment['parent_id']);
             // 不是主评论作者
-            if ($parent['from_user_id'] !== $userId)
+            if ($parent['from_user_id'] != $userId)
             {
                 return $this->resErrRole();
             }
@@ -532,7 +538,7 @@ class CommentController extends Controller
             $repository = $this->getRepositoryByType($type);
             $parent = $repository->item($comment['modal_id']);
             // 不是主题的作者
-            if ($parent['user_id'] !== $userId)
+            if ($parent['user_id'] != $userId)
             {
                 return $this->resErrRole();
             }
@@ -711,6 +717,10 @@ class CommentController extends Controller
         $result = [];
         foreach ($this->types as $modal)
         {
+            if ($modal === 'role')
+            {
+                $modal = 'cartoon_role';
+            }
             $list = DB::table($modal . '_comments')
                 ->where('state', '<>', 0)
                 ->select('id', 'user_id', 'content', 'modal_id', 'parent_id')
@@ -743,6 +753,10 @@ class CommentController extends Controller
     {
         $id = $request->get('id');
         $type = $request->get('type');
+        if ($type === 'role')
+        {
+            $type = 'cartoon_role';
+        }
         $now = Carbon::now();
 
         DB::table($type . '_comments')->where('id', $id)
@@ -758,6 +772,10 @@ class CommentController extends Controller
     {
         $id = $request->get('id');
         $type = $request->get('type');
+        if ($type === 'role')
+        {
+            $type = 'cartoon_role';
+        }
 
         DB::table($type . '_comments')->where('id', $id)
             ->update([
