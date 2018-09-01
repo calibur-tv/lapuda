@@ -105,7 +105,7 @@ class CommentController extends Controller
 
         $saveContent = [];
         $userId = $this->getAuthUserId();
-        $images = $request->get('images');
+        $images = $request->get('images') ?: [];
         $masterId = isset($parent['user_id']) ? intval($parent['user_id']) : 0;
 
         foreach ($images as $image)
