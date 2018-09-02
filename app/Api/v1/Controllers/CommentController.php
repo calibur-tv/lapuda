@@ -26,6 +26,7 @@ use App\Api\V1\Services\Counter\Stats\TotalCommentCount;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -764,6 +765,8 @@ class CommentController extends Controller
                 'state' => 0,
                 'deleted_at' => $now
             ]);
+
+        Redis::DEL($type . '_comments_' . $id . '_main_comment_ids');
 
         return $this->resNoContent();
     }
