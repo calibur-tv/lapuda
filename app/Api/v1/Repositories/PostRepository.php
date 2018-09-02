@@ -82,7 +82,7 @@ class PostRepository extends Repository
             {
                 $arr[] = [
                     'post_id' => $commentId,
-                    'src' => $this->convertImagePath($item['key']),
+                    'src' => $this->convertImagePath($item['url']),
                     'size' => intval($item['size']),
                     'width' => intval($item['width']),
                     'height' => intval($item['height']),

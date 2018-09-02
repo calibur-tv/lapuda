@@ -75,7 +75,7 @@ class PostController extends Controller
         foreach ($images as $i => $image)
         {
             $validator = Validator::make($image, [
-                'key' => 'required|string',
+                'url' => 'required|string',
                 'width' => 'required|integer',
                 'height' => 'required|integer',
                 'size' => 'required|integer',

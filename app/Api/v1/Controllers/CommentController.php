@@ -114,7 +114,8 @@ class CommentController extends Controller
             $saveContent[] = [
                 'type' => 'img',
                 'data' => [
-                    'key' => $repository->convertImagePath($image['key']),
+                    // 历史遗留问题，这里叫 key
+                    'key' => $repository->convertImagePath($image['url']),
                     'width' => $image['width'],
                     'height' => $image['height'],
                     'type' => $image['type'],
