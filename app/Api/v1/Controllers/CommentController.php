@@ -761,13 +761,22 @@ class CommentController extends Controller
         }
         $now = Carbon::now();
 
-        DB::table($type . '_comments')->where('id', $id)
+        $comment = DB
+            ::table($type . '_comments')
+            ->where('id', $id)
+            ->first();
+
+        DB::table($type . '_comments')
+            ->where('id', $id)
             ->update([
                 'state' => 0,
                 'deleted_at' => $now
             ]);
 
-        Redis::DEL($type . '_comments_' . $id . '_main_comment_ids');
+        if ($comment->parent_id != 0)
+        {
+            Redis::DEL($type . '_comments_' . $comment->modal_id . '_main_comment_ids');
+        }
 
         return $this->resNoContent();
     }
