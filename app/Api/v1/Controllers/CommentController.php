@@ -773,7 +773,7 @@ class CommentController extends Controller
                 'deleted_at' => $now
             ]);
 
-        if ($comment->parent_id != 0)
+        if ($comment->parent_id == 0)
         {
             Redis::DEL($type . '_comments_' . $comment->modal_id . '_main_comment_ids');
         }
