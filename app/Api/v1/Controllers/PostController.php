@@ -103,7 +103,7 @@ class PostController extends Controller
 
         $id = $postRepository->create([
             'title' => Purifier::clean($request->get('title')),
-            'content' => Purifier::clean($request->get('content')),
+            'content' => $postRepository->formatRichContent(Purifier::clean($request->get('content'))),
             'desc' => Purifier::clean($request->get('desc')),
             'bangumi_id' => $bangumiId,
             'user_id' => $userId,

@@ -124,7 +124,7 @@ class CommentController extends Controller
         }
         $saveContent[] = [
             'type' => 'txt',
-            'data' => $request->get('content')
+            'data' => $repository->formatRichContent($request->get('content'))
         ];
 
         $newComment = $commentService->create([

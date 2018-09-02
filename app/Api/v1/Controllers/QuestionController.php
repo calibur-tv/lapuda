@@ -42,7 +42,7 @@ class QuestionController extends Controller
         $validator = Validator::make($request->all(), [
             'tags' => 'required|Array',
             'title' => 'required|string|max:30',
-            'images' => 'required|Array',
+            'images' => 'Array',
             'intro' => 'required|max:120',
             'content' => 'required|string|max:1000'
         ]);
@@ -52,7 +52,7 @@ class QuestionController extends Controller
             return $this->resErrParams($validator);
         }
 
-        $images = $request->get('images');
+        $images = $request->get('images') ?: [];
         foreach ($images as $i => $image)
         {
             $validator = Validator::make($image, [

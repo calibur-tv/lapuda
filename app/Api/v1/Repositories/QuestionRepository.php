@@ -30,7 +30,7 @@ class QuestionRepository extends Repository
     public function create(Array $params)
     {
         $content = [
-            'text' => Purifier::clean($params['text']),
+            'text' => $this->formatRichContent(Purifier::clean($params['text'])),
             'images' => array_map(function ($image)
             {
                 $image['url'] = $this->convertImagePath($image['url']);
