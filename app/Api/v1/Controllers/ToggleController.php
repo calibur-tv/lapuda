@@ -43,14 +43,16 @@ class ToggleController extends Controller
     /**
      * 检查toggle状态
      *
-     * > 目前支持的 type：like, follow
-     * 如果是 like，modal 支持：post、image、score
-     * 如果是 follow，modal 支持：bangumi
+     * > 目前支持的参数格式：
+     * type：like, follow
+     * 如果是 type 是 like，modal 支持：post、image、score、answer
+     * 如果是 type 是follow，modal 支持：bangumi、question
      *
-     * @Post("/toggle/{type}/check")
+     * @Post("/toggle/check")
      *
      * @Parameters({
      *      @Parameter("modal", description="要检测的模型", type="string", required=true),
+     *      @Parameter("type", description="要检测的类型", type="string", required=true),
      *      @Parameter("id", description="要检测的id", type="integer", required=true)
      * })
      *
@@ -90,14 +92,17 @@ class ToggleController extends Controller
     /**
      * 获取发起操作的用户列表
      *
-     * > 目前支持的 type：like, follow，mark, reward, contributors
-     * 如果是 follow，modal 支持：bangumi
-     * 如果是 contributors，modal 支持：bangumi（就是吧主列表）
+     * > 目前支持的参数格式：
+     * type：like, follow, reward, mark，contributors
+     * 如果是 type 是 [like|reward|mark]，modal 支持：post、image、score、answer
+     * 如果是 type 是 follow，modal 支持：bangumi、question
+     * 如果是 contributors，modal 支持：bangumi（就是吧主列表），question（修改过问题的人列表）
      *
-     * @Get("/toggle/{type}/users")
+     * @Get("/toggle/users")
      *
      * @Parameters({
      *      @Parameter("modal", description="要请求的模型", type="string", required=true),
+     *      @Parameter("type", description="要检测的类型", type="string", required=true),
      *      @Parameter("id", description="要请求的id", type="integer", required=true),
      *      @Parameter("last_id", description="已获取列表里的最后一个 item 的 id", type="integer", required=true, default=0),
      *      @Parameter("take", description="获取的个数", type="integer", default=10)
@@ -152,7 +157,7 @@ class ToggleController extends Controller
     /**
      * 关注或取消关注
      *
-     * > 目前支持的 type：bangumi
+     * > 目前支持的 type：bangumi，question
      *
      * @Post("/toggle/follow")
      *
@@ -207,7 +212,7 @@ class ToggleController extends Controller
     /**
      * 喜欢或取消喜欢
      *
-     * > 目前支持的 type：post、image、score
+     * > 目前支持的 type：post、image、score、answer
      *
      * @Post("/toggle/like")
      *
@@ -286,7 +291,7 @@ class ToggleController extends Controller
     /**
      * 收藏或取消收藏
      *
-     * > 目前支持的 type：post、image、score
+     * > 目前支持的 type：post、image、score、answer
      *
      * @Post("/toggle/mark")
      *
@@ -360,7 +365,7 @@ class ToggleController extends Controller
     /**
      * 打赏或取消打赏
      *
-     * > 目前支持的 type：post、image、score
+     * > 目前支持的 type：post、image、score、answer
      *
      * @Post("/toggle/reward")
      *
@@ -469,6 +474,27 @@ class ToggleController extends Controller
         return $this->resCreated((boolean)$rewardId);
     }
 
+    /**
+     * 投票或取消投票
+     *
+     * > 目前支持的type： answer
+     * > 只支持赞同、不赞同两种情况
+     *
+     * @Post("/toggle/vote")
+     *
+     * @Parameters({
+     *      @Parameter("type", description="要请求的类型", type="string", required=true),
+     *      @Parameter("id", description="要请求的id", type="integer", required=true),
+     *      @Parameter("is_agree", description="是赞同", type="boolean", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body={"total": "目前赞的总数", "result": "自己是赞还是反对，-1代表反对，0代表不反对不赞同，1代表赞同"}),
+     *      @Response(403, body={"code": 40301, "message": "不能赞同自己"}),
+     *      @Response(404, body={"code": 40401, "message": "数据不存在"})
+     * })
+     */
     public function vote(Request $request)
     {
         $id = $request->get('id');
@@ -490,7 +516,7 @@ class ToggleController extends Controller
 
         if ($anwer['user_id'] === $userId)
         {
-            return $this->resErrRole('不能给自己点赞');
+            return $this->resErrRole($isAgree ? '不能给自己点赞' : '不能给自己点反对');
         }
 
         $answerVoteService = new AnswerVoteService();

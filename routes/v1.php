@@ -76,8 +76,6 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/bangumis', 'App\Api\V1\Controllers\ScoreController@bangumis');
 
-        $api->get('/users', 'App\Api\V1\Controllers\ScoreController@users');
-
         $api->get('/drafts', 'App\Api\V1\Controllers\ScoreController@drafts')->middleware(['jwt.auth']);
 
         $api->get('/check', 'App\Api\V1\Controllers\ScoreController@check')->middleware(['jwt.auth']);
@@ -297,7 +295,7 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/vote', 'App\Api\V1\Controllers\ToggleController@vote');
 
-            $api->post('/{type}/check', 'App\Api\V1\Controllers\ToggleController@mixinCheck');
+            $api->post('/check', 'App\Api\V1\Controllers\ToggleController@mixinCheck');
         });
 
         $api->get('/{type}/users', 'App\Api\V1\Controllers\ToggleController@mixinUsers');
@@ -321,7 +319,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/search'], function ($api)
         {
-            $api->get('/user', 'App\Api\V1\Controllers\SearchController@getUserInfo');
+            $api->get('/user', 'App\Api\V1\Controllers\UserController@getUserInfo');
         });
 
         $api->group(['prefix' => '/bangumi'], function ($api)

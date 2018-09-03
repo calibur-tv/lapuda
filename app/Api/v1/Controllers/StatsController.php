@@ -23,6 +23,7 @@ use Illuminate\Http\Request;
 
 class StatsController extends Controller
 {
+    // 后台实时数据
     public function realtime()
     {
         $totalUserCount = new TotalUserCount();
@@ -46,6 +47,7 @@ class StatsController extends Controller
         ]);
     }
 
+    // 后台30天内数据
     public function timeline(Request $request)
     {
         $today = strtotime(date('Y-m-d', time()));

@@ -23,12 +23,49 @@ class ReportController extends Controller
             'post',
             'image',
             'score',
+            'question',
+            'answer',
             'post_comment',
             'image_comment',
             'score_comment',
+            'video_comment',
+            'question_comment',
+            'answer_comment'
         ];
     }
 
+    /**
+     * 举报内容
+     *
+     * > 目前支持的 type：
+     *   user,
+     *   bangumi,
+     *   video,
+     *   role,
+     *   post,
+     *   image,
+     *   score,
+     *   question,
+     *   answer,
+     *   post_comment,
+     *   image_comment,
+     *   score_comment,
+     *   video_comment,
+     *   question_comment,
+     *   answer_comment
+     *
+     * @Post("/report/send")
+     *
+     * @Parameters({
+     *      @Parameter("id", description="举报的 id", type="integer", required=true),
+     *      @Parameter("type", description="举报的类型", type="string", required=true),
+     *      @Parameter("message", description="举报的留言", type="string", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(204)
+     * })
+     */
     public function send(Request $request)
     {
         $type = $request->get('type');

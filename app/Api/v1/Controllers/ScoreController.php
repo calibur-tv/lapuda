@@ -31,6 +31,17 @@ use Mews\Purifier\Facades\Purifier;
 
 class ScoreController extends Controller
 {
+    /**
+     * 获取漫评详情
+     *
+     * @Get("/score/{id}/show")
+     *
+     * @Transaction({
+     *      @Response(423, body={"code": 42301, "message": "内容正在审核中"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的漫评"}),
+     *      @Response(200, body="详情")
+     * })
+     */
     public function show($id)
     {
         $scoreRepository = new ScoreRepository();
@@ -114,6 +125,18 @@ class ScoreController extends Controller
         return $this->resOK($transformer->show($score));
     }
 
+    /**
+     * 编辑漫评时，根据 id 获取数据
+     *
+     * @Get("/score/{id}/edit")
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的漫评"}),
+     *      @Response(403, body={"code": 40301, "message": "没有操作权限"}),
+     *      @Response(200, body="漫评数据")
+     * })
+     */
     public function edit($id)
     {
         $scoreRepository = new ScoreRepository();
@@ -122,6 +145,7 @@ class ScoreController extends Controller
         {
             return $this->resErrNotFound();
         }
+
         $userId = $this->getAuthUserId();
         if ($score['user_id'] != $userId)
         {
@@ -131,6 +155,19 @@ class ScoreController extends Controller
         return $this->resOK($score);
     }
 
+    /**
+     * 获取番剧的漫评总分
+     *
+     * @Post("/score/bangumis")
+     *
+     * @Parameters({
+     *      @Parameter("id", description="番剧 id", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body="番剧的评分详情")
+     * })
+     */
     public function bangumis(Request $request)
     {
         $bangumiId = $request->get('id');
@@ -147,24 +184,16 @@ class ScoreController extends Controller
         return $this->resOK($score);
     }
 
-    public function users(Request $request)
-    {
-        $zone = $request->get('zone');
-        $page = $request->get('page') ?: 0;
-        $take = $request->get('take') ?: 10;
-
-        $repository = new Repository();
-        $userId = $repository->getUserIdByZone($zone);
-        if (!$userId)
-        {
-            return $this->resErrNotFound();
-        }
-
-        $scoreTrendingService = new ScoreTrendingService(0, $userId);
-
-        return $this->resOK($scoreTrendingService->users($page, $take));
-    }
-
+    /**
+     * 获取用户的漫评草稿列表
+     *
+     * @Get("/score/drafts")
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body="漫评草稿列表")
+     * })
+     */
     public function drafts()
     {
         $userId = $this->getAuthUserId();
@@ -202,13 +231,27 @@ class ScoreController extends Controller
         return $this->resOK($scoreTransformer->drafts($result));
     }
 
+    /**
+     * 创建漫评
+     *
+     * @Post("/score/check")
+     *
+     * @Parameters({
+     *      @Parameter("id", description="番剧 id", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body="如果是0，就是没评过，否则返回漫评的id")
+     * })
+     */
     public function check(Request $request)
     {
         $bangumiId = $request->get('id');
         $userId = $this->getAuthUserId();
 
-        $likeService = new BangumiScoreService();
-        if (!$likeService->check($userId, $bangumiId))
+        $bangumiScoreService = new BangumiScoreService();
+        if (!$bangumiScoreService->check($userId, $bangumiId))
         {
             return $this->resOK(0);
         }
@@ -220,6 +263,38 @@ class ScoreController extends Controller
         return $this->resOK($createdId);
     }
 
+    /**
+     * 创建漫评
+     *
+     * @Post("/score/cerate")
+     *
+     * @Parameters({
+     *      @Parameter("title", description="标题", type="string", required=true),
+     *      @Parameter("bangumi_id", description="番剧 id", type="integer", required=true),
+     *      @Parameter("intro", description="纯文本简介，120字以内", type="string", required=true),
+     *      @Parameter("content", description="JSON-content 的内容", type="array", required=true),
+     *      @Parameter("lol", description="笑点", type="integer", required=true),
+     *      @Parameter("cry", description="泪点", type="integer", required=true),
+     *      @Parameter("fight", description="燃点", type="integer", required=true),
+     *      @Parameter("moe", description="萌点", type="integer", required=true),
+     *      @Parameter("sound", description="音乐", type="integer", required=true),
+     *      @Parameter("vision", description="画面", type="integer", required=true),
+     *      @Parameter("role", description="人设", type="integer", required=true),
+     *      @Parameter("story", description="情节", type="integer", required=true),
+     *      @Parameter("express", description="内涵", type="integer", required=true),
+     *      @Parameter("style", description="美感", type="integer", required=true),
+     *      @Parameter("do_publish", description="是否公开发布", type="boolean", required=true),
+     *      @Parameter("is_creator", description="是否是原创内容", type="boolean", required=true),
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的番剧"}),
+     *      @Response(403, body={"code": 40301, "message": "没有操作权限"}),
+     *      @Response(400, body={"code": 40001, "message": "错误的请求参数|同一个番剧不能重复评价"}),
+     *      @Response(204)
+     * })
+     */
     public function create(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -314,6 +389,38 @@ class ScoreController extends Controller
         return $this->resOK($newId);
     }
 
+    /**
+     * 更新漫评
+     *
+     * @Post("/score/update")
+     *
+     * @Parameters({
+     *      @Parameter("id", description="要更新的漫评 id", type="integer", required=true),
+     *      @Parameter("title", description="标题", type="string", required=true),
+     *      @Parameter("bangumi_id", description="番剧 id", type="integer", required=true),
+     *      @Parameter("intro", description="纯文本简介，120字以内", type="string", required=true),
+     *      @Parameter("content", description="JSON-content 的内容", type="array", required=true),
+     *      @Parameter("lol", description="笑点", type="integer", required=true),
+     *      @Parameter("cry", description="泪点", type="integer", required=true),
+     *      @Parameter("fight", description="燃点", type="integer", required=true),
+     *      @Parameter("moe", description="萌点", type="integer", required=true),
+     *      @Parameter("sound", description="音乐", type="integer", required=true),
+     *      @Parameter("vision", description="画面", type="integer", required=true),
+     *      @Parameter("role", description="人设", type="integer", required=true),
+     *      @Parameter("story", description="情节", type="integer", required=true),
+     *      @Parameter("express", description="内涵", type="integer", required=true),
+     *      @Parameter("style", description="美感", type="integer", required=true),
+     *      @Parameter("do_publish", description="是否公开发布", type="boolean", required=true),
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的番剧"}),
+     *      @Response(403, body={"code": 40301, "message": "没有操作权限"}),
+     *      @Response(400, body={"code": 40001, "message": "错误的请求参数|同一个番剧不能重复评价"}),
+     *      @Response(204)
+     * })
+     */
     public function update(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -417,6 +524,22 @@ class ScoreController extends Controller
         return $this->resNoContent();
     }
 
+    /**
+     * 删除漫评
+     *
+     * @Post("/score/delete")
+     *
+     * @Parameters({
+     *      @Parameter("id", description="要删除的漫评 id", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(404, body={"code": 40401, "message": "数据不存在"}),
+     *      @Response(403, body={"code": 40301, "message": "没有操作权限"}),
+     *      @Response(204)
+     * })
+     */
     public function delete(Request $request)
     {
         $id = $request->get('id');
@@ -437,6 +560,7 @@ class ScoreController extends Controller
         return $this->resNoContent();
     }
 
+    // 漫评审核列表
     public function trials()
     {
         $ids = Score::withTrashed()
@@ -455,6 +579,7 @@ class ScoreController extends Controller
         return $this->resOK($list);
     }
 
+    // 后台删除漫评
     public function ban(Request $request)
     {
         $id = $request->get('id');
@@ -465,6 +590,7 @@ class ScoreController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台通过漫评
     public function pass(Request $request)
     {
         $id = $request->get('id');

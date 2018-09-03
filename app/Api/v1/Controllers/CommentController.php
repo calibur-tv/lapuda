@@ -714,6 +714,7 @@ class CommentController extends Controller
         return $this->resCreated((boolean)$result);
     }
 
+    // 后台待审的评论
     public function trials()
     {
         $result = [];
@@ -751,6 +752,7 @@ class CommentController extends Controller
         ]);
     }
 
+    // 后台删除评论
     public function ban(Request $request)
     {
         $id = $request->get('id');
@@ -781,6 +783,7 @@ class CommentController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台通过评论
     public function pass(Request $request)
     {
         $id = $request->get('id');
