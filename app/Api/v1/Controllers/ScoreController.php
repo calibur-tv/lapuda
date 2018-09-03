@@ -29,6 +29,9 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Mews\Purifier\Facades\Purifier;
 
+/**
+ * @Resource("漫评相关接口")
+ */
 class ScoreController extends Controller
 {
     /**

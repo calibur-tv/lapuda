@@ -11,6 +11,9 @@ namespace App\Api\V1\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 
+/**
+ * @Resource("举报相关接口")
+ */
 class ReportController extends Controller
 {
     public function __construct()

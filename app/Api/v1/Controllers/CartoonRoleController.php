@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
 /**
- * @Resource("动漫角色相关接口")
+ * @Resource("偶像相关接口")
  */
 class CartoonRoleController extends Controller
 {

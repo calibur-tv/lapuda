@@ -13,6 +13,9 @@ use App\Models\Question;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
+/**
+ * @Resource("提问相关接口")
+ */
 class QuestionController extends Controller
 {
     /**

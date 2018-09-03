@@ -243,8 +243,9 @@ class UserController extends Controller
      *
      * @Get("/user/`zone`/posts/reply")
      *
+     * @Parameter("page", description="页码", type="integer", required=true),
+     *
      * @Transaction({
-     *      @Parameter("page", description="页码", type="integer", required=true),
      *      @Response(200, body={"code": 0, "data": "帖子列表"}),
      *      @Response(404, body={"code": 40401, "message": "找不到用户"})
      * })

@@ -19,6 +19,9 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Mews\Purifier\Facades\Purifier;
 
+/**
+ * @Resource("回答相关接口")
+ */
 class AnswerController extends Controller
 {
     /**
