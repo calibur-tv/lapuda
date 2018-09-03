@@ -406,7 +406,7 @@ class ImageController extends Controller
                 'bangumi_id' => $bangumiId
             ]);
 
-        Redis::DEL($this->itemCacheKey($imageId));
+        Redis::DEL($imageRepository->itemCacheKey($imageId));
         $imageRepository->updateProcess($imageId);
 
         return $this->resNoContent();
