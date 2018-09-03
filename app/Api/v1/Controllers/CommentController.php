@@ -26,6 +26,7 @@ use App\Api\V1\Services\Counter\Stats\TotalCommentCount;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -105,7 +106,7 @@ class CommentController extends Controller
 
         $saveContent = [];
         $userId = $this->getAuthUserId();
-        $images = $request->get('images');
+        $images = $request->get('images') ?: [];
         $masterId = isset($parent['user_id']) ? intval($parent['user_id']) : 0;
 
         foreach ($images as $image)
@@ -113,7 +114,8 @@ class CommentController extends Controller
             $saveContent[] = [
                 'type' => 'img',
                 'data' => [
-                    'key' => $repository->convertImagePath($image['key']),
+                    // 历史遗留问题，这里叫 key
+                    'key' => $repository->convertImagePath($image['url']),
                     'width' => $image['width'],
                     'height' => $image['height'],
                     'type' => $image['type'],
@@ -123,7 +125,7 @@ class CommentController extends Controller
         }
         $saveContent[] = [
             'type' => 'txt',
-            'data' => $request->get('content')
+            'data' => $repository->formatRichContent($request->get('content'))
         ];
 
         $newComment = $commentService->create([
@@ -712,6 +714,7 @@ class CommentController extends Controller
         return $this->resCreated((boolean)$result);
     }
 
+    // 后台待审的评论
     public function trials()
     {
         $result = [];
@@ -749,6 +752,7 @@ class CommentController extends Controller
         ]);
     }
 
+    // 后台删除评论
     public function ban(Request $request)
     {
         $id = $request->get('id');
@@ -759,15 +763,27 @@ class CommentController extends Controller
         }
         $now = Carbon::now();
 
-        DB::table($type . '_comments')->where('id', $id)
+        $comment = DB
+            ::table($type . '_comments')
+            ->where('id', $id)
+            ->first();
+
+        DB::table($type . '_comments')
+            ->where('id', $id)
             ->update([
                 'state' => 0,
                 'deleted_at' => $now
             ]);
 
+        if ($comment->parent_id == 0)
+        {
+            Redis::DEL($type . '_comments_' . $comment->modal_id . '_main_comment_ids');
+        }
+
         return $this->resNoContent();
     }
 
+    // 后台通过评论
     public function pass(Request $request)
     {
         $id = $request->get('id');

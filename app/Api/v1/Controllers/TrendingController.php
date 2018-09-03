@@ -22,17 +22,46 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 /**
- * @Resource("排行相关接口")
+ * @Resource("信息流相关接口")
  */
 class TrendingController extends Controller
 {
+    /**
+     * 获取信息流列表
+     *
+     * > 调用方法：
+     * 如果是请求首页的数据，那么就不传 bangumiId 和 userZone，sort 为 active
+     * 如果是请求番剧页的数据，那么就传 bangumiId，sort 为 active
+     * 如果是请求用户页的数据，那么就传 userZone，sort 为 news
+     *
+     * > 支持的 type：
+     * post, image, score, role, question, answer
+     *
+     * > 支持的 sort：
+     * news，active，hot
+     *
+     * @Get("/flow/list")
+     *
+     * @Parameters({
+     *      @Parameter("type", description="哪种类型的数据", type="string", required=true),
+     *      @Parameter("sort", description="排序方法", type="string", required=true),
+     *      @Parameter("bangumiId", description="番剧的id", type="integer"),
+     *      @Parameter("userZone", description="用户的空间名", type="string")
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误"}),
+     *      @Response(204)
+     * })
+     */
     public function flowlist(Request $request)
     {
         $validator = Validator::make(
             $request->all(),
             [
                 'userZone' => 'string',
-                'bangumiId' => 'required|integer',
+                'bangumiId' => 'integer',
                 'type' => [
                     'required',
                     Rule::in(['post', 'image', 'score', 'role', 'question','answer']),
@@ -110,6 +139,7 @@ class TrendingController extends Controller
         return $this->resOK($trendingService->hot($seen, $take));
     }
 
+    // 获取信息流的统计数据，App暂无需求，之后可用于下拉刷新提示
     public function meta(Request $request)
     {
         $type = $request->get('type');

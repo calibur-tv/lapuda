@@ -13,8 +13,22 @@ use App\Models\Question;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
+/**
+ * @Resource("提问相关接口")
+ */
 class QuestionController extends Controller
 {
+    /**
+     * 获取提问详情
+     *
+     * @Get("/question/qaq/{id}/show")
+     *
+     * @Transaction({
+     *      @Response(423, body={"code": 42301, "message": "内容正在审核中"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的漫评"}),
+     *      @Response(200, body="详情")
+     * })
+     */
     public function show($id)
     {
         $questionRepository = new QuestionRepository();
@@ -37,12 +51,31 @@ class QuestionController extends Controller
         return $this->resOK($questionRepository->show($id, $this->getAuthUserId()));
     }
 
+    /**
+     * 创建提问
+     *
+     * @Post("/question/qaq/cerate")
+     *
+     * @Parameters({
+     *      @Parameter("tags", description="番剧的id数字", type="array", required=true),
+     *      @Parameter("title", description="标题", type="string", required=true),
+     *      @Parameter("images", description="图片列表", type="array"),
+     *      @Parameter("intro", description="纯文本简介，120字", type="string", required=true),
+     *      @Parameter("content", description="正题，1000字以内", type="string", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(400, body={"code": 40001, "message": "错误的请求参数"}),
+     *      @Response(201, body={"code": 0, "data": "提问的id"})
+     * })
+     */
     public function create(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'tags' => 'required|Array',
             'title' => 'required|string|max:30',
-            'images' => 'required|Array',
+            'images' => 'Array',
             'intro' => 'required|max:120',
             'content' => 'required|string|max:1000'
         ]);
@@ -52,7 +85,7 @@ class QuestionController extends Controller
             return $this->resErrParams($validator);
         }
 
-        $images = $request->get('images');
+        $images = $request->get('images') ?: [];
         foreach ($images as $i => $image)
         {
             $validator = Validator::make($image, [
@@ -82,16 +115,19 @@ class QuestionController extends Controller
         return $this->resCreated($newId);
     }
 
+    // TODO：更新问题
     public function update()
     {
 
     }
 
+    // TODO：删除问题
     public function delete()
     {
 
     }
 
+    // 后台审核列表
     public function trials()
     {
         $ids = Question
@@ -111,6 +147,7 @@ class QuestionController extends Controller
         return $this->resOK($list);
     }
 
+    // 后台删除问题
     public function ban(Request $request)
     {
         $id = $request->get('id');
@@ -121,6 +158,7 @@ class QuestionController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台通过问题
     public function pass(Request $request)
     {
         $id = $request->get('id');

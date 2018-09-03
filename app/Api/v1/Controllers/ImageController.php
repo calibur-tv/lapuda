@@ -56,86 +56,6 @@ class ImageController extends Controller
         return $this->resOK($imageTransformer->indexBanner($list));
     }
 
-    public function getIndexBanners()
-    {
-        $imageRepository = new ImageRepository();
-
-        $list = $imageRepository->banners(true);
-        $transformer = new ImageTransformer();
-
-        return $this->resOK($transformer->indexBanner($list));
-    }
-
-    public function uploadIndexBanner(Request $request)
-    {
-        $now = Carbon::now();
-
-        $id = Banner::insertGetId([
-            'url' => $request->get('url'),
-            'bangumi_id' => $request->get('bangumi_id') ?: 0,
-            'user_id' => $request->get('user_id') ?: 0,
-            'gray' => $request->get('gray') ?: 0,
-            'created_at' => $now,
-            'updated_at' => $now
-        ]);
-
-        Redis::DEL('loop_banners');
-        Redis::DEL('loop_banners_all');
-
-        return $this->resCreated($id);
-    }
-
-    public function toggleIndexBanner(Request $request)
-    {
-        $id = $request->get('id');
-        $banner = Banner::find($id);
-
-        if (is_null($banner))
-        {
-            Banner::withTrashed()->find($id)->restore();
-            $result = true;
-        }
-        else
-        {
-            $banner->delete();
-            $result = false;
-        }
-
-        Redis::DEL('loop_banners');
-        Redis::DEL('loop_banners_all');
-
-        return $this->resOK($result);
-    }
-
-    public function editIndexBanner(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'id' => 'required|integer|min:1',
-            'bangumi_id' => 'required|integer|min:0',
-            'user_id' => 'required|integer|min:0'
-        ]);
-
-        if ($validator->fails())
-        {
-            return $this->resErrParams($validator);
-        }
-
-        $id = $request->get('id');
-
-        Banner::withTrashed()
-            ->where('id', $id)
-            ->update([
-                'bangumi_id' => $request->get('bangumi_id'),
-                'user_id' => $request->get('user_id'),
-                'updated_at' => Carbon::now()
-            ]);
-
-        Redis::DEL('loop_banners');
-        Redis::DEL('loop_banners_all');
-
-        return $this->resNoContent();
-    }
-
     /**
      * 获取 Geetest 验证码
      *
@@ -713,7 +633,8 @@ class ImageController extends Controller
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": "相册页面信息"}),
-     *      @Response(404, body={"code": 40401, "message": "图片不存在"})
+     *      @Response(404, body={"code": 40401, "message": "图片不存在"}),
+     *      @Response(423, body={"code": 42301, "message": "内容正在审核中"})
      * })
      */
     public function show($id)
@@ -1005,6 +926,7 @@ class ImageController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台待审图片列表
     public function trials()
     {
         $albums = Image::withTrashed()
@@ -1020,6 +942,7 @@ class ImageController extends Controller
         return $this->resOK(array_merge($albums, $images));
     }
 
+    // 后台删除图片
     public function ban(Request $request)
     {
         $id = $request->get('id');
@@ -1061,6 +984,7 @@ class ImageController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台通过图片
     public function pass(Request $request)
     {
         $id = $request->get('id');
@@ -1083,6 +1007,90 @@ class ImageController extends Controller
             $totalImageCount = new TotalImageCount();
             $totalImageCount->add();
         }
+
+        return $this->resNoContent();
+    }
+
+    // 后台获取所有的 banner 图
+    public function getIndexBanners()
+    {
+        $imageRepository = new ImageRepository();
+
+        $list = $imageRepository->banners(true);
+        $transformer = new ImageTransformer();
+
+        return $this->resOK($transformer->indexBanner($list));
+    }
+
+    // 后台更新 banner
+    public function uploadIndexBanner(Request $request)
+    {
+        $now = Carbon::now();
+
+        $id = Banner::insertGetId([
+            'url' => $request->get('url'),
+            'bangumi_id' => $request->get('bangumi_id') ?: 0,
+            'user_id' => $request->get('user_id') ?: 0,
+            'gray' => $request->get('gray') ?: 0,
+            'created_at' => $now,
+            'updated_at' => $now
+        ]);
+
+        Redis::DEL('loop_banners');
+        Redis::DEL('loop_banners_all');
+
+        return $this->resCreated($id);
+    }
+
+    // 后台上下线 banner
+    public function toggleIndexBanner(Request $request)
+    {
+        $id = $request->get('id');
+        $banner = Banner::find($id);
+
+        if (is_null($banner))
+        {
+            Banner::withTrashed()->find($id)->restore();
+            $result = true;
+        }
+        else
+        {
+            $banner->delete();
+            $result = false;
+        }
+
+        Redis::DEL('loop_banners');
+        Redis::DEL('loop_banners_all');
+
+        return $this->resOK($result);
+    }
+
+    // 编辑 banner 信息
+    public function editIndexBanner(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer|min:1',
+            'bangumi_id' => 'required|integer|min:0',
+            'user_id' => 'required|integer|min:0'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $id = $request->get('id');
+
+        Banner::withTrashed()
+            ->where('id', $id)
+            ->update([
+                'bangumi_id' => $request->get('bangumi_id'),
+                'user_id' => $request->get('user_id'),
+                'updated_at' => Carbon::now()
+            ]);
+
+        Redis::DEL('loop_banners');
+        Redis::DEL('loop_banners_all');
 
         return $this->resNoContent();
     }

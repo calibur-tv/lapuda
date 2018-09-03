@@ -97,6 +97,7 @@ class VideoController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台获取番剧的视频列表
     public function bangumis(Request $request)
     {
         $bangumiId = $request->get('id');
@@ -125,6 +126,7 @@ class VideoController extends Controller
         ]);
     }
 
+    // 后台编辑视频
     public function edit(Request $request)
     {
         $videoId = $request->get('id');
@@ -148,6 +150,7 @@ class VideoController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台批量保存视频
     public function save(Request $request)
     {
         $data = $request->all();
@@ -194,6 +197,7 @@ class VideoController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台删除视频
     public function delete(Request $request)
     {
         $videoId = $request->get('id');
@@ -219,6 +223,7 @@ class VideoController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台查看播放排行榜
     public function playTrending(Request $request)
     {
         $curPage = $request->get('cur_page') ?: 0;

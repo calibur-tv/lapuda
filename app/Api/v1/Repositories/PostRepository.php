@@ -82,7 +82,7 @@ class PostRepository extends Repository
             {
                 $arr[] = [
                     'post_id' => $commentId,
-                    'src' => $this->convertImagePath($item['key']),
+                    'src' => $this->convertImagePath($item['url']),
                     'size' => intval($item['size']),
                     'width' => intval($item['width']),
                     'height' => intval($item['height']),
@@ -96,15 +96,8 @@ class PostRepository extends Repository
             PostImages::insert($arr);
 
             // 更新帖子图片预览的缓存
-            if (Redis::EXISTS('post_'.$postId.'_preview_images') && !empty($images))
-            {
-                foreach ($images as $i => $val)
-                {
-                    $images[$i]['url'] = config('website.image') . $val['key'];
-                    $images[$i] = json_encode($images[$i]);
-                }
-                Redis::RPUSH('post_'.$postId.'_preview_images', $images);
-            }
+            Redis::DEL('post_'.$postId.'_preview_images_1');
+            Redis::DEL('post_'.$postId.'_preview_images_0');
         }
     }
 
@@ -121,12 +114,13 @@ class PostRepository extends Repository
 
         $trendingService = new PostTrendingService();
         $trendingService->update($id);
+
         Redis::LPUSHX('user_'.$userId.'_replyPostIds', $newId);
     }
 
     public function previewImages($id, $masterId, $onlySeeMaster)
     {
-        $list = $this->RedisList('post_'.$id.'_preview_images', function () use ($id, $masterId, $onlySeeMaster)
+        return $this->Cache('post_'.$id.'_preview_images_' . $onlySeeMaster, function () use ($id, $masterId, $onlySeeMaster)
         {
             $postCommentService = new PostCommentService();
             $ids = $onlySeeMaster
@@ -135,27 +129,15 @@ class PostRepository extends Repository
 
             $ids[] = $id;
 
-            $images = PostImages::whereIn('post_id', $ids)
+            return PostImages
+                ::whereIn('post_id', $ids)
                 ->orderBy('created_at', 'asc')
                 ->select('src AS url', 'width', 'height', 'size', 'type')
                 ->get()
                 ->toArray();
 
-            foreach ($images as $i => $img)
-            {
-                $images[$i] = json_encode($img);
-            }
-
             return $images;
         });
-
-        $result = [];
-        foreach ($list as $item)
-        {
-            $result[] = json_decode($item, true);
-        }
-
-        return $result;
     }
 
     public function createProcess($id, $state = 0)

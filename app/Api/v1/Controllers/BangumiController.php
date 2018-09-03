@@ -239,257 +239,6 @@ class BangumiController extends Controller
         return $this->resOK($repository->videos($id, json_decode($bangumi['season'])));
     }
 
-    public function updateBangumiRelease(Request $request)
-    {
-        $bangumi_id = $request->get('bangumi_id');
-        $video_id = $request->get('video_id');
-
-        $video = Video::find($video_id);
-        if (is_null($video))
-        {
-            return $this->resErrBad('不存在的视频');
-        }
-
-        Bangumi::where('id', $bangumi_id)->update([
-            'released_time' => time(),
-            'released_video_id' => $video_id
-        ]);
-
-        Redis::DEL('bangumi_release_list');
-        Redis::DEL('bangumi_' . $bangumi_id);
-
-        $job = (new \App\Jobs\Push\Baidu('bangumi/news'));
-        dispatch($job);
-
-        return $this->resNoContent();
-    }
-
-    public function adminList(Request $request)
-    {
-        $curPage = $request->get('cur_page') ?: 0;
-        $toPage = $request->get('to_page') ?: 1;
-        $take = $request->get('take') ?: 10;
-
-        $list = Bangumi::withTrashed()
-            ->orderBy('id', 'DESC')
-            ->select('id', 'name', 'deleted_at')
-            ->take(($toPage - $curPage) * $take)
-            ->skip($curPage * $take)
-            ->get();
-
-        return $this->resOK([
-            'list' => $list,
-            'total' => Bangumi::count()
-        ]);
-    }
-
-    public function deleteBangumi(Request $request)
-    {
-        $id = $request->get('id');
-        $bangumi = Bangumi::withTrashed()->find($id);
-
-        if (is_null($bangumi))
-        {
-            return $this->resErrNotFound();
-        }
-
-        if (is_null($bangumi->deleted_at))
-        {
-            $bangumi->delete();
-
-            $job = (new \App\Jobs\Search\Index('D', 'bangumi', $id));
-            dispatch($job);
-
-            Redis::DEL('bangumi_'.$id);
-        }
-        else
-        {
-            $bangumi->restore();
-        }
-
-        return $this->resNoContent();
-    }
-
-    public function getAdminBangumiInfo(Request $request)
-    {
-        $id = $request->get('id');
-
-        $bangumi = Bangumi::withTrashed()->find($id);
-        if (is_null($bangumi))
-        {
-            return $this->resErrNotFound();
-        }
-
-        $bangumiTagService = new BangumiTagService();
-
-        $bangumi['alias'] = $bangumi['alias'] === 'null' ? '' : json_decode($bangumi['alias'])->search;
-        $bangumi['tags'] = $bangumiTagService->tags($id);
-        $bangumi['season'] = $bangumi['season'] === 'null' ? '' : $bangumi['season'];
-        $bangumi['published_at'] = $bangumi['published_at'] * 1000;
-
-        return $this->resOK($bangumi);
-    }
-
-    public function create(Request $request)
-    {
-        $releasedId = $request->get('released_video_id') ?: 0;
-        $time = Carbon::now();
-        $bangumiId = Bangumi::insertGetId([
-            'name' => $request->get('name'),
-            'avatar' => $request->get('avatar'),
-            'banner' => $request->get('banner'),
-            'summary' => $request->get('summary'),
-            'released_at' => $request->get('released_at'),
-            'released_video_id' => $releasedId,
-            'season' => $request->get('season') ? $request->get('season') : 'null',
-            'alias' => $request->get('alias') ? json_encode([
-                'search' => $request->get('alias')
-            ]) : 'null',
-            'published_at' => $request->get('published_at') ?: 0,
-            'others_site_video' => $request->get('others_site_video'),
-            'end' => $request->get('end'),
-            'created_at' => $time,
-            'updated_at' => $time
-        ]);
-
-        $bangumiTagService = new BangumiTagService();
-        $bangumiTagService->update($bangumiId, $request->get('tags'));
-
-        if ($releasedId)
-        {
-            Redis::DEL('bangumi_release_list');
-        }
-        Redis::DEL('bangumi_all_list');
-
-        $bangumiRepository = new BangumiRepository();
-        $bangumiRepository->migrateSearchIndex('C', $bangumiId);
-
-        return $this->resCreated($bangumiId);
-    }
-
-    public function edit(Request $request)
-    {
-        $rollback = false;
-        $bangumiId = $request->get('id');
-        DB::beginTransaction();
-
-        $bangumiTagService = new BangumiTagService();
-        $result = $bangumiTagService->update($bangumiId, $request->get('tags'));
-
-        if (!$result)
-        {
-            $rollback = true;
-        }
-
-        $bangumi = Bangumi::withTrashed()->where('id', $bangumiId)->first();
-        $arr = [
-            'name' => $request->get('name'),
-            'avatar' => $request->get('avatar'),
-            'banner' => $request->get('banner'),
-            'summary' => $request->get('summary'),
-            'released_at' => $request->get('released_at'),
-            'released_video_id' => $request->get('released_video_id'),
-            'season' => $request->get('season') ? $request->get('season') : 'null',
-            'alias' => $request->get('alias') ? json_encode([
-                'search' => $request->get('alias')
-            ]) : 'null',
-            'end' => $request->get('end'),
-            'published_at' => $request->get('published_at'),
-            'others_site_video' => $request->get('others_site_video'),
-            'has_cartoon' => $request->get('has_cartoon'),
-            'has_video' => $request->get('has_video')
-        ];
-
-        $result = $bangumi->update($arr);
-        if ($result === false)
-        {
-            $rollback = true;
-        }
-
-        if ($rollback)
-        {
-            DB::rollBack();
-
-            return $this->resErrBad('更新失败');
-        }
-        else
-        {
-            DB::commit();
-
-            Redis::DEL('bangumi_'.$bangumiId);
-            Redis::DEL('bangumi_'.$bangumiId.'_videos');
-
-            $bangumiRepository = new BangumiRepository();
-            $bangumiRepository->migrateSearchIndex('U', $bangumiId);
-
-            return $this->resNoContent();
-        }
-    }
-
-    public function setManager(Request $request)
-    {
-        $userId = $request->get('user_id');
-        $bangumiId = $request->get('bangumi_id');
-
-        $bangumiManager = new BangumiManager();
-        $result = $bangumiManager->set($bangumiId, $userId);
-
-        if (!$result)
-        {
-            return $this->resErrBad();
-        }
-
-        return $this->resNoContent();
-    }
-
-    public function removeManager(Request $request)
-    {
-        $userId = $request->get('user_id');
-        $bangumiId = $request->get('bangumi_id');
-
-        $bangumiManager = new BangumiManager();
-        $result = $bangumiManager->remove($bangumiId, $userId);
-
-        if (!$result)
-        {
-            return $this->resErrBad();
-        }
-
-        return $this->resNoContent();
-    }
-
-    public function upgradeManager(Request $request)
-    {
-        $userId = $request->get('user_id');
-        $bangumiId = $request->get('bangumi_id');
-
-        $bangumiManager = new BangumiManager();
-        $result = $bangumiManager->upgrade($bangumiId, $userId);
-
-        if (!$result)
-        {
-            return $this->resErrBad();
-        }
-
-        return $this->resNoContent();
-    }
-
-    public function downgradeManager(Request $request)
-    {
-        $userId = $request->get('user_id');
-        $bangumiId = $request->get('bangumi_id');
-
-        $bangumiManager = new BangumiManager();
-        $result = $bangumiManager->downgrade($bangumiId, $userId);
-
-        if (!$result)
-        {
-            return $this->resErrBad();
-        }
-
-        return $this->resNoContent();
-    }
-
     /**
      * 吧主编辑番剧信息
      *
@@ -594,6 +343,268 @@ class BangumiController extends Controller
         }
     }
 
+    // 后台给番剧上新（视频）
+    public function updateBangumiRelease(Request $request)
+    {
+        $bangumi_id = $request->get('bangumi_id');
+        $video_id = $request->get('video_id');
+
+        $video = Video::find($video_id);
+        if (is_null($video))
+        {
+            return $this->resErrBad('不存在的视频');
+        }
+
+        Bangumi::where('id', $bangumi_id)->update([
+            'released_time' => time(),
+            'released_video_id' => $video_id
+        ]);
+
+        Redis::DEL('bangumi_release_list');
+        Redis::DEL('bangumi_' . $bangumi_id);
+
+        $job = (new \App\Jobs\Push\Baidu('bangumi/news'));
+        dispatch($job);
+
+        return $this->resNoContent();
+    }
+
+    // 后台获取番剧列表
+    public function adminList(Request $request)
+    {
+        $curPage = $request->get('cur_page') ?: 0;
+        $toPage = $request->get('to_page') ?: 1;
+        $take = $request->get('take') ?: 10;
+
+        $list = Bangumi::withTrashed()
+            ->orderBy('id', 'DESC')
+            ->select('id', 'name', 'deleted_at')
+            ->take(($toPage - $curPage) * $take)
+            ->skip($curPage * $take)
+            ->get();
+
+        return $this->resOK([
+            'list' => $list,
+            'total' => Bangumi::count()
+        ]);
+    }
+
+    // 后台软删除番剧
+    public function deleteBangumi(Request $request)
+    {
+        $id = $request->get('id');
+        $bangumi = Bangumi::withTrashed()->find($id);
+
+        if (is_null($bangumi))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if (is_null($bangumi->deleted_at))
+        {
+            $bangumi->delete();
+
+            $job = (new \App\Jobs\Search\Index('D', 'bangumi', $id));
+            dispatch($job);
+
+            Redis::DEL('bangumi_'.$id);
+        }
+        else
+        {
+            $bangumi->restore();
+        }
+
+        return $this->resNoContent();
+    }
+
+    // 后台获取番剧详情
+    public function getAdminBangumiInfo(Request $request)
+    {
+        $id = $request->get('id');
+
+        $bangumi = Bangumi::withTrashed()->find($id);
+        if (is_null($bangumi))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $bangumiTagService = new BangumiTagService();
+
+        $bangumi['alias'] = $bangumi['alias'] === 'null' ? '' : json_decode($bangumi['alias'])->search;
+        $bangumi['tags'] = $bangumiTagService->tags($id);
+        $bangumi['season'] = $bangumi['season'] === 'null' ? '' : $bangumi['season'];
+        $bangumi['published_at'] = $bangumi['published_at'] * 1000;
+
+        return $this->resOK($bangumi);
+    }
+
+    // 后台创建番剧
+    public function create(Request $request)
+    {
+        $releasedId = $request->get('released_video_id') ?: 0;
+        $time = Carbon::now();
+        $bangumiId = Bangumi::insertGetId([
+            'name' => $request->get('name'),
+            'avatar' => $request->get('avatar'),
+            'banner' => $request->get('banner'),
+            'summary' => $request->get('summary'),
+            'released_at' => $request->get('released_at'),
+            'released_video_id' => $releasedId,
+            'season' => $request->get('season') ? $request->get('season') : 'null',
+            'alias' => $request->get('alias') ? json_encode([
+                'search' => $request->get('alias')
+            ]) : 'null',
+            'published_at' => $request->get('published_at') ?: 0,
+            'others_site_video' => $request->get('others_site_video'),
+            'end' => $request->get('end'),
+            'created_at' => $time,
+            'updated_at' => $time
+        ]);
+
+        $bangumiTagService = new BangumiTagService();
+        $bangumiTagService->update($bangumiId, $request->get('tags'));
+
+        if ($releasedId)
+        {
+            Redis::DEL('bangumi_release_list');
+        }
+        Redis::DEL('bangumi_all_list');
+
+        $bangumiRepository = new BangumiRepository();
+        $bangumiRepository->migrateSearchIndex('C', $bangumiId);
+
+        return $this->resCreated($bangumiId);
+    }
+
+    // 后台编辑番剧
+    public function edit(Request $request)
+    {
+        $rollback = false;
+        $bangumiId = $request->get('id');
+        DB::beginTransaction();
+
+        $bangumiTagService = new BangumiTagService();
+        $result = $bangumiTagService->update($bangumiId, $request->get('tags'));
+
+        if (!$result)
+        {
+            $rollback = true;
+        }
+
+        $bangumi = Bangumi::withTrashed()->where('id', $bangumiId)->first();
+        $arr = [
+            'name' => $request->get('name'),
+            'avatar' => $request->get('avatar'),
+            'banner' => $request->get('banner'),
+            'summary' => $request->get('summary'),
+            'released_at' => $request->get('released_at'),
+            'released_video_id' => $request->get('released_video_id'),
+            'season' => $request->get('season') ? $request->get('season') : 'null',
+            'alias' => $request->get('alias') ? json_encode([
+                'search' => $request->get('alias')
+            ]) : 'null',
+            'end' => $request->get('end'),
+            'published_at' => $request->get('published_at'),
+            'others_site_video' => $request->get('others_site_video'),
+            'has_cartoon' => $request->get('has_cartoon'),
+            'has_video' => $request->get('has_video')
+        ];
+
+        $result = $bangumi->update($arr);
+        if ($result === false)
+        {
+            $rollback = true;
+        }
+
+        if ($rollback)
+        {
+            DB::rollBack();
+
+            return $this->resErrBad('更新失败');
+        }
+        else
+        {
+            DB::commit();
+
+            Redis::DEL('bangumi_'.$bangumiId);
+            Redis::DEL('bangumi_'.$bangumiId.'_videos');
+
+            $bangumiRepository = new BangumiRepository();
+            $bangumiRepository->migrateSearchIndex('U', $bangumiId);
+
+            return $this->resNoContent();
+        }
+    }
+
+    // 后台设置番剧管理员
+    public function setManager(Request $request)
+    {
+        $userId = $request->get('user_id');
+        $bangumiId = $request->get('bangumi_id');
+
+        $bangumiManager = new BangumiManager();
+        $result = $bangumiManager->set($bangumiId, $userId);
+
+        if (!$result)
+        {
+            return $this->resErrBad();
+        }
+
+        return $this->resNoContent();
+    }
+
+    // 后台撤销番剧管理员
+    public function removeManager(Request $request)
+    {
+        $userId = $request->get('user_id');
+        $bangumiId = $request->get('bangumi_id');
+
+        $bangumiManager = new BangumiManager();
+        $result = $bangumiManager->remove($bangumiId, $userId);
+
+        if (!$result)
+        {
+            return $this->resErrBad();
+        }
+
+        return $this->resNoContent();
+    }
+
+    // 后台升级番剧管理员权限
+    public function upgradeManager(Request $request)
+    {
+        $userId = $request->get('user_id');
+        $bangumiId = $request->get('bangumi_id');
+
+        $bangumiManager = new BangumiManager();
+        $result = $bangumiManager->upgrade($bangumiId, $userId);
+
+        if (!$result)
+        {
+            return $this->resErrBad();
+        }
+
+        return $this->resNoContent();
+    }
+
+    // 后台降级番剧管理员权限
+    public function downgradeManager(Request $request)
+    {
+        $userId = $request->get('user_id');
+        $bangumiId = $request->get('bangumi_id');
+
+        $bangumiManager = new BangumiManager();
+        $result = $bangumiManager->downgrade($bangumiId, $userId);
+
+        if (!$result)
+        {
+            return $this->resErrBad();
+        }
+
+        return $this->resNoContent();
+    }
+
+    // 后台番剧待审列表
     public function trials()
     {
         $bangumiIds = Bangumi::where('state', '<>', 0)
@@ -611,6 +622,7 @@ class BangumiController extends Controller
         return $this->resOK($list);
     }
 
+    // 后台通过番剧
     public function pass(Request $request)
     {
         Bangumi::where('id', $request->get('id'))

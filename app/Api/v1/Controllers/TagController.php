@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 
 class TagController extends Controller
 {
+    // 后台获取所有的 tag
     public function all(Request $request)
     {
         $type = $request->get('type');
@@ -26,6 +27,7 @@ class TagController extends Controller
         return $this->resOK($result);
     }
 
+    // 后台编辑 tag
     public function edit(Request $request)
     {
         $id = $request->get('id');
@@ -41,6 +43,7 @@ class TagController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台创建 tag
     public function create(Request $request)
     {
         $type = $request->get('type');

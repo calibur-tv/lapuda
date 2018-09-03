@@ -99,7 +99,7 @@ class ImageRepository extends Repository
                     "width": $(imageInfo.width),
                     "type": "$(mimeType)",
                     "size": $(fsize),
-                    "key": "$(key)"
+                    "url": "$(key)"
                 }
             }',
             'mimeLimit' => 'image/jpeg;image/png;image/jpg;image/gif'

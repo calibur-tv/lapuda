@@ -400,6 +400,24 @@ class Repository
         return str_replace(config('website.image'), '', $url);
     }
 
+    public function formatRichContent($content)
+    {
+        while (preg_match('/\n\n\n/', $content))
+        {
+            $content = str_replace("\n\n\n", "\n\n", $content);
+        }
+
+        $content = explode("\n", $content);
+
+        $result = [];
+        foreach ($content as $item)
+        {
+            $result[] = $item ? '<p>' . $item . '</p>' : '<p><br></p>';
+        }
+
+        return implode("", $result);
+    }
+
     protected function formatJsonContent($content)
     {
         $content = json_decode($content, true);

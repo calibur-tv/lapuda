@@ -13,6 +13,25 @@ use Mews\Purifier\Facades\Purifier;
  */
 class SearchController extends Controller
 {
+    /**
+     * 搜索接口
+     *
+     * > 目前支持的参数格式：
+     * type：all, user, bangumi, video，post，role，image，score，question，answer
+     * 返回的数据与 flow/list 返回的相同
+     *
+     * @Get("/search/new")
+     *
+     * @Parameters({
+     *      @Parameter("type", description="要检测的类型", type="string", required=true),
+     *      @Parameter("key", description="搜索的关键词", type="string", required=true),
+     *      @Parameter("page", description="搜索的页码", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body="数据列表")
+     * })
+     */
     public function search(Request $request)
     {
         $key = Purifier::clean($request->get('q'));
@@ -31,33 +50,21 @@ class SearchController extends Controller
         return $this->resOK($result);
     }
 
+    /**
+     * 获取所有番剧列表
+     *
+     * > 返回所有的番剧列表，用户搜索提示，可以有效减少请求数
+     *
+     * @Get("/search/bangumis")
+     *
+     * @Transaction({
+     *      @Response(200, body="番剧列表")
+     * })
+     */
     public function bangumis()
     {
         $bangumiRepository = new BangumiRepository();
 
         return $this->resOK($bangumiRepository->searchAll());
-    }
-
-    public function getUserInfo(Request $request)
-    {
-        $zone = $request->get('zone');
-        $userId = $request->get('id');
-        if (!$zone && !$userId)
-        {
-            return $this->resErrBad();
-        }
-
-        $userRepository = new UserRepository();
-        if (!$userId)
-        {
-            $userId = $userRepository->getUserIdByZone($zone, true);
-        }
-
-        if (!$userId)
-        {
-            return $this->resErrNotFound();
-        }
-
-        return $this->resOK($userRepository->item($userId, true));
     }
 }

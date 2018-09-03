@@ -33,7 +33,7 @@ class PostController extends Controller
      * 新建帖子
      *
      * > 图片对象示例：
-     * 1. `key` 七牛传图后得到的 key，不包含图片地址的 host，如一张图片 image.calibur.tv/user/1/avatar.png，七牛返回的 key 是：user/1/avatar.png，将这个 key 传到后端
+     * 1. `url` 七牛传图后得到的 url，不包含图片地址的 host，如一张图片 image.calibur.tv/user/1/avatar.png，七牛返回的 url 是：user/1/avatar.png，将这个 url 传到后端
      * 2. `width` 图片的宽度，七牛上传图片后得到
      * 3. `height` 图片的高度，七牛上传图片后得到
      * 4. `size` 图片的尺寸，七牛上传图片后得到
@@ -75,7 +75,7 @@ class PostController extends Controller
         foreach ($images as $i => $image)
         {
             $validator = Validator::make($image, [
-                'key' => 'required|string',
+                'url' => 'required|string',
                 'width' => 'required|integer',
                 'height' => 'required|integer',
                 'size' => 'required|integer',
@@ -103,7 +103,7 @@ class PostController extends Controller
 
         $id = $postRepository->create([
             'title' => Purifier::clean($request->get('title')),
-            'content' => Purifier::clean($request->get('content')),
+            'content' => $postRepository->formatRichContent(Purifier::clean($request->get('content'))),
             'desc' => Purifier::clean($request->get('desc')),
             'bangumi_id' => $bangumiId,
             'user_id' => $userId,
@@ -118,7 +118,7 @@ class PostController extends Controller
     /**
      * 帖子详情
      *
-     * @Get("/post/`postId`/show")
+     * @Get("/post/{id}/show")
      *
      * @Parameters({
      *      @Parameter("only", description="是否只看楼主", type="integer", default="0", required=false)
@@ -127,7 +127,8 @@ class PostController extends Controller
      * @Transaction({
      *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(200, body={"code": 0, "data": {"bangumi":"番剧信息", "user": "作者信息", "post": "帖子信息"}}),
-     *      @Response(404, body={"code": 40401, "message": "帖子不存在/番剧不存在/作者不存在"})
+     *      @Response(404, body={"code": 40401, "message": "帖子不存在/番剧不存在/作者不存在"}),
+     *      @Response(423, body={"code": 42301, "message": "内容正在审核中"})
      * })
      */
     public function show(Request $request, $id)
@@ -200,7 +201,7 @@ class PostController extends Controller
         $post['preview_images'] = $postRepository->previewImages(
             $id,
             $post['user_id'],
-            (boolean)(intval($request->get('only')) ?: 0)
+            intval($request->get('only')) ?: 0
         );
 
         $viewCounter = new PostViewCounter();
@@ -223,9 +224,25 @@ class PostController extends Controller
         ]);
     }
 
-    public function bangumiTops(Request $request, $id)
+    /**
+     * 获取番剧页的置顶帖子列表
+     *
+     * @Get("/bangumi/{id}/posts/top")
+     *
+     * @Transaction({
+     *      @Response(404, body={"code": 40401, "message": "番剧不存在"}),
+     *      @Response(200, body="帖子列表")
+     * })
+     */
+    public function bangumiTops($id)
     {
         $bangumiRepository = new BangumiRepository();
+        $bangumi = $bangumiRepository->item($id);
+        if (is_null($bangumi))
+        {
+            return $this->resErrNotFound();
+        }
+
         $ids = $bangumiRepository->getTopPostIds($id);
 
         if (empty($ids))
@@ -296,7 +313,24 @@ class PostController extends Controller
 
         return $this->resNoContent();
     }
-    // TODO：doc
+
+    /**
+     * 设置帖子加精
+     *
+     * @Post("/post/manager/nice/set")
+     *
+     * @Parameters({
+     *      @Parameter("id", description="帖子 id", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(204),
+     *      @Response(400, body={"code": 40001, "message": "已经是精品贴了"}),
+     *      @Response(403, body={"code": 40301, "message": "权限不足"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的帖子"})
+     * })
+     */
     public function setNice(Request $request)
     {
         $postId = $request->get('id');
@@ -331,7 +365,24 @@ class PostController extends Controller
 
         return $this->resNoContent();
     }
-    // TODO：doc
+
+    /**
+     * 撤销帖子加精
+     *
+     * @Post("/post/manager/nice/remove")
+     *
+     * @Parameters({
+     *      @Parameter("id", description="帖子 id", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(204),
+     *      @Response(400, body={"code": 40001, "message": "不是精品贴"}),
+     *      @Response(403, body={"code": 40301, "message": "权限不足"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的帖子"})
+     * })
+     */
     public function removeNice(Request $request)
     {
         $postId = $request->get('id');
@@ -365,7 +416,24 @@ class PostController extends Controller
 
         return $this->resNoContent();
     }
-    // TODO：doc
+
+    /**
+     * 撤销帖子置顶
+     *
+     * @Post("/post/manager/top/set")
+     *
+     * @Parameters({
+     *      @Parameter("id", description="帖子 id", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(204),
+     *      @Response(400, body={"code": 40001, "message": "超过置顶帖的个数限制（目前是3）"}),
+     *      @Response(403, body={"code": 40301, "message": "权限不足"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的帖子"})
+     * })
+     */
     public function setTop(Request $request)
     {
         $postId = $request->get('id');
@@ -404,7 +472,24 @@ class PostController extends Controller
 
         return $this->resNoContent();
     }
-    // TODO：doc
+
+    /**
+     * 撤销帖子置顶
+     *
+     * @Post("/post/manager/top/remove")
+     *
+     * @Parameters({
+     *      @Parameter("id", description="帖子 id", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(204),
+     *      @Response(400, body={"code": 40001, "message": "不是置顶贴"}),
+     *      @Response(403, body={"code": 40301, "message": "权限不足"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的帖子"})
+     * })
+     */
     public function removeTop(Request $request)
     {
         $postId = $request->get('id');
@@ -439,6 +524,7 @@ class PostController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台审核列表
     public function trials()
     {
         $list = Post::withTrashed()
@@ -465,6 +551,7 @@ class PostController extends Controller
         return $this->resOK($list);
     }
 
+    // 后台删除帖子
     public function ban(Request $request)
     {
         $id = $request->get('id');
@@ -480,6 +567,7 @@ class PostController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台通过帖子
     public function pass(Request $request)
     {
         $postId = $request->get('id');
@@ -496,6 +584,7 @@ class PostController extends Controller
         return $this->resNoContent();
     }
 
+    // 后天删除帖子里的某张图片
     public function deletePostImage(Request $request)
     {
         $id = $request->get('id');

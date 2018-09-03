@@ -348,6 +348,7 @@ class DoorController extends Controller
         return $this->resOK('密码重置成功');
     }
 
+    // 创建营销号
     public function createFaker(Request $request)
     {
         $nickname = $request->get('nickname');

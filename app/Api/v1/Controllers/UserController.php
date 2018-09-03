@@ -8,6 +8,7 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Services\Counter\Stats\TotalUserCount;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
@@ -67,45 +68,6 @@ class UserController extends Controller
     }
 
     /**
-     * 更新用户资料中的图片
-     *
-     * @Post("/user/setting/image")
-     *
-     * @Parameters({
-     *      @Parameter("type", description="`avatar`或`banner`", type="string", required=true),
-     *      @Parameter("url", description="图片地址，不带`host`", type="string", required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(204)
-     * })
-     */
-    public function image(Request $request)
-    {
-        $userId = $this->getAuthUserId();
-        $key = $request->get('type');
-
-        if (!in_array($key, ['avatar', 'banner']))
-        {
-            return $this->resErrBad();
-        }
-
-        $val = $request->get('url');
-
-        User::where('id', $userId)->update([
-            $key => $val
-        ]);
-
-        Redis::DEL('user_'.$userId);
-
-        $job = (new \App\Jobs\Trial\User\Image($userId, $key));
-        dispatch($job);
-
-        return $this->resNoContent();
-    }
-
-    /**
      * 用户详情
      *
      * @Get("/user/`zone`/show")
@@ -151,7 +113,70 @@ class UserController extends Controller
         return $this->resOK($userTransformer->show($user));
     }
 
-    // TODO：API Doc
+    /**
+     * 更新用户资料中的图片
+     *
+     * @Post("/user/setting/image")
+     *
+     * @Parameters({
+     *      @Parameter("type", description="`avatar`或`banner`", type="string", required=true),
+     *      @Parameter("url", description="图片地址，不带`host`", type="string", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误"}),
+     *      @Response(204)
+     * })
+     */
+    public function image(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $key = $request->get('type');
+
+        if (!in_array($key, ['avatar', 'banner']))
+        {
+            return $this->resErrBad();
+        }
+
+        $repository = new Repository();
+        $val = $repository->convertImagePath($request->get('url'));
+
+        User::where('id', $userId)->update([
+            $key => $val
+        ]);
+
+        Redis::DEL('user_'.$userId);
+
+        $job = (new \App\Jobs\Trial\User\Image($userId, $key));
+        dispatch($job);
+
+        return $this->resNoContent();
+    }
+
+    /**
+     * 更新用户资料中文本
+     *
+     * > 性别对应：
+     *  0：未知，1：男，2：女，3：伪娘，4：药娘，5：扶她
+     *
+     * @Post("/user/setting/profile")
+     *
+     * @Parameters({
+     *      @Parameter("sex", description="性别，必填", type="integer", required=true),
+     *      @Parameter("signature", description="用户签名，最多150字", type="string", required=true),
+     *      @Parameter("nickname", description="用户昵称，最多14字符（1个汉字占2个字符）", type="string", required=true),
+     *      @Parameter("birthday", description="用户生日，秒为单位的时间戳", type="number", required=true),
+     *      @Parameter("birth_secret", description="生日是否保密", type="boolean", required=true),
+     *      @Parameter("sex_secret", description="性别是否保密", type="boolean", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误"}),
+     *      @Response(204)
+     * })
+     */
     public function profile(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -159,6 +184,7 @@ class UserController extends Controller
             'signature' => 'string|min:0|max:150',
             'nickname' => 'required|min:1|max:14',
             'birth_secret' => 'required|boolean',
+            'birthday' => 'required',
             'sex_secret' => 'required|boolean'
         ]);
 
@@ -217,8 +243,9 @@ class UserController extends Controller
      *
      * @Get("/user/`zone`/posts/reply")
      *
+     * @Parameter("page", description="页码", type="integer", required=true),
+     *
      * @Transaction({
-     *      @Request({"minId": "看过的帖子列表里，id 最小的那个帖子的 id"}),
      *      @Response(200, body={"code": 0, "data": "帖子列表"}),
      *      @Response(404, body={"code": 40401, "message": "找不到用户"})
      * })
@@ -274,7 +301,7 @@ class UserController extends Controller
      * @Post("/user/feedback")
      *
      * @Transaction({
-     *      @Request({"type": "反馈的类型", "desc": "反馈内容，最多120字"}),
+     *      @Request({"type": "反馈的类型", "desc": "反馈内容，最多120字", "ua": "用户的设备信息"}),
      *      @Response(204),
      *      @Response(400, body={"code": 40003, "message": "请求参数错误"})
      * })
@@ -395,16 +422,41 @@ class UserController extends Controller
         $userId = $this->getAuthUserId();
 
         Notifications
-        ::where('to_user_id', $userId)
-        ->update([
-            'checked' => true
-        ]);
+            ::where('to_user_id', $userId)
+            ->update([
+                'checked' => true
+            ]);
 
         Redis::DEL('user-' . $userId . '-notification-ids');
 
         return $this->resNoContent();
     }
 
+    // 后台根据用户的 zone 来获取用户信息
+    public function getUserInfo(Request $request)
+    {
+        $zone = $request->get('zone');
+        $userId = $request->get('id');
+        if (!$zone && !$userId)
+        {
+            return $this->resErrBad();
+        }
+
+        $userRepository = new UserRepository();
+        if (!$userId)
+        {
+            $userId = $userRepository->getUserIdByZone($zone, true);
+        }
+
+        if (!$userId)
+        {
+            return $this->resErrNotFound();
+        }
+
+        return $this->resOK($userRepository->item($userId, true));
+    }
+
+    // 营销号列表
     public function fakers()
     {
         $users = User::withTrashed()
@@ -415,6 +467,7 @@ class UserController extends Controller
         return $this->resOK($users);
     }
 
+    // 认领营销号
     public function fakerReborn(Request $request)
     {
         $phone = $request->get('phone');
@@ -437,6 +490,7 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
+    // 金币用户排行榜
     public function coinDescList(Request $request)
     {
         $curPage = $request->get('cur_page') ?: 0;
@@ -457,6 +511,7 @@ class UserController extends Controller
         ]);
     }
 
+    // 把用户加入到审核列表
     public function addUserToTrial(Request $request)
     {
         $userId = $request->get('id');
@@ -476,6 +531,7 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
+    // 用户反馈列表
     public function feedbackList()
     {
         $list = Feedback::where('stage', 0)->get();
@@ -483,6 +539,7 @@ class UserController extends Controller
         return $this->resOK($list);
     }
 
+    // 读取用户反馈列表
     public function readFeedback(Request $request)
     {
         Feedback::where('id', $request->get('id'))->update([
@@ -492,6 +549,7 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
+    // 管理员列表
     public function adminUsers()
     {
         $users = User::where('is_admin', 1)
@@ -501,6 +559,7 @@ class UserController extends Controller
         return $this->resOK($users);
     }
 
+    // 撤销管理员
     public function removeAdmin(Request $request)
     {
         $userId = $this->getAuthUserId();
@@ -519,6 +578,7 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
+    // 添加管理员
     public function addAdmin(Request $request)
     {
         $userId = $this->getAuthUserId();
@@ -536,6 +596,7 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
+    // 获取用户的交易记录
     public function getUserCoinTransactions(Request $request)
     {
         $curPage = $request->get('cur_page') ?: 0;
@@ -636,6 +697,7 @@ class UserController extends Controller
         ]);
     }
 
+    // 用户提现
     public function withdrawal(Request $request)
     {
         $adminId = $this->getAuthUserId();
@@ -673,6 +735,7 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
+    // 用户审核列表
     public function trials()
     {
         $users = User
@@ -684,6 +747,7 @@ class UserController extends Controller
         return $this->resOK($users);
     }
 
+    // 封禁用户
     public function ban(Request $request)
     {
         $userId = $request->get('id');
@@ -702,6 +766,7 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
+    // 通过用户
     public function pass(Request $request)
     {
         User::where('id', $request->get('id'))->update([
@@ -711,6 +776,7 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
+    // 解禁用户
     public function recover(Request $request)
     {
         $userId = $request->get('id');
@@ -728,6 +794,7 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
+    // 删除用户的某条数据
     public function deleteUserInfo(Request $request)
     {
         $userId = $request->get('id');

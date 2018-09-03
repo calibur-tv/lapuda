@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
 /**
- * @Resource("动漫角色相关接口")
+ * @Resource("偶像相关接口")
  */
 class CartoonRoleController extends Controller
 {
@@ -208,6 +208,7 @@ class CartoonRoleController extends Controller
         ]));
     }
 
+    // 后台展示偶像详情
     public function adminShow(Request $request)
     {
         $result = CartoonRole::find($request->get('id'));
@@ -215,6 +216,7 @@ class CartoonRoleController extends Controller
         return $this->resOK($result);
     }
 
+    // 创建偶像
     public function create(Request $request)
     {
         $user = $this->getAuthUser();
@@ -262,6 +264,7 @@ class CartoonRoleController extends Controller
         return $this->resCreated($id);
     }
 
+    // 编辑偶像
     public function edit(Request $request)
     {
         $user = $this->getAuthUser();
@@ -297,6 +300,7 @@ class CartoonRoleController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台偶像列表
     public function trials()
     {
         $roles = CartoonRole::where('state', '<>', 0)
@@ -306,6 +310,7 @@ class CartoonRoleController extends Controller
         return $this->resOK($roles);
     }
 
+    // 后台删除偶像
     public function ban(Request $request)
     {
         $id = $request->get('id');
@@ -322,6 +327,7 @@ class CartoonRoleController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台通过偶像
     public function pass(Request $request)
     {
         CartoonRole::where('id', $request->get('id'))

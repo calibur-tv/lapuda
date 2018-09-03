@@ -19,8 +19,22 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Mews\Purifier\Facades\Purifier;
 
+/**
+ * @Resource("回答相关接口")
+ */
 class AnswerController extends Controller
 {
+    /**
+     * 获取回答详情
+     *
+     * @Get("/question/soga/{id}/show")
+     *
+     * @Transaction({
+     *      @Response(423, body={"code": 42301, "message": "内容正在审核中"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的漫评"}),
+     *      @Response(200, body="详情")
+     * })
+     */
     public function show($id)
     {
         $answerRepository = new AnswerRepository();
@@ -65,6 +79,18 @@ class AnswerController extends Controller
         ]);
     }
 
+    /**
+     * 编辑回答时，根据 id 获取数据
+     *
+     * @Get("/question/soga/{id}/resource")
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的回答"}),
+     *      @Response(403, body={"code": 40301, "message": "没有操作权限"}),
+     *      @Response(200, body="回答数据")
+     * })
+     */
     public function editData($id)
     {
         $answerRepository = new AnswerRepository();
@@ -83,6 +109,27 @@ class AnswerController extends Controller
         return $this->resOK($answer);
     }
 
+    /**
+     * 创建回答
+     *
+     * @Post("/question/soga/{id}/create")
+     *
+     * @Parameters({
+     *      @Parameter("question_id", description="问题的id", type="integer", required=true),
+     *      @Parameter("intro", description="纯文本简介，120字以内", type="string", required=true),
+     *      @Parameter("content", description="JSON-content 的内容", type="array", required=true),
+     *      @Parameter("do_publish", description="是否公开发布", type="boolean", required=true),
+     *      @Parameter("source_url", description="内容出处的 url", type="string"),
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的问题"}),
+     *      @Response(403, body={"code": 40301, "message": "不能重复作答"}),
+     *      @Response(400, body={"code": 40001, "message": "请求参数错误"}),
+     *      @Response(200, body="回答的id")
+     * })
+     */
     public function create(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -133,6 +180,26 @@ class AnswerController extends Controller
         return $this->resOK($newId);
     }
 
+    /**
+     * 更新自己的回答
+     *
+     * @Post("/question/soga/{id}/update")
+     *
+     * @Parameters({
+     *      @Parameter("intro", description="纯文本简介，120字以内", type="string", required=true),
+     *      @Parameter("content", description="JSON-content 的内容", type="array", required=true),
+     *      @Parameter("do_publish", description="是否公开发布", type="boolean", required=true),
+     *      @Parameter("source_url", description="内容出处的 url", type="string"),
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的答案|问题"}),
+     *      @Response(403, body={"code": 40301, "message": "没有操作权限"}),
+     *      @Response(400, body={"code": 40001, "message": "请求参数错误"}),
+     *      @Response(204)
+     * })
+     */
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
@@ -195,6 +262,18 @@ class AnswerController extends Controller
         return $this->resNoContent();
     }
 
+    /**
+     * 删除自己的回答
+     *
+     * @Post("/question/soga/{id}/delete")
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(404, body={"code": 40401, "message": "数据不存在"}),
+     *      @Response(403, body={"code": 40301, "message": "没有操作权限"}),
+     *      @Response(204)
+     * })
+     */
     public function delete($id)
     {
         $answerRepository = new AnswerRepository();
@@ -213,6 +292,16 @@ class AnswerController extends Controller
         return $this->resNoContent();
     }
 
+    /**
+     * 获取用户的回答草稿列表
+     *
+     * @Get("/question/soga/drafts")
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body="回答草稿列表")
+     * })
+     */
     public function drafts()
     {
         $userId = $this->getAuthUserId();
@@ -247,6 +336,7 @@ class AnswerController extends Controller
         return $this->resOK($answerTransformer->drafts($list));
     }
 
+    // 后台回答待审列表
     public function trials()
     {
         $ids = Answer
@@ -266,6 +356,7 @@ class AnswerController extends Controller
         return $this->resOK($list);
     }
 
+    // 后台删除回答
     public function ban(Request $request)
     {
         $id = $request->get('id');
@@ -276,6 +367,7 @@ class AnswerController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台通过回答
     public function pass(Request $request)
     {
         $id = $request->get('id');

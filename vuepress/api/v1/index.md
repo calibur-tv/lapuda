@@ -4,19 +4,28 @@ FORMAT: 1A
 
 # 搜索相关接口
 
-## 根据关键字搜索番剧 [GET /search/index]
-
+## 搜索接口 [GET /search/new]
+> 目前支持的参数格式：
+type：all, user, bangumi, video，post，role，image，score，question，answer
+返回的数据与 flow/list 返回的相同
 
 + Parameters
-    + q: (string, required) - 关键字
+    + type: (string, required) - 要检测的类型
+    + key: (string, required) - 搜索的关键词
+    + page: (integer, required) - 搜索的页码
 
 + Response 200 (application/json)
     + Body
 
-            {
-                "code": 0,
-                "data": "番剧的 url"
-            }
+            "数据列表"
+
+## 获取所有番剧列表 [GET /search/bangumis]
+> 返回所有的番剧列表，用户搜索提示，可以有效减少请求数
+
++ Response 200 (application/json)
+    + Body
+
+            "番剧列表"
 
 # 用户认证相关接口
 
@@ -375,7 +384,7 @@ FORMAT: 1A
 
 ## 新建帖子 [POST /post/create]
 > 图片对象示例：
-1. `key` 七牛传图后得到的 key，不包含图片地址的 host，如一张图片 image.calibur.tv/user/1/avatar.png，七牛返回的 key 是：user/1/avatar.png，将这个 key 传到后端
+1. `url` 七牛传图后得到的 url，不包含图片地址的 host，如一张图片 image.calibur.tv/user/1/avatar.png，七牛返回的 url 是：user/1/avatar.png，将这个 url 传到后端
 2. `width` 图片的宽度，七牛上传图片后得到
 3. `height` 图片的高度，七牛上传图片后得到
 4. `size` 图片的尺寸，七牛上传图片后得到
@@ -409,7 +418,7 @@ FORMAT: 1A
                 "message": "请求参数错误"
             }
 
-## 帖子详情 [GET /post/`postId`/show]
+## 帖子详情 [GET /post/{id}/show]
 
 
 + Parameters
@@ -441,6 +450,30 @@ FORMAT: 1A
                 "message": "帖子不存在/番剧不存在/作者不存在"
             }
 
++ Response 423 (application/json)
+    + Body
+
+            {
+                "code": 42301,
+                "message": "内容正在审核中"
+            }
+
+## 获取番剧页的置顶帖子列表 [GET /bangumi/{id}/posts/top]
+
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "番剧不存在"
+            }
+
++ Response 200 (application/json)
+    + Body
+
+            "帖子列表"
+
 ## 删除帖子 [POST /post/`postId`/deletePost]
 
 
@@ -457,6 +490,154 @@ FORMAT: 1A
             {
                 "code": 40104,
                 "message": "未登录的用户"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "权限不足"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "不存在的帖子"
+            }
+
+## 设置帖子加精 [POST /post/manager/nice/set]
+
+
++ Parameters
+    + id: (string, required) - 帖子 id
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 204 (application/json)
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40001,
+                "message": "已经是精品贴了"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "权限不足"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "不存在的帖子"
+            }
+
+## 撤销帖子加精 [POST /post/manager/nice/remove]
+
+
++ Parameters
+    + id: (string, required) - 帖子 id
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 204 (application/json)
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40001,
+                "message": "不是精品贴"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "权限不足"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "不存在的帖子"
+            }
+
+## 撤销帖子置顶 [POST /post/manager/top/set]
+
+
++ Parameters
+    + id: (string, required) - 帖子 id
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 204 (application/json)
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40001,
+                "message": "超过置顶帖的个数限制（目前是3）"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "权限不足"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "不存在的帖子"
+            }
+
+## 撤销帖子置顶 [POST /post/manager/top/remove]
+
+
++ Parameters
+    + id: (string, required) - 帖子 id
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 204 (application/json)
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40001,
+                "message": "不是置顶贴"
             }
 
 + Response 403 (application/json)
@@ -747,34 +928,6 @@ FORMAT: 1A
                 "data": "相册数组"
             }
 
-## 用户的相册列表 [GET /image/users]
-
-
-+ Parameters
-    + zone: (string, required) - 用户的空间地址
-    + page: (integer, required) - 页数
-        + Default: 0
-
-+ Response 200 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "data": {
-                    "list": "相册列表",
-                    "total": "总数",
-                    "noMore": "是否还有更多"
-                }
-            }
-
-+ Response 404 (application/json)
-    + Body
-
-            {
-                "code": 40401,
-                "message": "用户不存在"
-            }
-
 ## 自己的相册列表 [POST /image/album/delete]
 
 
@@ -804,7 +957,7 @@ FORMAT: 1A
                 "message": "相册不存在"
             }
 
-## 用户的相册列表 [GET /image/${image_id}/show]
+## 图片详情页 [GET /image/${image_id}/show]
 
 
 + Response 200 (application/json)
@@ -821,6 +974,14 @@ FORMAT: 1A
             {
                 "code": 40401,
                 "message": "图片不存在"
+            }
+
++ Response 423 (application/json)
+    + Body
+
+            {
+                "code": 42301,
+                "message": "内容正在审核中"
             }
 
 ## 番剧漫画列表 [GET /bangumi/${bangumi_id}/cartoon]
@@ -905,78 +1066,6 @@ FORMAT: 1A
                 "message": "不存在的相册，或要删除的图片已经被删除"
             }
 
-# 动漫角色相关接口
-
-## 番剧角色列表 [GET /bangumi/`bangumiId`/roles]
-
-
-+ Response 200 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "data": "角色列表"
-            }
-
-+ Response 404 (application/json)
-    + Body
-
-            {
-                "code": 40401,
-                "message": "不存在的番剧"
-            }
-
-## 给角色应援 [POST /cartoon_role/`roleId`/star]
-
-
-+ Request (application/json)
-    + Headers
-
-            Authorization: Bearer JWT-Token
-
-+ Response 204 (application/json)
-
-+ Response 404 (application/json)
-    + Body
-
-            {
-                "code": 40401,
-                "message": "不存在的角色"
-            }
-
-+ Response 403 (application/json)
-    + Body
-
-            {
-                "code": 40301,
-                "message": "没有足够的金币"
-            }
-
-## 角色的粉丝列表 [POST /cartoon_role/`roleId`/fans]
-
-
-## 角色详情 [GET /cartoon_role/`roleId`/show]
-
-
-+ Response 200 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "data": {
-                    "bangumi": "番剧简介",
-                    "data": "角色信息"
-                }
-            }
-
-+ Response 404 (application/json)
-    + Body
-
-            {
-                "code": 40401,
-                "message": "不存在的角色"
-            }
-
 # 视频相关接口
 
 ## 获取视频资源 [GET /video/${videoId}/show]
@@ -1014,6 +1103,469 @@ FORMAT: 1A
 
             Authorization: Bearer JWT-Token
 
+# 漫评相关接口
+
+## 获取漫评详情 [GET /score/{id}/show]
+
+
++ Response 423 (application/json)
+    + Body
+
+            {
+                "code": 42301,
+                "message": "内容正在审核中"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "不存在的漫评"
+            }
+
++ Response 200 (application/json)
+    + Body
+
+            "详情"
+
+## 编辑漫评时，根据 id 获取数据 [GET /score/{id}/edit]
+
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "不存在的漫评"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "没有操作权限"
+            }
+
++ Response 200 (application/json)
+    + Body
+
+            "漫评数据"
+
+## 获取番剧的漫评总分 [POST /score/bangumis]
+
+
++ Parameters
+    + id: (integer, required) - 番剧 id
+
++ Response 200 (application/json)
+    + Body
+
+            "番剧的评分详情"
+
+## 获取用户的漫评草稿列表 [GET /score/drafts]
+
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 200 (application/json)
+    + Body
+
+            "漫评草稿列表"
+
+## 创建漫评 [POST /score/check]
+
+
++ Parameters
+    + id: (integer, required) - 番剧 id
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 200 (application/json)
+    + Body
+
+            "如果是0，就是没评过，否则返回漫评的id"
+
+## 创建漫评 [POST /score/cerate]
+
+
++ Parameters
+    + title: (string, required) - 标题
+    + bangumi_id: (integer, required) - 番剧 id
+    + intro: (string, required) - 纯文本简介，120字以内
+    + content: (array, required) - JSON-content 的内容
+    + lol: (integer, required) - 笑点
+    + cry: (integer, required) - 泪点
+    + fight: (integer, required) - 燃点
+    + moe: (integer, required) - 萌点
+    + sound: (integer, required) - 音乐
+    + vision: (integer, required) - 画面
+    + role: (integer, required) - 人设
+    + story: (integer, required) - 情节
+    + express: (integer, required) - 内涵
+    + style: (integer, required) - 美感
+    + do_publish: (boolean, required) - 是否公开发布
+    + is_creator: (boolean, required) - 是否是原创内容
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "不存在的番剧"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "没有操作权限"
+            }
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40001,
+                "message": "错误的请求参数|同一个番剧不能重复评价"
+            }
+
++ Response 204 (application/json)
+
+## 更新漫评 [POST /score/update]
+
+
++ Parameters
+    + id: (integer, required) - 要更新的漫评 id
+    + title: (string, required) - 标题
+    + bangumi_id: (integer, required) - 番剧 id
+    + intro: (string, required) - 纯文本简介，120字以内
+    + content: (array, required) - JSON-content 的内容
+    + lol: (integer, required) - 笑点
+    + cry: (integer, required) - 泪点
+    + fight: (integer, required) - 燃点
+    + moe: (integer, required) - 萌点
+    + sound: (integer, required) - 音乐
+    + vision: (integer, required) - 画面
+    + role: (integer, required) - 人设
+    + story: (integer, required) - 情节
+    + express: (integer, required) - 内涵
+    + style: (integer, required) - 美感
+    + do_publish: (boolean, required) - 是否公开发布
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "不存在的番剧"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "没有操作权限"
+            }
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40001,
+                "message": "错误的请求参数|同一个番剧不能重复评价"
+            }
+
++ Response 204 (application/json)
+
+## 删除漫评 [POST /score/delete]
+
+
++ Parameters
+    + id: (integer, required) - 要删除的漫评 id
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "数据不存在"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "没有操作权限"
+            }
+
++ Response 204 (application/json)
+
+# 提问相关接口
+
+## 获取提问详情 [GET /question/qaq/{id}/show]
+
+
++ Response 423 (application/json)
+    + Body
+
+            {
+                "code": 42301,
+                "message": "内容正在审核中"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "不存在的漫评"
+            }
+
++ Response 200 (application/json)
+    + Body
+
+            "详情"
+
+## 创建提问 [POST /question/qaq/cerate]
+
+
++ Parameters
+    + tags: (array, required) - 番剧的id数字
+    + title: (string, required) - 标题
+    + images: (array, optional) - 图片列表
+    + intro: (string, required) - 纯文本简介，120字
+    + content: (string, required) - 正题，1000字以内
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40001,
+                "message": "错误的请求参数"
+            }
+
++ Response 201 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "提问的id"
+            }
+
+# 回答相关接口
+
+## 获取回答详情 [GET /question/soga/{id}/show]
+
+
++ Response 423 (application/json)
+    + Body
+
+            {
+                "code": 42301,
+                "message": "内容正在审核中"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "不存在的漫评"
+            }
+
++ Response 200 (application/json)
+    + Body
+
+            "详情"
+
+## 编辑回答时，根据 id 获取数据 [GET /question/soga/{id}/resource]
+
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "不存在的回答"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "没有操作权限"
+            }
+
++ Response 200 (application/json)
+    + Body
+
+            "回答数据"
+
+## 创建回答 [POST /question/soga/{id}/create]
+
+
++ Parameters
+    + question_id: (integer, required) - 问题的id
+    + intro: (string, required) - 纯文本简介，120字以内
+    + content: (array, required) - JSON-content 的内容
+    + do_publish: (boolean, required) - 是否公开发布
+    + source_url: (string, optional) - 内容出处的 url
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "不存在的问题"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "不能重复作答"
+            }
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40001,
+                "message": "请求参数错误"
+            }
+
++ Response 200 (application/json)
+    + Body
+
+            "回答的id"
+
+## 更新自己的回答 [POST /question/soga/{id}/update]
+
+
++ Parameters
+    + intro: (string, required) - 纯文本简介，120字以内
+    + content: (array, required) - JSON-content 的内容
+    + do_publish: (boolean, required) - 是否公开发布
+    + source_url: (string, optional) - 内容出处的 url
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "不存在的答案|问题"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "没有操作权限"
+            }
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40001,
+                "message": "请求参数错误"
+            }
+
++ Response 204 (application/json)
+
+## 删除自己的回答 [POST /question/soga/{id}/delete]
+
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "数据不存在"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "没有操作权限"
+            }
+
++ Response 204 (application/json)
+
+## 获取用户的回答草稿列表 [GET /question/soga/drafts]
+
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 200 (application/json)
+    + Body
+
+            "回答草稿列表"
+
 # 用户相关接口
 
 ## 用户每日签到 [POST /user/daySign]
@@ -1042,20 +1594,6 @@ FORMAT: 1A
                 "message": "今日已签到"
             }
 
-## 更新用户资料中的图片 [POST /user/setting/image]
-
-
-+ Parameters
-    + type: (string, required) - `avatar`或`banner`
-    + url: (string, required) - 图片地址，不带`host`
-
-+ Request (application/json)
-    + Headers
-
-            Authorization: Bearer JWT-Token
-
-+ Response 204 (application/json)
-
 ## 用户详情 [GET /user/`zone`/show]
 
 
@@ -1074,6 +1612,55 @@ FORMAT: 1A
                 "code": 40401,
                 "message": "该用户不存在"
             }
+
+## 更新用户资料中的图片 [POST /user/setting/image]
+
+
++ Parameters
+    + type: (string, required) - `avatar`或`banner`
+    + url: (string, required) - 图片地址，不带`host`
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "请求参数错误"
+            }
+
++ Response 204 (application/json)
+
+## 更新用户资料中文本 [POST /user/setting/profile]
+> 性别对应：
+0：未知，1：男，2：女，3：伪娘，4：药娘，5：扶她
+
++ Parameters
+    + sex: (integer, required) - 性别，必填
+    + signature: (string, required) - 用户签名，最多150字
+    + nickname: (string, required) - 用户昵称，最多14字符（1个汉字占2个字符）
+    + birthday: (number, required) - 用户生日，秒为单位的时间戳
+    + birth_secret: (boolean, required) - 生日是否保密
+    + sex_secret: (boolean, required) - 性别是否保密
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "请求参数错误"
+            }
+
++ Response 204 (application/json)
 
 ## 用户关注的番剧列表 [GET /user/`zone`/followed/bangumi]
 
@@ -1094,75 +1681,7 @@ FORMAT: 1A
                 "message": "该用户不存在"
             }
 
-## 用户发布的帖子列表 [GET /user/`zone`/posts/mine]
-
-
-+ Parameters
-    + page: (integer, required) - 页码
-        + Default: 0
-
-+ Response 200 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "data": "帖子列表"
-            }
-
-+ Response 404 (application/json)
-    + Body
-
-            {
-                "code": 40401,
-                "message": "找不到用户"
-            }
-
 ## 用户回复的帖子列表 [GET /user/`zone`/posts/reply]
-
-
-+ Request (application/json)
-    + Body
-
-            {
-                "minId": "看过的帖子列表里，id 最小的那个帖子的 id"
-            }
-
-+ Response 200 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "data": "帖子列表"
-            }
-
-+ Response 404 (application/json)
-    + Body
-
-            {
-                "code": 40401,
-                "message": "找不到用户"
-            }
-
-## 用户喜欢的帖子列表 [GET /user/`zone`/posts/like]
-
-
-+ Response 200 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "data": "帖子列表"
-            }
-
-+ Response 404 (application/json)
-    + Body
-
-            {
-                "code": 40401,
-                "message": "找不到用户"
-            }
-
-## 用户收藏的帖子列表 [GET /user/`zone`/posts/mark]
 
 
 + Response 200 (application/json)
@@ -1189,7 +1708,8 @@ FORMAT: 1A
 
             {
                 "type": "反馈的类型",
-                "desc": "反馈内容，最多120字"
+                "desc": "反馈内容，最多120字",
+                "ua": "用户的设备信息"
             }
 
 + Response 204 (application/json)
@@ -1278,33 +1798,6 @@ FORMAT: 1A
             Authorization: Bearer JWT-Token
 
 + Response 204 (application/json)
-
-## 用户应援的角色列表 [GET /user/`zone`/followed/role]
-
-
-+ Parameters
-    + page: (integer, required) - 页码
-        + Default: 0
-
-+ Response 200 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "data": {
-                    "list": "角色列表",
-                    "total": "总数",
-                    "noMore": "没有更多"
-                }
-            }
-
-+ Response 404 (application/json)
-    + Body
-
-            {
-                "code": 40401,
-                "message": "该用户不存在"
-            }
 
 # 评论相关接口
 
@@ -1583,15 +2076,105 @@ FORMAT: 1A
                 "message": "参数错误"
             }
 
+# 偶像相关接口
+
+## 给角色应援 [POST /cartoon_role/`roleId`/star]
+
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 204 (application/json)
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "不存在的角色"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "没有足够的金币"
+            }
+
+## 角色的粉丝列表 [POST /cartoon_role/`roleId`/fans]
+
+
+## 角色详情 [GET /cartoon_role/`roleId`/show]
+
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": {
+                    "bangumi": "番剧简介",
+                    "data": "角色信息"
+                }
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "不存在的角色"
+            }
+
+# 信息流相关接口
+
+## 获取信息流列表 [GET /flow/list]
+> 调用方法：
+如果是请求首页的数据，那么就不传 bangumiId 和 userZone，sort 为 active
+如果是请求番剧页的数据，那么就传 bangumiId，sort 为 active
+如果是请求用户页的数据，那么就传 userZone，sort 为 news
+
+> 支持的 type：
+post, image, score, role, question, answer
+
+> 支持的 sort：
+news，active，hot
+
++ Parameters
+    + type: (string, required) - 哪种类型的数据
+    + sort: (string, required) - 排序方法
+    + bangumiId: (integer, optional) - 番剧的id
+    + userZone: (string, optional) - 用户的空间名
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "请求参数错误"
+            }
+
++ Response 204 (application/json)
+
 # 用户社交点击相关接口
 
-## 检查toggle状态 [POST /toggle/{type}/check]
-> 目前支持的 type：like, follow
-如果是 like，modal 支持：post、image、score
-如果是 follow，modal 支持：bangumi
+## 检查toggle状态 [POST /toggle/check]
+> 目前支持的参数格式：
+type：like, follow
+如果是 type 是 like，modal 支持：post、image、score、answer
+如果是 type 是follow，modal 支持：bangumi、question
 
 + Parameters
     + modal: (string, required) - 要检测的模型
+    + type: (string, required) - 要检测的类型
     + id: (integer, required) - 要检测的id
 
 + Request (application/json)
@@ -1612,16 +2195,18 @@ FORMAT: 1A
                 "message": "请求参数错"
             }
 
-## 获取发起操作的用户列表 [GET /toggle/{type}/users]
-> 目前支持的 type：like, follow，contributors
-如果是 like，modal 支持：post、image、score
-如果是 follow，modal 支持：bangumi
-如果是 contributors，bangumi 支持：bangumi（就是吧主列表）
+## 获取发起操作的用户列表 [GET /toggle/users]
+> 目前支持的参数格式：
+type：like, follow, reward, mark，contributors
+如果是 type 是 [like|reward|mark]，modal 支持：post、image、score、answer
+如果是 type 是 follow，modal 支持：bangumi、question
+如果是 contributors，modal 支持：bangumi（就是吧主列表），question（修改过问题的人列表）
 
 + Parameters
     + modal: (string, required) - 要请求的模型
+    + type: (string, required) - 要检测的类型
     + id: (integer, required) - 要请求的id
-    + page: (integer, required) - 页码
+    + last_id: (integer, required) - 已获取列表里的最后一个 item 的 id
         + Default: 0
     + take: (integer, optional) - 获取的个数
         + Default: 10
@@ -1644,49 +2229,8 @@ FORMAT: 1A
                 "message": "请求参数错"
             }
 
-## 喜欢或取消喜欢 [POST /toggle/like]
-> 目前支持的 type：post、image、score
-
-+ Parameters
-    + type: (string, required) - 要请求的类型
-    + id: (integer, required) - 要请求的id
-
-+ Request (application/json)
-    + Headers
-
-            Authorization: Bearer JWT-Token
-
-+ Response 200 (application/json)
-    + Body
-
-            "一个boolean值"
-
-+ Response 400 (application/json)
-    + Body
-
-            {
-                "code": 40003,
-                "message": "请求参数错"
-            }
-
-+ Response 403 (application/json)
-    + Body
-
-            {
-                "code": 40303,
-                "message": "原创内容只能打赏，不能喜欢 | 不能喜欢自己的内容"
-            }
-
-+ Response 404 (application/json)
-    + Body
-
-            {
-                "code": 40401,
-                "message": "检测的对象不存在"
-            }
-
 ## 关注或取消关注 [POST /toggle/follow]
-> 目前支持的 type：bangumi
+> 目前支持的 type：bangumi，question
 
 + Parameters
     + type: (string, required) - 要请求的类型
@@ -1726,8 +2270,49 @@ FORMAT: 1A
                 "message": "检测的对象不存在"
             }
 
+## 喜欢或取消喜欢 [POST /toggle/like]
+> 目前支持的 type：post、image、score、answer
+
++ Parameters
+    + type: (string, required) - 要请求的类型
+    + id: (integer, required) - 要请求的id
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 200 (application/json)
+    + Body
+
+            "一个boolean值"
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "请求参数错"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40303,
+                "message": "原创内容只能打赏，不能喜欢 | 不能喜欢自己的内容"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "检测的对象不存在"
+            }
+
 ## 收藏或取消收藏 [POST /toggle/mark]
-> 目前支持的 type：post、image、score
+> 目前支持的 type：post、image、score、answer
 
 + Parameters
     + type: (string, required) - 要请求的类型
@@ -1768,7 +2353,7 @@ FORMAT: 1A
             }
 
 ## 打赏或取消打赏 [POST /toggle/reward]
-> 目前支持的 type：post、image、score
+> 目前支持的 type：post、image、score、answer
 
 + Parameters
     + type: (string, required) - 要请求的类型
@@ -1807,3 +2392,68 @@ FORMAT: 1A
                 "code": 40401,
                 "message": "检测的对象不存在"
             }
+
+## 投票或取消投票 [POST /toggle/vote]
+> 目前支持的type： answer
+> 只支持赞同、不赞同两种情况
+
++ Parameters
+    + type: (string, required) - 要请求的类型
+    + id: (integer, required) - 要请求的id
+    + is_agree: (boolean, required) - 是赞同
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "total": "目前赞的总数",
+                "result": "自己是赞还是反对，-1代表反对，0代表不反对不赞同，1代表赞同"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "不能赞同自己"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "数据不存在"
+            }
+
+# 举报相关接口
+
+## 举报内容 [POST /report/send]
+> 目前支持的 type：
+user,
+bangumi,
+video,
+role,
+post,
+image,
+score,
+question,
+answer,
+post_comment,
+image_comment,
+score_comment,
+video_comment,
+question_comment,
+answer_comment
+
++ Parameters
+    + id: (integer, required) - 举报的 id
+    + type: (string, required) - 举报的类型
+    + message: (string, required) - 举报的留言
+
++ Response 204 (application/json)

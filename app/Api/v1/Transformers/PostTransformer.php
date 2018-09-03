@@ -21,26 +21,8 @@ class PostTransformer extends Transformer
                 'title' => $post['title'],
                 'desc' => $post['desc'],
                 'content' => $post['content'],
-                'images' => $this->collection($post['images'], function ($image)
-                {
-                    return [
-                        'width' => (int)$image['width'],
-                        'height' => (int)$image['height'],
-                        'size' => (int)$image['size'],
-                        'type' => $image['type'],
-                        'url' => config('website.image'). $image['url']
-                    ];
-                }),
-                'preview_images' => $this->collection($post['preview_images'], function ($image)
-                {
-                    return [
-                        'width' => (int)$image['width'],
-                        'height' => (int)$image['height'],
-                        'size' => (int)$image['size'],
-                        'type' => $image['type'],
-                        'url' => config('website.image') . $image['url']
-                    ];
-                }),
+                'images' => $post['images'],
+                'preview_images' => $post['preview_images'],
                 'view_count' => (int)$post['view_count'],
                 'comment_count' => (int)$post['comment_count'],
                 'commented' => $post['commented'],
@@ -182,16 +164,7 @@ class PostTransformer extends Transformer
                 //
                 'title' => $item['title'] ? $item['title'] : '标题什么的不重要',
                 'desc' => $item['desc'],
-                'images' => $this->collection($item['images'], function ($image)
-                {
-                    return [
-                        'width' => (int)$image['width'],
-                        'height' => (int)$image['height'],
-                        'size' => (int)$image['size'],
-                        'type' => $image['type'],
-                        'url' => config('website.image'). $image['url']
-                    ];
-                }),
+                'images' => $item['images'],
                 'top_at' => $item['top_at'],
                 'is_nice' => (boolean)$item['is_nice'],
                 //

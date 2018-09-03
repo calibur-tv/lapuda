@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Redis;
 
 class TrialController extends Controller
 {
+    // TODO：counter-cache
     public function todo()
     {
         $comments = 0;
@@ -54,6 +55,7 @@ class TrialController extends Controller
         return $this->resOK($result);
     }
 
+    // 敏感词列表
     public function words()
     {
         $words = Redis::LRANGE('blackwords', 0, -1);
@@ -61,6 +63,7 @@ class TrialController extends Controller
         return $this->resOK($words);
     }
 
+    // 删除敏感词
     public function deleteWords(Request $request)
     {
         $words = $request->get('words');
@@ -72,6 +75,7 @@ class TrialController extends Controller
         return $this->resNoContent();
     }
 
+    // 添加敏感词
     public function addWords(Request $request)
     {
         Redis::LPUSH('blackwords', $request->get('words'));
@@ -79,6 +83,7 @@ class TrialController extends Controller
         return $this->resNoContent();
     }
 
+    // 图片测试
     public function imageTest(Request $request)
     {
         $imageUrl = $request->get('url');
@@ -92,6 +97,7 @@ class TrialController extends Controller
         return $this->resOK($imageFilter->test($imageUrl));
     }
 
+    // 文字测试
     public function textTest(Request $request)
     {
         $content = $request->get('text');

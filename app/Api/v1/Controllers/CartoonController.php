@@ -12,8 +12,12 @@ use App\Models\Bangumi;
 use App\Models\Image;
 use Illuminate\Http\Request;
 
+/**
+ * @Resource("漫画相关接口")
+ */
 class CartoonController extends Controller
 {
+    // 后台展示有漫画的番剧列表
     public function bangumis()
     {
         $bangumis = Bangumi::where('cartoon', '<>', '')
@@ -23,6 +27,7 @@ class CartoonController extends Controller
         return $this->resOK($bangumis);
     }
 
+    // 后台展示番剧的漫画列表
     public function listOfBangumi(Request $request)
     {
         $bangumiId = $request->get('id');
@@ -46,6 +51,7 @@ class CartoonController extends Controller
         return $this->resOK($result);
     }
 
+    // 后台对番剧的漫画进行排序
     public function sortOfBangumi(Request $request)
     {
         $bangumiId = $request->get('id');
@@ -58,6 +64,7 @@ class CartoonController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台编辑漫画
     public function edit(Request $request)
     {
         Image::where('id', $request->get('id'))
