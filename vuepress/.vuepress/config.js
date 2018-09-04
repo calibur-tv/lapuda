@@ -8,5 +8,9 @@ module.exports = {
   base: '/Laputa/',
   dest: 'docs',
   themeConfig: {
+    sidebar: [
+      '/',
+      ['/api/v1/', '接口文档']
+    ]
   }
 }
