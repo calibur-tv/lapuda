@@ -76,7 +76,6 @@ class QuestionController extends Controller
             'tags' => 'required|Array',
             'title' => 'required|string|max:30',
             'images' => 'Array',
-            'intro' => 'required|max:120',
             'content' => 'required|string|max:1000'
         ]);
 
@@ -107,7 +106,6 @@ class QuestionController extends Controller
             'tags' => $request->get('tags'),
             'title' => $request->get('title'),
             'text' => $request->get('content'),
-            'intro' => $request->get('intro'),
             'images' => $request->get('images'),
             'user_id' => $this->getAuthUserId()
         ]);

@@ -60,7 +60,6 @@ class PostController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'required|max:40',
             'bangumiId' => 'required|integer',
-            'desc' => 'required|max:120',
             'content' => 'required|max:1200',
             'images' => 'array',
             'is_creator' => 'required|boolean'
@@ -100,11 +99,12 @@ class PostController extends Controller
         }
 
         $now = Carbon::now();
+        $content = Purifier::clean($request->get('content'));
 
         $id = $postRepository->create([
             'title' => Purifier::clean($request->get('title')),
-            'content' => $postRepository->formatRichContent(Purifier::clean($request->get('content'))),
-            'desc' => Purifier::clean($request->get('desc')),
+            'content' => $postRepository->formatRichContent($content),
+            'desc' => substr($content, 0, 120),
             'bangumi_id' => $bangumiId,
             'user_id' => $userId,
             'is_creator' => $request->get('is_creator'),

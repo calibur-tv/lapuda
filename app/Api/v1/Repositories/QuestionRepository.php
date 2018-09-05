@@ -29,8 +29,10 @@ class QuestionRepository extends Repository
 {
     public function create(Array $params)
     {
+        $text = Purifier::clean($params['text']);
+
         $content = [
-            'text' => $this->formatRichContent(Purifier::clean($params['text'])),
+            'text' => $this->formatRichContent($text),
             'images' => array_map(function ($image)
             {
                 $image['url'] = $this->convertImagePath($image['url']);
@@ -45,7 +47,7 @@ class QuestionRepository extends Repository
         $newId = Question::insertGetId([
             'user_id' => $params['user_id'],
             'title' => $title,
-            'intro' => Purifier::clean($params['intro']),
+            'intro' => substr($text, 0, 120),
             'content' => json_encode($content),
             'created_at' => $now,
             'updated_at' => $now
