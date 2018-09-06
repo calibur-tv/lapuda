@@ -104,7 +104,7 @@ class PostController extends Controller
         $id = $postRepository->create([
             'title' => Purifier::clean($request->get('title')),
             'content' => $postRepository->formatRichContent($content),
-            'desc' => substr($content, 0, 120),
+            'desc' => mb_substr($content, 0, 120, 'UTF-8'),
             'bangumi_id' => $bangumiId,
             'user_id' => $userId,
             'is_creator' => $request->get('is_creator'),
