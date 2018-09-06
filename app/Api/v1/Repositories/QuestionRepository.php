@@ -47,7 +47,7 @@ class QuestionRepository extends Repository
         $newId = Question::insertGetId([
             'user_id' => $params['user_id'],
             'title' => $title,
-            'intro' => substr($text, 0, 120),
+            'intro' => mb_substr($text, 0, 120, 'UTF-8'),
             'content' => json_encode($content),
             'created_at' => $now,
             'updated_at' => $now
