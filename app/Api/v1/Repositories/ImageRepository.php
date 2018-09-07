@@ -272,6 +272,7 @@ class ImageRepository extends Repository
 
         $baiduPush = new BaiduPush();
         $baiduPush->trending('image');
+        $baiduPush->bangumi($image['bangumi_id'], 'pins');
 
         if ($image['is_cartoon'])
         {

@@ -53,7 +53,7 @@ class BaiduPush
         }
         else if ($table === 'image')
         {
-            $prefix = 'image';
+            $prefix = 'pins';
         }
         else if ($table === 'score')
         {
