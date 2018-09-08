@@ -24,7 +24,6 @@ class Bangumi extends Model
         'released_time', // 更新时间
         'released_video_id',
         'published_at',
-        'count_like',
         'others_site_video',
         'end',
         'score',
