@@ -15,6 +15,6 @@ class ScoreRewardService extends ToggleService
 {
     public function __construct()
     {
-        parent::__construct('score_reward', true);
+        parent::__construct('score_reward');
     }
 }

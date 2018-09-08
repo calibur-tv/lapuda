@@ -18,12 +18,10 @@ use App\Api\V1\Repositories\Repository;
 class ToggleService extends Repository
 {
     protected $table;
-    protected $needCacheList;
 
-    public function __construct($toggleTable, $needCacheList = false)
+    public function __construct($toggleTable)
     {
         $this->table = $toggleTable;
-        $this->needCacheList = $needCacheList;
     }
 
     public function do($userId, $modalId, $count = 1)
@@ -38,11 +36,8 @@ class ToggleService extends Repository
         $relationCounterService = new RelationCounterService($this->table);
         $relationCounterService->add($modalId, $count);
 
-        if ($this->needCacheList)
-        {
-            $this->SortAdd($this->doUsersCacheKey($modalId), $userId);
-            $this->SortAdd($this->usersDoCacheKey($userId), $modalId);
-        }
+        $this->SortAdd($this->doUsersCacheKey($modalId), $userId);
+        $this->SortAdd($this->usersDoCacheKey($userId), $modalId);
 
         return $id;
     }
@@ -57,11 +52,8 @@ class ToggleService extends Repository
         $relationCounterService = new RelationCounterService($this->table);
         $relationCounterService->add($modalId, -1);
 
-        if ($this->needCacheList)
-        {
-            $this->SortRemove($this->doUsersCacheKey($modalId), $userId);
-            $this->SortRemove($this->usersDoCacheKey($userId), $modalId);
-        }
+        $this->SortRemove($this->doUsersCacheKey($modalId), $userId);
+        $this->SortRemove($this->usersDoCacheKey($userId), $modalId);
 
         return 0;
     }
@@ -165,15 +157,6 @@ class ToggleService extends Repository
     // 某个用户的文章收藏列表
     public function usersDoIds($userId, $page = 0, $count = 10)
     {
-        if (!$this->needCacheList)
-        {
-            return [
-                'ids' => [],
-                'total' => 0,
-                'noMore' => true
-            ];
-        }
-
         $ids = $this->RedisSort($this->usersDoCacheKey($userId), function () use ($userId)
         {
             return DB::table($this->table)
@@ -206,15 +189,6 @@ class ToggleService extends Repository
     // 谋篇文章的收藏者们
     protected function doUsersIds($modalId, $lastId, $count)
     {
-        if (!$this->needCacheList)
-        {
-            return [
-                'ids' => [],
-                'moMore' => true,
-                'total' => 0
-            ];
-        }
-
         $ids = $this->RedisSort($this->doUsersCacheKey($modalId), function () use ($modalId)
         {
             return DB::table($this->table)

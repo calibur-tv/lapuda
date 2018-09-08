@@ -15,7 +15,7 @@ class BangumiFollowService extends ToggleService
 {
     public function __construct()
     {
-        parent::__construct('bangumi_follows', true);
+        parent::__construct('bangumi_follows');
     }
 
     public function beforeHook($bangumiId, $userId)

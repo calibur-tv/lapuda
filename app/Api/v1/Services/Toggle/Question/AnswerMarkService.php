@@ -15,6 +15,6 @@ class AnswerMarkService extends ToggleService
 {
     public function __construct()
     {
-        parent::__construct('answer_mark', true);
+        parent::__construct('answer_mark');
     }
 }
