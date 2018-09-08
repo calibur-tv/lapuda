@@ -452,8 +452,10 @@ class UserController extends Controller
         {
             return $this->resErrNotFound();
         }
+        $user = $userRepository->item($userId, true);
+        $user['coin_count'] = User::where('id', $userId)->pluck('coin_count')->first();
 
-        return $this->resOK($userRepository->item($userId, true));
+        return $this->resOK($user);
     }
 
     // 营销号列表
