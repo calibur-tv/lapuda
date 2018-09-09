@@ -114,12 +114,13 @@ class ToggleController extends Controller
      *      @Response(400, body={"code": 40003, "message": "请求参数错"})
      * })
      */
-    public function mixinUsers(Request $request, $type)
+    public function mixinUsers(Request $request)
     {
         $id = $request->get('id');
         $take = $request->get('take') ?: 10;
         $model = $request->get('model');
         $lastId = $request->get('last_id') ?: 0;
+        $type = $request->get('type');
 
         if ($type === 'like')
         {

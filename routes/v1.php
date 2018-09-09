@@ -298,7 +298,7 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/check', 'App\Api\V1\Controllers\ToggleController@mixinCheck');
         });
 
-        $api->get('/{type}/users', 'App\Api\V1\Controllers\ToggleController@mixinUsers');
+        $api->get('/users', 'App\Api\V1\Controllers\ToggleController@mixinUsers');
     });
 
     $api->group(['prefix' => '/report'], function ($api)
