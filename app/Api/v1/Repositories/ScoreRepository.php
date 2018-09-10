@@ -214,6 +214,7 @@ class ScoreRepository extends Repository
 
             $baiduPush = new BaiduPush();
             $baiduPush->trending('score');
+            $baiduPush->bangumi($score['bangumi_id'], 'review');
 
             $this->migrateSearchIndex('C', $id, false);
         }

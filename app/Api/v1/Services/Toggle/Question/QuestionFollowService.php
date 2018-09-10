@@ -15,7 +15,7 @@ class QuestionFollowService extends ToggleService
 {
     public function __construct()
     {
-        parent::__construct('question_follows', true);
+        parent::__construct('question_follows');
     }
 
     public function beforeHook($bangumiId, $userId)

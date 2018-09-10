@@ -15,6 +15,6 @@ class PostRewardService extends ToggleService
 {
     public function __construct()
     {
-        parent::__construct('post_reward', true);
+        parent::__construct('post_reward');
     }
 }

@@ -15,6 +15,6 @@ class AnswerLikeService extends ToggleService
 {
     public function __construct()
     {
-        parent::__construct('answer_like', true);
+        parent::__construct('answer_like');
     }
 }

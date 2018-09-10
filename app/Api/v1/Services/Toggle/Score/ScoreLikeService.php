@@ -14,6 +14,6 @@ class ScoreLikeService extends ToggleService
 {
     public function __construct()
     {
-        parent::__construct('score_like', true);
+        parent::__construct('score_like');
     }
 }

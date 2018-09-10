@@ -15,6 +15,6 @@ class ScoreMarkService extends ToggleService
 {
     public function __construct()
     {
-        parent::__construct('score_mark', true);
+        parent::__construct('score_mark');
     }
 }

@@ -135,8 +135,6 @@ class PostRepository extends Repository
                 ->select('src AS url', 'width', 'height', 'size', 'type')
                 ->get()
                 ->toArray();
-
-            return $images;
         });
     }
 
@@ -158,7 +156,7 @@ class PostRepository extends Repository
 
         $baiduPush = new BaiduPush();
         $baiduPush->trending('post');
-        $baiduPush->bangumi($post['bangumi_id']);
+        $baiduPush->bangumi($post['bangumi_id'], 'post');
 
         $this->migrateSearchIndex('C', $id, false);
     }

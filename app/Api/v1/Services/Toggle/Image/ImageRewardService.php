@@ -15,6 +15,6 @@ class ImageRewardService extends ToggleService
 {
     public function __construct()
     {
-        parent::__construct('image_reward', true);
+        parent::__construct('image_reward');
     }
 }

@@ -191,6 +191,10 @@ class QuestionRepository extends Repository
 
         $baiduPush = new BaiduPush();
         $baiduPush->trending('question');
+        foreach ($question['tag_ids'] as $bangumiId)
+        {
+            $baiduPush->bangumi($bangumiId, 'qaq');
+        }
 
         $this->migrateSearchIndex('C', $id, false);
     }
