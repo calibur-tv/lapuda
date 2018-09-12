@@ -166,19 +166,19 @@ class NotificationPresenter
                 return '/post/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
                 break;
             case 6:
-                return '/pins/' . $modalId;
+                return '/pin/' . $modalId;
                 break;
             case 7:
-                return '/pins/' . $modalId;
+                return '/pin/' . $modalId;
                 break;
             case 8:
-                return '/pins/' . $modalId;
+                return '/pin/' . $modalId;
                 break;
             case 9:
-                return '/pins/' . $modalId . '?comment-id=' . $commentId;
+                return '/pin/' . $modalId . '?comment-id=' . $commentId;
                 break;
             case 10:
-                return '/pins/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
+                return '/pin/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
                 break;
             case 11:
                 return '/review/' . $modalId;
@@ -208,10 +208,10 @@ class NotificationPresenter
                 return '/post/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
                 break;
             case 20:
-                return '/pins/' . $modalId . '?comment-id=' . $commentId;
+                return '/pin/' . $modalId . '?comment-id=' . $commentId;
                 break;
             case 21:
-                return '/pins/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
+                return '/pin/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
                 break;
             case 22:
                 return '/review/' . $modalId . '?comment-id=' . $commentId;

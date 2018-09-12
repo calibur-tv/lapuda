@@ -236,7 +236,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/single', 'middleware' => ['jwt.auth']], function ($api)
         {
-            $api->post('/upload', 'App\Api\V1\Controllers\ImageController@uploadSingleImage');
+            $api->post('/upload', 'App\Api\V1\Controllers\ImageController@uploadSingleImage')->middleware(['geetest']);
 
             $api->post('/edit', 'App\Api\V1\Controllers\ImageController@editSingleImage');
         });
