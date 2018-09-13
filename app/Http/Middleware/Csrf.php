@@ -13,8 +13,6 @@ class Csrf
         'https://t-m.calibur.tv',
         'http://www.calibur.tv',
         'http://m.calibur.tv',
-        'https://android.calibur.tv',
-        'https://ios.calibur.tv',
         ''
     ];
 

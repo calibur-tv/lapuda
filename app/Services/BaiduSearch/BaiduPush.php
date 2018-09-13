@@ -118,7 +118,7 @@ class BaiduPush
         }
         else if ($model === 'image')
         {
-            $prefix = 'pins';
+            $prefix = 'pin';
         }
         else if ($model === 'score')
         {
