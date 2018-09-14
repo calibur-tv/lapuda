@@ -306,6 +306,14 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/send', 'App\Api\V1\Controllers\ReportController@send');
     });
 
+    $api->group(['prefix' => '/callback'], function ($api)
+    {
+        $api->group(['prefix' => '/qiniu'], function ($api)
+        {
+            $api->post('/avthumb', 'App\Api\V1\Controllers\CallbackController@qiniuAvthumb');
+        });
+    });
+
     $api->group(['prefix' => '/admin', 'middleware' => ['jwt.admin']], function ($api)
     {
         $api->get('/todo', 'App\Api\V1\Controllers\TrialController@todo');
