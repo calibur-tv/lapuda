@@ -21,7 +21,7 @@ class UserTransformer extends Transformer
                 'avatar' => $user['avatar'],
                 'banner' => $user['banner'],
                 'nickname' => $user['nickname'],
-                'birthday' => $user['birthday'],
+                'birthday' => $user['birthday'] ? $user['birthday'] : 0,
                 'sex' => $user['sex'],
                 'birthSecret' => (boolean)$user['birth_secret'],
                 'sexSecret' => (boolean)$user['sex_secret'],
