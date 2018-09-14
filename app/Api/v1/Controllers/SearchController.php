@@ -67,4 +67,12 @@ class SearchController extends Controller
 
         return $this->resOK($bangumiRepository->searchAll());
     }
+
+    public function test()
+    {
+        $job = (new \App\Jobs\Pfop\Avthumb(1));
+        $result = dispatch($job);
+
+        return $this->resOK($result);
+    }
 }

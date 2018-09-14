@@ -16,6 +16,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Support\Facades\Log;
 
 
 class Avthumb implements ShouldQueue
@@ -31,10 +32,10 @@ class Avthumb implements ShouldQueue
 
     public function handle()
     {
-        if (config('app.env') !== 'production')
-        {
-            return true;
-        }
+//        if (config('app.env') !== 'production')
+//        {
+//            return true;
+//        }
 
         $key = $this->getVideoUrl();
 
@@ -52,13 +53,16 @@ class Avthumb implements ShouldQueue
         $bucket = config('filesystems.qiniu.bucket');
         $notifyUrl = "https://api.calibur.tv/callback/qiniu/avthumb";
 
-        $fops = "avthumb/mp4/vcodec/libx265/" . $this->base64_urlSafeEncode($bucket . '/' . explode('.', $key)[0] . '-h265.mp4');
+        $fops = "avthumb/mp4/vcodec/libx264/" . $this->base64_urlSafeEncode($bucket . '/' . explode('.', $key)[0] . '-h265.mp4');
         list($id, $err) = $pfop->execute($bucket, $key, $fops, $pipeline, $notifyUrl, $force);
 
-        Video::where('id', $this->id)
-            ->update([
-                'process' => $id
-            ]);
+        if ($err == null)
+        {
+            Video::where('id', $this->id)
+                ->update([
+                    'process' => $id
+                ]);
+        }
 
         return true;
     }

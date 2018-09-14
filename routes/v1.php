@@ -9,6 +9,8 @@ $api = app('Dingo\Api\Routing\Router');
 
 $api->version(['v1', 'latest'], function ($api)
 {
+    $api->get('/test', 'App\Api\V1\Controllers\SearchController@test');
+
     $api->group(['prefix' => '/search'], function ($api)
     {
         $api->get('/new', 'App\Api\V1\Controllers\SearchController@search');
@@ -304,14 +306,6 @@ $api->version(['v1', 'latest'], function ($api)
     $api->group(['prefix' => '/report'], function ($api)
     {
         $api->post('/send', 'App\Api\V1\Controllers\ReportController@send');
-    });
-
-    $api->group(['prefix' => '/callback'], function ($api)
-    {
-        $api->group(['prefix' => '/qiniu'], function ($api)
-        {
-            $api->post('/avthumb', 'App\Api\V1\Controllers\CallbackController@qiniuAvthumb');
-        });
     });
 
     $api->group(['prefix' => '/admin', 'middleware' => ['jwt.admin']], function ($api)
