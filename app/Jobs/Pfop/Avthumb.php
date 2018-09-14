@@ -53,7 +53,7 @@ class Avthumb implements ShouldQueue
         $bucket = config('filesystems.qiniu.bucket');
         $notifyUrl = "https://api.calibur.tv/callback/qiniu/avthumb";
 
-        $fops = "avthumb/mp4/vcodec/libx264/" . $this->base64_urlSafeEncode($bucket . '/' . explode('.', $key)[0] . '-h265.mp4');
+        $fops = "avthumb/mp4/vcodec/libx264|saveas/" . $this->base64_urlSafeEncode($bucket . '/' . explode('.', $key)[0] . '-h265.mp4');
         list($id, $err) = $pfop->execute($bucket, $key, $fops, $pipeline, $notifyUrl, $force);
 
         if ($err == null)
