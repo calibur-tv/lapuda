@@ -31,10 +31,10 @@ class Avthumb implements ShouldQueue
 
     public function handle()
     {
-//        if (config('app.env') !== 'production')
-//        {
-//            return true;
-//        }
+        if (config('app.env') !== 'production')
+        {
+            return true;
+        }
 
         $key = $this->getVideoUrl();
 

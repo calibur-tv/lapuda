@@ -12,6 +12,7 @@ use App\Models\Video;
 use App\Services\Qiniu\Config;
 use App\Services\Qiniu\Processing\PersistentFop;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redis;
 
 
 class CallbackController extends Controller
@@ -90,6 +91,8 @@ class CallbackController extends Controller
                 ]);
         }
 
-        return response('', 204);
+        Redis::DEL('video_' . $videoId);
+
+        return response('', 200);
     }
 }
