@@ -46,8 +46,9 @@ class Avthumb implements ShouldQueue
         $auth = new \App\Services\Qiniu\Auth();
         $config = new Config();
         $pfop = new PersistentFop($auth, $config);
+        $queues = ['avthumb', 'avthumb-0', 'avthumb-1', 'avthumb-2'];
 
-        $pipeline = 'avthumb';
+        $pipeline = $queues[rand(0, 3)];
         $force = false;
         $bucket = config('filesystems.qiniu.bucket');
         $notifyUrl = "https://api.calibur.tv/callback/qiniu/avthumb?id=" . $this->id;
