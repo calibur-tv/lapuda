@@ -19,7 +19,7 @@ class CallbackController extends Controller
     public function qiniuAvthumb(Request $request)
     {
         $videoId = $request->get('id');
-        $video = Video::where('process', $videoId)->first();
+        $video = Video::where('id', $videoId)->first();
         if (is_null($video))
         {
             return response()->json(['data' => 'video not found'], 404);
