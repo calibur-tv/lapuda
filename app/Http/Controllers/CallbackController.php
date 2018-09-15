@@ -18,10 +18,15 @@ class CallbackController extends Controller
 {
     public function qiniuAvthumb(Request $request)
     {
-        $notifyId = $request->get('persistentId');
-        $video = Video::where('process', $notifyId)->first();
-
+        $videoId = $request->get('id');
+        $video = Video::where('process', $videoId)->first();
         if (is_null($video))
+        {
+            return;
+        }
+
+        $notifyId = $video['process'];
+        if (!$notifyId)
         {
             return;
         }
@@ -34,7 +39,7 @@ class CallbackController extends Controller
 
         if ($err != null)
         {
-            Video::where('process', $notifyId)
+            Video::where('id', $videoId)
                 ->update([
                     'process' => '-' . $notifyId
                 ]);
@@ -76,7 +81,7 @@ class CallbackController extends Controller
             }
 
             Video
-                ::where('process', $notifyId)
+                ::where('id', $videoId)
                 ->update([
                     'process' => '1',
                     'resource' => json_encode($resource)

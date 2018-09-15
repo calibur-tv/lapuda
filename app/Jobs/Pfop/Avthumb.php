@@ -50,7 +50,7 @@ class Avthumb implements ShouldQueue
         $pipeline = 'avthumb';
         $force = false;
         $bucket = config('filesystems.qiniu.bucket');
-        $notifyUrl = "https://api.calibur.tv/callback/qiniu/avthumb";
+        $notifyUrl = "https://api.calibur.tv/callback/qiniu/avthumb?id=" . $this->id;
         $namePrefix = $bucket . ':' . str_replace(' ', '-', strtolower(explode('.', $key)[0]));
 
         $fops = array(
