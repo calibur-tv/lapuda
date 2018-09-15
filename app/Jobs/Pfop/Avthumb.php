@@ -16,7 +16,6 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Support\Facades\Log;
 
 
 class Avthumb implements ShouldQueue
@@ -52,13 +51,19 @@ class Avthumb implements ShouldQueue
         $force = false;
         $bucket = config('filesystems.qiniu.bucket');
         $notifyUrl = "https://api.calibur.tv/callback/qiniu/avthumb";
+        $namePrefix = $bucket . ':' . str_replace(' ', '-', strtolower(explode('.', $key)[0]));
 
-        $fops = "avthumb/mp4/vcodec/libx264|saveas/" . $this->base64_urlSafeEncode($bucket . '/' . explode('.', $key)[0] . '-h265.mp4');
+        $fops = array(
+            "avthumb/mp4/acodec/aac/ar/44100/ab/128k/vcodec/libx264/vb/3.2m/s/1280x720/autoscale/1|saveas/" . $this->base64_urlSafeEncode($namePrefix . '-720.mp4'),
+            "avthumb/mp4/acodec/aac/ar/44100/ab/64k/vcodec/libx264/vb/1.6m/s/848x480/autoscale/1|saveas/" . $this->base64_urlSafeEncode($namePrefix . '-480.mp4')
+        );
+
         list($id, $err) = $pfop->execute($bucket, $key, $fops, $pipeline, $notifyUrl, $force);
 
         if ($err == null)
         {
-            Video::where('id', $this->id)
+            Video
+                ::where('id', $this->id)
                 ->update([
                     'process' => $id
                 ]);
@@ -77,8 +82,17 @@ class Avthumb implements ShouldQueue
         }
 
         $resource = $video['resource'] === 'null' ? null : json_decode($video['resource'], true);
+        if (is_null($resource))
+        {
+            return '';
+        }
 
-        if (isset($resource['video'][720]) && isset($resource['video'][720]['src']) && $resource['video'][720]['src'])
+        if (isset($resource['video'][0]) && isset($resource['video'][0]['src']) && $resource['video'][0]['src'])
+        {
+            $src = $resource['video'][0]['src'];
+            $other_site = 0;
+        }
+        else if (isset($resource['video'][720]) && isset($resource['video'][720]['src']) && $resource['video'][720]['src'])
         {
             $src = $resource['video'][720]['src'];
             $other_site = 0;

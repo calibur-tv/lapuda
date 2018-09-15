@@ -49,16 +49,17 @@ class CallbackController extends Controller
 
             if (isset($resource['video'][720]) && isset($resource['video'][720]['src']) && $resource['video'][720]['src'])
             {
-                $resource['video'][1080]['src'] = $ret['items'][0]['key'];
+                $originlSrc = $resource['video'][720]['src'];
                 $other_site = 0;
             }
             else if (isset($resource['video'][1080]) && isset($resource['video'][1080]['src']) && $resource['video'][1080]['src'])
             {
-                $resource['video'][1080]['src'] = $ret['items'][0]['key'];
+                $originlSrc = $resource['video'][1080]['src'];
                 $other_site = 0;
             }
             else
             {
+                $originlSrc = '';
                 $other_site = 1;
             }
 
@@ -67,11 +68,19 @@ class CallbackController extends Controller
                 return;
             }
 
-//            Video::where('process', $notifyId)
-//                ->update([
-//                    'process' => '1',
-//                    'resource' => json_encode($resource)
-//                ]);
+            $resource['video'][0]['src'] = $originlSrc;
+            foreach ($ret['items'] as $item)
+            {
+                $rate = explode('.', end(explode('-', $item['key'])))[0];
+                $resource['video'][$rate]['src'] = $item['key'];
+            }
+
+            Video
+                ::where('process', $notifyId)
+                ->update([
+                    'process' => '1',
+                    'resource' => json_encode($resource)
+                ]);
         }
 
         return;
