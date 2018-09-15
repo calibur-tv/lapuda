@@ -87,19 +87,19 @@ class Avthumb implements ShouldQueue
             return '';
         }
 
-        if (isset($resource['video'][0]) && isset($resource['video'][0]['src']) && $resource['video'][0]['src'])
+        if (isset($resource['video']['0']))
         {
-            $src = $resource['video'][0]['src'];
+            $src = $resource['video']['0']['src'];
             $other_site = 0;
         }
-        else if (isset($resource['video'][720]) && isset($resource['video'][720]['src']) && $resource['video'][720]['src'])
+        else if (isset($resource['video']['720']))
         {
-            $src = $resource['video'][720]['src'];
+            $src = $resource['video']['720']['src'];
             $other_site = 0;
         }
-        else if (isset($resource['video'][1080]) && isset($resource['video'][1080]['src']) && $resource['video'][1080]['src'])
+        else if (isset($resource['video']['1080']))
         {
-            $src = $resource['video'][1080]['src'];
+            $src = $resource['video']['1080']['src'];
             $other_site = 0;
         }
         else

@@ -3,7 +3,6 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
-use App\Api\V1\Repositories\UserRepository;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
 use Mews\Purifier\Facades\Purifier;
@@ -66,13 +65,5 @@ class SearchController extends Controller
         $bangumiRepository = new BangumiRepository();
 
         return $this->resOK($bangumiRepository->searchAll());
-    }
-
-    public function test()
-    {
-        $job = (new \App\Jobs\Pfop\Avthumb(1));
-        $result = dispatch($job);
-
-        return $this->resOK($result);
     }
 }

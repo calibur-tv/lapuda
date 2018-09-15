@@ -53,14 +53,19 @@ class CallbackController extends Controller
                 return response()->json(['data' => 'resource is empyt'], 403);
             }
 
-            if (isset($resource['video'][720]) && isset($resource['video'][720]['src']) && $resource['video'][720]['src'])
+            if (isset($resource['video']['0']))
             {
-                $originlSrc = $resource['video'][720]['src'];
+                $originlSrc = $resource['video']['0']['src'];
                 $other_site = 0;
             }
-            else if (isset($resource['video'][1080]) && isset($resource['video'][1080]['src']) && $resource['video'][1080]['src'])
+            else if (isset($resource['video']['720']))
             {
-                $originlSrc = $resource['video'][1080]['src'];
+                $originlSrc = $resource['video']['720']['src'];
+                $other_site = 0;
+            }
+            else if (isset($resource['video']['1080']))
+            {
+                $originlSrc = $resource['video']['1080']['src'];
                 $other_site = 0;
             }
             else
@@ -74,7 +79,7 @@ class CallbackController extends Controller
                 return response()->json(['data' => 'use other site resource'], 403);
             }
 
-            $resource['video'][0]['src'] = $originlSrc;
+            $resource['video']['0']['src'] = $originlSrc;
             foreach ($ret['items'] as $item)
             {
                 $rate = explode('-', $item['key']);

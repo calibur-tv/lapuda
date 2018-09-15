@@ -16,7 +16,8 @@ class Kernel extends ConsoleKernel
         Trail\BlackWords::class,
         Job\CronPush::class,
         Job\ClearSearch::class,
-        Job\DayStats::class
+        Job\DayStats::class,
+        Job\CronAvthumb::class
     ];
 
     /**
@@ -31,6 +32,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('CronPush')->dailyAt('23:33');
         $schedule->command('DayStats')->dailyAt('00:01');
         $schedule->command('ClearSearch')->dailyAt('02:01');
+        $schedule->command('CronAvthumb')->hourly();
     }
 
     /**
