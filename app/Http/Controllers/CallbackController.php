@@ -76,7 +76,9 @@ class CallbackController extends Controller
             $resource['video'][0]['src'] = $originlSrc;
             foreach ($ret['items'] as $item)
             {
-                $rate = explode('.', end(explode('-', $item['key'])))[0];
+                $rate = explode('-', $item['key']);
+                $rate = end($rate);
+                $rate = explode('.', $rate)[0];
                 $resource['video'][$rate]['src'] = $item['key'];
             }
 
