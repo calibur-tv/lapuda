@@ -22,13 +22,13 @@ class CallbackController extends Controller
         $video = Video::where('process', $videoId)->first();
         if (is_null($video))
         {
-            return;
+            return response()->json(['data' => 'video not found'], 404);
         }
 
         $notifyId = $video['process'];
         if (!$notifyId)
         {
-            return;
+            return response()->json(['data' => 'notify not found'], 404);
         }
 
         $auth = new \App\Services\Qiniu\Auth();
@@ -49,7 +49,7 @@ class CallbackController extends Controller
             $resource = $video['resource'] === 'null' ? null : json_decode($video['resource'], true);
             if (!$resource)
             {
-                return;
+                return response()->json(['data' => 'resource is empyt'], 403);
             }
 
             if (isset($resource['video'][720]) && isset($resource['video'][720]['src']) && $resource['video'][720]['src'])
@@ -70,7 +70,7 @@ class CallbackController extends Controller
 
             if ($other_site)
             {
-                return;
+                return response()->json(['data' => 'use other site resource'], 403);
             }
 
             $resource['video'][0]['src'] = $originlSrc;
@@ -88,6 +88,6 @@ class CallbackController extends Controller
                 ]);
         }
 
-        return;
+        return response('', 204);
     }
 }
