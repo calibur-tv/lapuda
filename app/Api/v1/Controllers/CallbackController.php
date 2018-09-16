@@ -75,4 +75,9 @@ class CallbackController extends Controller
 
         return $this->resNoContent();
     }
+
+    public function wechatAuth(Request $request)
+    {
+
+    }
 }

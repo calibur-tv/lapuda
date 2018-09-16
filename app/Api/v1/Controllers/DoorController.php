@@ -21,6 +21,13 @@ use Tymon\JWTAuth\Facades\JWTAuth;
  */
 class DoorController extends Controller
 {
+    public function pageData(Request $request)
+    {
+        return $this->resOK([
+            'wechat_app_id' => config('tencent.wechat.app_id'),
+            "page_banner" => "https://image.calibur.tv/banner/3.png"
+        ]);
+    }
     /**
      * 发送手机验证码
      *
