@@ -82,6 +82,16 @@ class CallbackController extends Controller
             $resource['video']['0']['src'] = $originlSrc;
             foreach ($ret['items'] as $item)
             {
+                if ($item['code'] != 0)
+                {
+                    Video::where('id', $videoId)
+                        ->update([
+                            'process' => '-' . $notifyId
+                        ]);
+
+                    return response()->json(['data' => 'something error'], 403);
+                }
+
                 $rate = explode('-', $item['key']);
                 $rate = end($rate);
                 $rate = explode('.', $rate)[0];
