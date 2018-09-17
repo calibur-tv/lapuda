@@ -8,6 +8,7 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\Repository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 
@@ -61,6 +62,7 @@ class ReportController extends Controller
      *
      * @Parameters({
      *      @Parameter("id", description="举报的 id", type="integer", required=true),
+     *      @Parameter("model", description="举报的模型", type="string", required=true),
      *      @Parameter("type", description="举报的类型", type="string", required=true),
      *      @Parameter("message", description="举报的留言", type="string", required=true)
      * })
@@ -72,31 +74,53 @@ class ReportController extends Controller
     public function send(Request $request)
     {
         $type = $request->get('type');
+        $model = $request->get('model');
         $id = $request->get('id');
         $message = $request->get('message');
         $userId = $this->getAuthUserId();
 
-        if (!in_array($type, $this->types))
+        if (!in_array($model, $this->types))
         {
             return $this->resErrBad();
         }
 
-        $listCacheKey = $this->getReportListKeyByType($type);
-        Redis::ZINCRBY($listCacheKey, 1, $id);
+        Redis::ZINCRBY('user-report-trending-ids', 1, $model . '-' . $id);
 
-        $itemCacheKey = $this->getReportItemDetailKey($type, $id);
-        Redis::RPUSH($itemCacheKey, $userId . ':' . $message);
+        Redis::RPUSH('user-report-item' . '-' . $model . '-' . $id, $userId . '|' . $type . '|' . $message);
 
         return $this->resNoContent();
     }
 
-    protected function getReportListKeyByType($type)
+    public function list()
     {
-        return 'user_report_' . $type . '_trending_ids';
+        $repository = new Repository();
+        $list = $repository->RedisSort('user-report-trending-ids', function ()
+        {
+            return [];
+        });
+
+        return $this->resOK($list);
     }
 
-    protected function getReportItemDetailKey($type, $id)
+    public function item(Request $request)
     {
-        return 'user_report_' . $type . '_' . $id . '_detail';
+        $tail = $request->get('tail');
+        $repository = new Repository();
+        $list = $repository->RedisList('user-report-item' . '-' . $tail, function ()
+        {
+            return [];
+        });
+
+        return $this->resOK($list);
+    }
+
+    public function remove(Request $request)
+    {
+        $tail = $request->get('tail');
+
+        Redis::ZREM('user-report-trending-ids', $tail);
+        Redis::DEL('user-report-item' . '-' . $tail);
+
+        return $this->resNoContent();
     }
 }

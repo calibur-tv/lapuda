@@ -49,7 +49,8 @@ class TrialController extends Controller
             'role' => CartoonRole::withTrashed()->where('state', '<>', 0)->count(),
             'score' => Score::withTrashed()->where('state', '<>', 0)->count(),
             'question' => Question::withTrashed()->where('state', '<>', 0)->count(),
-            'answer' => Answer::withTrashed()->where('state', '<>', 0)->count()
+            'answer' => Answer::withTrashed()->where('state', '<>', 0)->count(),
+            'report' => Redis::ZCARD('user-report-trending-ids')
         ];
 
         return $this->resOK($result);

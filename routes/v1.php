@@ -544,5 +544,14 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/pass', 'App\Api\V1\Controllers\CartoonRoleController@pass');
             });
         });
+
+        $api->group(['prefix' => '/report'], function ($api)
+        {
+            $api->get('/list', 'App\Api\V1\Controllers\ReportController@list');
+
+            $api->get('/item', 'App\Api\V1\Controllers\ReportController@item');
+
+            $api->post('/remove', 'App\Api\V1\Controllers\ReportController@remove');
+        });
     });
 });
