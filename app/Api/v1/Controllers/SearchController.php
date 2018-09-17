@@ -3,7 +3,6 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
-use App\Api\V1\Repositories\UserRepository;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
 use Mews\Purifier\Facades\Purifier;

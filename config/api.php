@@ -110,7 +110,7 @@ return [
     |
     */
 
-    'strict' => env('API_STRICT', env('APP_ENV') === 'production'),
+    'strict' => env('API_STRICT', false),
 
     /*
     |--------------------------------------------------------------------------

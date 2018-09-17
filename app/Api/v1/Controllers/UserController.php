@@ -63,6 +63,11 @@ class UserController extends Controller
         ]);
 
         User::where('id', $userId)->increment('coin_count', 1);
+        Redis::DEL('user_' . $userId . '_day_signed_' . date('y-m-d', time()));
+        if (Redis::EXISTS('user_' . $userId . '_coin_sign'))
+        {
+            Redis::INCRBY('user_' . $userId . '_coin_sign', 1);
+        }
 
         return $this->resNoContent();
     }
@@ -194,14 +199,14 @@ class UserController extends Controller
         }
 
         $userId = $this->getAuthUserId();
-        $birthday = date('Y-m-d H:m:s', (int)$request->get('birthday'));
+        $birthday = $request->get('birthday') ? date('Y-m-d H:m:s', (int)$request->get('birthday')) : null;
 
         User::where('id', $userId)->update([
             'nickname' => Purifier::clean($request->get('nickname')),
             'signature' => Purifier::clean($request->get('signature')),
             'sex' => $request->get('sex'),
             'sex_secret' => $request->get('sex_secret'),
-            'birthday' => $birthday ? $birthday : null,
+            'birthday' => $birthday,
             'birth_secret' => $request->get('birth_secret')
         ]);
 
@@ -393,7 +398,9 @@ class UserController extends Controller
             return $this->resNoContent();
         }
 
-        if (intval($notification['to_user_id']) !== $this->getAuthUserId())
+        $userId =  $this->getAuthUserId();
+
+        if (intval($notification['to_user_id']) !== $userId)
         {
             return $this->resNoContent();
         }
@@ -403,6 +410,10 @@ class UserController extends Controller
         ]);
 
         Redis::DEL('notification-' . $id);
+        if (Redis::EXISTS('user_' . $userId . '_notification_count'))
+        {
+            Redis::INCRBY('user_' . $userId . '_notification_count', -1);
+        }
 
         return $this->resNoContent();
     }
@@ -428,6 +439,7 @@ class UserController extends Controller
             ]);
 
         Redis::DEL('user-' . $userId . '-notification-ids');
+        Redis::SET('user_' . $userId . '_notification_count', 0);
 
         return $this->resNoContent();
     }
@@ -452,8 +464,10 @@ class UserController extends Controller
         {
             return $this->resErrNotFound();
         }
+
         $user = $userRepository->item($userId, true);
         $user['coin_count'] = User::where('id', $userId)->pluck('coin_count')->first();
+        $user['coin_from_sign'] = $userRepository->userSignCoin($userId);
 
         return $this->resOK($user);
     }
@@ -633,7 +647,7 @@ class UserController extends Controller
             if ($item->type == 0)
             {
                 $transaction['type'] = '收入';
-                $transaction['action'] = '每日签到';
+                $transaction['action'] = '每日签到（旧）';
             }
             else if ($item->type == 1)
             {
@@ -674,6 +688,35 @@ class UserController extends Controller
                 $transaction['action'] = '提现';
                 $transaction['type'] = '支出';
             }
+            else if ($item->type == 6)
+            {
+                $transaction['action'] = '打赏漫评';
+                if ($item->from_user_id == $userId)
+                {
+                    $transaction['type'] = '支出';
+                }
+                else
+                {
+                    $transaction['type'] = '收入';
+                }
+            }
+            else if ($item->type == 7)
+            {
+                $transaction['action'] = '打赏回答';
+                if ($item->from_user_id == $userId)
+                {
+                    $transaction['type'] = '支出';
+                }
+                else
+                {
+                    $transaction['type'] = '收入';
+                }
+            }
+            else if ($item->type == 8)
+            {
+                $transaction['type'] = '收入';
+                $transaction['action'] = '每日签到';
+            }
 
             if ($transaction['type'] === '收入' && $item->from_user_id != 0 && $item->from_user_id != $userId)
             {
@@ -712,6 +755,8 @@ class UserController extends Controller
         $coinCount = User::where('id', $userId)
             ->pluck('coin_count')
             ->first();
+
+        $coinCount = $coinCount - UserCoin::whereRaw('user_id = ? and type = ?', [$userId, 8])->count();
 
         if ($coinCount < 100)
         {

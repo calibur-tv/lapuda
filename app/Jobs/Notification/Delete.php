@@ -15,6 +15,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Support\Facades\Redis;
 
 class Delete implements ShouldQueue
 {
@@ -55,13 +56,20 @@ class Delete implements ShouldQueue
             return;
         }
 
+        $userId = $this->toUserId;
+
         Notifications
             ::where('type', $type)
             ->where('model_id', $this->modelId)
             ->where('comment_id', $this->commentId)
             ->where('reply_id', $this->replyId)
-            ->where('to_user_id', $this->toUserId)
+            ->where('to_user_id', $userId)
             ->where('from_user_id', $this->fromUserId)
             ->delete();
+
+        if (Redis::EXISTS('user_' . $userId . '_notification_count'))
+        {
+            Redis::INCRBY('user_' . $userId . '_notification_count', -1);
+        }
     }
 }

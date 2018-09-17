@@ -55,8 +55,8 @@ final class PersistentFop
             $fops = implode(';', $fops);
         }
         $params = array('bucket' => $bucket, 'key' => $key, 'fops' => $fops);
-        \App\Services\Qiniu\setWithoutEmpty($params, 'pipeline', $pipeline);
-        \App\Services\Qiniu\setWithoutEmpty($params, 'notifyURL', $notify_url);
+        $this->setWithoutEmpty($params, 'pipeline', $pipeline);
+        $this->setWithoutEmpty($params, 'notifyURL', $notify_url);
         if ($force) {
             $params['force'] = 1;
         }
@@ -90,5 +90,22 @@ final class PersistentFop
             return array(null, new Error($url, $response));
         }
         return array($response->json(), null);
+    }
+
+    /**
+     * array 辅助方法，无值时不set
+     *
+     * @param $array 待操作array
+     * @param $key key
+     * @param $value value 为null时 不设置
+     *
+     * @return array 原来的array，便于连续操作
+     */
+    protected function setWithoutEmpty(&$array, $key, $value)
+    {
+        if (!empty($value)) {
+            $array[$key] = $value;
+        }
+        return $array;
     }
 }

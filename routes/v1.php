@@ -18,13 +18,17 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/door'], function ($api)
     {
+        $api->get('/data', 'App\Api\V1\Controllers\DoorController@pageData');
+
         $api->post('/message', 'App\Api\V1\Controllers\DoorController@sendMessage')->middleware(['geetest']);
 
         $api->post('/register', 'App\Api\V1\Controllers\DoorController@register');
 
         $api->post('/login', 'App\Api\V1\Controllers\DoorController@login')->middleware(['geetest']);
 
-        $api->post('/user', 'App\Api\V1\Controllers\DoorController@refresh')->middleware(['jwt.refresh']);
+        $api->post('/user', 'App\Api\V1\Controllers\DoorController@currentUser')->middleware(['jwt.refresh']);
+
+        $api->post('/refresh', 'App\Api\V1\Controllers\DoorController@refreshUser')->middleware(['jwt.refresh']);
 
         $api->post('/reset', 'App\Api\V1\Controllers\DoorController@resetPassword');
 

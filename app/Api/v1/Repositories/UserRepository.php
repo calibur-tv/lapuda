@@ -91,7 +91,18 @@ class UserRepository extends Repository
 
     public function daySigned($userId)
     {
-        return UserSign::whereRaw('user_id = ? and created_at > ?', [$userId, Carbon::now()->startOfDay()])->count() !== 0;
+        return $this->RedisItem('user_' . $userId . '_day_signed_' . date('y-m-d', time()), function () use ($userId)
+        {
+            return UserSign::whereRaw('user_id = ? and created_at > ?', [$userId, Carbon::now()->startOfDay()])->count() !== 0;
+        });
+    }
+
+    public function userSignCoin($userId)
+    {
+        return $this->RedisItem('user_' . $userId . '_coin_sign', function () use ($userId)
+        {
+            return UserCoin::whereRaw('user_id = ? and type = ?', [$userId, 8])->count();
+        });
     }
 
     public function replyPostIds($userId)
@@ -183,7 +194,10 @@ class UserRepository extends Repository
 
     public function getNotificationCount($userId)
     {
-        return Notifications::whereRaw('to_user_id = ? and checked = ?', [$userId, false])->count();
+        return $this->RedisItem('user_' . $userId . '_notification_count', function () use ($userId)
+        {
+            return Notifications::whereRaw('to_user_id = ? and checked = ?', [$userId, false])->count();
+        });
     }
 
     public function getNotifications($userId, $minId, $take)

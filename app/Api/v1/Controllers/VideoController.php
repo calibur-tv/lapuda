@@ -212,7 +212,7 @@ class VideoController extends Controller
         }
         else
         {
-            $video->delete();
+            Video::withTrashed()->where('id', $videoId)->delete();
 
             $job = (new \App\Jobs\Search\Index('D', 'video', $videoId));
             dispatch($job);
