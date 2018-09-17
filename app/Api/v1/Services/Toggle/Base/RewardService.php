@@ -51,7 +51,7 @@ class RewardService extends ToggleService
             'from_user_id' => 0,
             'user_id' => $item['user_id'],
             'type' => $this->type,
-            'count' => -$count
+            'count' => $count
         ]);
 
         User::where('id', $item['user_id'])->increment('coin_count', -$count);
