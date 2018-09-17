@@ -21,13 +21,15 @@ class UserCoin extends Model
 
     /**
      * type
-     * 0：每日签到
+     * 0：每日签到（old）
      * 1：帖子
      * 2：邀请用户注册
      * 3：为偶像应援
      * 4：为图片点赞
      * 5：提现
-     * 6：评分
+     * 6：漫评
+     * 7：回答
+     * 8：每日签到（new）
      */
 
     protected $casts = [

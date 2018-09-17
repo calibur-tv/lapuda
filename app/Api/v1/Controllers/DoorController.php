@@ -5,6 +5,7 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\User;
+use App\Models\UserCoin;
 use App\Models\UserZone;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Services\Sms\Message;
@@ -285,7 +286,7 @@ class DoorController extends Controller
      *      @Response(401, body={"code": 40104, "message": "未登录的用户"})
      * })
      */
-    public function refresh()
+    public function currentUser()
     {
         $user = $this->getAuthUser();
         if (!$user)
@@ -302,6 +303,42 @@ class DoorController extends Controller
         $transformer = new UserTransformer();
 
         return $this->resOK($transformer->self($user));
+    }
+
+    /**
+     * 获取用户信息
+     *
+     * 每次`启动应用`、`登录`、`注册`成功后调用
+     *
+     * @Post("/door/refresh")
+     *
+     * @Request(headers={"Authorization": "Bearer JWT-Token"})
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "用户对象"}),
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户"})
+     * })
+     */
+    public function refreshUser()
+    {
+        $user = $this->getAuthUser();
+        if (!$user)
+        {
+            return $this->resErrAuth();
+        }
+
+        $user = $user->toArray();
+        $userId = $user['id'];
+
+        $imageRepository = new ImageRepository();
+        $userRepository = new UserRepository();
+        $user['uptoken'] = $imageRepository->uptoken();
+        $user['daySign'] = $userRepository->daySigned($userId);
+        $user['notification'] = $userRepository->getNotificationCount($userId);
+        $user['coin_from_sign'] = $userRepository->userSignCoin($userId);
+
+        $transformer = new UserTransformer();
+
+        return $this->resOK($transformer->refresh($user));
     }
 
     /**

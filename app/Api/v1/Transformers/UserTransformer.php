@@ -36,6 +36,32 @@ class UserTransformer extends Transformer
         });
     }
 
+    public function refresh($user)
+    {
+        return $this->transformer($user, function ($user)
+        {
+            return [
+                'id' => (int)$user['id'],
+                'zone' => $user['zone'],
+                'avatar' => $user['avatar'],
+                'banner' => $user['banner'],
+                'nickname' => $user['nickname'],
+                'birthday' => $user['birthday'] ? $user['birthday'] : 0,
+                'sex' => $user['sex'],
+                'birthSecret' => (boolean)$user['birth_secret'],
+                'sexSecret' => (boolean)$user['sex_secret'],
+                'signature' => $user['signature'],
+                'uptoken' => $user['uptoken'],
+                'daySign' => (boolean)$user['daySign'],
+                'coin' => (int)$user['coin_count'],
+                'coin_from_sign' => (int)$user['coin_from_sign'],
+                'faker' => (boolean)$user['faker'],
+                'is_admin' => (boolean)$user['is_admin'],
+                'notification' => $user['notification']
+            ];
+        });
+    }
+
     public function item($user)
     {
         return $this->transformer($user, function ($user)

@@ -18,6 +18,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Support\Facades\Redis;
 
 class Create implements ShouldQueue
 {
@@ -69,19 +70,25 @@ class Create implements ShouldQueue
         }
 
         $now = Carbon::now();
+        $userId = $this->toUserId;
+
         $id = Notifications::insertGetId([
             'type' => $type,
             'model_id' => $this->modelId,
             'comment_id' => $this->commentId,
             'reply_id' => $this->replyId,
-            'to_user_id' => $this->toUserId,
+            'to_user_id' => $userId,
             'from_user_id' => $this->fromUserId,
             'created_at' => $now,
             'updated_at' => $now
         ]);
 
         $repository = new Repository();
-        $repository->ListInsertBefore('user-' . $this->toUserId . '-notification-ids', $id);
+        $repository->ListInsertBefore('user-' . $userId . '-notification-ids', $id);
+        if (Redis::EXISTS('user_' . $userId . '_notification_count'))
+        {
+            Redis::INCRBY('user_' . $userId . '_notification_count', 1);
+        }
     }
 
     protected function convertStrTypeToInt()
