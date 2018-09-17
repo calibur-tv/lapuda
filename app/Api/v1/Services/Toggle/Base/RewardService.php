@@ -34,7 +34,7 @@ class RewardService extends ToggleService
             return;
         }
 
-        $item = $repository->item($id);
+        $item = $repository->item($id, true);
         if (is_null($item) || $item['is_creator'] == 0)
         {
             return;
