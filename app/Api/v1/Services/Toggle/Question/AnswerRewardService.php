@@ -9,12 +9,12 @@
 namespace App\Api\V1\Services\Toggle\Question;
 
 
-use App\Api\V1\Services\Toggle\ToggleService;
+use App\Api\V1\Services\Toggle\Base\RewardService;
 
-class AnswerRewardService extends ToggleService
+class AnswerRewardService extends RewardService
 {
     public function __construct()
     {
-        parent::__construct('answer_reward');
+        parent::__construct('answer_reward', 12);
     }
 }

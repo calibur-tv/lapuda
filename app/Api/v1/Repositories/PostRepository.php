@@ -10,6 +10,7 @@ namespace App\Api\V1\Repositories;
 
 
 use App\Api\V1\Services\Comment\PostCommentService;
+use App\Api\V1\Services\Toggle\Post\PostRewardService;
 use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Models\Post;
 use App\Models\PostImages;
@@ -185,6 +186,9 @@ class PostRepository extends Repository
             $job = (new \App\Jobs\Search\Index('D', 'post', $id));
             dispatch($job);
         }
+
+        $postRewardService = new PostRewardService();
+        $postRewardService->cancel($id);
 
         Redis::DEL($this->itemCacheKey($id));
     }

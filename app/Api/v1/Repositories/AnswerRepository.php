@@ -9,6 +9,7 @@
 namespace App\Api\V1\Repositories;
 
 
+use App\Api\V1\Services\Toggle\Question\AnswerRewardService;
 use App\Api\V1\Services\Trending\AnswerTrendingService;
 use App\Api\V1\Services\Trending\QuestionTrendingService;
 use App\Api\V1\Services\Vote\AnswerVoteService;
@@ -121,6 +122,9 @@ class AnswerRepository extends Repository
             $job = (new \App\Jobs\Search\Index('D', 'answer', $id));
             dispatch($job);
         }
+
+        $answerRewardService = new AnswerRewardService();
+        $answerRewardService->cancel($id);
 
         Redis::DEL($this->itemCacheKey($id));
     }

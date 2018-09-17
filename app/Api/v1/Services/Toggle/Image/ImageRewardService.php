@@ -9,12 +9,12 @@
 namespace App\Api\V1\Services\Toggle\Image;
 
 
-use App\Api\V1\Services\Toggle\ToggleService;
+use App\Api\V1\Services\Toggle\Base\RewardService;
 
-class ImageRewardService extends ToggleService
+class ImageRewardService extends RewardService
 {
     public function __construct()
     {
-        parent::__construct('image_reward');
+        parent::__construct('image_reward', 10);
     }
 }

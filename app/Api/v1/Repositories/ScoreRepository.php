@@ -11,6 +11,7 @@ namespace App\Api\V1\Repositories;
 
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
+use App\Api\V1\Services\Toggle\Score\ScoreRewardService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
 use App\Models\Score;
 use App\Services\BaiduSearch\BaiduPush;
@@ -247,6 +248,9 @@ class ScoreRepository extends Repository
             $job = (new \App\Jobs\Search\Index('D', 'score', $id));
             dispatch($job);
         }
+
+        $scoreRewardService = new ScoreRewardService();
+        $scoreRewardService->cancel($id);
 
         Redis::DEL($this->itemCacheKey($id));
     }
