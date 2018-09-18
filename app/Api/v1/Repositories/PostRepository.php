@@ -102,23 +102,6 @@ class PostRepository extends Repository
         }
     }
 
-    public function applyAddComment($userId, $post, $images, $newComment)
-    {
-        $id = $post['id'];
-        $newId = $newComment['id'];
-        $this->savePostImage($id, $newId, $images);
-        $now = Carbon::now();
-
-        Post::where('id', $id)->update([
-            'updated_at' => $now
-        ]);
-
-        $trendingService = new PostTrendingService();
-        $trendingService->update($id);
-
-        Redis::LPUSHX('user_'.$userId.'_replyPostIds', $newId);
-    }
-
     public function previewImages($id, $masterId, $onlySeeMaster)
     {
         return $this->Cache('post_'.$id.'_preview_images_' . $onlySeeMaster, function () use ($id, $masterId, $onlySeeMaster)
