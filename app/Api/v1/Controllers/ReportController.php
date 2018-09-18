@@ -34,7 +34,15 @@ class ReportController extends Controller
             'score_comment',
             'video_comment',
             'question_comment',
-            'answer_comment'
+            'answer_comment',
+            'role_comment',
+            'post_reply',
+            'image_reply',
+            'score_reply',
+            'video_reply',
+            'question_reply',
+            'answer_reply',
+            'role_reply'
         ];
     }
 

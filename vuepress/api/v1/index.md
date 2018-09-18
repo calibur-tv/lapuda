@@ -181,6 +181,30 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
                 "message": "未登录的用户"
             }
 
+## 获取用户信息 [POST /door/refresh]
+每次`启动应用`、`登录`、`注册`成功后调用
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "用户对象"
+            }
+
++ Response 401 (application/json)
+    + Body
+
+            {
+                "code": 40104,
+                "message": "未登录的用户"
+            }
+
 ## 重置密码 [POST /door/reset]
 
 
@@ -2453,6 +2477,7 @@ answer_comment
 
 + Parameters
     + id: (integer, required) - 举报的 id
+    + model: (string, required) - 举报的模型
     + type: (string, required) - 举报的类型
     + message: (string, required) - 举报的留言
 
