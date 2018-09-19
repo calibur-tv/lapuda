@@ -9,12 +9,12 @@
 namespace App\Api\V1\Services\Toggle\Post;
 
 
-use App\Api\V1\Services\Toggle\ToggleService;
+use App\Api\V1\Services\Toggle\Base\RewardService;
 
-class PostRewardService extends ToggleService
+class PostRewardService extends RewardService
 {
     public function __construct()
     {
-        parent::__construct('post_reward');
+        parent::__construct('post_reward', 9);
     }
 }

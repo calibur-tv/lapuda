@@ -36,8 +36,17 @@ class Invite implements ShouldQueue
      */
     public function handle()
     {
-        $inviteUser = User::where('id', $this->inviteCode)->select('id', 'phone', 'nickname', 'faker')->first();
-        if ($inviteUser && $inviteUser->phone && !intval($inviteUser->faker))
+        $inviteUser = User
+            ::where('id', $this->inviteCode)
+            ->select('id', 'phone', 'nickname', 'faker')
+            ->first();
+
+        if (
+            $inviteUser &&
+            $inviteUser->phone &&
+            preg_match('/^(13[0-9]|15[012356789]|166|17[3678]|18[0-9]|14[57])[0-9]{8}$/', $inviteUser->phone) &&
+            !intval($inviteUser->faker)
+        )
         {
             $userRepository = new UserRepository();
             $userRepository->toggleCoin(false, $this->inviteUserId, $inviteUser->id, 2, 0);

@@ -25,6 +25,7 @@ use App\Models\UserSign;
 use App\Models\Video;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class UserRepository extends Repository
 {
@@ -161,6 +162,7 @@ class UserRepository extends Repository
         }
         else
         {
+            // 邀请他人注册
             if ($type !== 2)
             {
                 $count = User::where('id', $fromUserId)->pluck('coin_count')->first();

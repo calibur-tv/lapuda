@@ -9,12 +9,12 @@
 namespace App\Api\V1\Services\Toggle\Score;
 
 
-use App\Api\V1\Services\Toggle\ToggleService;
+use App\Api\V1\Services\Toggle\Base\RewardService;
 
-class ScoreRewardService extends ToggleService
+class ScoreRewardService extends RewardService
 {
     public function __construct()
     {
-        parent::__construct('score_reward');
+        parent::__construct('score_reward', 11);
     }
 }

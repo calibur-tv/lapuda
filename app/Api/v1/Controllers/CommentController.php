@@ -83,6 +83,23 @@ class CommentController extends Controller
             return $this->resErrParams($validator);
         }
 
+        $images = $request->get('images') ?: [];
+        foreach ($images as $i => $image)
+        {
+            $validator = Validator::make($image, [
+                'url' => 'required|string',
+                'width' => 'required|integer',
+                'height' => 'required|integer',
+                'size' => 'required|integer',
+                'type' => 'required|string',
+            ]);
+
+            if ($validator->fails())
+            {
+                return $this->resErrParams($validator);
+            }
+        }
+
         $type = $request->get('type');
         $id = $request->get('id');
 
@@ -106,7 +123,6 @@ class CommentController extends Controller
 
         $saveContent = [];
         $userId = $this->getAuthUserId();
-        $images = $request->get('images') ?: [];
         $masterId = isset($parent['user_id']) ? intval($parent['user_id']) : 0;
 
         foreach ($images as $image)
@@ -139,8 +155,6 @@ class CommentController extends Controller
         {
             return $this->resErrServiceUnavailable();
         }
-
-        $repository->applyAddComment($userId, $parent, $images, $newComment);
 
         $job = (new \App\Jobs\Notification\Create(
             $type . '-comment',

@@ -19,6 +19,7 @@ use App\Api\V1\Services\Counter\Stats\TotalUserCount;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redis;
 
 
 class StatsController extends Controller

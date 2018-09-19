@@ -9,6 +9,7 @@
 namespace App\Api\V1\Repositories;
 
 use App\Api\V1\Services\Counter\Stats\TotalImageCount;
+use App\Api\V1\Services\Toggle\Image\ImageRewardService;
 use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\AlbumImage;
@@ -326,6 +327,9 @@ class ImageRepository extends Repository
             $totalImageCount = new TotalImageCount();
             $totalImageCount->add(-count(explode(',', $image['image_ids'])));
         }
+
+        $imageRewardService = new ImageRewardService();
+        $imageRewardService->cancel($id);
 
         Redis::DEL($this->itemCacheKey($id));
     }

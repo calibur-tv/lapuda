@@ -10,6 +10,7 @@ namespace App\Api\V1\Repositories;
 
 
 use App\Api\V1\Services\Comment\PostCommentService;
+use App\Api\V1\Services\Toggle\Post\PostRewardService;
 use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Models\Post;
 use App\Models\PostImages;
@@ -101,23 +102,6 @@ class PostRepository extends Repository
         }
     }
 
-    public function applyAddComment($userId, $post, $images, $newComment)
-    {
-        $id = $post['id'];
-        $newId = $newComment['id'];
-        $this->savePostImage($id, $newId, $images);
-        $now = Carbon::now();
-
-        Post::where('id', $id)->update([
-            'updated_at' => $now
-        ]);
-
-        $trendingService = new PostTrendingService();
-        $trendingService->update($id);
-
-        Redis::LPUSHX('user_'.$userId.'_replyPostIds', $newId);
-    }
-
     public function previewImages($id, $masterId, $onlySeeMaster)
     {
         return $this->Cache('post_'.$id.'_preview_images_' . $onlySeeMaster, function () use ($id, $masterId, $onlySeeMaster)
@@ -185,6 +169,9 @@ class PostRepository extends Repository
             $job = (new \App\Jobs\Search\Index('D', 'post', $id));
             dispatch($job);
         }
+
+        $postRewardService = new PostRewardService();
+        $postRewardService->cancel($id);
 
         Redis::DEL($this->itemCacheKey($id));
     }

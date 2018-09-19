@@ -27,12 +27,14 @@ class Post extends Model
         'floor_count', // 楼层数
         'view_count',
         'is_nice',
-        'top_at'
+        'top_at',
+        'is_creator'
     ];
 
     protected $casts = [
         'state' => 'integer',
         'is_nice' => 'integer',
+        'is_creator' => 'integer',
         'floor_count' => 'integer'
     ];
 
