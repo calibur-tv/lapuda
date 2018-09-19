@@ -49,7 +49,7 @@ class ReportController extends Controller
     /**
      * 举报内容
      *
-     * > 目前支持的 type：
+     * > 目前支持的 model：
      *   user,
      *   bangumi,
      *   video,
@@ -65,6 +65,20 @@ class ReportController extends Controller
      *   video_comment,
      *   question_comment,
      *   answer_comment
+     *
+     * > 目前支持的 type：
+     * 0：其它
+     * 1：违法违规
+     * 2：色情低俗
+     * 3：赌博诈骗
+     * 4：人身攻击
+     * 5：侵犯隐私
+     * 6：内容抄袭
+     * 7：垃圾广告
+     * 8：恶意引战
+     * 9：重复内容/刷屏
+     * 10：内容不相关
+     * 11：互刷金币
      *
      * @Post("/report/send")
      *

@@ -2458,22 +2458,36 @@ type：like, follow, reward, mark，contributors
 # 举报相关接口
 
 ## 举报内容 [POST /report/send]
+> 目前支持的 model：
+  user,
+  bangumi,
+  video,
+  role,
+  post,
+  image,
+  score,
+  question,
+  answer,
+  post_comment,
+  image_comment,
+  score_comment,
+  video_comment,
+  question_comment,
+  answer_comment
+
 > 目前支持的 type：
-user,
-bangumi,
-video,
-role,
-post,
-image,
-score,
-question,
-answer,
-post_comment,
-image_comment,
-score_comment,
-video_comment,
-question_comment,
-answer_comment
+0：其它
+1：违法违规
+2：色情低俗
+3：赌博诈骗
+4：人身攻击
+5：侵犯隐私
+6：内容抄袭
+7：垃圾广告
+8：恶意引战
+9：重复内容/刷屏
+10：内容不相关
+11：互刷金币
 
 + Parameters
     + id: (integer, required) - 举报的 id
