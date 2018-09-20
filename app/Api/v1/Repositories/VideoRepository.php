@@ -48,26 +48,19 @@ class VideoRepository extends Repository
             else
             {
                 $resource = $video['resource'] === 'null' ? null : json_decode($video['resource'], true);
+                $other_site = 0;
 
                 if (isset($resource['video'][720]) && isset($resource['video'][720]['src']) && $resource['video'][720]['src'])
                 {
                     $src_720 = $this->computeVideoSrc($resource['video'][720]['src']);
-                    $other_site = 0;
                 }
-                else if (isset($resource['video'][1080]) && isset($resource['video'][1080]['src']) && $resource['video'][1080]['src'])
+                if (isset($resource['video'][1080]) && isset($resource['video'][1080]['src']) && $resource['video'][1080]['src'])
                 {
                     $src_1080 = $this->computeVideoSrc($resource['video'][1080]['src']);
-                    $other_site = 0;
                 }
-                else if (isset($resource['video'][480]) && isset($resource['video'][480]['src']) && $resource['video'][480]['src'])
+                if (isset($resource['video'][480]) && isset($resource['video'][480]['src']) && $resource['video'][480]['src'])
                 {
-                    $src_480 = $this->computeVideoSrc($resource['video'][480]['src']);;
-                    $other_site = 0;
-                }
-                else
-                {
-                    $src_other = $video['url'];
-                    $other_site = 1;
+                    $src_480 = $this->computeVideoSrc($resource['video'][480]['src']);
                 }
             }
 
