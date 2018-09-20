@@ -90,6 +90,7 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
     + secret: (string, required) - `6至16位`的密码
     + nickname: (string, required) - 昵称，只能包含`汉字、数字和字母，2~14个字符组成，1个汉字占2个字符`
     + authCode: (number, required) - 6位数字的短信验证码
+    + inviteCode: (number, optional) - 邀请码
 
 + Response 201 (application/json)
     + Body

@@ -135,6 +135,7 @@ class DoorController extends Controller
      *      @Parameter("secret", description="`6至16位`的密码", type="string", required=true),
      *      @Parameter("nickname", description="昵称，只能包含`汉字、数字和字母，2~14个字符组成，1个汉字占2个字符`", type="string", required=true),
      *      @Parameter("authCode", description="6位数字的短信验证码", type="number", required=true),
+     *      @Parameter("inviteCode", description="邀请码", type="number", required=false),
      * })
      *
      * @Transaction({

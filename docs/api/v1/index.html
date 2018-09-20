@@ -7,7 +7,7 @@
     <meta name="description" content="Just playing around">
     <link rel="icon" href="https://static.calibur.tv/favicon.ico">
     
-    <link rel="preload" href="/Laputa/assets/css/0.styles.c4c0b6bf.css" as="style"><link rel="preload" href="/Laputa/assets/js/app.8eee8d5b.js" as="script"><link rel="preload" href="/Laputa/assets/js/14.ea881eeb.js" as="script"><link rel="prefetch" href="/Laputa/assets/js/7.c641c61e.js"><link rel="prefetch" href="/Laputa/assets/js/2.cda51ec0.js"><link rel="prefetch" href="/Laputa/assets/js/3.6992acff.js"><link rel="prefetch" href="/Laputa/assets/js/4.46d60c2e.js"><link rel="prefetch" href="/Laputa/assets/js/5.a1a56ee0.js"><link rel="prefetch" href="/Laputa/assets/js/6.dd980f89.js"><link rel="prefetch" href="/Laputa/assets/js/8.69b175f0.js"><link rel="prefetch" href="/Laputa/assets/js/9.84ab4a6c.js"><link rel="prefetch" href="/Laputa/assets/js/10.f59205e5.js"><link rel="prefetch" href="/Laputa/assets/js/11.e7d00fc8.js"><link rel="prefetch" href="/Laputa/assets/js/12.07dda909.js"><link rel="prefetch" href="/Laputa/assets/js/13.e159813c.js"><link rel="prefetch" href="/Laputa/assets/js/15.bad4212f.js">
+    <link rel="preload" href="/Laputa/assets/css/0.styles.c4c0b6bf.css" as="style"><link rel="preload" href="/Laputa/assets/js/app.35990682.js" as="script"><link rel="preload" href="/Laputa/assets/js/14.c6f13155.js" as="script"><link rel="prefetch" href="/Laputa/assets/js/7.c641c61e.js"><link rel="prefetch" href="/Laputa/assets/js/2.cda51ec0.js"><link rel="prefetch" href="/Laputa/assets/js/3.6992acff.js"><link rel="prefetch" href="/Laputa/assets/js/4.46d60c2e.js"><link rel="prefetch" href="/Laputa/assets/js/5.a1a56ee0.js"><link rel="prefetch" href="/Laputa/assets/js/6.dd980f89.js"><link rel="prefetch" href="/Laputa/assets/js/8.69b175f0.js"><link rel="prefetch" href="/Laputa/assets/js/9.84ab4a6c.js"><link rel="prefetch" href="/Laputa/assets/js/10.f59205e5.js"><link rel="prefetch" href="/Laputa/assets/js/11.e7d00fc8.js"><link rel="prefetch" href="/Laputa/assets/js/12.07dda909.js"><link rel="prefetch" href="/Laputa/assets/js/13.e159813c.js"><link rel="prefetch" href="/Laputa/assets/js/15.bad4212f.js">
     <link rel="stylesheet" href="/Laputa/assets/css/0.styles.c4c0b6bf.css">
   </head>
   <body>
@@ -37,7 +37,7 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
       &quot;code&quot;: 50310,
       &quot;message&quot;: &quot;短信服务暂不可用或请求过于频繁&quot;
   }
-</code></pre></li></ul></li></ul> <h2 id="用户注册-post-door-register"><a href="#用户注册-post-door-register" aria-hidden="true" class="header-anchor">#</a> 用户注册 [POST /door/register]</h2> <p>目前仅支持使用手机号注册</p> <ul><li><p>Parameters</p> <ul><li>access: (number, required) - 手机号</li> <li>secret: (string, required) - <code>6至16位</code>的密码</li> <li>nickname: (string, required) - 昵称，只能包含<code>汉字、数字和字母，2~14个字符组成，1个汉字占2个字符</code></li> <li>authCode: (number, required) - 6位数字的短信验证码</li></ul></li> <li><p>Response 201 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
+</code></pre></li></ul></li></ul> <h2 id="用户注册-post-door-register"><a href="#用户注册-post-door-register" aria-hidden="true" class="header-anchor">#</a> 用户注册 [POST /door/register]</h2> <p>目前仅支持使用手机号注册</p> <ul><li><p>Parameters</p> <ul><li>access: (number, required) - 手机号</li> <li>secret: (string, required) - <code>6至16位</code>的密码</li> <li>nickname: (string, required) - 昵称，只能包含<code>汉字、数字和字母，2~14个字符组成，1个汉字占2个字符</code></li> <li>authCode: (number, required) - 6位数字的短信验证码</li> <li>inviteCode: (number, optional) - 邀请码</li></ul></li> <li><p>Response 201 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
       &quot;code&quot;: 0,
       &quot;data&quot;: &quot;JWT-Token&quot;
   }
@@ -883,6 +883,6 @@ answer_comment</p></blockquote> <blockquote><p>目前支持的 type：
         <a href="/Laputa/" class="prev router-link-active">
           首页
         </a></span> <!----></p></div> </div> <!----></div></div>
-    <script src="/Laputa/assets/js/14.ea881eeb.js" defer></script><script src="/Laputa/assets/js/app.8eee8d5b.js" defer></script>
+    <script src="/Laputa/assets/js/14.c6f13155.js" defer></script><script src="/Laputa/assets/js/app.35990682.js" defer></script>
   </body>
 </html>
