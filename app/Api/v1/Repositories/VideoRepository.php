@@ -13,7 +13,7 @@ use App\Models\Video;
 
 class VideoRepository extends Repository
 {
-    public function item($id, $isShow = false)
+    public function item($id, $isShow = false, $isPC = false)
     {
         if (!$id)
         {
@@ -35,10 +35,14 @@ class VideoRepository extends Repository
             $video = $video->toArray();
             $bangumiRepository = new BangumiRepository();
             $bangumi = $bangumiRepository->item($video['bangumi_id']);
+            $src_1080 = "";
+            $src_720 = "";
+            $src_480 = "";
+            $src_other = "";
 
             if ($bangumi['others_site_video'] == 1)
             {
-                $src = $video['url'];
+                $src_other = $video['url'];
                 $other_site = 1;
             }
             else
@@ -47,24 +51,32 @@ class VideoRepository extends Repository
 
                 if (isset($resource['video'][720]) && isset($resource['video'][720]['src']) && $resource['video'][720]['src'])
                 {
-                    $src = $this->computeVideoSrc($resource['video'][720]['src']);
+                    $src_720 = $this->computeVideoSrc($resource['video'][720]['src']);
                     $other_site = 0;
                 }
                 else if (isset($resource['video'][1080]) && isset($resource['video'][1080]['src']) && $resource['video'][1080]['src'])
                 {
-                    $src = $this->computeVideoSrc($resource['video'][1080]['src']);
+                    $src_1080 = $this->computeVideoSrc($resource['video'][1080]['src']);
+                    $other_site = 0;
+                }
+                else if (isset($resource['video'][480]) && isset($resource['video'][480]['src']) && $resource['video'][480]['src'])
+                {
+                    $src_480 = $this->computeVideoSrc($resource['video'][480]['src']);;
                     $other_site = 0;
                 }
                 else
                 {
-                    $src = $video['url'];
+                    $src_other = $video['url'];
                     $other_site = 1;
                 }
             }
 
             return [
                 'id' => $video['id'],
-                'src' => $src,
+                'src_480' => $src_480,
+                'src_720' => $src_720,
+                'src_1080' => $src_1080,
+                'src_other' => $src_other,
                 'poster' => $video['poster'],
                 'other_site' => $other_site,
                 'part' => $video['part'],
@@ -78,6 +90,19 @@ class VideoRepository extends Repository
         if (!$result || ($result['deleted_at'] && !$isShow))
         {
             return null;
+        }
+
+        if ($result['other_site'])
+        {
+            $result['src'] = $result['src_other'];
+        }
+        else if (!$isPC && $result['src_480'])
+        {
+            $result['src'] = $result['src_480'];
+        }
+        else
+        {
+            $result['src'] = $result['src_720'] ? $result['src_720'] : $result['src_1080'];
         }
 
         return $result;

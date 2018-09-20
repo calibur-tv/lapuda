@@ -30,10 +30,11 @@ class VideoController extends Controller
      *      @Response(404, body={"code": 40401, "message": "不存在的视频资源"})
      * })
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $videoRepository = new VideoRepository();
-        $info = $videoRepository->item($id);
+        $isPC = $request->get("refer") ?: false;
+        $info = $videoRepository->item($id, false, $isPC);
 
         if (is_null($info))
         {
