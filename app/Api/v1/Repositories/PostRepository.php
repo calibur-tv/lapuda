@@ -65,15 +65,16 @@ class PostRepository extends Repository
     {
         $newId = Post::insertGetId($data);
 
-        $this->savePostImage($newId, $newId, $images);
+        $this->savePostImage($newId, $images);
         $job = (new \App\Jobs\Trial\Post\Create($newId));
         dispatch($job);
 
         return $newId;
     }
 
-    public function savePostImage($postId, $commentId, $images)
+    public function savePostImage($postId, $images)
     {
+        // 同时存 postId 和 commentId
         if (!empty($images))
         {
             $arr = [];
@@ -82,7 +83,7 @@ class PostRepository extends Repository
             foreach ($images as $item)
             {
                 $arr[] = [
-                    'post_id' => $commentId,
+                    'post_id' => $postId,
                     'src' => $this->convertImagePath($item['url']),
                     'size' => intval($item['size']),
                     'width' => intval($item['width']),
@@ -211,5 +212,10 @@ class PostRepository extends Repository
 
         $job = (new \App\Jobs\Search\Index($type, 'post', $id, $content));
         dispatch($job);
+    }
+
+    public function applyComment($postId, $images)
+    {
+        $this->savePostImage($postId, $images);
     }
 }

@@ -3,6 +3,11 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
+use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Services\Comment\PostCommentService;
+use App\Models\Post;
+use App\Models\PostImages2;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
 use Mews\Purifier\Facades\Purifier;
@@ -65,5 +70,75 @@ class SearchController extends Controller
         $bangumiRepository = new BangumiRepository();
 
         return $this->resOK($bangumiRepository->searchAll());
+    }
+
+    public function migrate()
+    {
+        $lastId = PostImages2
+            ::orderBy("post_id", "desc")
+            ->pluck('post_id')
+            ->first();
+
+        $lastId = is_null($lastId) ? 0 : $lastId;
+        $postIds = Post::orderBy("id", "ASC")
+            ->where("id", '>', $lastId)
+            ->take(100)
+            ->pluck("id")
+            ->toArray();
+
+        if (empty($postIds))
+        {
+            return $this->resOK('done');
+        }
+
+        $postRepository = new PostRepository();
+        $postCommentService = new PostCommentService();
+        $now = Carbon::now();
+
+        foreach ($postIds as $postId)
+        {
+            $arr = [];
+            $post = $postRepository->item($postId);
+            foreach ($post['images'] as $image)
+            {
+                $arr[] = [
+                    'post_id' => $postId,
+                    'comment_id' => 0,
+                    'width' => $image['width'],
+                    'height' => $image['height'],
+                    'size' => $image['size'],
+                    'type' => $image['type'],
+                    'origin_url' => '',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                    'url' => $postRepository->convertImagePath($image['url']),
+                ];
+            }
+
+            $commentIds = $postCommentService->getMainCommentIds($postId);
+            $comments = $postCommentService->mainCommentList($commentIds);
+            foreach ($comments as $comment)
+            {
+                foreach ($comment['images'] as $image)
+                {
+                    $arr[] = [
+                        'post_id' => $postId,
+                        'comment_id' => $comment['id'],
+                        'width' => $image['width'],
+                        'height' => $image['height'],
+                        'size' => $image['size'],
+                        'type' => $image['type'],
+                        'origin_url' => '',
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                        'url' => $postRepository->convertImagePath($image['url']),
+                    ];
+                }
+            }
+
+            PostImages2::insert($arr);
+        }
+
+        return $this->resOK('success');
     }
 }
