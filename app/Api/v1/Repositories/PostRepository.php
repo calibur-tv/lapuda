@@ -44,7 +44,7 @@ class PostRepository extends Repository
 
             $images = PostImages::where('post_id', $id)
                 ->orderBy('created_at', 'ASC')
-                ->select('src AS url', 'width', 'height', 'size', 'type')
+                ->select('url', 'width', 'height', 'size', 'type')
                 ->get()
                 ->toArray();
 
@@ -65,14 +65,14 @@ class PostRepository extends Repository
     {
         $newId = Post::insertGetId($data);
 
-        $this->savePostImage($newId, $images);
+        $this->savePostImage($newId, 0, $images);
         $job = (new \App\Jobs\Trial\Post\Create($newId));
         dispatch($job);
 
         return $newId;
     }
 
-    public function savePostImage($postId, $images)
+    public function savePostImage($postId, $commentId, $images)
     {
         // 同时存 postId 和 commentId
         if (!empty($images))
@@ -84,7 +84,8 @@ class PostRepository extends Repository
             {
                 $arr[] = [
                     'post_id' => $postId,
-                    'src' => $this->convertImagePath($item['url']),
+                    'comment_id' => $commentId,
+                    'url' => $this->convertImagePath($item['url']),
                     'size' => intval($item['size']),
                     'width' => intval($item['width']),
                     'height' => intval($item['height']),
@@ -117,7 +118,7 @@ class PostRepository extends Repository
             return PostImages
                 ::whereIn('post_id', $ids)
                 ->orderBy('created_at', 'asc')
-                ->select('src AS url', 'width', 'height', 'size', 'type')
+                ->select('url', 'width', 'height', 'size', 'type')
                 ->get()
                 ->toArray();
         });
@@ -214,8 +215,8 @@ class PostRepository extends Repository
         dispatch($job);
     }
 
-    public function applyComment($postId, $images)
+    public function applyComment($postId, $commentId, $images)
     {
-        $this->savePostImage($postId, $images);
+        $this->savePostImage($postId, $commentId, $images);
     }
 }

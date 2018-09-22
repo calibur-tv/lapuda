@@ -156,7 +156,7 @@ class CommentController extends Controller
             return $this->resErrServiceUnavailable();
         }
 
-        $repository->applyComment($id, $images);
+        $repository->applyComment($id, $newComment['id'], $images);
 
         $job = (new \App\Jobs\Notification\Create(
             $type . '-comment',

@@ -9,8 +9,6 @@ $api = app('Dingo\Api\Routing\Router');
 
 $api->version(['v1', 'latest'], function ($api)
 {
-    $api->get('/test', 'App\Api\V1\Controllers\SearchController@migrate');
-
     $api->group(['prefix' => '/search'], function ($api)
     {
         $api->get('/new', 'App\Api\V1\Controllers\SearchController@search');

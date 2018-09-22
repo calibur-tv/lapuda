@@ -413,7 +413,7 @@ class Repository
         return implode("", $result);
     }
 
-    public function applyComment($id, $images)
+    public function applyComment($id, $commentId, $images)
     {
 
     }
