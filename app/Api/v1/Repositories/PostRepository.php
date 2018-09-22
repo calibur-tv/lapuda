@@ -42,7 +42,9 @@ class PostRepository extends Repository
 
             $post = $post->toArray();
 
-            $images = PostImages::where('post_id', $id)
+            $images = PostImages
+                ::where('post_id', $id)
+                ->where('comment_id', 0)
                 ->orderBy('created_at', 'ASC')
                 ->select('url', 'width', 'height', 'size', 'type')
                 ->get()
@@ -109,14 +111,15 @@ class PostRepository extends Repository
         return $this->Cache('post_'.$id.'_preview_images_' . $onlySeeMaster, function () use ($id, $masterId, $onlySeeMaster)
         {
             $postCommentService = new PostCommentService();
+
             $ids = $onlySeeMaster
                 ? $postCommentService->getAuthorMainCommentIds($id, $masterId)
                 : $postCommentService->getMainCommentIds($id);
-
-            $ids[] = $id;
+            array_unshift($ids, 0);
 
             return PostImages
-                ::whereIn('post_id', $ids)
+                ::where('post_id', $id)
+                ->whereIn('comment_id', $ids)
                 ->orderBy('created_at', 'asc')
                 ->select('url', 'width', 'height', 'size', 'type')
                 ->get()
