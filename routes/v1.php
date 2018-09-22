@@ -146,6 +146,8 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/feedback', 'App\Api\V1\Controllers\UserController@feedback');
 
+        $api->get('/recommended', 'App\Api\V1\Controllers\UserController@recommendedUsers');
+
         $api->group(['prefix' => '/{zone}'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\UserController@show');
