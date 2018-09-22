@@ -55,7 +55,7 @@ class UserController extends Controller
         UserCoin::create([
             'from_user_id' => $userId,
             'user_id' => $userId,
-            'type' => 0
+            'type' => 8
         ]);
 
         UserSign::create([
