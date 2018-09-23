@@ -249,7 +249,9 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
 # App版本检测
 
 ## 检测App版本 [GET /app/version/check]
-
+> 目前支持的type
+1：Android
+2：iOS
 
 + Parameters
     + type: (integer, required) - 系统类型
