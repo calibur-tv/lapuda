@@ -22,11 +22,12 @@ class AppVersionController extends Controller
     /**
      * 检测App版本
      *
-     * @Get("/app/version/check")
-     *
      * > 目前支持的type
      * 1：Android
      * 2：iOS
+     *
+     * @Get("/app/version/check")
+     *
      *
      * @Parameters({
      *      @Parameter("type", description="系统类型", type="integer", required=true),

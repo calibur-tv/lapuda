@@ -901,6 +901,8 @@ class UserController extends Controller
                 $request->get('key') => $request->get('value') ?: ''
             ]);
 
+        Redis::DEL('user_' . $userId);
+
         return $this->resNoContent();
     }
 }
