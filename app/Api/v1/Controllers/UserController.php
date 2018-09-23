@@ -768,6 +768,26 @@ class UserController extends Controller
                 $transaction['type'] = '收入';
                 $transaction['action'] = '每日签到';
             }
+            else if ($item->type == 9)
+            {
+                $transaction['type'] = '支出';
+                $transaction['action'] = '删除帖子';
+            }
+            else if ($item->type == 10)
+            {
+                $transaction['type'] = '支出';
+                $transaction['action'] = '删除图片';
+            }
+            else if ($item->type == 11)
+            {
+                $transaction['type'] = '支出';
+                $transaction['action'] = '删除漫评';
+            }
+            else if ($item->type == 12)
+            {
+                $transaction['type'] = '支出';
+                $transaction['action'] = '删除回答';
+            }
 
             if ($transaction['type'] === '收入' && $item->from_user_id != 0 && $item->from_user_id != $userId)
             {
