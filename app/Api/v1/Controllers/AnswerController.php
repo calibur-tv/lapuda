@@ -134,7 +134,7 @@ class AnswerController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'question_id' => 'required|integer',
-            'intro' => 'required|max:120',
+            'intro' => 'present|max:120',
             'content' => 'required|Array',
             'do_publish' => 'required|boolean',
             'source_url' => 'present|URL'

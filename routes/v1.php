@@ -35,6 +35,11 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/logout', 'App\Api\V1\Controllers\DoorController@logout')->middleware(['jwt.auth']);
     });
 
+    $api->group(['prefix' => '/app'], function ($api)
+    {
+        $api->get('/version/check', 'App\Api\V1\Controllers\AppVersionController@check');
+    });
+
     $api->group(['prefix' => '/bangumi'], function ($api)
     {
         $api->get('/timeline', 'App\Api\V1\Controllers\BangumiController@timeline');
@@ -145,6 +150,8 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/daySign', 'App\Api\V1\Controllers\UserController@daySign')->middleware('jwt.auth');
 
         $api->post('/feedback', 'App\Api\V1\Controllers\UserController@feedback');
+
+        $api->get('/recommended', 'App\Api\V1\Controllers\UserController@recommendedUsers');
 
         $api->group(['prefix' => '/{zone}'], function ($api)
         {
@@ -552,6 +559,22 @@ $api->version(['v1', 'latest'], function ($api)
             $api->get('/item', 'App\Api\V1\Controllers\ReportController@item');
 
             $api->post('/remove', 'App\Api\V1\Controllers\ReportController@remove');
+        });
+
+        $api->group(['prefix' => '/app'], function ($api)
+        {
+            $api->group(['prefix' => '/version'], function ($api)
+            {
+                $api->post('/create', 'App\Api\V1\Controllers\AppVersionController@create');
+
+                $api->post('/delete', 'App\Api\V1\Controllers\AppVersionController@delete');
+
+                $api->post('/toggleForce', 'App\Api\V1\Controllers\AppVersionController@toggleForce');
+
+                $api->get('/list', 'App\Api\V1\Controllers\AppVersionController@list');
+
+                $api->get('/uptoken', 'App\Api\V1\Controllers\AppVersionController@uploadAppToken');
+            });
         });
     });
 });

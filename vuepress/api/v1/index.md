@@ -246,6 +246,35 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
                 "message": "各种错误"
             }
 
+# App版本检测
+
+## 检测App版本 [GET /app/version/check]
+
+
++ Parameters
+    + type: (integer, required) - 系统类型
+    + version: (string, required) - 当前版本
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": {
+                    "latest_version": "最新版本号",
+                    "force_update": "当前版本是否需要强制更新",
+                    "download_url": "最新版下载链接"
+                }
+            }
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "参数错误"
+            }
+
 # 番剧相关接口
 
 ## 番剧时间轴 [GET /bangumi/timeline]

@@ -413,21 +413,9 @@ class Repository
         return implode("", $result);
     }
 
-    protected function formatJsonContent($content)
+    public function applyComment($id, $commentId, $images)
     {
-        $content = json_decode($content, true);
-        $result = [];
-        foreach ($content as $item)
-        {
-            unset($item['id']);
-            if ($item['type'] === 'img')
-            {
-                $item['url'] = config('website.image') . $item['url'];
-            }
-            $result[] = $item;
-        }
 
-        return $result;
     }
 
     public function filterJsonContent(array $content)
@@ -456,5 +444,22 @@ class Repository
             }
         }
         return Purifier::clean(json_encode($result));
+    }
+
+    protected function formatJsonContent($content)
+    {
+        $content = json_decode($content, true);
+        $result = [];
+        foreach ($content as $item)
+        {
+            unset($item['id']);
+            if ($item['type'] === 'img')
+            {
+                $item['url'] = config('website.image') . $item['url'];
+            }
+            $result[] = $item;
+        }
+
+        return $result;
     }
 }

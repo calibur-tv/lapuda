@@ -588,14 +588,21 @@ class PostController extends Controller
     public function deletePostImage(Request $request)
     {
         $id = $request->get('id');
-        $postId = PostImages::where('id', $id)->pluck('post_id')->first();
-        PostImages::where('id', $id)
+        $postId = PostImages
+            ::where('id', $id)
+            ->pluck('post_id')
+            ->first();
+
+        PostImages
+            ::where('id', $id)
             ->update([
-                'src' => '',
-                'origin_url' => $request->get('src')
+                'url' => '',
+                'origin_url' => $request->get('url')
             ]);
 
         Redis::DEL('post_'.$postId.'_images');
+        Redis::DEL('post_'.$postId.'_preview_images_1');
+        Redis::DEL('post_'.$postId.'_preview_images_0');
 
         return $this->resNoContent();
     }

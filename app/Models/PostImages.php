@@ -6,11 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class PostImages extends Model
 {
-    protected $table = 'post_images';
+    protected $table = 'post_images_2';
 
     protected $fillable = [
         'post_id',
-        'src',
+        'comment_id',
+        'url',
         'type',
         'size',
         'width',

@@ -55,7 +55,7 @@ class UserController extends Controller
         UserCoin::create([
             'from_user_id' => $userId,
             'user_id' => $userId,
-            'type' => 0
+            'type' => 8
         ]);
 
         UserSign::create([
@@ -563,6 +563,57 @@ class UserController extends Controller
         ]);
 
         return $this->resNoContent();
+    }
+
+    public function recommendedUsers()
+    {
+        $ids = [
+            [
+                'id' => 24702,
+                'desc' => '御用coser'
+            ],
+            [
+                'id' => 11041,
+                'desc' => '巨人吧吧主'
+            ],
+            [
+                'id' => 14609,
+                'desc' => 'B站大V'
+            ],
+            [
+                'id' => 559,
+                'desc' => '文豪越萌新'
+            ],
+            [
+                'id' => 148,
+                'desc' => '战略核武'
+            ],
+            [
+                'id' => 5208,
+                'desc' => '颜值担当'
+            ],
+            [
+                'id' => 5379,
+                'desc' => '程序媛'
+            ]
+        ];
+
+        $userRepository = new UserRepository();
+        $result = [];
+        foreach ($ids as $item)
+        {
+            $user = $userRepository->item($item['id']);
+            if (is_null($user))
+            {
+                continue;
+            }
+            $user['desc'] = $item['desc'];
+            $result[] = $user;
+        }
+
+        $userTransformer = new UserTransformer();
+
+        return $this->resOK($userTransformer->recommended($result));
     }
 
     // 管理员列表

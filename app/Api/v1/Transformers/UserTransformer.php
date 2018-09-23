@@ -104,6 +104,20 @@ class UserTransformer extends Transformer
         });
     }
 
+    public function recommended($users)
+    {
+        return $this->collection($users, function ($user)
+        {
+            return [
+                'id' => (int)$user['id'],
+                'zone' => $user['zone'],
+                'avatar' => $user['avatar'],
+                'nickname' => $user['nickname'],
+                'desc' => $user['desc']
+            ];
+        });
+    }
+
     public function notification($list)
     {
         return $this->collection($list, function ($data)
