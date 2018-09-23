@@ -582,15 +582,15 @@ class UserController extends Controller
             ],
             [
                 'id' => 559,
-                'desc' => '文豪越萌新'
+                'desc' => '文学部长'
             ],
             [
                 'id' => 148,
-                'desc' => '战略核武'
+                'desc' => '学生会长'
             ],
             [
-                'id' => 5208,
-                'desc' => '颜值担当'
+                'id' => 5732,
+                'desc' => '风纪委员'
             ],
             [
                 'id' => 5379,
