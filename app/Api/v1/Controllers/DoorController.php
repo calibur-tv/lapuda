@@ -5,7 +5,6 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\User;
-use App\Models\UserCoin;
 use App\Models\UserZone;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Services\Sms\Message;
@@ -24,9 +23,20 @@ class DoorController extends Controller
 {
     public function pageData(Request $request)
     {
+        $repository = new Repository();
+
+        $friendLinks = $repository->Cache('friend_sites', function ()
+        {
+            return DB
+                ::table('friend_sites')
+                ->get()
+                ->toArray();
+        });
+
         return $this->resOK([
             'wechat_app_id' => config('tencent.wechat.app_id'),
-            "page_banner" => "https://image.calibur.tv/banner/3.png"
+            "page_banner" => "https://image.calibur.tv/banner/3.png",
+            "friend_links" => $friendLinks
         ]);
     }
     /**

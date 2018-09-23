@@ -576,5 +576,17 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->get('/uptoken', 'App\Api\V1\Controllers\AppVersionController@uploadAppToken');
             });
         });
+
+        $api->group(['prefix' => '/web'], function ($api)
+        {
+            $api->group(['prefix' => '/friend_link'], function ($api)
+            {
+                $api->post('/append', 'App\Api\V1\Controllers\FriendLinkController@append');
+
+                $api->post('/remove', 'App\Api\V1\Controllers\FriendLinkController@remove');
+
+                $api->get('/list', 'App\Api\V1\Controllers\FriendLinkController@list');
+            });
+        });
     });
 });

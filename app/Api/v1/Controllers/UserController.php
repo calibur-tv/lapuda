@@ -570,7 +570,7 @@ class UserController extends Controller
         $ids = [
             [
                 'id' => 24702,
-                'desc' => '御用coser'
+                'desc' => '看板娘'
             ],
             [
                 'id' => 11041,
