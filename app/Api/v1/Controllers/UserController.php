@@ -570,7 +570,7 @@ class UserController extends Controller
         $ids = [
             [
                 'id' => 24702,
-                'desc' => '御用coser'
+                'desc' => '看板娘'
             ],
             [
                 'id' => 11041,
@@ -582,15 +582,15 @@ class UserController extends Controller
             ],
             [
                 'id' => 559,
-                'desc' => '文豪越萌新'
+                'desc' => '文学部长'
             ],
             [
                 'id' => 148,
-                'desc' => '战略核武'
+                'desc' => '学生会长'
             ],
             [
-                'id' => 5208,
-                'desc' => '颜值担当'
+                'id' => 5732,
+                'desc' => '风纪委员'
             ],
             [
                 'id' => 5379,
@@ -767,6 +767,26 @@ class UserController extends Controller
             {
                 $transaction['type'] = '收入';
                 $transaction['action'] = '每日签到';
+            }
+            else if ($item->type == 9)
+            {
+                $transaction['type'] = '支出';
+                $transaction['action'] = '删除帖子';
+            }
+            else if ($item->type == 10)
+            {
+                $transaction['type'] = '支出';
+                $transaction['action'] = '删除图片';
+            }
+            else if ($item->type == 11)
+            {
+                $transaction['type'] = '支出';
+                $transaction['action'] = '删除漫评';
+            }
+            else if ($item->type == 12)
+            {
+                $transaction['type'] = '支出';
+                $transaction['action'] = '删除回答';
             }
 
             if ($transaction['type'] === '收入' && $item->from_user_id != 0 && $item->from_user_id != $userId)

@@ -74,7 +74,7 @@ class Search
         }
 
         $modalId = $this->convertModal($modal);
-        if (!$modalId)
+        if (!$modalId || !$content)
         {
             return 0;
         }

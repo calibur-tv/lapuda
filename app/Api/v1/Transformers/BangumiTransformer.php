@@ -75,6 +75,19 @@ class BangumiTransformer extends Transformer
         });
     }
 
+    public function recommended($list)
+    {
+        return $this->collection($list, function ($bangumi)
+        {
+            return [
+                'id' => (int)$bangumi['id'],
+                'name' => $bangumi['name'],
+                'avatar' => $bangumi['avatar'],
+                'tag' => $bangumi['tag']
+            ];
+        });
+    }
+
     public function timeline($list)
     {
         return $this->collection($list, function ($bangumi)
