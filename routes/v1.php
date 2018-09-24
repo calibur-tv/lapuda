@@ -50,6 +50,8 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/category', 'App\Api\V1\Controllers\BangumiController@category');
 
+        $api->get('/recommended', 'App\Api\V1\Controllers\BangumiController@recommendedBangumis');
+
         $api->group(['prefix' => '/{id}'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\BangumiController@show');

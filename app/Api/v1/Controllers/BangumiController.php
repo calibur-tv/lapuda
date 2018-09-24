@@ -239,6 +239,101 @@ class BangumiController extends Controller
         return $this->resOK($repository->videos($id, json_decode($bangumi['season'])));
     }
 
+    public function recommendedBangumis()
+    {
+        $ids = [
+            [
+                'id' => 7,
+                'tag' => '泪腺崩坏'
+            ],
+            [
+                'id' => 2,
+                'tag' => '有生之年'
+            ],
+            [
+                'id' => 24,
+                'tag' => '真相就是没有真相'
+            ],
+            [
+                'id' => 72,
+                'tag' => '强者世界'
+            ],
+            [
+                'id' => 37,
+                'tag' => '治愈X致郁'
+            ],
+            [
+                'id' => 6,
+                'tag' => '真正的英雄'
+            ],
+            [
+                'id' => 9,
+                'tag' => '不老不死'
+            ],
+            [
+                'id' => 33,
+                'tag' => '神话的战斗'
+            ],
+            [
+                'id' => 8,
+                'tag' => '毁灭世界'
+            ],
+            [
+                'id' => 160,
+                'tag' => 'BK-201'
+            ],
+            [
+                'id' => 338,
+                'tag' => '德国骨科'
+            ],
+            [
+                'id' => 84,
+                'tag' => '欧拉欧拉'
+            ],
+            [
+                'id' => 46,
+                'tag' => '人与非人'
+            ],
+            [
+                'id' => 22,
+                'tag' => '唯一的神'
+            ],
+            [
+                'id' => 10,
+                'tag' => '白夜叉降诞'
+            ],
+            [
+                'id' => 30,
+                'tag' => '圆环之理'
+            ],
+            [
+                'id' => 29,
+                'tag' => '剑'
+            ],
+            [
+                'id' => 1,
+                'tag' => '游戏世界'
+            ]
+        ];
+
+        $bangumiRepository = new BangumiRepository();
+        $result = [];
+        foreach ($ids as $item)
+        {
+            $bangumi = $bangumiRepository->item($item['id']);
+            if (is_null($bangumi))
+            {
+                continue;
+            }
+            $bangumi['tag'] = $item['tag'];
+            $result[] = $bangumi;
+        }
+
+        $bangumiTransformer = new BangumiTransformer();
+
+        return $this->resOK($bangumiTransformer->recommended($result));
+    }
+
     /**
      * 吧主编辑番剧信息
      *
