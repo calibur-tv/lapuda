@@ -1,5 +1,3 @@
-# 竞品分析
-
 ### bilibili 的优势
 1. 【核心业务】就视频业务方面，bilibili 与爱奇艺、优酷等视频网站相比在“大众化”上还差一些，因为动漫相比于电影电视剧在国内还是小众，而在二次元这一单独领域，bilibili 在行业地位上完全是碾压爱奇艺、优酷的
 2. 【业务广度】就二次元领域方面，bilibili 基本上占据了市场 60% 以上的份额，属于寡头地位，业务涉及面很广，包括：
@@ -17,19 +15,12 @@
 
 #### 社区建设方面
 
-##### 前言
-
-1. 我们的竞品有：
-	- [bilibili](https://www.bilibili.com/)
-	- [百度贴吧](http://tieba.baidu.com/f/index/forumpark?pcn=%E5%8A%A8%E6%BC%AB%E5%AE%85&pci=206&ct=0&rn=20&pn=1)
-	- [知乎](https://www.zhihu.com/topic/19591985/hot)
-	- [豆瓣](https://movie.douban.com/)
-	- [第一弹](http://www.diyidan.com/)
+1. 我们的竞品有：[bilibili](https://www.bilibili.com/)、[百度贴吧](http://tieba.baidu.com/f/index/forumpark?pcn=%E5%8A%A8%E6%BC%AB%E5%AE%85&pci=206&ct=0&rn=20&pn=1)、[知乎](https://www.zhihu.com/topic/19591985/hot)、[豆瓣](https://movie.douban.com/)、[第一弹](http://www.diyidan.com/)
 2.  豆瓣因为主要是电影方面的影评、在动漫领域挖掘不深，所以数据非常惨淡，并且豆瓣近年由于技术骨干相继离职、融资不顺等原因，一直在走下坡路，所以删除了豆瓣的数据
 3. 第一弹因为数据造假、高层不和离职等原因，没有对其数据进行统计，并且第一弹与百度贴吧的功能重合度极高，因此也没必要专门做统计
 4. 所选数据源（共20部）包括：
-	- [2015~2018年bilibili（除小埋、fate系列外都是独播）热门番剧](https://www.bilibili.com/anime/index#season_version=-1&area=-1&is_finish=-1&copyright=-1&season_status=-1&season_month=-1&pub_date=-1&style_id=-1&order=3&st=1&sort=0&page=1)，这些动漫在漫友圈是家喻户晓，都是在当季度热度极高的作品
-	- [全年代日本动漫Top200](https://www.bilibili.com/video/av1184434?t=586)中的前10名作品（去除在中国热度较低的两部和仅剧场版很火的一部）
+	- [2015~2018年bilibili（除小埋、fate系列外都是独播）热门番剧](https://www.bilibili.com/anime/index#season_version=-1&area=-1&is_finish=-1&copyright=-1&season_status=-1&season_month=-1&pub_date=-1&style_id=-1&order=3&st=1&sort=0&page=1)
+	- [全年代日本动漫Top200](https://www.bilibili.com/video/av1184434?t=586)
 	- [三大民工漫](https://baike.baidu.com/item/%E6%B0%91%E5%B7%A5%E6%BC%AB/228673?fr=aladdin)
 5. **平均关注用户发文数**代表：在当前平台关注该动漫的用户中，有多少人是发表过内容的（不包括点赞/喜欢）
 6. 其中由于知乎没有"当前话题下答案总数"的数据，因此根据抽样统计，将精华答案乘以50作为话题答案个数来计算（并且忽略掉了评论数）
@@ -42,12 +33,12 @@
 |----|----|----|----|-----|-----|-----|-----|
 |2015年热门|[《干物妹！小埋》](https://www.bilibili.com/bangumi/media/md2580/)|9115.2万|255.1万（2.79%）|499.5万|1951|20|**1.96**|
 |2016年独家热门|[《在下坂本，有何贵干？》](https://www.bilibili.com/bangumi/media/md3450/)|1.3亿|347.5万（2.67%）|204.3万|3258|40|**0.59**|
-|2016年独家热门|[《从零开始的异世界生活》](https://www.bilibili.com/bangumi/media/md3461/)|1.6亿|382.6万（2.39%）|977.4万（6.11%）|5378（~0%）|213 (~0%)|**2.56**|
-|2017年独家热门|[《埃罗芒阿老师》](https://www.bilibili.com/bangumi/media/md5997/)|9168.9万|393.4万（4.29%）|563万（6.14%）|5874（~0%）|72 （~0%）|**1.43**|
-|2017年独家热门|[《小林家的龙女仆》](https://www.bilibili.com/bangumi/media/md5800/)|1.1亿|348万（3.16%）|342.2万（3.11%）|3744（~0%）|44（~0%）|**0.98**
-|2017年独家热门|[《欢迎来到实力至上主义的教室》](https://www.bilibili.com/bangumi/media/md6339/)|8952.6万|407.4万（4.55%）|308.3万（3.44%）|12781（~0%）|205（~0%）|**0.76**
-|2018年独家热门|[《工作细胞》](https://www.bilibili.com/bangumi/media/md102392/)|1.1亿|566.3万（5.15%）|298.9万（2.72%）|13805（~0%）|170（~0%）|**0.53**|
-|2018年独家热门|[《紫罗兰永恒花园》](https://www.bilibili.com/bangumi/media/md8892/)|4933.3万|392.9万（7.96%）|182万（3.69%）|48723（~0%）|1476（~0%）|**0.47**|
+|2016年独家热门|[《从零开始的异世界生活》](https://www.bilibili.com/bangumi/media/md3461/)|1.6亿|382.6万（2.39%）|977.4万|5378|213|**2.56**|
+|2017年独家热门|[《埃罗芒阿老师》](https://www.bilibili.com/bangumi/media/md5997/)|9168.9万|393.4万（4.29%）|563万|5874|72 |**1.43**|
+|2017年独家热门|[《小林家的龙女仆》](https://www.bilibili.com/bangumi/media/md5800/)|1.1亿|348万（3.16%）|342.2万|3744|44|**0.98**
+|2017年独家热门|[《欢迎来到实力至上主义的教室》](https://www.bilibili.com/bangumi/media/md6339/)|8952.6万|407.4万（4.55%）|308.3万|12781|205|**0.76**
+|2018年独家热门|[《工作细胞》](https://www.bilibili.com/bangumi/media/md102392/)|1.1亿|566.3万（5.15%）|298.9万|13805|170|**0.53**|
+|2018年独家热门|[《紫罗兰永恒花园》](https://www.bilibili.com/bangumi/media/md8892/)|4933.3万|392.9万（7.96%）|182万|48723|1476|**0.47**|
 |经典热门|《死神》| - | - | - | - | - | - |
 |经典热门|《火影忍者》| - | - | - | - | - | - |
 |经典热门|《海贼王》| - | - | - | - | - | - |
