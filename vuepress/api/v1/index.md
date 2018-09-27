@@ -1778,7 +1778,7 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
                 "message": "请求参数错误"
             }
 
-## 用户消息列表 [GET /user/notifications/list]
+## 用户消息列表 [GET /user/notification/list]
 
 
 + Request (application/json)
@@ -1809,7 +1809,7 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
                 "message": "未登录的用户"
             }
 
-## 用户未读消息个数 [GET /user/notifications/count]
+## 用户未读消息个数 [GET /user/notification/count]
 
 
 + Response 200 (application/json)
@@ -1828,7 +1828,7 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
                 "message": "未登录的用户"
             }
 
-## 读取某条消息 [POST /user/notifications/read]
+## 读取某条消息 [POST /user/notification/read]
 
 
 + Request (application/json)
@@ -1845,7 +1845,7 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
 
 + Response 204 (application/json)
 
-## 清空未读消息 [POST /user/notifications/clear]
+## 清空未读消息 [POST /user/notification/clear]
 
 
 + Request (application/json)

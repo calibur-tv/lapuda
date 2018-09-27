@@ -339,7 +339,7 @@ class UserController extends Controller
     /**
      * 用户消息列表
      *
-     * @Get("/user/notifications/list")
+     * @Get("/user/notification/list")
      *
      * @Transaction({
      *      @Request({"minId": "看过的最小id"}),
@@ -348,7 +348,7 @@ class UserController extends Controller
      *      @Response(401, body={"code": 40104, "message": "未登录的用户"})
      * })
      */
-    public function notifications(Request $request)
+    public function notification(Request $request)
     {
         $userId = $this->getAuthUserId();
         $minId = $request->get('minId') ?: 0;
@@ -362,7 +362,7 @@ class UserController extends Controller
     /**
      * 用户未读消息个数
      *
-     * @Get("/user/notifications/count")
+     * @Get("/user/notification/count")
      *
      * @Transaction({
      *      @Response(200, body={"code": 0, "data": "未读个数"}),
@@ -380,7 +380,7 @@ class UserController extends Controller
     /**
      * 读取某条消息
      *
-     * @Post("/user/notifications/read")
+     * @Post("/user/notification/read")
      *
      * @Transaction({
      *      @Request({"id": "消息id"}),
@@ -421,7 +421,7 @@ class UserController extends Controller
     /**
      * 清空未读消息
      *
-     * @Post("/user/notifications/clear")
+     * @Post("/user/notification/clear")
      *
      * @Transaction({
      *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
