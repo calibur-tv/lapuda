@@ -348,7 +348,7 @@ class UserController extends Controller
      *      @Response(401, body={"code": 40104, "message": "未登录的用户"})
      * })
      */
-    public function notification(Request $request)
+    public function notifications(Request $request)
     {
         $userId = $this->getAuthUserId();
         $minId = $request->get('minId') ?: 0;
