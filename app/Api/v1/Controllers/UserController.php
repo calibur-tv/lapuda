@@ -18,6 +18,7 @@ use App\Api\V1\Repositories\UserRepository;
 use App\Models\UserCoin;
 use App\Models\UserSign;
 use App\Services\OpenSearch\Search;
+use App\Services\Trial\UserIpAddress;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -444,20 +445,34 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
-    // 后台根据用户的 zone 来获取用户信息
+    // 后台获取用户详情
     public function getUserInfo(Request $request)
     {
-        $zone = $request->get('zone');
-        $userId = $request->get('id');
-        if (!$zone && !$userId)
+        $type = $request->get('type');
+        $value = $request->get('value');
+        if (!$type || !$value)
         {
             return $this->resErrBad();
         }
 
-        $userRepository = new UserRepository();
-        if (!$userId)
+        $userIpAddress = new UserIpAddress();
+        if ($type === 'ip_address')
         {
-            $userId = $userRepository->getUserIdByZone($zone, true);
+            $userIds = $userIpAddress->addressUsers($value);
+
+            return $this->resOK($userIds);
+        }
+
+        if ($type !== 'id')
+        {
+            $userId = User
+                ::where($type, $value)
+                ->pluck('id')
+                ->first();
+        }
+        else
+        {
+            $userId = $value;
         }
 
         if (!$userId)
@@ -465,9 +480,11 @@ class UserController extends Controller
             return $this->resErrNotFound();
         }
 
+        $userRepository = new UserRepository();
         $user = $userRepository->item($userId, true);
         $user['coin_count'] = User::where('id', $userId)->pluck('coin_count')->first();
         $user['coin_from_sign'] = $userRepository->userSignCoin($userId);
+        $user['ip_address'] = $userIpAddress->userIps($userId);
 
         return $this->resOK($user);
     }
