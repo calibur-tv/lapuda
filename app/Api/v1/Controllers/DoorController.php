@@ -9,6 +9,7 @@ use App\Models\UserZone;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Services\Sms\Message;
 use App\Api\V1\Repositories\Repository;
+use App\Services\Trial\UserIpAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -207,6 +208,8 @@ class DoorController extends Controller
         }
 
         $userId = $user->id;
+        $UserIpAddress = new UserIpAddress();
+        $UserIpAddress->add($request->ip(), $userId);
 
         $inviteCode = $request->get('inviteCode');
         if ($inviteCode)
@@ -263,6 +266,9 @@ class DoorController extends Controller
             $user = Auth::user();
 
             $jwtToken = $this->responseUser($user);
+
+            $UserIpAddress = new UserIpAddress();
+            $UserIpAddress->add($request->ip(), $user->id);
 
             return response([
                 'code' => 0,
