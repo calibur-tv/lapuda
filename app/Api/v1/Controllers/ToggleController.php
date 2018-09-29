@@ -199,10 +199,14 @@ class ToggleController extends Controller
             return $this->resErrNotFound();
         }
 
-        $check = $followService->beforeHook($id, $userId);
-        if ($check !== true)
+        $cantCancel = $followService->beforeHook($id, $userId);
+        if ($cantCancel !== true)
         {
-            return $this->resErrRole($check);
+            $followed = $followService->check($userId, $id);
+            if ($followed)
+            {
+                return $this->resErrRole($cantCancel);
+            }
         }
 
         $result = $followService->toggle($userId, $id);
