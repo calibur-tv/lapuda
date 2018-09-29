@@ -96,7 +96,7 @@ class AppVersionController extends Controller
             return $this->resErrBad();
         }
 
-        Redis::SET($this->latestCacheKey($type), $version);
+        Redis::DEL($this->appCacheKey($type, $version));
 
         $newVersion = DB
             ::table('app_versions')
@@ -160,13 +160,8 @@ class AppVersionController extends Controller
         return $this->resOK($uptoken);
     }
 
-    protected function latestCacheKey($type)
-    {
-        return 'app_version_' . $type . '_latest';
-    }
-
     protected function appCacheKey($type, $version)
     {
-        return 'app_version_' . $type . '_' . $version;
+        return 'app_version-' . $type . '-' . $version;
     }
 }
