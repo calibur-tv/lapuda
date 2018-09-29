@@ -313,6 +313,10 @@ class BangumiController extends Controller
             [
                 'id' => 1,
                 'tag' => '游戏世界'
+            ],
+            [
+                'id' => 20,
+                'tag' => '直男军宅'
             ]
         ];
 
