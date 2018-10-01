@@ -590,8 +590,8 @@ class UserController extends Controller
                 'desc' => '看板娘'
             ],
             [
-                'id' => 11041,
-                'desc' => '巨人吧吧主'
+                'id' => 5499,
+                'desc' => '萌宠'
             ],
             [
                 'id' => 14609,
