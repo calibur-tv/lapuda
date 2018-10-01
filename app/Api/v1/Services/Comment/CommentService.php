@@ -297,7 +297,16 @@ class CommentService extends Repository
         }
 
         $fromUser = $this->userRepository()->item($result['user_id']);
+        if (is_null($fromUser))
+        {
+            return null;
+        }
+
         $toUser = $this->userRepository()->item($result['to_user_id']);
+        if (is_null($toUser))
+        {
+            return null;
+        }
 
         $result['from_user_name'] = $fromUser['nickname'];
         $result['from_user_zone'] = $fromUser['zone'];
@@ -360,6 +369,11 @@ class CommentService extends Repository
         }
 
         $fromUser = $this->userRepository()->item($result['user_id']);
+        if (is_null($fromUser))
+        {
+            return null;
+        }
+
         $toUser = $this->userRepository()->item($result['to_user_id']);
 
         $result['from_user_name'] = $fromUser['nickname'];
