@@ -8,7 +8,17 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\ImageRepository;
+use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\Repository;
+use App\Api\V1\Repositories\ScoreRepository;
+use App\Api\V1\Services\Comment\AnswerCommentService;
+use App\Api\V1\Services\Comment\CartoonRoleCommentService;
+use App\Api\V1\Services\Comment\ImageCommentService;
+use App\Api\V1\Services\Comment\PostCommentService;
+use App\Api\V1\Services\Comment\QuestionCommentService;
+use App\Api\V1\Services\Comment\ScoreCommentService;
+use App\Api\V1\Services\Comment\VideoCommentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 
@@ -64,7 +74,15 @@ class ReportController extends Controller
      *   score_comment,
      *   video_comment,
      *   question_comment,
-     *   answer_comment
+     *   answer_comment,
+     *   role_comment,
+     *   post_reply,
+     *   image_reply,
+     *   score_reoly,
+     *   video_reply,
+     *   question_reply,
+     *   answer_reply,
+     *   role_reply
      *
      * > 目前支持的 type：
      * 0：其它
@@ -120,6 +138,39 @@ class ReportController extends Controller
         {
             return [];
         });
+        foreach ($list as $i => $item)
+        {
+            if (preg_match('/_/', $item))
+            {
+                $one = explode('_', $item);
+                $two = explode('-', $one[1]);
+                $key = $two[0];
+                $type = $one[0];
+                $id = $two[1];
+                $repository = $this->getCommentRepositoryByType($type);
+                if (is_null($repository))
+                {
+                    continue;
+                }
+                if ($key === 'reply')
+                {
+                    $subComment = $repository->getSubCommentItem($id);
+                    $commentId = $subComment['parent_id'];
+                }
+                else
+                {
+                    $commentId = $id;
+                }
+                $mainComment = $repository->getMainCommentItem($commentId);
+                $item = $item . '-' . $mainComment['modal_id'];
+                if ($key === 'reply')
+                {
+                    $item = $item . '-' . $commentId;
+                }
+
+                $list[$i] = $item;
+            }
+        }
 
         return $this->resOK($list);
     }
@@ -144,5 +195,41 @@ class ReportController extends Controller
         Redis::DEL('user-report-item' . '-' . $tail);
 
         return $this->resNoContent();
+    }
+
+    protected function getCommentRepositoryByType($type)
+    {
+        if ($type === 'post')
+        {
+            return new PostCommentService();
+        }
+        else if ($type === 'image')
+        {
+            return new ImageCommentService();
+        }
+        else if ($type === 'score')
+        {
+            return new ScoreCommentService();
+        }
+        else if ($type === 'question')
+        {
+            return new QuestionCommentService();
+        }
+        else if ($type === 'answer')
+        {
+            return new AnswerCommentService();
+        }
+        else if ($type === 'role')
+        {
+            return new CartoonRoleCommentService();
+        }
+        else if ($type === 'video')
+        {
+            return new VideoCommentService();
+        }
+        else
+        {
+            return null;
+        }
     }
 }
