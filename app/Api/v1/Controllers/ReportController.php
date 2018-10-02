@@ -155,6 +155,10 @@ class ReportController extends Controller
                 if ($key === 'reply')
                 {
                     $subComment = $repository->getSubCommentItem($id);
+                    if (is_null($subComment))
+                    {
+                        continue;
+                    }
                     $commentId = $subComment['parent_id'];
                 }
                 else
@@ -162,6 +166,10 @@ class ReportController extends Controller
                     $commentId = $id;
                 }
                 $mainComment = $repository->getMainCommentItem($commentId);
+                if (is_null($mainComment))
+                {
+                    continue;
+                }
                 $item = $item . '-' . $mainComment['modal_id'];
                 if ($key === 'reply')
                 {
