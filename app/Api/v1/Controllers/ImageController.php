@@ -959,7 +959,7 @@ class ImageController extends Controller
                 ->where('id', $id)
                 ->first();
 
-            if ($image['deleted_at'])
+            if ($image->deleted_at)
             {
                 DB::table('album_images')
                     ->where('id', $id)
