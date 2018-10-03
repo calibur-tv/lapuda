@@ -22,8 +22,8 @@ class UserTransformer extends Transformer
                 'banner' => $user['banner'],
                 'nickname' => $user['nickname'],
                 'birthday' => $user['birthday'] ? $user['birthday'] : 0,
-                'sex' => $user['sex'],
                 'birthSecret' => (boolean)$user['birth_secret'],
+                'sex' => $user['sex'],
                 'sexSecret' => (boolean)$user['sex_secret'],
                 'signature' => $user['signature'],
                 'uptoken' => $user['uptoken'],
@@ -101,6 +101,8 @@ class UserTransformer extends Transformer
                 'banner' => $user['banner'],
                 'nickname' => $user['nickname'],
                 'signature' => $user['signature'],
+                'sex' => $user['sex'],
+                'sexSecret' => (boolean)$user['sex_secret'],
                 'faker' => (boolean)$user['faker']
             ];
         });
