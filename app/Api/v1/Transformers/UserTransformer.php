@@ -36,6 +36,21 @@ class UserTransformer extends Transformer
         });
     }
 
+    public function card($user)
+    {
+        return [
+            'id' => (int)$user['id'],
+            'zone' => $user['zone'],
+            'avatar' => $user['avatar'],
+            'banner' => $user['banner'],
+            'nickname' => $user['nickname'],
+            'sex' => $user['sex_secret'] ? "未知" : $user['sex'],
+            'birthSecret' => (boolean)$user['birth_secret'],
+            'sexSecret' => (boolean)$user['sex_secret'],
+            'signature' => $user['signature']
+        ];
+    }
+
     public function refresh($user)
     {
         return $this->transformer($user, function ($user)

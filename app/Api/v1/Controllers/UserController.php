@@ -445,6 +445,74 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
+    // 获取推荐用户
+    public function recommendedUsers()
+    {
+        $ids = [
+            [
+                'id' => 24702,
+                'desc' => '看板娘'
+            ],
+            [
+                'id' => 5499,
+                'desc' => '萌宠'
+            ],
+            [
+                'id' => 14609,
+                'desc' => 'B站大V'
+            ],
+            [
+                'id' => 559,
+                'desc' => '文学部长'
+            ],
+            [
+                'id' => 148,
+                'desc' => '学生会长'
+            ],
+            [
+                'id' => 5732,
+                'desc' => '风纪委员'
+            ],
+            [
+                'id' => 5379,
+                'desc' => '程序媛'
+            ]
+        ];
+
+        $userRepository = new UserRepository();
+        $result = [];
+        foreach ($ids as $item)
+        {
+            $user = $userRepository->item($item['id']);
+            if (is_null($user))
+            {
+                continue;
+            }
+            $user['desc'] = $item['desc'];
+            $result[] = $user;
+        }
+
+        $userTransformer = new UserTransformer();
+
+        return $this->resOK($userTransformer->recommended($result));
+    }
+
+    // 获取用户卡片信息
+    public function userCard(Request $request)
+    {
+        $userId = $request->get('id');
+        $userRepisotory = new UserRepository();
+
+        $user = $userRepisotory->item($userId);
+        if (is_null($user))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $userTransformer = new UserTransformer();
+        return $this->resOK($userTransformer->card($user));
+    }
+
     // 后台获取用户详情
     public function getUserInfo(Request $request)
     {
@@ -580,57 +648,6 @@ class UserController extends Controller
         ]);
 
         return $this->resNoContent();
-    }
-
-    public function recommendedUsers()
-    {
-        $ids = [
-            [
-                'id' => 24702,
-                'desc' => '看板娘'
-            ],
-            [
-                'id' => 5499,
-                'desc' => '萌宠'
-            ],
-            [
-                'id' => 14609,
-                'desc' => 'B站大V'
-            ],
-            [
-                'id' => 559,
-                'desc' => '文学部长'
-            ],
-            [
-                'id' => 148,
-                'desc' => '学生会长'
-            ],
-            [
-                'id' => 5732,
-                'desc' => '风纪委员'
-            ],
-            [
-                'id' => 5379,
-                'desc' => '程序媛'
-            ]
-        ];
-
-        $userRepository = new UserRepository();
-        $result = [];
-        foreach ($ids as $item)
-        {
-            $user = $userRepository->item($item['id']);
-            if (is_null($user))
-            {
-                continue;
-            }
-            $user['desc'] = $item['desc'];
-            $result[] = $user;
-        }
-
-        $userTransformer = new UserTransformer();
-
-        return $this->resOK($userTransformer->recommended($result));
     }
 
     // 管理员列表
