@@ -354,6 +354,7 @@ class DoorController extends Controller
         $user['daySign'] = $userRepository->daySigned($userId);
         $user['notification'] = $userRepository->getNotificationCount($userId);
         $user['coin_from_sign'] = $userRepository->userSignCoin($userId);
+        $user['exp'] = $userRepository->computeExpObject($user['exp']);
 
         $transformer = new UserTransformer();
 

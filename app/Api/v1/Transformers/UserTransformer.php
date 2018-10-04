@@ -47,7 +47,8 @@ class UserTransformer extends Transformer
             'sex' => $user['sex_secret'] ? "未知" : $user['sex'],
             'birthSecret' => (boolean)$user['birth_secret'],
             'sexSecret' => (boolean)$user['sex_secret'],
-            'signature' => $user['signature']
+            'signature' => $user['signature'],
+            'level' => $user['level']
         ];
     }
 
@@ -72,7 +73,8 @@ class UserTransformer extends Transformer
                 'coin_from_sign' => (int)$user['coin_from_sign'],
                 'faker' => (boolean)$user['faker'],
                 'is_admin' => (boolean)$user['is_admin'],
-                'notification' => $user['notification']
+                'notification' => $user['notification'],
+                'exp' => $user['exp']
             ];
         });
     }

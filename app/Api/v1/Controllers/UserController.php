@@ -508,6 +508,7 @@ class UserController extends Controller
         {
             return $this->resErrNotFound();
         }
+        $user['level'] = $userRepisotory->convertExpToLevel($user['exp']);
 
         $userTransformer = new UserTransformer();
         return $this->resOK($userTransformer->card($user));
