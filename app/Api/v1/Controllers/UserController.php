@@ -558,10 +558,12 @@ class UserController extends Controller
         }
 
         $userRepository = new UserRepository();
+        $userLevel = new UserLevel();
         $user = $userRepository->item($userId, true);
         $user['coin_count'] = User::where('id', $userId)->pluck('coin_count')->first();
         $user['coin_from_sign'] = $userRepository->userSignCoin($userId);
         $user['ip_address'] = $userIpAddress->userIps($userId);
+        $user['level'] = $userLevel->convertExpToLevel($user['exp']);
 
         return $this->resOK($user);
     }
