@@ -90,35 +90,6 @@ class UserRepository extends Repository
         return $res;
     }
 
-    public function convertExpToLevel($exp)
-    {
-        // EXP + 25 = (level + 5)^2
-        // 用户自己主动操作的才加经验，被动的数据不加经验（被点赞/被打赏）
-        // 发帖 + 5
-        // 发图片 + 5
-        // 发漫评 + 5
-        // 提问 + 3
-        // 回答 + 5
-        // 主评论 + 2
-        // 子评论 + 2
-        // 签到 + 2
-        return intval(sqrt($exp + 25)) - 5;
-    }
-
-    public function computeExpObject($exp)
-    {
-        $level = $this->convertExpToLevel($exp);
-        $nextLevel = $level + 1;
-        $next_level_exp = $nextLevel * $nextLevel + ($nextLevel * 10);
-        $have_exp = $exp - $level * $level - 10 * $level;
-
-        return [
-            'level' => $level,
-            'next_level_exp' => $next_level_exp,
-            'have_exp' => $have_exp
-        ];
-    }
-
     public function daySigned($userId)
     {
         return $this->RedisItem('user_' . $userId . '_day_signed_' . date('y-m-d', time()), function () use ($userId)

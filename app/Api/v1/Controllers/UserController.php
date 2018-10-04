@@ -10,6 +10,7 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Services\Counter\Stats\TotalUserCount;
+use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
 use App\Models\Notifications;
@@ -69,6 +70,9 @@ class UserController extends Controller
         {
             Redis::INCRBY('user_' . $userId . '_coin_sign', 1);
         }
+
+        $userLevel = new UserLevel();
+        $userLevel->change($userId, 2);
 
         return $this->resNoContent();
     }
@@ -508,7 +512,9 @@ class UserController extends Controller
         {
             return $this->resErrNotFound();
         }
-        $user['level'] = $userRepisotory->convertExpToLevel($user['exp']);
+
+        $userLevel = new UserLevel();
+        $user['level'] = $userLevel->convertExpToLevel($user['exp']);
 
         $userTransformer = new UserTransformer();
         return $this->resOK($userTransformer->card($user));

@@ -15,6 +15,7 @@ use App\Api\V1\Services\Toggle\ToggleService;
 use App\Api\V1\Transformers\CommentTransformer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Mews\Purifier\Facades\Purifier;
 
 class CommentService extends Repository
@@ -303,10 +304,6 @@ class CommentService extends Repository
         }
 
         $toUser = $this->userRepository()->item($result['to_user_id']);
-        if (is_null($toUser))
-        {
-            return null;
-        }
 
         $result['from_user_name'] = $fromUser['nickname'];
         $result['from_user_zone'] = $fromUser['zone'];
