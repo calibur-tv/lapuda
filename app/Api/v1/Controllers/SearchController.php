@@ -71,8 +71,8 @@ class SearchController extends Controller
     public function migrate(Request $request)
     {
         $begin = intval($request->get('begin')) ?: 0;
-        $end = ($begin + 1) * 1000;
-        $begin = $begin * 1000;
+        $end = ($begin + 1) * 100;
+        $begin = $begin * 100;
         for ($i = $begin; $i < $end; $i++)
         {
             $userId = $i;
