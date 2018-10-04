@@ -434,8 +434,11 @@ class CommentController extends Controller
         $totalCommentCount = new TotalCommentCount();
         $totalCommentCount->add();
 
-        $userLevel = new UserLevel();
-        $userLevel->change($userId, 1);
+        if ($userId !== $targetUserId)
+        {
+            $userLevel = new UserLevel();
+            $userLevel->change($userId, 1);
+        }
 
         return $this->resCreated($newComment);
     }
@@ -511,8 +514,11 @@ class CommentController extends Controller
         ));
         dispatch($job);
 
-        $userLevel = new UserLevel();
-        $userLevel->change($comment['from_user_id'], -1);
+        if ($comment['to_user_id'] != 0)
+        {
+            $userLevel = new UserLevel();
+            $userLevel->change($comment['from_user_id'], -1);
+        }
 
         return $this->resNoContent();
     }
