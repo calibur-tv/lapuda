@@ -103,6 +103,7 @@ class UserTransformer extends Transformer
                 'banner' => $user['banner'],
                 'nickname' => $user['nickname'],
                 'signature' => $user['signature'],
+                'level' => $user['level'],
                 'sex' => $user['sex'],
                 'sexSecret' => (boolean)$user['sex_secret'],
                 'faker' => (boolean)$user['faker']

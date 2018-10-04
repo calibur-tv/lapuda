@@ -119,6 +119,8 @@ class UserController extends Controller
             $job = (new \App\Jobs\Search\UpdateWeight('user', $userId));
             dispatch($job);
         }
+        $userLevel = new UserLevel();
+        $user['level'] = $userLevel->convertExpToLevel($user['exp']);
 
         return $this->resOK($userTransformer->show($user));
     }
