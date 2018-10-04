@@ -51,7 +51,7 @@ class UserLevel
 
         if (Redis::EXISTS('user_' . $userId))
         {
-            Redis::HMSET('user_' . $userId, 'exp', $score);
+            Redis::HINCRBYFLOAT('user_' . $userId, 'exp', $score);
         }
     }
 }
