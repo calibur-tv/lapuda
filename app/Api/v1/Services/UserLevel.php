@@ -26,7 +26,28 @@ class UserLevel
 
     public function convertExpToLevel($exp)
     {
-        return intval(sqrt(intval($exp) + 25)) - 4;
+        $result = 1;
+        $computeExp = $exp;
+        for ($i = 1; $i < 999; $i++)
+        {
+            $thisLevelNeedExp = $i * ($i + 10);
+            if ($computeExp < $thisLevelNeedExp)
+            {
+                $result = $i;
+                break;
+            }
+            else if ($computeExp === $thisLevelNeedExp)
+            {
+                $result = $i + 1;
+                break;
+            }
+            else
+            {
+                $computeExp = $computeExp - $thisLevelNeedExp;
+            }
+        }
+
+        return $result;
     }
 
     public function computeExpObject($exp)
@@ -34,8 +55,19 @@ class UserLevel
         $exp = intval($exp);
         $level = $this->convertExpToLevel($exp);
         $next_level_exp = $level * $level + ($level * 10);
-        $lastLevel = $level - 1;
-        $have_exp = $exp - $lastLevel * $lastLevel - 10 * $lastLevel;
+        $totalExp = 0;
+        if ($level > 1)
+        {
+            for ($i = 1; $i < $level; $i++)
+            {
+                $totalExp += $i * ($i + 10);
+            }
+            $have_exp = $exp - $totalExp;
+        }
+        else
+        {
+            $have_exp = $exp;
+        }
 
         return [
             'level' => $level,

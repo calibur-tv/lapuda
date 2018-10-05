@@ -578,7 +578,7 @@ class ImageController extends Controller
     }
 
     /**
-     * 自己的相册列表
+     * 删除某个相册
      *
      * @Post("/image/album/delete")
      *
