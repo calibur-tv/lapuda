@@ -31,18 +31,22 @@ class BangumiRepository extends Repository
 
             if ($bangumi['released_video_id'])
             {
-                $part = Video::where('id', $bangumi['released_video_id'])->pluck('part')->first();
+                $part = Video
+                    ::where('id', $bangumi['released_video_id'])
+                    ->pluck('part')
+                    ->first();
                 // 如果有季度信息，并且 name 和 part 都存在，那么就要重算 released_part
                 if ($season !== '' && isset($season->part) && isset($season->name))
                 {
-                    // 如果设置了 re（重拍），那么就要计算
+                    // 如果设置了 re（重排序），那么就要计算
                     if (isset($season->re))
                     {
                         $reset = $season->re;
                         // 如果 re 是一个数组
                         if (gettype($reset) === 'array')
                         {
-                            // 假设有 4季，第二三季是连着的
+                            // {"name": ["第一季", "√A","re","re第二季"], "part": [0, 12, 24, 36, 48], "time": ["2014.7", "2015.1","2018.4","2018.10"], "re":[0, 0, 1, 0]}
+                            // 假设有 3 季，第二三季是连着的
                             // season->re：[1, 1, 0]
                             // season->part: [0, 12, 24, -1]
                             // $part 可能是 10, 20, 40
@@ -56,7 +60,7 @@ class BangumiRepository extends Repository
                                     for ($j = $i; $j >= 0; $j--)
                                     {
                                         // 遇到第一个需要 reset 的，就 reset
-                                        if ($reset[$j])
+                                        if (isset($reset[$j]) && $reset[$j])
                                         {
                                             $bangumi['released_part'] = $part - $season->part[$j];
                                             break;

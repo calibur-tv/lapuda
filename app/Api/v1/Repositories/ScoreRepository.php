@@ -13,6 +13,7 @@ use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Toggle\Score\ScoreRewardService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
+use App\Api\V1\Services\UserLevel;
 use App\Models\Score;
 use App\Services\BaiduSearch\BaiduPush;
 use Carbon\Carbon;
@@ -217,6 +218,9 @@ class ScoreRepository extends Repository
             $baiduPush->trending('score');
             $baiduPush->bangumi($score['bangumi_id'], 'review');
 
+            $userLevel = new UserLevel();
+            $userLevel->change($score['user_id'], 5);
+
             $this->migrateSearchIndex('C', $id, false);
         }
     }
@@ -244,6 +248,9 @@ class ScoreRepository extends Repository
 
             $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
             $scoreTrendingService->delete($id);
+
+            $userLevel = new UserLevel();
+            $userLevel->change($score['user_id'], -5);
 
             $job = (new \App\Jobs\Search\Index('D', 'score', $id));
             dispatch($job);

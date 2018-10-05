@@ -578,7 +578,7 @@ class ImageController extends Controller
     }
 
     /**
-     * 自己的相册列表
+     * 删除某个相册
      *
      * @Post("/image/album/delete")
      *
@@ -959,7 +959,7 @@ class ImageController extends Controller
                 ->where('id', $id)
                 ->first();
 
-            if ($image['deleted_at'])
+            if ($image->deleted_at)
             {
                 DB::table('album_images')
                     ->where('id', $id)

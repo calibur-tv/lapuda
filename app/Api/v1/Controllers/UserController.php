@@ -10,6 +10,7 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Services\Counter\Stats\TotalUserCount;
+use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
 use App\Models\Notifications;
@@ -18,6 +19,7 @@ use App\Api\V1\Repositories\UserRepository;
 use App\Models\UserCoin;
 use App\Models\UserSign;
 use App\Services\OpenSearch\Search;
+use App\Services\Trial\UserIpAddress;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -69,6 +71,9 @@ class UserController extends Controller
             Redis::INCRBY('user_' . $userId . '_coin_sign', 1);
         }
 
+        $userLevel = new UserLevel();
+        $userLevel->change($userId, 2);
+
         return $this->resNoContent();
     }
 
@@ -114,6 +119,8 @@ class UserController extends Controller
             $job = (new \App\Jobs\Search\UpdateWeight('user', $userId));
             dispatch($job);
         }
+        $userLevel = new UserLevel();
+        $user['level'] = $userLevel->convertExpToLevel($user['exp']);
 
         return $this->resOK($userTransformer->show($user));
     }
@@ -444,20 +451,105 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
-    // 后台根据用户的 zone 来获取用户信息
+    // 获取推荐用户
+    public function recommendedUsers()
+    {
+        $ids = [
+            [
+                'id' => 24702,
+                'desc' => '看板娘'
+            ],
+            [
+                'id' => 5499,
+                'desc' => '萌宠'
+            ],
+            [
+                'id' => 14609,
+                'desc' => 'B站大V'
+            ],
+            [
+                'id' => 559,
+                'desc' => '文学部长'
+            ],
+            [
+                'id' => 148,
+                'desc' => '学生会长'
+            ],
+            [
+                'id' => 5732,
+                'desc' => '风纪委员'
+            ],
+            [
+                'id' => 5379,
+                'desc' => '程序媛'
+            ]
+        ];
+
+        $userRepository = new UserRepository();
+        $result = [];
+        foreach ($ids as $item)
+        {
+            $user = $userRepository->item($item['id']);
+            if (is_null($user))
+            {
+                continue;
+            }
+            $user['desc'] = $item['desc'];
+            $result[] = $user;
+        }
+
+        $userTransformer = new UserTransformer();
+
+        return $this->resOK($userTransformer->recommended($result));
+    }
+
+    // 获取用户卡片信息
+    public function userCard(Request $request)
+    {
+        $userId = $request->get('id');
+        $userRepisotory = new UserRepository();
+
+        $user = $userRepisotory->item($userId);
+        if (is_null($user))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $userLevel = new UserLevel();
+        $user['level'] = $userLevel->convertExpToLevel($user['exp']);
+
+        $userTransformer = new UserTransformer();
+        return $this->resOK($userTransformer->card($user));
+    }
+
+    // 后台获取用户详情
     public function getUserInfo(Request $request)
     {
-        $zone = $request->get('zone');
-        $userId = $request->get('id');
-        if (!$zone && !$userId)
+        $type = $request->get('type');
+        $value = $request->get('value');
+        if (!$type || !$value)
         {
             return $this->resErrBad();
         }
 
-        $userRepository = new UserRepository();
-        if (!$userId)
+        $userIpAddress = new UserIpAddress();
+        if ($type === 'ip_address')
         {
-            $userId = $userRepository->getUserIdByZone($zone, true);
+            $userIds = $userIpAddress->addressUsers($value);
+
+            return $this->resOK($userIds);
+        }
+
+        if ($type !== 'id')
+        {
+            $userId = User
+                ::where($type, $value)
+                ->pluck('id')
+                ->first();
+        }
+        else
+        {
+            $userId = $value;
         }
 
         if (!$userId)
@@ -465,9 +557,13 @@ class UserController extends Controller
             return $this->resErrNotFound();
         }
 
+        $userRepository = new UserRepository();
+        $userLevel = new UserLevel();
         $user = $userRepository->item($userId, true);
         $user['coin_count'] = User::where('id', $userId)->pluck('coin_count')->first();
         $user['coin_from_sign'] = $userRepository->userSignCoin($userId);
+        $user['ip_address'] = $userIpAddress->userIps($userId);
+        $user['level'] = $userLevel->convertExpToLevel($user['exp']);
 
         return $this->resOK($user);
     }
@@ -563,57 +659,6 @@ class UserController extends Controller
         ]);
 
         return $this->resNoContent();
-    }
-
-    public function recommendedUsers()
-    {
-        $ids = [
-            [
-                'id' => 24702,
-                'desc' => '看板娘'
-            ],
-            [
-                'id' => 11041,
-                'desc' => '巨人吧吧主'
-            ],
-            [
-                'id' => 14609,
-                'desc' => 'B站大V'
-            ],
-            [
-                'id' => 559,
-                'desc' => '文学部长'
-            ],
-            [
-                'id' => 148,
-                'desc' => '学生会长'
-            ],
-            [
-                'id' => 5732,
-                'desc' => '风纪委员'
-            ],
-            [
-                'id' => 5379,
-                'desc' => '程序媛'
-            ]
-        ];
-
-        $userRepository = new UserRepository();
-        $result = [];
-        foreach ($ids as $item)
-        {
-            $user = $userRepository->item($item['id']);
-            if (is_null($user))
-            {
-                continue;
-            }
-            $user['desc'] = $item['desc'];
-            $result[] = $user;
-        }
-
-        $userTransformer = new UserTransformer();
-
-        return $this->resOK($userTransformer->recommended($result));
     }
 
     // 管理员列表

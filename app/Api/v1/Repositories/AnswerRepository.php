@@ -12,8 +12,10 @@ namespace App\Api\V1\Repositories;
 use App\Api\V1\Services\Toggle\Question\AnswerRewardService;
 use App\Api\V1\Services\Trending\AnswerTrendingService;
 use App\Api\V1\Services\Trending\QuestionTrendingService;
+use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Services\Vote\AnswerVoteService;
 use App\Models\Answer;
+use App\Models\User;
 use App\Services\BaiduSearch\BaiduPush;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -94,6 +96,9 @@ class AnswerRepository extends Repository
             ));
             dispatch($job);
 
+            $userLevel = new UserLevel();
+            $userLevel->change($answer['user_id'], 4);
+
             $baiduPush = new BaiduPush();
             $baiduPush->trending('question');
 
@@ -119,6 +124,9 @@ class AnswerRepository extends Repository
 
         if ($state === 0 || $answer['created_at'] !== $answer['updated_at'])
         {
+            $userLevel = new UserLevel();
+            $userLevel->change($answer['user_id'], -4);
+
             $job = (new \App\Jobs\Search\Index('D', 'answer', $id));
             dispatch($job);
         }

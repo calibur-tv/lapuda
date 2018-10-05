@@ -24,11 +24,19 @@ class UserIpAddress
 
     public function userIps($userId)
     {
-
+        return DB::table('user_ip')
+            ->where('user_id', $userId)
+            ->select('ip_address', 'created_at')
+            ->get()
+            ->toArray();
     }
 
     public function addressUsers($ipAddress)
     {
-
+        return DB::table('user_ip')
+            ->where('ip_address', $ipAddress)
+            ->select('user_id', 'created_at')
+            ->get()
+            ->toArray();
     }
 }

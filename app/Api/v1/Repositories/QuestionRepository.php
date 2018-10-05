@@ -16,6 +16,7 @@ use App\Api\V1\Services\Owner\QuestionLog;
 use App\Api\V1\Services\Tag\QuestionTagService;
 use App\Api\V1\Services\Toggle\Question\QuestionFollowService;
 use App\Api\V1\Services\Trending\QuestionTrendingService;
+use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\QuestionTransformer;
 use App\Models\Answer;
 use App\Models\Question;
@@ -196,6 +197,9 @@ class QuestionRepository extends Repository
             $baiduPush->bangumi($bangumiId, 'qaq');
         }
 
+        $userLevel = new UserLevel();
+        $userLevel->change($question['user_id'], 3);
+
         $this->migrateSearchIndex('C', $id, false);
     }
 
@@ -222,6 +226,9 @@ class QuestionRepository extends Repository
 
             $job = (new \App\Jobs\Search\Index('D', 'post', $id));
             dispatch($job);
+
+            $userLevel = new UserLevel();
+            $userLevel->change($question['user_id'], -3);
         }
 
         Redis::DEL($this->itemCacheKey($id));

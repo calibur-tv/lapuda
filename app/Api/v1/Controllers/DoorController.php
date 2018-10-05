@@ -3,6 +3,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\User;
 use App\Models\UserZone;
@@ -350,10 +351,13 @@ class DoorController extends Controller
 
         $imageRepository = new ImageRepository();
         $userRepository = new UserRepository();
+        $userLevel = new UserLevel();
+
         $user['uptoken'] = $imageRepository->uptoken();
         $user['daySign'] = $userRepository->daySigned($userId);
         $user['notification'] = $userRepository->getNotificationCount($userId);
         $user['coin_from_sign'] = $userRepository->userSignCoin($userId);
+        $user['exp'] = $userLevel->computeExpObject($user['exp']);
 
         $transformer = new UserTransformer();
 

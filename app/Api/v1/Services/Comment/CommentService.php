@@ -15,6 +15,7 @@ use App\Api\V1\Services\Toggle\ToggleService;
 use App\Api\V1\Transformers\CommentTransformer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Mews\Purifier\Facades\Purifier;
 
 class CommentService extends Repository
@@ -297,6 +298,11 @@ class CommentService extends Repository
         }
 
         $fromUser = $this->userRepository()->item($result['user_id']);
+        if (is_null($fromUser))
+        {
+            return null;
+        }
+
         $toUser = $this->userRepository()->item($result['to_user_id']);
 
         $result['from_user_name'] = $fromUser['nickname'];
@@ -360,6 +366,11 @@ class CommentService extends Repository
         }
 
         $fromUser = $this->userRepository()->item($result['user_id']);
+        if (is_null($fromUser))
+        {
+            return null;
+        }
+
         $toUser = $this->userRepository()->item($result['to_user_id']);
 
         $result['from_user_name'] = $fromUser['nickname'];

@@ -23,6 +23,7 @@ use App\Api\V1\Services\Comment\QuestionCommentService;
 use App\Api\V1\Services\Comment\ScoreCommentService;
 use App\Api\V1\Services\Comment\VideoCommentService;
 use App\Api\V1\Services\Counter\Stats\TotalCommentCount;
+use App\Api\V1\Services\UserLevel;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -184,6 +185,12 @@ class CommentController extends Controller
 
         $totalCommentCount = new TotalCommentCount();
         $totalCommentCount->add();
+
+        if ($parent['user_id'] != $userId)
+        {
+            $userLevel = new UserLevel();
+            $userLevel->change($userId, 2);
+        }
 
         return $this->resCreated($newComment);
     }
@@ -375,7 +382,8 @@ class CommentController extends Controller
             ],
         ]);
 
-        if ($validator->fails()) {
+        if ($validator->fails())
+        {
             return $this->resErrParams($validator);
         }
 
@@ -383,12 +391,14 @@ class CommentController extends Controller
         $id = $request->get('id');
 
         $commentService = $this->getCommentServiceByType($type);
-        if (is_null($commentService)) {
+        if (is_null($commentService))
+        {
             return $this->resErrBad('错误的类型');
         }
 
         $comment = $commentService->getMainCommentItem($id);
-        if (is_null($comment)) {
+        if (is_null($comment))
+        {
             return $this->resErrNotFound('内容已删除');
         }
 
@@ -403,7 +413,8 @@ class CommentController extends Controller
             'parent_id' => $id
         ]);
 
-        if (is_null($newComment)) {
+        if (is_null($newComment))
+        {
             return $this->resErrServiceUnavailable();
         }
 
@@ -422,6 +433,12 @@ class CommentController extends Controller
 
         $totalCommentCount = new TotalCommentCount();
         $totalCommentCount->add();
+
+        if ($userId !== $targetUserId)
+        {
+            $userLevel = new UserLevel();
+            $userLevel->change($userId, 1);
+        }
 
         return $this->resCreated($newComment);
     }
@@ -496,6 +513,12 @@ class CommentController extends Controller
             $comment['id']
         ));
         dispatch($job);
+
+        if ($comment['to_user_id'] != 0)
+        {
+            $userLevel = new UserLevel();
+            $userLevel->change($comment['from_user_id'], -1);
+        }
 
         return $this->resNoContent();
     }
@@ -576,6 +599,12 @@ class CommentController extends Controller
             $comment['id']
         ));
         dispatch($job);
+
+        if (!$isMaster)
+        {
+            $userLevel = new UserLevel();
+            $userLevel->change($comment['from_user_id'], -2);
+        }
 
         return $this->resNoContent();
     }

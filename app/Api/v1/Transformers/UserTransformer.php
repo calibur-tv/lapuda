@@ -22,8 +22,8 @@ class UserTransformer extends Transformer
                 'banner' => $user['banner'],
                 'nickname' => $user['nickname'],
                 'birthday' => $user['birthday'] ? $user['birthday'] : 0,
-                'sex' => $user['sex'],
                 'birthSecret' => (boolean)$user['birth_secret'],
+                'sex' => $user['sex'],
                 'sexSecret' => (boolean)$user['sex_secret'],
                 'signature' => $user['signature'],
                 'uptoken' => $user['uptoken'],
@@ -34,6 +34,22 @@ class UserTransformer extends Transformer
                 'notification' => $user['notification']
             ];
         });
+    }
+
+    public function card($user)
+    {
+        return [
+            'id' => (int)$user['id'],
+            'zone' => $user['zone'],
+            'avatar' => $user['avatar'],
+            'banner' => $user['banner'],
+            'nickname' => $user['nickname'],
+            'sex' => $user['sex_secret'] ? "未知" : $user['sex'],
+            'birthSecret' => (boolean)$user['birth_secret'],
+            'sexSecret' => (boolean)$user['sex_secret'],
+            'signature' => $user['signature'],
+            'level' => $user['level']
+        ];
     }
 
     public function refresh($user)
@@ -57,7 +73,8 @@ class UserTransformer extends Transformer
                 'coin_from_sign' => (int)$user['coin_from_sign'],
                 'faker' => (boolean)$user['faker'],
                 'is_admin' => (boolean)$user['is_admin'],
-                'notification' => $user['notification']
+                'notification' => $user['notification'],
+                'exp' => $user['exp']
             ];
         });
     }
@@ -86,6 +103,9 @@ class UserTransformer extends Transformer
                 'banner' => $user['banner'],
                 'nickname' => $user['nickname'],
                 'signature' => $user['signature'],
+                'level' => $user['level'],
+                'sex' => $user['sex'],
+                'sexSecret' => (boolean)$user['sex_secret'],
                 'faker' => (boolean)$user['faker']
             ];
         });

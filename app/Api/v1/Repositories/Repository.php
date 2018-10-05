@@ -351,7 +351,8 @@ class Repository
 
     public function getUserIdByZone($zone, $force = false)
     {
-        $userId = User::where('zone', $zone)
+        $userId = User
+            ::where('zone', $zone)
             ->when($force, function ($query)
             {
                 return $query->withTrashed();

@@ -12,6 +12,7 @@ namespace App\Api\V1\Repositories;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Toggle\Post\PostRewardService;
 use App\Api\V1\Services\Trending\PostTrendingService;
+use App\Api\V1\Services\UserLevel;
 use App\Models\Post;
 use App\Models\PostImages;
 use App\Services\BaiduSearch\BaiduPush;
@@ -147,6 +148,9 @@ class PostRepository extends Repository
         $baiduPush->trending('post');
         $baiduPush->bangumi($post['bangumi_id'], 'post');
 
+        $userLevel = new UserLevel();
+        $userLevel->change($post['user_id'], 4);
+
         $this->migrateSearchIndex('C', $id, false);
     }
 
@@ -170,6 +174,9 @@ class PostRepository extends Repository
         {
             $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
             $postTrendingService->delete($id);
+
+            $userLevel = new UserLevel();
+            $userLevel->change($post['user_id'], -4);
 
             $job = (new \App\Jobs\Search\Index('D', 'post', $id));
             dispatch($job);

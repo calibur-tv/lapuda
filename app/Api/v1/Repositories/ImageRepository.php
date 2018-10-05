@@ -11,6 +11,7 @@ namespace App\Api\V1\Repositories;
 use App\Api\V1\Services\Counter\Stats\TotalImageCount;
 use App\Api\V1\Services\Toggle\Image\ImageRewardService;
 use App\Api\V1\Services\Trending\ImageTrendingService;
+use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\AlbumImage;
 use App\Models\Banner;
@@ -275,6 +276,9 @@ class ImageRepository extends Repository
         $baiduPush->trending('image');
         $baiduPush->bangumi($image['bangumi_id'], 'pins');
 
+        $userLevel = new UserLevel();
+        $userLevel->change($image['user_id'], 3);
+
         if ($image['is_cartoon'])
         {
             Redis::DEL($this->cacheKeyCartoonParts($image['bangumi_id']));
@@ -327,6 +331,9 @@ class ImageRepository extends Repository
             $totalImageCount = new TotalImageCount();
             $totalImageCount->add(-count(explode(',', $image['image_ids'])));
         }
+
+        $userLevel = new UserLevel();
+        $userLevel->change($image['user_id'], -3);
 
         $imageRewardService = new ImageRewardService();
         $imageRewardService->cancel($id);
