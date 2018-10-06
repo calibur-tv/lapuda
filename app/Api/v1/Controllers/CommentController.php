@@ -783,6 +783,12 @@ class CommentController extends Controller
             foreach ($list as $i => $item)
             {
                 $list[$i]['type'] = $modal;
+                if ($item['modal_id'] == 0)
+                {
+                    $repository = $this->getCommentServiceByType($modal);
+                    $mainComment = $repository->getMainCommentItem($item['parent_id']);
+                    $list[$i]['modal_id'] = $mainComment['modal_id'];
+                }
             }
 
             if (!is_null($list))
