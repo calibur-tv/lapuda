@@ -579,6 +579,36 @@ class UserController extends Controller
         return $this->resOK($users);
     }
 
+    // 后台获取被封禁的用户ip列表
+    public function getBlockedUserIpAddress()
+    {
+        $userIpAddress = new UserIpAddress();
+
+        return $this->resOK($userIpAddress->blockedList());
+    }
+
+    // 后台封禁用户ip
+    public function blockUserByIp(Request $request)
+    {
+        $ipAddress = $request->get('ip_address');
+
+        $userIpAddress = new UserIpAddress();
+        $userIpAddress->blockUserByIp($ipAddress);
+
+        return $this->resNoContent();
+    }
+
+    // 后台解禁用户的ip
+    public function recoverUserIp(Request $request)
+    {
+        $ipAddress = $request->get('ip_address');
+
+        $userIpAddress = new UserIpAddress();
+        $userIpAddress->recoverUser($ipAddress);
+
+        return $this->resNoContent();
+    }
+
     // 认领营销号
     public function fakerReborn(Request $request)
     {

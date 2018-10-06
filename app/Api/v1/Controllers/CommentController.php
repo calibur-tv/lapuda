@@ -52,7 +52,7 @@ class CommentController extends Controller
     /**
      * 新建主评论
      *
-     * @Post("/comment/create")
+     * @Post("/comment/main/create")
      *
      * @Parameters({
      *      @Parameter("content", description="内容，`1000字以内`", type="string", required=true),
@@ -354,7 +354,7 @@ class CommentController extends Controller
     /**
      * 回复评论
      *
-     * @Post("/comment/reply")
+     * @Post("/comment/main/reply")
      *
      * @Parameters({
      *      @Parameter("type", description="某种 type", type="string", required=true),
@@ -441,86 +441,6 @@ class CommentController extends Controller
         }
 
         return $this->resCreated($newComment);
-    }
-
-    /**
-     * 删除子评论
-     *
-     * @Post("/comment/sub/delete")
-     *
-     * @Parameters({
-     *      @Parameter("type", description="某种 type", type="string", required=true),
-     *      @Parameter("id", description="父评论 id", type="integer", required=true)
-     * })
-     *
-     * @Transaction({
-     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(204),
-     *      @Response(400, body={"code": 40003, "message": "参数错误"}),
-     *      @Response(404, body={"code": 40401, "message": "该评论已被删除"}),
-     *      @Response(403, body={"code": 40301, "message": "继续操作前请先登录"})
-     * })
-     */
-    public function deleteSubComment(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'id' => 'required|integer|min:1',
-            'type' => [
-                'required',
-                Rule::in($this->types),
-            ],
-        ]);
-
-        if ($validator->fails())
-        {
-            return $this->resErrParams($validator);
-        }
-
-        $type = $request->get('type');
-        $id = $request->get('id');
-
-        $commentService = $this->getCommentServiceByType($type);
-        if (is_null($commentService))
-        {
-            return $this->resErrBad('错误的类型');
-        }
-
-        $comment = $commentService->getSubCommentItem($id);
-        if (is_null($comment))
-        {
-            return $this->resErrNotFound('该评论已被删除');
-        }
-
-        $userId = $this->getAuthUserId();
-        // 不是子评论的作者
-        if ($userId !== $comment['from_user_id'])
-        {
-            $parent = $commentService->getMainCommentItem($comment['parent_id']);
-            // 不是主评论作者
-            if ($parent['from_user_id'] != $userId)
-            {
-                return $this->resErrRole();
-            }
-        }
-
-        $commentService->deleteSubComment($id, $comment['parent_id']);
-
-        $job = (new \App\Jobs\Notification\Delete(
-            $type . '-reply',
-            $comment['to_user_id'],
-            $comment['from_user_id'],
-            $comment['parent_id'],
-            $comment['id']
-        ));
-        dispatch($job);
-
-        if ($comment['to_user_id'] != 0)
-        {
-            $userLevel = new UserLevel();
-            $userLevel->change($comment['from_user_id'], -1);
-        }
-
-        return $this->resNoContent();
     }
 
     /**
@@ -759,6 +679,86 @@ class CommentController extends Controller
         return $this->resCreated((boolean)$result);
     }
 
+    /**
+     * 删除子评论
+     *
+     * @Post("/comment/sub/delete")
+     *
+     * @Parameters({
+     *      @Parameter("type", description="某种 type", type="string", required=true),
+     *      @Parameter("id", description="父评论 id", type="integer", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(204),
+     *      @Response(400, body={"code": 40003, "message": "参数错误"}),
+     *      @Response(404, body={"code": 40401, "message": "该评论已被删除"}),
+     *      @Response(403, body={"code": 40301, "message": "继续操作前请先登录"})
+     * })
+     */
+    public function deleteSubComment(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer|min:1',
+            'type' => [
+                'required',
+                Rule::in($this->types),
+            ],
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $type = $request->get('type');
+        $id = $request->get('id');
+
+        $commentService = $this->getCommentServiceByType($type);
+        if (is_null($commentService))
+        {
+            return $this->resErrBad('错误的类型');
+        }
+
+        $comment = $commentService->getSubCommentItem($id);
+        if (is_null($comment))
+        {
+            return $this->resErrNotFound('该评论已被删除');
+        }
+
+        $userId = $this->getAuthUserId();
+        // 不是子评论的作者
+        if ($userId !== $comment['from_user_id'])
+        {
+            $parent = $commentService->getMainCommentItem($comment['parent_id']);
+            // 不是主评论作者
+            if ($parent['from_user_id'] != $userId)
+            {
+                return $this->resErrRole();
+            }
+        }
+
+        $commentService->deleteSubComment($id, $comment['parent_id']);
+
+        $job = (new \App\Jobs\Notification\Delete(
+            $type . '-reply',
+            $comment['to_user_id'],
+            $comment['from_user_id'],
+            $comment['parent_id'],
+            $comment['id']
+        ));
+        dispatch($job);
+
+        if ($comment['to_user_id'] != 0)
+        {
+            $userLevel = new UserLevel();
+            $userLevel->change($comment['from_user_id'], -1);
+        }
+
+        return $this->resNoContent();
+    }
+
     // 后台待审的评论
     public function trials()
     {
@@ -783,6 +783,12 @@ class CommentController extends Controller
             foreach ($list as $i => $item)
             {
                 $list[$i]['type'] = $modal;
+                if ($item['modal_id'] == 0)
+                {
+                    $repository = $this->getCommentServiceByType($modal);
+                    $mainComment = $repository->getMainCommentItem($item['parent_id']);
+                    $list[$i]['modal_id'] = $mainComment['modal_id'];
+                }
             }
 
             if (!is_null($list))

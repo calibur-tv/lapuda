@@ -8,10 +8,7 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Api\V1\Repositories\ImageRepository;
-use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\Repository;
-use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Services\Comment\AnswerCommentService;
 use App\Api\V1\Services\Comment\CartoonRoleCommentService;
 use App\Api\V1\Services\Comment\ImageCommentService;

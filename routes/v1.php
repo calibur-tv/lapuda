@@ -565,6 +565,15 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/remove', 'App\Api\V1\Controllers\ReportController@remove');
         });
 
+        $api->group(['prefix' => '/ip_blocker'], function ($api)
+        {
+            $api->get('/list', 'App\Api\V1\Controllers\UserController@getBlockedUserIpAddress');
+
+            $api->post('/block', 'App\Api\V1\Controllers\UserController@blockUserByIp');
+
+            $api->post('/recover', 'App\Api\V1\Controllers\UserController@recoverUserIp');
+        });
+
         $api->group(['prefix' => '/app'], function ($api)
         {
             $api->group(['prefix' => '/version'], function ($api)

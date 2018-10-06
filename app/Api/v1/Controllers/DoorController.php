@@ -43,6 +43,7 @@ class DoorController extends Controller
             "friend_links" => $friendLinks
         ]);
     }
+
     /**
      * 发送手机验证码
      *
@@ -210,7 +211,10 @@ class DoorController extends Controller
 
         $userId = $user->id;
         $UserIpAddress = new UserIpAddress();
-        $UserIpAddress->add($request->ip(), $userId);
+        $UserIpAddress->add(
+            explode(', ', $request->headers->get('X-Forwarded-For'))[0],
+            $userId
+        );
 
         $inviteCode = $request->get('inviteCode');
         if ($inviteCode)
@@ -269,7 +273,10 @@ class DoorController extends Controller
             $jwtToken = $this->responseUser($user);
 
             $UserIpAddress = new UserIpAddress();
-            $UserIpAddress->add($request->ip(), $user->id);
+            $UserIpAddress->add(
+                explode(', ', $request->headers->get('X-Forwarded-For'))[0],
+                $user->id
+            );
 
             return response([
                 'code' => 0,
@@ -293,19 +300,8 @@ class DoorController extends Controller
         return $this->resNoContent();
     }
 
-    /**
-     * 获取用户信息
-     *
-     * 每次`启动应用`、`登录`、`注册`成功后调用
-     *
-     * @Post("/door/user")
-     *
-     * @Request(headers={"Authorization": "Bearer JWT-Token"})
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": "用户对象"}),
-     *      @Response(401, body={"code": 40104, "message": "未登录的用户"})
-     * })
-     */
+
+    // TODO：delete
     public function currentUser()
     {
         $user = $this->getAuthUser();
