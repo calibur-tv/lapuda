@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Redis;
 
 class UserIpAddress
 {
-    public function add($ipAddress, $userId)
+    public function add($ipAddress, $userId, $blocked = 0)
     {
         $now = Carbon::now();
 
@@ -25,6 +25,7 @@ class UserIpAddress
             ->insert([
                 'ip_address' => $ipAddress,
                 'user_id' => $userId,
+                'blocked' => $blocked,
                 'created_at' => $now,
                 'updated_at' => $now
             ]);
@@ -74,15 +75,17 @@ class UserIpAddress
 
         if (is_null($userId))
         {
-            return;
+            $this->add($ipAddress, 0, 1);
         }
-
-        DB
-            ::table('user_ip')
-            ->where('user_id', $userId)
-            ->update([
-                'blocked' => 1
-            ]);
+        else
+        {
+            DB
+                ::table('user_ip')
+                ->where('user_id', $userId)
+                ->update([
+                    'blocked' => 1
+                ]);
+        }
 
         Redis::DEL('blocked_user_ips');
         Redis::DEL('blocked_user_ids');
@@ -101,12 +104,22 @@ class UserIpAddress
             return;
         }
 
-        DB
-            ::table('user_ip')
-            ->where('user_id', $userId)
-            ->update([
-                'blocked' => 0
-            ]);
+        if ($userId)
+        {
+            DB
+                ::table('user_ip')
+                ->where('user_id', $userId)
+                ->update([
+                    'blocked' => 0
+                ]);
+        }
+        else
+        {
+            DB
+                ::table('user_ip')
+                ->where('ip_address', $ipAddress)
+                ->delete();
+        }
 
         Redis::DEL('blocked_user_ips');
         Redis::DEL('blocked_user_ids');
