@@ -114,6 +114,11 @@ class UserIpAddress
 
     public function check($userId)
     {
+        if (!$userId)
+        {
+            return false;
+        }
+
         $repository = new Repository();
 
         $ids = $repository->RedisList('blocked_user_ids', function ()

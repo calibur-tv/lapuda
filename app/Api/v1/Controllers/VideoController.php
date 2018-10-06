@@ -10,6 +10,7 @@ use App\Api\V1\Transformers\VideoTransformer;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Models\Video;
 use App\Services\OpenSearch\Search;
+use App\Services\Trial\UserIpAddress;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
@@ -58,6 +59,7 @@ class VideoController extends Controller
 
         $videoTransformer = new VideoTransformer();
         $bangumiTransformer = new BangumiTransformer();
+        $userIpAddress = new UserIpAddress();
 
         $searchService = new Search();
         if ($searchService->checkNeedMigrate('video', $id))
@@ -70,7 +72,8 @@ class VideoController extends Controller
             'info' => $videoTransformer->show($info),
             'bangumi' => $bangumiTransformer->video($bangumi),
             'season' => $season,
-            'list' => $list
+            'list' => $list,
+            'ip_blocked' => $userIpAddress->check($userId)
         ]);
     }
 
