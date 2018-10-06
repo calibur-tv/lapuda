@@ -158,30 +158,6 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
 
 + Response 204 (application/json)
 
-## 获取用户信息 [POST /door/user]
-每次`启动应用`、`登录`、`注册`成功后调用
-
-+ Request (application/json)
-    + Headers
-
-            Authorization: Bearer JWT-Token
-
-+ Response 200 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "data": "用户对象"
-            }
-
-+ Response 401 (application/json)
-    + Body
-
-            {
-                "code": 40104,
-                "message": "未登录的用户"
-            }
-
 ## 获取用户信息 [POST /door/refresh]
 每次`启动应用`、`登录`、`注册`成功后调用
 
@@ -984,7 +960,7 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
                 "data": "相册数组"
             }
 
-## 自己的相册列表 [POST /image/album/delete]
+## 删除某个相册 [POST /image/album/delete]
 
 
 + Parameters
@@ -1857,7 +1833,7 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
 
 # 评论相关接口
 
-## 新建主评论 [POST /comment/create]
+## 新建主评论 [POST /comment/main/create]
 
 
 + Parameters
@@ -1962,7 +1938,7 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
                 "message": "不存在的父评论"
             }
 
-## 回复评论 [POST /comment/reply]
+## 回复评论 [POST /comment/main/reply]
 
 
 + Parameters
@@ -1998,44 +1974,6 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
             {
                 "code": 40401,
                 "message": "内容已删除"
-            }
-
-## 删除子评论 [POST /comment/sub/delete]
-
-
-+ Parameters
-    + type: (string, required) - 某种 type
-    + id: (integer, required) - 父评论 id
-
-+ Request (application/json)
-    + Headers
-
-            Authorization: Bearer JWT-Token
-
-+ Response 204 (application/json)
-
-+ Response 400 (application/json)
-    + Body
-
-            {
-                "code": 40003,
-                "message": "参数错误"
-            }
-
-+ Response 404 (application/json)
-    + Body
-
-            {
-                "code": 40401,
-                "message": "该评论已被删除"
-            }
-
-+ Response 403 (application/json)
-    + Body
-
-            {
-                "code": 40301,
-                "message": "继续操作前请先登录"
             }
 
 ## 删除主评论 [POST /comment/main/delete]
@@ -2130,6 +2068,44 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
             {
                 "code": 40003,
                 "message": "参数错误"
+            }
+
+## 删除子评论 [POST /comment/sub/delete]
+
+
++ Parameters
+    + type: (string, required) - 某种 type
+    + id: (integer, required) - 父评论 id
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 204 (application/json)
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "参数错误"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "该评论已被删除"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "继续操作前请先登录"
             }
 
 # 偶像相关接口
@@ -2505,7 +2481,15 @@ type：like, follow, reward, mark，contributors
   score_comment,
   video_comment,
   question_comment,
-  answer_comment
+  answer_comment,
+  role_comment,
+  post_reply,
+  image_reply,
+  score_reoly,
+  video_reply,
+  question_reply,
+  answer_reply,
+  role_reply
 
 > 目前支持的 type：
 0：其它
