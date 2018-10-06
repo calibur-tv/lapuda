@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Support\Facades\Log;
 
 class Csrf
 {
@@ -18,6 +19,10 @@ class Csrf
 
     public function handle($request, Closure $next)
     {
+        Log::info("----------");
+        Log::info("user ip：" . $request->ip());
+        Log::info("user real ip：" . $request->headers->get('X-Forwarded-For'));
+        Log::info("----------");
         if (config('app.env') === 'local')
         {
             return $next($request);
