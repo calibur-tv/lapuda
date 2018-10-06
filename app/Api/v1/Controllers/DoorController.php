@@ -210,7 +210,10 @@ class DoorController extends Controller
 
         $userId = $user->id;
         $UserIpAddress = new UserIpAddress();
-        $UserIpAddress->add($request->ip(), $userId);
+        $UserIpAddress->add(
+            explode(', ', $request->headers->get('X-Forwarded-For'))[0],
+            $userId
+        );
 
         $inviteCode = $request->get('inviteCode');
         if ($inviteCode)
@@ -269,7 +272,10 @@ class DoorController extends Controller
             $jwtToken = $this->responseUser($user);
 
             $UserIpAddress = new UserIpAddress();
-            $UserIpAddress->add($request->ip(), $user->id);
+            $UserIpAddress->add(
+                explode(', ', $request->headers->get('X-Forwarded-For'))[0],
+                $user->id
+            );
 
             return response([
                 'code' => 0,
