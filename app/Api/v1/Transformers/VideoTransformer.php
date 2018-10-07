@@ -23,7 +23,18 @@ class VideoTransformer extends Transformer
                 'name' => $video['name'],
                 'part' => (int)$video['part'],
                 'poster' => $video['poster'],
-                'other_site' => (boolean)$video['other_site']
+                'other_site' => (boolean)$video['other_site'],
+                'is_creator' => true,
+                'liked' => false,
+                'like_users' => [
+                    'list' => [],
+                    'total' => 0,
+                    'noMore' => true
+                ],
+                'rewarded' => $video['rewarded'],
+                'reward_users' => $video['reward_users'],
+                'marked' => $video['marked'],
+                'mark_users' => $video['mark_users']
             ];
         });
     }

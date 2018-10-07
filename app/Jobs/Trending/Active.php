@@ -37,6 +37,12 @@ class Active implements ShouldQueue
 
     public function handle()
     {
+        $service = $this->getTrendingServiceByModel();
+        if (is_null($service))
+        {
+            return;
+        }
+
         $table = $this->getTableByModel();
         if (!$table)
         {
@@ -48,12 +54,6 @@ class Active implements ShouldQueue
             ->update([
                 'updated_at' => Carbon::now()
             ]);
-
-        $service = $this->getTrendingServiceByModel();
-        if (is_null($service))
-        {
-            return;
-        }
 
         $service->update($this->id);
     }
