@@ -8,7 +8,14 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\AnswerRepository;
+use App\Api\V1\Repositories\CartoonRoleRepository;
+use App\Api\V1\Repositories\ImageRepository;
+use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Repositories\Repository;
+use App\Api\V1\Repositories\ScoreRepository;
+use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Comment\AnswerCommentService;
 use App\Api\V1\Services\Comment\CartoonRoleCommentService;
 use App\Api\V1\Services\Comment\ImageCommentService;
@@ -16,6 +23,7 @@ use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Comment\QuestionCommentService;
 use App\Api\V1\Services\Comment\ScoreCommentService;
 use App\Api\V1\Services\Comment\VideoCommentService;
+use App\Api\V1\Services\Owner\BangumiManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 
@@ -122,8 +130,109 @@ class ReportController extends Controller
         }
 
         Redis::ZINCRBY('user-report-trending-ids', 1, $model . '-' . $id);
-
         Redis::RPUSH('user-report-item' . '-' . $model . '-' . $id, $userId . '|' . $type . '|' . $message);
+
+        if ($userId)
+        {
+            if (preg_match('/_/', $model))
+            {
+                // 是 reply
+                $arr = explode('_', $model);
+                $commentService = $this->getCommentRepositoryByType($arr[0]);
+
+                $subComment = $commentService->getSubCommentItem($arr[1]);
+                if (is_null($subComment))
+                {
+                    return $this->resNoContent();
+                }
+
+                $mainComment = $commentService->getMainCommentItem($subComment['parent_id']);
+                if (is_null($mainComment))
+                {
+                    return $this->resNoContent();
+                }
+
+                $repository = $this->getRepositoryByType($arr[0]);
+                if (is_null($repository))
+                {
+                    return $this->resNoContent();
+                }
+
+                $item = $repository->item($mainComment['modal_id']);
+                if (is_null($item))
+                {
+                    return $this->resNoContent();
+                }
+
+                if (!isset($item['bangumi_id']))
+                {
+                    return $this->resNoContent();
+                }
+
+                $bangumiManager = new BangumiManager();
+                if ($bangumiManager->isOwner($item['bangumi_id'], $userId))
+                {
+                    $commentService->deleteSubComment($subComment['id'], $mainComment['id'], $userId);
+                }
+            }
+            else if (preg_match('/-/', $model))
+            {
+                // 是 comment
+                $arr = explode('_', $model);
+                $commentService = $this->getCommentRepositoryByType($arr[0]);
+
+                $mainComment = $commentService->getMainCommentItem($arr[1]);
+                if (is_null($mainComment))
+                {
+                    return $this->resNoContent();
+                }
+
+                $repository = $this->getRepositoryByType($arr[0]);
+                if (is_null($repository))
+                {
+                    return $this->resNoContent();
+                }
+
+                $item = $repository->item($mainComment['modal_id']);
+                if (is_null($item))
+                {
+                    return $this->resNoContent();
+                }
+
+                if (!isset($item['bangumi_id']))
+                {
+                    return $this->resNoContent();
+                }
+
+                $bangumiManager = new BangumiManager();
+                if ($bangumiManager->isOwner($item['bangumi_id'], $userId))
+                {
+                    $commentService->deleteMainComment(
+                        $mainComment['id'],
+                        $mainComment['modal_id'],
+                        $mainComment['from_user_id'],
+                        false,
+                        $userId
+                    );
+                }
+            }
+            else if (in_array($model, ['post', 'image', 'score', 'question', 'answer']))
+            {
+                $repository = $this->getRepositoryByType($model);
+
+                $item = $repository->item($id);
+                if (is_null($item))
+                {
+                    return $this->resNoContent();
+                }
+
+                $bangumiManager = new BangumiManager();
+                if ($bangumiManager->isOwner($item['bangumi_id'], $userId))
+                {
+                    $repository->deleteProcess($id, $userId);
+                }
+            }
+        }
 
         return $this->resNoContent();
     }
@@ -231,6 +340,42 @@ class ReportController extends Controller
         else if ($type === 'video')
         {
             return new VideoCommentService();
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    protected function getRepositoryByType($type)
+    {
+        if ($type === 'post')
+        {
+            return new PostRepository();
+        }
+        else if ($type === 'image')
+        {
+            return new ImageRepository();
+        }
+        else if ($type === 'score')
+        {
+            return new ScoreRepository();
+        }
+        else if ($type === 'question')
+        {
+            return new QuestionRepository();
+        }
+        else if ($type === 'answer')
+        {
+            return new AnswerRepository();
+        }
+        else if ($type === 'role')
+        {
+            return new CartoonRoleRepository();
+        }
+        else if ($type === 'video')
+        {
+            return new VideoRepository();
         }
         else
         {

@@ -185,24 +185,24 @@ class CommentService extends Repository
         return $result;
     }
 
-    public function deleteSubComment($id, $parentId)
+    public function deleteSubComment($id, $parentId, $state = 0)
     {
         DB::table($this->table)
             ->where('id', $id)
             ->update([
-                'state' => 0,
+                'state' => $state,
                 'deleted_at' => Carbon::now()
             ]);
 
         $this->changeSubCommentCount($parentId, $id, false);
     }
 
-    public function deleteMainComment($id, $modalId, $userId = 0, $isMaster = false)
+    public function deleteMainComment($id, $modalId, $userId = 0, $isMaster = false, $state = 0)
     {
         DB::table($this->table)
             ->where('id', $id)
             ->update([
-                'state' => 0,
+                'state' => $state,
                 'deleted_at' => Carbon::now()
             ]);
 
