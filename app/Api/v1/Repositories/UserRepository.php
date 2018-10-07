@@ -312,7 +312,7 @@ class UserRepository extends Repository
 
         return [
             'list' => $result,
-            'noMore' => $idsObj['noMore'],
+            'noMore' => empty($result) ? true : $idsObj['noMore'],
             'total' => $idsObj['total']
         ];
     }
