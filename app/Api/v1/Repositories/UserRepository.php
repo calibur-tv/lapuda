@@ -424,6 +424,9 @@ class UserRepository extends Repository
             case 'answer':
                 return 7;
                 break;
+            case 'video':
+                return 13;
+                break;
             default:
                 return -1;
         }

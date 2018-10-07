@@ -137,6 +137,12 @@ class NotificationPresenter
             case 'answer-reply-like':
                 return 39;
                 break;
+            case 'video-reward':
+                return 40;
+                break;
+            case 'video-like':
+                return 41;
+                break;
             default:
                 return 0;
                 break;
@@ -266,6 +272,12 @@ class NotificationPresenter
                 break;
             case 39:
                 return '/soga/' . $modalId . '?comment-id=' . $commentId . '&reply-id=' . $replyId;
+                break;
+            case 40:
+                return '/video/' . $modalId;
+                break;
+            case 41:
+                return '/video/' . $modalId;
                 break;
             default:
                 return '';
@@ -397,6 +409,12 @@ class NotificationPresenter
             case 39:
                 return '${user}赞了你在问题${title}下的回复';
                 break;
+            case 40:
+                return '${user}打赏了你的视频${title}';
+                break;
+            case 41:
+                return '${user}收藏了你的视频${title}';
+                break;
             default:
                 return '';
                 break;
@@ -526,6 +544,12 @@ class NotificationPresenter
                 break;
             case 39:
                 return new AnswerRepository();
+                break;
+            case 40:
+                return new VideoRepository();
+                break;
+            case 41:
+                return new VideoRepository();
                 break;
             default:
                 return null;

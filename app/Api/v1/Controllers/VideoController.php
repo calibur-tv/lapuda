@@ -68,6 +68,10 @@ class VideoController extends Controller
             dispatch($job);
         }
 
+//        $must_reward = true;
+//        $rewarded = false;
+//        $need_min_level = 3;
+
         return $this->resOK([
             'info' => $videoTransformer->show($info),
             'bangumi' => $bangumiTransformer->video($bangumi),
@@ -174,6 +178,7 @@ class VideoController extends Controller
                     'resource' => $video['resource'] ? json_encode($video['resource']) : '',
                     'poster' => $video['poster'],
                     'user_id' => 2,
+                    'is_creator' => 1,
                     'created_at' => $time,
                     'updated_at' => $time
                 ]);

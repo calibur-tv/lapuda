@@ -34,6 +34,8 @@ class UserCoin extends Model
      * 10：删除图片
      * 11：删除漫评
      * 12：删除回答
+     * 13：视频
+     * 14：删除视频
      */
 
     protected $casts = [

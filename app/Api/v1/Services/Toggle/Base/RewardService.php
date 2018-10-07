@@ -7,6 +7,7 @@ use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Services\Toggle\Post\PostRewardService;
 use App\Api\V1\Services\Toggle\ToggleService;
+use App\Api\V1\Services\Toggle\Video\VideoRewardService;
 use App\Models\User;
 use App\Models\UserCoin;
 
@@ -73,6 +74,8 @@ class RewardService extends ToggleService
             case 12:
                 return new AnswerRepository();
                 break;
+            case 14:
+                return new VideoRewardService();
             default:
                 return null;
                 break;
