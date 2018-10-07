@@ -9,6 +9,7 @@
 namespace App\Api\V1\Repositories;
 
 
+use App\Api\V1\Services\Counter\QuestionAnswerCounter;
 use App\Api\V1\Services\Toggle\Question\AnswerRewardService;
 use App\Api\V1\Services\Trending\AnswerTrendingService;
 use App\Api\V1\Services\Trending\QuestionTrendingService;
@@ -83,6 +84,9 @@ class AnswerRepository extends Repository
             $questionTrendingService = new QuestionTrendingService($question['tag_ids']);
             $questionTrendingService->update($questionId);
 
+            $questionAnswerCounter = new QuestionAnswerCounter();
+            $questionAnswerCounter->add($questionId);
+
             DB::table('questions')
                 ->where('id', $questionId)
                 ->update([
@@ -127,6 +131,9 @@ class AnswerRepository extends Repository
         {
             $userLevel = new UserLevel();
             $userLevel->change($answer['user_id'], -4);
+
+            $questionAnswerCounter = new QuestionAnswerCounter();
+            $questionAnswerCounter->add($answer['question_id'], -1);
 
             $job = (new \App\Jobs\Search\Index('D', 'answer', $id));
             dispatch($job);
