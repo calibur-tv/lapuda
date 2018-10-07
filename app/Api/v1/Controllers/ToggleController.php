@@ -414,7 +414,7 @@ class ToggleController extends Controller
             return $this->resErrNotFound();
         }
 
-        if (isset($item['is_creator']) ? !$item['is_creator'] : $item['source_url'])
+        if (!$item['is_creator'])
         {
             return $this->resErrRole('非原创内容只能喜欢，不能打赏');
         }
