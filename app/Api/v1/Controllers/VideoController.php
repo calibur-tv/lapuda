@@ -5,6 +5,8 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Counter\VideoPlayCounter;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
+use App\Api\V1\Services\Toggle\Video\VideoMarkService;
+use App\Api\V1\Services\Toggle\Video\VideoRewardService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\VideoTransformer;
 use App\Api\V1\Repositories\BangumiRepository;
@@ -68,12 +70,24 @@ class VideoController extends Controller
             dispatch($job);
         }
 
+        $videoMarkService = new VideoMarkService();
+        $videoRewardService = new VideoRewardService();
+
+        $info['rewarded'] = $videoRewardService->check($userId, $id);
+        $info['reward_users'] = $videoRewardService->users($id);
+        $info['marked'] = $videoMarkService->check($userId, $id);
+        $info['mark_users'] = $videoMarkService->users($id);
+
+        $mustReward = $bangumi['released_video_id'] == $id && $bangumi['end'] == 0;
+
         return $this->resOK([
             'info' => $videoTransformer->show($info),
             'bangumi' => $bangumiTransformer->video($bangumi),
             'season' => $season,
             'list' => $list,
-            'ip_blocked' => $userIpAddress->check($userId)
+            'ip_blocked' => $userIpAddress->check($userId),
+            'must_reward' => $mustReward,
+            'need_min_level' => $mustReward ? 0 : 3
         ]);
     }
 
@@ -174,6 +188,7 @@ class VideoController extends Controller
                     'resource' => $video['resource'] ? json_encode($video['resource']) : '',
                     'poster' => $video['poster'],
                     'user_id' => 2,
+                    'is_creator' => 1,
                     'created_at' => $time,
                     'updated_at' => $time
                 ]);

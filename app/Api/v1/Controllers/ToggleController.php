@@ -15,6 +15,7 @@ use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Owner\QuestionLog;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
@@ -31,6 +32,8 @@ use App\Api\V1\Services\Toggle\Question\QuestionFollowService;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
 use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
 use App\Api\V1\Services\Toggle\Score\ScoreRewardService;
+use App\Api\V1\Services\Toggle\Video\VideoMarkService;
+use App\Api\V1\Services\Toggle\Video\VideoRewardService;
 use App\Api\V1\Services\Vote\AnswerVoteService;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -296,7 +299,7 @@ class ToggleController extends Controller
     /**
      * 收藏或取消收藏
      *
-     * > 目前支持的 type：post、image、score、answer
+     * > 目前支持的 type：post、image、score、answer、video
      *
      * @Post("/toggle/mark")
      *
@@ -616,6 +619,9 @@ class ToggleController extends Controller
             case 'answer':
                 return new AnswerMarkService();
                 break;
+            case 'video':
+                return new VideoMarkService();
+                break;
             default:
                 return null;
         }
@@ -636,6 +642,10 @@ class ToggleController extends Controller
                 break;
             case 'answer':
                 return new AnswerRewardService();
+                break;
+            case 'video':
+                return new VideoRewardService();
+                break;
             default:
                 return null;
         }
@@ -686,6 +696,9 @@ class ToggleController extends Controller
                 break;
             case 'answer':
                 return new AnswerRepository();
+                break;
+            case 'video':
+                return new VideoRepository();
                 break;
             default:
                 return null;
