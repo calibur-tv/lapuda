@@ -186,7 +186,7 @@ class CommentController extends Controller
         $totalCommentCount = new TotalCommentCount();
         $totalCommentCount->add();
 
-        if ($parent['user_id'] != $userId)
+        if (!isset($parent['user_id']) || $parent['user_id'] != $userId)
         {
             $userLevel = new UserLevel();
             $userLevel->change($userId, 2);
