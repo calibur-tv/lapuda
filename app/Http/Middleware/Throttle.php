@@ -36,9 +36,10 @@ class Throttle extends ThrottleRequests
 
     protected function resolveRequestSignature($request)
     {
-//        if ($userId = $this->getAuthUserId()) {
-//            return sha1($userId);
-//        }
+        if ($userId = $this->getAuthUserId()) {
+            return sha1($request->url().'|'.$userId);
+        }
+
         $ip = explode(', ', $request->headers->get('X-Forwarded-For'))[0];
 
         return sha1($request->url().'|'.$ip. '|' . $request->header('User-Agent'));
