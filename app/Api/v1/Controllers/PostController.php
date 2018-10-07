@@ -469,6 +469,7 @@ class PostController extends Controller
             ]);
 
         Redis::DEL('post_' . $postId);
+        Redis::DEL('bangumi_' . $post['bangumi_id'] . '_posts_top_ids');
 
         return $this->resNoContent();
     }
@@ -520,6 +521,7 @@ class PostController extends Controller
             ]);
 
         Redis::DEL('post_' . $postId);
+        Redis::DEL('bangumi_' . $post['bangumi_id'] . '_posts_top_ids');
 
         return $this->resNoContent();
     }
