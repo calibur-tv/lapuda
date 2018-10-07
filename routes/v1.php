@@ -95,14 +95,14 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/update', 'App\Api\V1\Controllers\ScoreController@update')->middleware(['jwt.auth']);
 
-        $api->post('/create', 'App\Api\V1\Controllers\ScoreController@create')->middleware(['jwt.auth', 'geetest']);
+        $api->post('/create', 'App\Api\V1\Controllers\ScoreController@create')->middleware(['jwt.auth', 'geetest', 'throttle:1,10']);
     });
 
     $api->group(['prefix' => '/question'], function ($api)
     {
         $api->group(['prefix' => '/qaq'], function ($api)
         {
-            $api->post('/create', 'App\Api\V1\Controllers\QuestionController@create')->middleware(['geetest', 'jwt.auth']);
+            $api->post('/create', 'App\Api\V1\Controllers\QuestionController@create')->middleware(['geetest', 'jwt.auth', 'throttle:1,3']);
 
             $api->group(['prefix' => '/{id}'], function ($api)
             {
@@ -112,7 +112,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/soga'], function ($api)
         {
-            $api->post('/create', 'App\Api\V1\Controllers\AnswerController@create')->middleware(['geetest', 'jwt.auth']);
+            $api->post('/create', 'App\Api\V1\Controllers\AnswerController@create')->middleware(['geetest', 'jwt.auth', 'throttle:1,3']);
 
             $api->get('/drafts', 'App\Api\V1\Controllers\AnswerController@drafts')->middleware(['jwt.auth']);
 
@@ -175,7 +175,7 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/post'], function ($api)
     {
-        $api->post('/create', 'App\Api\V1\Controllers\PostController@create')->middleware(['jwt.auth', 'geetest']);
+        $api->post('/create', 'App\Api\V1\Controllers\PostController@create')->middleware(['jwt.auth', 'geetest', 'throttle:1,3']);
 
         $api->group(['prefix' => '/{id}'], function ($api)
         {
@@ -208,9 +208,9 @@ $api->version(['v1', 'latest'], function ($api)
         {
             $api->get('/list', 'App\Api\V1\Controllers\CommentController@mainList');
 
-            $api->post('/create', 'App\Api\V1\Controllers\CommentController@create')->middleware(['jwt.auth']);
+            $api->post('/create', 'App\Api\V1\Controllers\CommentController@create')->middleware(['jwt.auth', 'throttle:6,1']);
 
-            $api->post('/reply', 'App\Api\V1\Controllers\CommentController@reply')->middleware(['jwt.auth']);
+            $api->post('/reply', 'App\Api\V1\Controllers\CommentController@reply')->middleware(['jwt.auth', 'throttle:10,1']);
 
             $api->post('/delete', 'App\Api\V1\Controllers\CommentController@deleteMainComment')->middleware(['jwt.auth']);
 
@@ -251,7 +251,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/single', 'middleware' => ['jwt.auth']], function ($api)
         {
-            $api->post('/upload', 'App\Api\V1\Controllers\ImageController@uploadSingleImage')->middleware(['geetest']);
+            $api->post('/upload', 'App\Api\V1\Controllers\ImageController@uploadSingleImage')->middleware(['geetest', 'throttle:1,1']);
 
             $api->post('/edit', 'App\Api\V1\Controllers\ImageController@editSingleImage');
         });
@@ -260,7 +260,7 @@ $api->version(['v1', 'latest'], function ($api)
         {
             $api->post('/upload', 'App\Api\V1\Controllers\ImageController@uploadAlbumImages');
 
-            $api->post('/create', 'App\Api\V1\Controllers\ImageController@createAlbum');
+            $api->post('/create', 'App\Api\V1\Controllers\ImageController@createAlbum')->middleware(['throttle:3,1']);
 
             $api->post('/edit', 'App\Api\V1\Controllers\ImageController@editAlbum');
 
