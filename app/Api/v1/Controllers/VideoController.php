@@ -173,6 +173,7 @@ class VideoController extends Controller
                     'url' => $video['url'] ? $video['url'] : '',
                     'resource' => $video['resource'] ? json_encode($video['resource']) : '',
                     'poster' => $video['poster'],
+                    'user_id' => 2,
                     'created_at' => $time,
                     'updated_at' => $time
                 ]);
