@@ -388,8 +388,18 @@ class ScoreController extends Controller
         {
             $scoreRepository->doPublish($userId, $newId, $bangumiId);;
         }
+        $userLevel = new UserLevel();
+        $exp = $userLevel->change($userId, 5, $intro);
 
-        return $this->resOK($newId);
+        return $this->resOK([
+            'data' => $newId,
+            'exp' => $exp,
+            'message' => $doPublished ? (
+                $exp ? "发布成功，经验+{$exp}" : "发布成功"
+            ) : (
+                $exp ? "保存成功，经验+{$exp}" : "保存成功"
+            )
+        ]);
     }
 
     /**
@@ -520,8 +530,9 @@ class ScoreController extends Controller
 
         if ($doPublished)
         {
-            $scoreRepository->doPublish($userId, $newId, $bangumiId);;
+            $scoreRepository->doPublish($userId, $newId, $bangumiId);
         }
+
         Redis::DEL($scoreRepository->itemCacheKey($newId));
 
         return $this->resNoContent();
@@ -558,9 +569,12 @@ class ScoreController extends Controller
             return $this->resErrRole();
         }
 
-        $scoreRepository->deleteProcess($id);
+        $exp = $scoreRepository->deleteProcess($id);
 
-        return $this->resNoContent();
+        return $this->resOK([
+            'exp' => $exp,
+            'message' => $exp ? "删除成功，经验{$exp}" : "删除成功"
+        ]);
     }
 
     // 漫评审核列表

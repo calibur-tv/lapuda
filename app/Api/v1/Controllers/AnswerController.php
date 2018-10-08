@@ -161,11 +161,12 @@ class AnswerController extends Controller
 
         $now = Carbon::now();
         $doPublished = $request->get('do_publish');
+        $intro = Purifier::clean($request->get('intro'));
         $newId = Answer::insertGetId([
             'user_id' => $userId,
             'question_id' => $questionId,
             'content' => $questionRepository->filterJsonContent($request->get('content')),
-            'intro' => Purifier::clean($request->get('intro')),
+            'intro' => $intro,
             'created_at' => $now,
             'updated_at' => $now,
             'published_at' => $doPublished ? $now : null,
@@ -176,8 +177,18 @@ class AnswerController extends Controller
         {
             $questionRepository->publishAnswer($userId, $newId, $questionId);
         }
+        $userLevel = new UserLevel();
+        $exp = $userLevel->change($userId, 4, $intro);
 
-        return $this->resOK($newId);
+        return $this->resOK([
+            'data' => $newId,
+            'exp' => $exp,
+            'message' => $doPublished ? (
+                $exp ? "发布成功，经验+{$exp}" : "发布成功"
+            ) : (
+                $exp ? "保存成功，经验+{$exp}" : "保存成功"
+            )
+        ]);
     }
 
     /**
@@ -287,9 +298,12 @@ class AnswerController extends Controller
             return $this->resErrRole();
         }
 
-        $answerRepository->deleteProcess($id);
+        $exp = $answerRepository->deleteProcess($id);
 
-        return $this->resNoContent();
+        return $this->resOK([
+            'exp' => $exp,
+            'message' => $exp ? "删除成功，经验{$exp}" : "删除成功"
+        ]);
     }
 
     /**

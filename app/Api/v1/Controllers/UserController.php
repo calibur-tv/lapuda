@@ -72,9 +72,12 @@ class UserController extends Controller
         }
 
         $userLevel = new UserLevel();
-        $userLevel->change($userId, 2);
+        $exp = $userLevel->change($userId, 2, false);
 
-        return $this->resNoContent();
+        return $this->resOK([
+            'exp' => $exp,
+            'message' => "签到成功，经验+{$exp}"
+        ]);
     }
 
     /**

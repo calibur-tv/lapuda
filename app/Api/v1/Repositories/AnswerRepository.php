@@ -101,9 +101,6 @@ class AnswerRepository extends Repository
             ));
             dispatch($job);
 
-            $userLevel = new UserLevel();
-            $userLevel->change($answer['user_id'], 4);
-
             $baiduPush = new BaiduPush();
             $baiduPush->trending('question');
 
@@ -129,8 +126,6 @@ class AnswerRepository extends Repository
 
         if ($state === 0 || $answer['created_at'] !== $answer['updated_at'])
         {
-            $userLevel = new UserLevel();
-            $userLevel->change($answer['user_id'], -4);
 
             $questionAnswerCounter = new QuestionAnswerCounter();
             $questionAnswerCounter->add($answer['question_id'], -1);
@@ -143,25 +138,38 @@ class AnswerRepository extends Repository
         $answerRewardService->cancel($id);
 
         Redis::DEL($this->itemCacheKey($id));
+
+        $userLevel = new UserLevel();
+        $exp = $userLevel->change($answer['user_id'], -4, $answer['intro']);
+
+        return $exp;
     }
 
     public function recoverProcess($id)
     {
         $answer = $this->item($id, true);
 
-        DB::table('question_answers')
-            ->where('id', $id)
-            ->update([
-                'state' => 0,
-                'deleted_at' => null
-            ]);
-
-        if ($answer['deleted_at'])
+        if ($answer['user_id'] == $answer['state'])
         {
-            $this->migrateSearchIndex('C', $id, false);
-        }
+            DB::table('question_answers')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => null
+                ]);
 
-        Redis::DEL($this->itemCacheKey($id));
+            $this->migrateSearchIndex('C', $id, false);
+
+            Redis::DEL($this->itemCacheKey($id));
+        }
+        else
+        {
+            DB::table('question_answers')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0
+                ]);
+        }
     }
 
     public function migrateSearchIndex($type, $id, $async = true)

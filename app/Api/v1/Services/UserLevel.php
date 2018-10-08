@@ -76,8 +76,18 @@ class UserLevel
         ];
     }
 
-    public function change($userId, $score)
+    public function change($userId, $score, $checkText)
     {
+        if ($checkText !== false)
+        {
+            $pureContent = str_replace("\n", '', $checkText);
+            $pureContent = str_replace("<p>", '', $pureContent);
+            $pureContent = str_replace("</p>", '', $pureContent);
+            if (mb_strlen($pureContent) < 15 || mb_strlen(count_chars($pureContent, 3)) < 5)
+            {
+                return 0;
+            }
+        }
         User::where('id', $userId)
             ->increment('exp', $score);
 
@@ -85,5 +95,7 @@ class UserLevel
         {
             Redis::HINCRBYFLOAT('user_' . $userId, 'exp', $score);
         }
+
+        return $score;
     }
 }

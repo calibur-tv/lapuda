@@ -16,6 +16,7 @@ use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Services\Toggle\Image\ImageMarkService;
 use App\Api\V1\Services\Toggle\Image\ImageRewardService;
 use App\Api\V1\Services\Trending\ImageTrendingService;
+use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\AlbumImage;
 use App\Models\Banner;
@@ -186,7 +187,14 @@ class ImageController extends Controller
         $newAlbum = $imageRepository->item($albumId);
         $imageTransformer = new ImageTransformer();
 
-        return $this->resCreated($imageTransformer->userAlbums([$newAlbum])[0]);
+        $userLevel = new UserLevel();
+        $exp = $userLevel->change($userId, 3, false);
+
+        return $this->resCreated([
+            'data' => $imageTransformer->userAlbums([$newAlbum])[0],
+            'exp' => $exp,
+            'message' => $exp ? "创建成功，经验+{$exp}" : '创建成功'
+        ]);
     }
 
     /**
@@ -349,7 +357,14 @@ class ImageController extends Controller
             'part' => 0
         ]);
 
-        return $this->resCreated($newId);
+        $userLevel = new UserLevel();
+        $exp = $userLevel->change($userId, 3, false);
+
+        return $this->resCreated([
+            'data' => $newId,
+            'exp' => $exp,
+            'message' => $exp ? "上传成功，经验+{$exp}" : '上传成功'
+        ]);
     }
 
     /**
@@ -621,9 +636,12 @@ class ImageController extends Controller
             }
         }
 
-        $imageRepository->deleteProcess($albumId);
+        $exp = $imageRepository->deleteProcess($albumId);
 
-        return $this->resNoContent();
+        return $this->resOK([
+            'exp' => $exp,
+            'message' => "删除成功，经验{$exp}"
+        ]);
     }
 
     /**
