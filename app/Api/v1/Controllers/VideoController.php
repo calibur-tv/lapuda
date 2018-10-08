@@ -77,6 +77,7 @@ class VideoController extends Controller
         $info['reward_users'] = $videoRewardService->users($id);
         $info['marked'] = $videoMarkService->check($userId, $id);
         $info['mark_users'] = $videoMarkService->users($id);
+        $info['other_site'] = $bangumi['others_site_video'];
 
         $mustReward = $bangumi['released_video_id'] == $id && $bangumi['end'] == 0;
 
