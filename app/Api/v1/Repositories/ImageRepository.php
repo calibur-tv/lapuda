@@ -276,9 +276,6 @@ class ImageRepository extends Repository
         $baiduPush->trending('image');
         $baiduPush->bangumi($image['bangumi_id'], 'pins');
 
-        $userLevel = new UserLevel();
-        $userLevel->change($image['user_id'], 3);
-
         if ($image['is_cartoon'])
         {
             Redis::DEL($this->cacheKeyCartoonParts($image['bangumi_id']));
@@ -333,34 +330,44 @@ class ImageRepository extends Repository
         }
 
         $userLevel = new UserLevel();
-        $userLevel->change($image['user_id'], -3);
+        $exp = $userLevel->change($image['user_id'], -3, false);
 
         $imageRewardService = new ImageRewardService();
         $imageRewardService->cancel($id);
 
         Redis::DEL($this->itemCacheKey($id));
+
+        return $exp;
     }
 
     public function recoverProcess($id)
     {
         $image = $this->item($id, true);
 
-        DB::table('images')
-            ->where('id', $id)
-            ->update([
-                'state' => 0,
-                'deleted_at' => null
-            ]);
-
-        if ($image['deleted_at'])
+        if ($image['user_id'] == $image['state'])
         {
+            DB::table('images')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => null
+                ]);
+
             $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
             $imageTrendingService->create($id);
 
             $this->migrateSearchIndex('C', $id, false);
-        }
 
-        Redis::DEL($this->itemCacheKey($id));
+            Redis::DEL($this->itemCacheKey($id));
+        }
+        else
+        {
+            DB::table('images')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0
+                ]);
+        }
     }
 
     public function itemCacheKey($id)

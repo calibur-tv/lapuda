@@ -10,6 +10,7 @@ use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Services\Toggle\Post\PostRewardService;
+use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Api\V1\Repositories\BangumiRepository;
@@ -112,7 +113,14 @@ class PostController extends Controller
             'updated_at' => $now
         ], $images);
 
-        return $this->resCreated($id);
+        $userLevel = new UserLevel();
+        $exp = $userLevel->change($userId, 4, $content);
+
+        return $this->resCreated([
+            'data' => $id,
+            'exp' => $exp,
+            'message' => $exp ? "发表成功，经验+{$exp}" : '发表成功'
+        ]);
     }
 
     /**
@@ -309,9 +317,12 @@ class PostController extends Controller
             return $this->resErrRole('权限不足');
         }
 
-        $postRepository->deleteProcess($postId, 0);
+        $exp = $postRepository->deleteProcess($postId);
 
-        return $this->resNoContent();
+        return $this->resOK([
+            'exp' => $exp,
+            'message' => $exp ? "删除成功，经验{$exp}" : '删除成功'
+        ]);
     }
 
     /**
@@ -469,6 +480,7 @@ class PostController extends Controller
             ]);
 
         Redis::DEL('post_' . $postId);
+        Redis::DEL('bangumi_' . $post['bangumi_id'] . '_posts_top_ids');
 
         return $this->resNoContent();
     }
@@ -520,6 +532,7 @@ class PostController extends Controller
             ]);
 
         Redis::DEL('post_' . $postId);
+        Redis::DEL('bangumi_' . $post['bangumi_id'] . '_posts_top_ids');
 
         return $this->resNoContent();
     }
@@ -562,7 +575,7 @@ class PostController extends Controller
             return $this->resErrNotFound();
         }
 
-        $postRepository->deleteProcess($post['id'], 0);
+        $postRepository->deleteProcess($post['id']);
 
         return $this->resNoContent();
     }

@@ -218,9 +218,6 @@ class ScoreRepository extends Repository
             $baiduPush->trending('score');
             $baiduPush->bangumi($score['bangumi_id'], 'review');
 
-            $userLevel = new UserLevel();
-            $userLevel->change($score['user_id'], 5);
-
             $this->migrateSearchIndex('C', $id, false);
         }
     }
@@ -249,9 +246,6 @@ class ScoreRepository extends Repository
             $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
             $scoreTrendingService->delete($id);
 
-            $userLevel = new UserLevel();
-            $userLevel->change($score['user_id'], -5);
-
             $job = (new \App\Jobs\Search\Index('D', 'score', $id));
             dispatch($job);
         }
@@ -260,28 +254,41 @@ class ScoreRepository extends Repository
         $scoreRewardService->cancel($id);
 
         Redis::DEL($this->itemCacheKey($id));
+
+        $userLevel = new UserLevel();
+        $exp = $userLevel->change($score['user_id'], -5, $score['intro']);
+
+        return $exp;
     }
 
     public function recoverProcess($id)
     {
         $score = $this->item($id, true);
 
-        DB::table('scores')
-            ->where('id', $id)
-            ->update([
-                'state' => 0,
-                'deleted_at' => null
-            ]);
-
-        if ($score['deleted_at'])
+        if ($score['user_id'] == $score['state'])
         {
+            DB::table('scores')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => null
+                ]);
+
             $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
             $scoreTrendingService->create($id);
 
             $this->migrateSearchIndex('C', $id, false);
-        }
 
-        Redis::DEL($this->itemCacheKey($id));
+            Redis::DEL($this->itemCacheKey($id));
+        }
+        else
+        {
+            DB::table('scores')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0
+                ]);
+        }
     }
 
     public function itemCacheKey($id)

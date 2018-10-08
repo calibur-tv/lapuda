@@ -148,9 +148,6 @@ class PostRepository extends Repository
         $baiduPush->trending('post');
         $baiduPush->bangumi($post['bangumi_id'], 'post');
 
-        $userLevel = new UserLevel();
-        $userLevel->change($post['user_id'], 4);
-
         $this->migrateSearchIndex('C', $id, false);
     }
 
@@ -175,9 +172,6 @@ class PostRepository extends Repository
             $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
             $postTrendingService->delete($id);
 
-            $userLevel = new UserLevel();
-            $userLevel->change($post['user_id'], -4);
-
             $job = (new \App\Jobs\Search\Index('D', 'post', $id));
             dispatch($job);
         }
@@ -186,28 +180,41 @@ class PostRepository extends Repository
         $postRewardService->cancel($id);
 
         Redis::DEL($this->itemCacheKey($id));
+
+        $userLevel = new UserLevel();
+        $exp = $userLevel->change($post['user_id'], -4, $post['desc']);
+
+        return $exp;
     }
 
     public function recoverProcess($id)
     {
         $post = $this->item($id, true);
 
-        DB::table('posts')
-            ->where('id', $id)
-            ->update([
-                'state' => 0,
-                'deleted_at' => null
-            ]);
-
-        if ($post['deleted_at'])
+        if ($post['user_id'] == $post['state'])
         {
+            DB::table('posts')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => null
+                ]);
+
             $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
             $postTrendingService->create($id);
 
             $this->migrateSearchIndex('C', $id, false);
-        }
 
-        Redis::DEL($this->itemCacheKey($id));
+            Redis::DEL($this->itemCacheKey($id));
+        }
+        else
+        {
+            DB::table('posts')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0
+                ]);
+        }
     }
 
     public function itemCacheKey($id)

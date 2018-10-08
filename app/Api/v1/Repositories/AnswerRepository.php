@@ -9,6 +9,7 @@
 namespace App\Api\V1\Repositories;
 
 
+use App\Api\V1\Services\Counter\QuestionAnswerCounter;
 use App\Api\V1\Services\Toggle\Question\AnswerRewardService;
 use App\Api\V1\Services\Trending\AnswerTrendingService;
 use App\Api\V1\Services\Trending\QuestionTrendingService;
@@ -44,6 +45,7 @@ class AnswerRepository extends Repository
 
             $answer = $answer->toArray();
             $answer['content'] = $this->formatJsonContent($answer['content']);
+            $answer['is_creator'] = !$answer['source_url'];
 
             return $answer;
         });
@@ -82,6 +84,9 @@ class AnswerRepository extends Repository
             $questionTrendingService = new QuestionTrendingService($question['tag_ids']);
             $questionTrendingService->update($questionId);
 
+            $questionAnswerCounter = new QuestionAnswerCounter();
+            $questionAnswerCounter->add($questionId);
+
             DB::table('questions')
                 ->where('id', $questionId)
                 ->update([
@@ -95,9 +100,6 @@ class AnswerRepository extends Repository
                 $id
             ));
             dispatch($job);
-
-            $userLevel = new UserLevel();
-            $userLevel->change($answer['user_id'], 4);
 
             $baiduPush = new BaiduPush();
             $baiduPush->trending('question');
@@ -124,8 +126,9 @@ class AnswerRepository extends Repository
 
         if ($state === 0 || $answer['created_at'] !== $answer['updated_at'])
         {
-            $userLevel = new UserLevel();
-            $userLevel->change($answer['user_id'], -4);
+
+            $questionAnswerCounter = new QuestionAnswerCounter();
+            $questionAnswerCounter->add($answer['question_id'], -1);
 
             $job = (new \App\Jobs\Search\Index('D', 'answer', $id));
             dispatch($job);
@@ -135,25 +138,38 @@ class AnswerRepository extends Repository
         $answerRewardService->cancel($id);
 
         Redis::DEL($this->itemCacheKey($id));
+
+        $userLevel = new UserLevel();
+        $exp = $userLevel->change($answer['user_id'], -4, $answer['intro']);
+
+        return $exp;
     }
 
     public function recoverProcess($id)
     {
         $answer = $this->item($id, true);
 
-        DB::table('question_answers')
-            ->where('id', $id)
-            ->update([
-                'state' => 0,
-                'deleted_at' => null
-            ]);
-
-        if ($answer['deleted_at'])
+        if ($answer['user_id'] == $answer['state'])
         {
-            $this->migrateSearchIndex('C', $id, false);
-        }
+            DB::table('question_answers')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => null
+                ]);
 
-        Redis::DEL($this->itemCacheKey($id));
+            $this->migrateSearchIndex('C', $id, false);
+
+            Redis::DEL($this->itemCacheKey($id));
+        }
+        else
+        {
+            DB::table('question_answers')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0
+                ]);
+        }
     }
 
     public function migrateSearchIndex($type, $id, $async = true)

@@ -140,9 +140,11 @@ class CommentController extends Controller
                 ]
             ];
         }
+
+        $content = $request->get('content');
         $saveContent[] = [
             'type' => 'txt',
-            'data' => $repository->formatRichContent($request->get('content'))
+            'data' => $repository->formatRichContent($content)
         ];
 
         $newComment = $commentService->create([
@@ -186,13 +188,18 @@ class CommentController extends Controller
         $totalCommentCount = new TotalCommentCount();
         $totalCommentCount->add();
 
-        if ($parent['user_id'] != $userId)
+        $exp = 0;
+        if (!isset($parent['user_id']) || $parent['user_id'] != $userId)
         {
             $userLevel = new UserLevel();
-            $userLevel->change($userId, 2);
+            $exp = $userLevel->change($userId, 2, $content);
         }
 
-        return $this->resCreated($newComment);
+        return $this->resCreated([
+            'data' => $newComment,
+            'exp' => $exp,
+            'message' => $exp ? "评论成功，经验+{$exp}" : "评论成功"
+        ]);
     }
 
     /**
@@ -434,13 +441,18 @@ class CommentController extends Controller
         $totalCommentCount = new TotalCommentCount();
         $totalCommentCount->add();
 
+        $exp = 0;
         if ($userId !== $targetUserId)
         {
             $userLevel = new UserLevel();
-            $userLevel->change($userId, 1);
+            $exp = $userLevel->change($userId, 1, $content);
         }
 
-        return $this->resCreated($newComment);
+        return $this->resCreated([
+            'data' => $newComment,
+            'exp' => $exp,
+            'message' => $exp ? "回复成功，经验+{$exp}" : "回复成功"
+        ]);
     }
 
     /**
@@ -520,13 +532,17 @@ class CommentController extends Controller
         ));
         dispatch($job);
 
+        $exp = 0;
         if (!$isMaster)
         {
             $userLevel = new UserLevel();
-            $userLevel->change($comment['from_user_id'], -2);
+            $exp = $userLevel->change($comment['from_user_id'], -2, $comment['content']);
         }
 
-        return $this->resNoContent();
+        return $this->resOK([
+            'exp' => $exp,
+            'message' => $exp ? "删除成功，经验{$exp}" : "删除成功"
+        ]);
     }
 
     /**
@@ -750,13 +766,17 @@ class CommentController extends Controller
         ));
         dispatch($job);
 
+        $exp = 0;
         if ($comment['to_user_id'] != 0)
         {
             $userLevel = new UserLevel();
-            $userLevel->change($comment['from_user_id'], -1);
+            $exp = $userLevel->change($comment['from_user_id'], -1, $comment['content']);
         }
 
-        return $this->resNoContent();
+        return $this->resOK([
+            'exp' => $exp,
+            'message' => $exp ? "删除成功，经验{$exp}" : '删除成功'
+        ]);
     }
 
     // 后台待审的评论

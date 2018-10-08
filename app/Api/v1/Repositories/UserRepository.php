@@ -264,6 +264,11 @@ class UserRepository extends Repository
                 if ($item['from_user_id'])
                 {
                     $user = $this->item($item['from_user_id']);
+                    if (is_null($user))
+                    {
+                        return null;
+                    }
+
                     $template = str_replace('${user}', '<a class="user" href="/user/'. $user['zone'] .'">' . $user['nickname'] . '</a>', $template);
 
                     $notification['user'] = [
@@ -273,10 +278,16 @@ class UserRepository extends Repository
                         'nickname' => $user['nickname']
                     ];
                 }
+
                 if ($item['model_id'])
                 {
                     $repository = $notificationPresenter->computeNotificationRepository($type);
                     $model = $repository->item($item['model_id']);
+                    if (is_null($model))
+                    {
+                        return null;
+                    }
+
                     $model = $notificationPresenter->convertModel($model, $type);
                     $title = $notificationPresenter->computeNotificationMessageTitle($model);
                     $template = str_replace('${title}', '<a class="title" href="'. $link .'">' . $title . '</a>', $template);
@@ -292,6 +303,7 @@ class UserRepository extends Repository
 
                 return $notification;
             }, 'm');
+
             if ($notify)
             {
                 $result[] = $notify;
@@ -300,7 +312,7 @@ class UserRepository extends Repository
 
         return [
             'list' => $result,
-            'noMore' => $idsObj['noMore'],
+            'noMore' => empty($result) ? true : $idsObj['noMore'],
             'total' => $idsObj['total']
         ];
     }

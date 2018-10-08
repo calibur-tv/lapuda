@@ -30,7 +30,7 @@ class QuestionRepository extends Repository
 {
     public function create(Array $params)
     {
-        $text = Purifier::clean($params['text']);
+        $text = $params['text'];
 
         $content = [
             'text' => $this->formatRichContent($text),
@@ -197,9 +197,6 @@ class QuestionRepository extends Repository
             $baiduPush->bangumi($bangumiId, 'qaq');
         }
 
-        $userLevel = new UserLevel();
-        $userLevel->change($question['user_id'], 3);
-
         $this->migrateSearchIndex('C', $id, false);
     }
 
@@ -226,34 +223,44 @@ class QuestionRepository extends Repository
 
             $job = (new \App\Jobs\Search\Index('D', 'post', $id));
             dispatch($job);
-
-            $userLevel = new UserLevel();
-            $userLevel->change($question['user_id'], -3);
         }
 
+        $userLevel = new UserLevel();
+        $exp = $userLevel->change($question['user_id'], -3, $question['intro']);
+
         Redis::DEL($this->itemCacheKey($id));
+
+        return $exp;
     }
 
     public function recoverProcess($id)
     {
         $question = $this->item($id, true);
 
-        DB::table('questions')
-            ->where('id', $id)
-            ->update([
-                'state' => 0,
-                'deleted_at' => null
-            ]);
-
-        if ($question['deleted_at'])
+        if ($question['user_id'] == $question['state'])
         {
+            DB::table('questions')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => null
+                ]);
+
             $questionTrendingService = new QuestionTrendingService($question['tag_ids'], $question['user_id']);
             $questionTrendingService->create($id);
 
             $this->migrateSearchIndex('C', $id, false);
-        }
 
-        Redis::DEL($this->itemCacheKey($id));
+            Redis::DEL($this->itemCacheKey($id));
+        }
+        else
+        {
+            DB::table('questions')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0
+                ]);
+        }
     }
 
     public function migrateSearchIndex($type, $id, $async = true)
