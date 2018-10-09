@@ -10,6 +10,8 @@ namespace App\Api\V1\Repositories;
 
 
 use App\Api\V1\Services\Counter\QuestionAnswerCounter;
+use App\Api\V1\Services\Toggle\Question\AnswerLikeService;
+use App\Api\V1\Services\Toggle\Question\AnswerMarkService;
 use App\Api\V1\Services\Toggle\Question\AnswerRewardService;
 use App\Api\V1\Services\Trending\AnswerTrendingService;
 use App\Api\V1\Services\Trending\QuestionTrendingService;
@@ -124,6 +126,8 @@ class AnswerRepository extends Repository
                 'deleted_at' => Carbon::now()
             ]);
 
+        Redis::DEL($this->itemCacheKey($id));
+
         if ($state === 0 || $answer['created_at'] !== $answer['updated_at'])
         {
 
@@ -137,10 +141,26 @@ class AnswerRepository extends Repository
         $answerRewardService = new AnswerRewardService();
         $answerRewardService->cancel($id);
 
-        Redis::DEL($this->itemCacheKey($id));
-
         $userLevel = new UserLevel();
         $exp = $userLevel->change($answer['user_id'], -4, $answer['intro']);
+        if ($answer['is_creator'])
+        {
+            $total = $answerRewardService->total($id);
+            $cancelEXP1 = $total * -3;
+            $exp += $cancelEXP1;
+        }
+        else
+        {
+            $answerLikeService = new AnswerLikeService();
+            $total = $answerLikeService->total($id);
+            $cancelEXP1 = $total * -2;
+            $exp += $cancelEXP1;
+        }
+        $answerMarkService = new AnswerMarkService();
+        $total = $answerMarkService->total($id);
+        $cancelEXP2 = $total * -2;
+        $exp += $cancelEXP2;
+        $userLevel->change($answer['user_id'], $cancelEXP1 + $cancelEXP2, false);
 
         return $exp;
     }
