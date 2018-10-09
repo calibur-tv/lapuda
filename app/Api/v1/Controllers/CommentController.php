@@ -883,6 +883,10 @@ class CommentController extends Controller
         {
             return new CartoonRoleCommentService();
         }
+        else if ($type === 'cartoon_role')
+        {
+            return new CartoonRoleCommentService();
+        }
         else
         {
             return null;
