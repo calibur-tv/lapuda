@@ -39,6 +39,11 @@ class CreateSubComment implements ShouldQueue
     {
         $service = new CommentService($this->model);
         $comment = $service->getSubCommentItem($this->id);
+
+        // 全量评论进审核
+        $service->changeCommentState($this->id, $comment['from_user_id']);
+        return;
+
         $content = $comment['content'];
 
         $filter = new WordsFilter();

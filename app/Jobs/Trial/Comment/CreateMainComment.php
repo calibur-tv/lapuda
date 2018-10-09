@@ -41,6 +41,10 @@ class CreateMainComment implements ShouldQueue
         $service = new CommentService($this->modal);
         $comment = $service->getMainCommentItem($this->id);
 
+        // 全量评论进审核
+        $service->changeCommentState($this->id, $comment['from_user_id']);
+        return;
+
         $content = $comment['content'];
         $images = $comment['images'];
 
