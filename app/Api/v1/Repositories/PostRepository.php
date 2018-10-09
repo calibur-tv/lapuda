@@ -10,6 +10,8 @@ namespace App\Api\V1\Repositories;
 
 
 use App\Api\V1\Services\Comment\PostCommentService;
+use App\Api\V1\Services\Toggle\Post\PostLikeService;
+use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Services\Toggle\Post\PostRewardService;
 use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Services\UserLevel;
@@ -159,6 +161,7 @@ class PostRepository extends Repository
     public function deleteProcess($id, $state = 0)
     {
         $post = $this->item($id, true);
+        $userId = $post['user_id'];
 
         DB::table('posts')
             ->where('id', $id)
@@ -169,20 +172,38 @@ class PostRepository extends Repository
 
         if ($state === 0 || $post['created_at'] !== $post['updated_at'])
         {
-            $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
+            $postTrendingService = new PostTrendingService($post['bangumi_id'], $userId);
             $postTrendingService->delete($id);
 
             $job = (new \App\Jobs\Search\Index('D', 'post', $id));
             dispatch($job);
         }
 
+        Redis::DEL($this->itemCacheKey($id));
+
         $postRewardService = new PostRewardService();
         $postRewardService->cancel($id);
 
-        Redis::DEL($this->itemCacheKey($id));
-
         $userLevel = new UserLevel();
-        $exp = $userLevel->change($post['user_id'], -4, $post['desc']);
+        $exp = $userLevel->change($userId, -4, $post['desc']);
+        if ($post['is_creator'])
+        {
+            $total = $postRewardService->total($id);
+            $cancelEXP1 = $total * -3;
+            $exp += $cancelEXP1;
+        }
+        else
+        {
+            $postLikeService = new PostLikeService();
+            $total = $postLikeService->total($id);
+            $cancelEXP1 = $total * -2;
+            $exp += $cancelEXP1;
+        }
+        $postMarkService = new PostMarkService();
+        $total = $postMarkService->total($id);
+        $cancelEXP2 = $total * -2;
+        $exp += $cancelEXP2;
+        $userLevel->change($userId, $cancelEXP1 + $cancelEXP2, false);
 
         return $exp;
     }

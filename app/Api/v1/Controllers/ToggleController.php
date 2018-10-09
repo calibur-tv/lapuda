@@ -34,6 +34,7 @@ use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
 use App\Api\V1\Services\Toggle\Score\ScoreRewardService;
 use App\Api\V1\Services\Toggle\Video\VideoMarkService;
 use App\Api\V1\Services\Toggle\Video\VideoRewardService;
+use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Services\Vote\AnswerVoteService;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -272,6 +273,7 @@ class ToggleController extends Controller
         }
 
         $result = $likeService->toggle($userId, $id);
+        $userLevel = new UserLevel();
         if ($result)
         {
             $job = (new \App\Jobs\Notification\Create(
@@ -281,6 +283,8 @@ class ToggleController extends Controller
                 $item['id']
             ));
             dispatch($job);
+
+            $userLevel->change($item['user_id'], 2, false);
         }
         else
         {
@@ -291,6 +295,8 @@ class ToggleController extends Controller
                 $item['id']
             ));
             dispatch($job);
+
+            $userLevel->change($item['user_id'], -2, false);
         }
 
         return $this->resCreated((boolean)$result);
@@ -346,6 +352,7 @@ class ToggleController extends Controller
         }
 
         $result = $markService->toggle($userId, $id);
+        $userLevel = new UserLevel();
         if ($result)
         {
             $job = (new \App\Jobs\Notification\Create(
@@ -355,6 +362,8 @@ class ToggleController extends Controller
                 $item['id']
             ));
             dispatch($job);
+
+            $userLevel->change($item['user_id'], 2, false);
         }
         else
         {
@@ -365,6 +374,8 @@ class ToggleController extends Controller
                 $item['id']
             ));
             dispatch($job);
+
+            $userLevel->change($item['user_id'], -2, false);
         }
 
         return $this->resCreated((boolean)$result);
@@ -451,6 +462,7 @@ class ToggleController extends Controller
         }
 
         $rewardId = $rewardService->toggle($userId, $id);
+        $userLevel = new UserLevel();
         if ($rewardId)
         {
             $job = (new \App\Jobs\Notification\Create(
@@ -467,6 +479,8 @@ class ToggleController extends Controller
                 isset($item['bangumi_id']) ? $item['bangumi_id'] : $item['question_id']
             ));
             dispatch($job);
+
+            $userLevel->change($item['user_id'], 3, false);
         }
         else
         {
@@ -477,6 +491,8 @@ class ToggleController extends Controller
                 $item['id']
             ));
             dispatch($job);
+
+            $userLevel->change($item['user_id'], -3, false);
         }
 
         return $this->resCreated((boolean)$rewardId);
@@ -516,18 +532,19 @@ class ToggleController extends Controller
         }
 
         $answerRepisotry = new AnswerRepository();
-        $anwer = $answerRepisotry->item($id);
-        if (is_null($anwer))
+        $answer = $answerRepisotry->item($id);
+        if (is_null($answer))
         {
             return $this->resErrNotFound();
         }
 
-        if ($anwer['user_id'] === $userId)
+        if ($answer['user_id'] === $userId)
         {
             return $this->resErrRole($isAgree ? '不能给自己点赞' : '不能给自己点反对');
         }
 
         $answerVoteService = new AnswerVoteService();
+        $userLevel = new UserLevel();
         if ($isAgree)
         {
             $result = $answerVoteService->toggleLike($userId, $id);
@@ -535,11 +552,12 @@ class ToggleController extends Controller
             {
                 $job = (new \App\Jobs\Notification\Create(
                     'answer-vote',
-                    $anwer['user_id'],
+                    $answer['user_id'],
                     $userId,
-                    $anwer['id']
+                    $answer['id']
                 ));
                 dispatch($job);
+                $userLevel->change($answer['user_id'], 1, false);
             }
         }
         else
@@ -551,11 +569,12 @@ class ToggleController extends Controller
         {
             $job = (new \App\Jobs\Notification\Delete(
                 'answer-vote',
-                $anwer['user_id'],
+                $answer['user_id'],
                 $userId,
-                $anwer['id']
+                $answer['id']
             ));
             dispatch($job);
+            $userLevel->change($answer['user_id'], -1, false);
         }
 
         $total = $answerVoteService->getVoteCount($id);

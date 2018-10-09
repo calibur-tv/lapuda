@@ -9,7 +9,6 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
-use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Counter\ScoreViewCounter;
@@ -17,7 +16,7 @@ use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
 use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
 use App\Api\V1\Services\Toggle\Score\ScoreRewardService;
-use App\Api\V1\Services\Trending\ScoreTrendingService;
+use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\ScoreTransformer;
 use App\Models\Score;

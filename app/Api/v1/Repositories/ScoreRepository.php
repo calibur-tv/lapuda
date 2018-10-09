@@ -11,6 +11,8 @@ namespace App\Api\V1\Repositories;
 
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
+use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
+use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
 use App\Api\V1\Services\Toggle\Score\ScoreRewardService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
 use App\Api\V1\Services\UserLevel;
@@ -230,6 +232,7 @@ class ScoreRepository extends Repository
     public function deleteProcess($id, $state = 0)
     {
         $score = $this->item($id, true);
+        $userId = $score['user_id'];
 
         DB::table('scores')
             ->where('id', $id)
@@ -238,12 +241,14 @@ class ScoreRepository extends Repository
                 'deleted_at' => Carbon::now()
             ]);
 
+        Redis::DEL($this->itemCacheKey($id));
+
         if ($state === 0 || $score['created_at'] !== $score['updated_at'])
         {
             $bangumiScoreService = new BangumiScoreService();
             $bangumiScoreService->undo($score['user_id'], $score['bangumi_id']);
 
-            $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
+            $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $userId);
             $scoreTrendingService->delete($id);
 
             $job = (new \App\Jobs\Search\Index('D', 'score', $id));
@@ -253,10 +258,26 @@ class ScoreRepository extends Repository
         $scoreRewardService = new ScoreRewardService();
         $scoreRewardService->cancel($id);
 
-        Redis::DEL($this->itemCacheKey($id));
-
         $userLevel = new UserLevel();
         $exp = $userLevel->change($score['user_id'], -5, $score['intro']);
+        if ($score['is_creator'])
+        {
+            $total = $scoreRewardService->total($id);
+            $cancelEXP1 = $total * -3;
+            $exp += $cancelEXP1;
+        }
+        else
+        {
+            $scoreLikeService = new ScoreLikeService();
+            $total = $scoreLikeService->total($id);
+            $cancelEXP1 = $total * -2;
+            $exp += $cancelEXP1;
+        }
+        $scoreMarkService = new ScoreMarkService();
+        $total = $scoreMarkService->total($id);
+        $cancelEXP2 = $total * -2;
+        $exp += $cancelEXP2;
+        $userLevel->change($userId, $cancelEXP1 + $cancelEXP2, false);
 
         return $exp;
     }

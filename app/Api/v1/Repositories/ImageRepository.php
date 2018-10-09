@@ -9,6 +9,8 @@
 namespace App\Api\V1\Repositories;
 
 use App\Api\V1\Services\Counter\Stats\TotalImageCount;
+use App\Api\V1\Services\Toggle\Image\ImageLikeService;
+use App\Api\V1\Services\Toggle\Image\ImageMarkService;
 use App\Api\V1\Services\Toggle\Image\ImageRewardService;
 use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Services\UserLevel;
@@ -299,6 +301,7 @@ class ImageRepository extends Repository
     public function deleteProcess($id, $state = 0)
     {
         $image = $this->item($id, true);
+        $userId = $image['user_id'];
 
         DB::table('images')
             ->where('id', $id)
@@ -309,12 +312,14 @@ class ImageRepository extends Repository
 
         if ($state === 0 || $image['created_at'] !== $image['updated_at'])
         {
-            $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
+            $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $userId);
             $imageTrendingService->delete($id);
 
             $job = (new \App\Jobs\Search\Index('D', 'image', $id));
             dispatch($job);
         }
+
+        Redis::DEL($this->itemCacheKey($id));
 
         if ($image['is_album'])
         {
@@ -329,13 +334,29 @@ class ImageRepository extends Repository
             $totalImageCount->add(-count(explode(',', $image['image_ids'])));
         }
 
-        $userLevel = new UserLevel();
-        $exp = $userLevel->change($image['user_id'], -3, false);
-
         $imageRewardService = new ImageRewardService();
         $imageRewardService->cancel($id);
 
-        Redis::DEL($this->itemCacheKey($id));
+        $userLevel = new UserLevel();
+        $exp = $userLevel->change($image['user_id'], -3, false);
+        if ($image['is_creator'])
+        {
+            $total = $imageRewardService->total($id);
+            $cancelEXP1 = $total * -3;
+            $exp += $cancelEXP1;
+        }
+        else
+        {
+            $imageLikeService = new ImageLikeService();
+            $total = $imageLikeService->total($id);
+            $cancelEXP1 = $total * -2;
+            $exp += $cancelEXP1;
+        }
+        $imageMarkService = new ImageMarkService();
+        $total = $imageMarkService->total($id);
+        $cancelEXP2 = $total * -2;
+        $exp += $cancelEXP2;
+        $userLevel->change($userId, $cancelEXP1 + $cancelEXP2, false);
 
         return $exp;
     }
