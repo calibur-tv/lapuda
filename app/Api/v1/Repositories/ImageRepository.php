@@ -91,11 +91,13 @@ class ImageRepository extends Repository
         return $newId;
     }
 
-    public function uptoken()
+    public function uptoken($userId)
     {
+        $now = time();
         $auth = new \App\Services\Qiniu\Auth();
         $timeout = 3600;
         $uptoken = $auth->uploadToken(null, $timeout, [
+            'endUser' => "{$userId}/{$now}",
             'returnBody' => '{
                 "code": 0,
                 "data": {
@@ -103,7 +105,7 @@ class ImageRepository extends Repository
                     "width": $(imageInfo.width),
                     "type": "$(mimeType)",
                     "size": $(fsize),
-                    "url": "$(key)"
+                    "url": "$(endUser)/$(key)"
                 }
             }',
             'mimeLimit' => 'image/jpeg;image/png;image/jpg;image/gif'
@@ -111,7 +113,7 @@ class ImageRepository extends Repository
 
         return [
             'upToken' => $uptoken,
-            'expiredAt' => time() + $timeout
+            'expiredAt' => $now + $timeout
         ];
     }
 

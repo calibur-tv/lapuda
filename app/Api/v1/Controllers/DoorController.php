@@ -349,7 +349,7 @@ class DoorController extends Controller
         $userRepository = new UserRepository();
         $userLevel = new UserLevel();
 
-        $user['uptoken'] = $imageRepository->uptoken();
+        $user['uptoken'] = $imageRepository->uptoken($userId);
         $user['daySign'] = $userRepository->daySigned($userId);
         $user['notification'] = $userRepository->getNotificationCount($userId);
         $user['coin_from_sign'] = $userRepository->userSignCoin($userId);

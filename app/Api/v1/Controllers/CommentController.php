@@ -847,9 +847,16 @@ class CommentController extends Controller
                 'deleted_at' => $now
             ]);
 
+        $userLevel = new UserLevel();
         if ($comment->parent_id == 0)
         {
             Redis::DEL($type . '_comments_' . $comment->modal_id . '_main_comment_ids');
+            $userLevel->change($comment->user_id, -2, false);
+        }
+        else
+        {
+            Redis::DEL($type . '_comments_' . $comment->parent_id . '_sub_comment_ids');
+            $userLevel->change($comment->user_id, -1, false);
         }
 
         return $this->resNoContent();
@@ -865,7 +872,9 @@ class CommentController extends Controller
             $type = 'cartoon_role';
         }
 
-        DB::table($type . '_comments')->where('id', $id)
+        DB
+            ::table($type . '_comments')
+            ->where('id', $id)
             ->update([
                 'state' => 0,
                 'deleted_at' => null
