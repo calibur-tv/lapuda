@@ -97,7 +97,7 @@ class ImageRepository extends Repository
         $auth = new \App\Services\Qiniu\Auth();
         $timeout = 3600;
         $uptoken = $auth->uploadToken(null, $timeout, [
-            'endUser' => "{$userId}/{$now}",
+            'endUser' => "{$userId}",
             'returnBody' => '{
                 "code": 0,
                 "data": {
