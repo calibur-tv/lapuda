@@ -103,7 +103,16 @@ class QuestionController extends Controller
             }
         }
 
-        $userId = $this->getAuthUserId();
+        $user = $this->getAuthUser();
+        $userId = $user->id;
+
+        $userLevel = new UserLevel();
+        $level = $userLevel->computeExpObject($user->exp);
+        if ($level < 3)
+        {
+            return $this->resErrRole("至少3级才能提问");
+        }
+
         $content = Purifier::clean($request->get('content'));
         $questionRepository = new QuestionRepository();
         $newId = $questionRepository->create([
@@ -114,7 +123,6 @@ class QuestionController extends Controller
             'user_id' => $userId
         ]);
 
-        $userLevel = new UserLevel();
         $exp = $userLevel->change($userId, 3, $content);
 
         return $this->resCreated([

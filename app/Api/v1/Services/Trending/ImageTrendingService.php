@@ -69,7 +69,7 @@ class ImageTrendingService extends TrendingService
                 ['is_cartoon', 0]
             ])
             ->orderBy('updated_at', 'desc')
-            ->take(100)
+            ->take(300)
             ->pluck('updated_at', 'id');
     }
 
