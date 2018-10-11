@@ -860,7 +860,7 @@ class CommentController extends Controller
             $commentService->deleteMainComment(
                 $id,
                 $comment['modal_id'],
-                $comment['user_id'],
+                $comment['from_user_id'],
                 true
             );
             $userLevel->change($comment->user_id, -2, false);
