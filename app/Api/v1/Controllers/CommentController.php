@@ -863,7 +863,7 @@ class CommentController extends Controller
                 $comment['from_user_id'],
                 true
             );
-            $userLevel->change($comment->user_id, -2, false);
+            $userLevel->change($comment['from_user_id'], -2, false);
         }
         else
         {
@@ -875,7 +875,7 @@ class CommentController extends Controller
             }
             $commentService->deleteSubComment($id, $comment['parent_id']);
 
-            $userLevel->change($comment->user_id, -1, false);
+            $userLevel->change($comment['from_user_id'], -1, false);
         }
 
         return $this->resNoContent();
