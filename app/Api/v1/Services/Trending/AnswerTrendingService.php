@@ -144,6 +144,6 @@ class AnswerTrendingService extends TrendingService
         }
 
         $questionTransformer = new QuestionTransformer();
-        return $questionTransformer->trendingFlow($list);
+        return $questionTransformer->answerFlow($list);
     }
 }
