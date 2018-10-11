@@ -122,7 +122,7 @@ class CallbackController extends Controller
                 'width' => (int)$params['width'],
                 'size' => (int)$params['size'],
                 'type' => $params['type'],
-                'url' => "{$params['uid']}/{$today}/{$params['key']}"
+                'url' => "user/{$params['uid']}/{$today}/{$params['key']}"
             ]
         ], 200);
     }
