@@ -108,6 +108,9 @@ class ImageRepository extends Repository
                     "url": "$(key)"
                 }
             }',
+//            'callbackUrl' => 'https://api.calibur.tv/callback/qiniu/uploadimage',
+//            'callbackBodyType' => 'application/json',
+//            'callbackBody' => '{"key":"$(key)","hash":"$(etag)","width":"$(imageInfo.width)","height":"$(imageInfo.height)"}',
             'mimeLimit' => 'image/jpeg;image/png;image/jpg;image/gif'
         ]);
 
