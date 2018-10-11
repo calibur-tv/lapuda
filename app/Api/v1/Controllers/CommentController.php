@@ -848,14 +848,33 @@ class CommentController extends Controller
             ]);
 
         $userLevel = new UserLevel();
+        $commentService = $this->getCommentServiceByType($type);
         if ($comment->parent_id == 0)
         {
-            Redis::DEL($type . '_comments_' . $comment->modal_id . '_main_comment_ids');
+            // 主评论
+            $comment = $commentService->getMainCommentItem($id);
+            if (is_null($comment))
+            {
+                return $this->resNoContent();
+            }
+            $commentService->deleteMainComment(
+                $id,
+                $comment['modal_id'],
+                $comment['user_id'],
+                true
+            );
             $userLevel->change($comment->user_id, -2, false);
         }
         else
         {
-            Redis::DEL($type . '_comments_' . $comment->parent_id . '_sub_comment_ids');
+            // 子评论
+            $comment = $commentService->getSubCommentItem($id);
+            if (is_null($comment))
+            {
+                return $this->resNoContent();
+            }
+            $commentService->deleteSubComment($id, $comment['parent_id']);
+
             $userLevel->change($comment->user_id, -1, false);
         }
 

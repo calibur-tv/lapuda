@@ -490,6 +490,8 @@ class CommentService extends Repository
 
     protected function changeMainCommentCount($modalId, $commentId, $userId, $isMaster, $isCreate)
     {
+        // $isMaster 表示这个评论是博主发的
+        // $isCreate true 就是发表，false 就是删除
         if ($isCreate)
         {
             if ($this->order === 'ASC')
@@ -514,11 +516,8 @@ class CommentService extends Repository
         else
         {
             $this->ListRemove($this->mainCommentIdsKey($modalId), $commentId);
-            // 不是楼主删层主
-            if ($userId && !$isMaster)
-            {
-                $this->ListRemove($this->userCommentIdsKey($userId), $commentId);
-            }
+            $this->ListRemove($this->userCommentIdsKey($userId), $commentId);
+
             if ($isMaster && $this->author_sort)
             {
                 $this->ListRemove($this->authorMainCommentIdsKey($modalId), $commentId);
