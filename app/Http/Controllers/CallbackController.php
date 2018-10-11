@@ -113,6 +113,10 @@ class CallbackController extends Controller
 
     public function qiniuUploadImage(Request $request)
     {
-        return response()->json($request->all(), 200);
+        $params = $request->all();
+        return response()->json([
+            'code' => 0,
+            'data' => $params
+        ], 200);
     }
 }
