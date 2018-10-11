@@ -110,7 +110,7 @@ class ImageRepository extends Repository
             }',
 //            'callbackUrl' => 'https://api.calibur.tv/callback/qiniu/uploadimage',
 //            'callbackBodyType' => 'application/json',
-//            'callbackBody' => '{"key":"$(key)","uid": "$(endUser)","y":"$(year)","m":"$(mon)","d":"$(day)","type":"$(mimeType)","size":"$(fsize)","width":"$(imageInfo.width)","height":"$(imageInfo.height)"}',
+//            'callbackBody' => '{"key":"$(key)","uid": "$(endUser)","type":"$(mimeType)","size":"$(fsize)","width":"$(imageInfo.width)","height":"$(imageInfo.height)"}',
             'mimeLimit' => 'image/jpeg;image/png;image/jpg;image/gif'
         ]);
 
