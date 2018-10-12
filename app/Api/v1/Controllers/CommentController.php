@@ -902,6 +902,61 @@ class CommentController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台批量删某用户的评论
+    public function batchBan(Request $request)
+    {
+        $userId = $request->get('user_id');
+        $type = $request->get('type');
+        if ($type === 'role')
+        {
+            $type = 'cartoon_role';
+        }
+
+        $commentIds = DB
+            ::table($type . '_comments')
+            ->where('user_id', $userId)
+            ->select('id', 'parent_id')
+            ->whereNull('deleted_at')
+            ->get()
+            ->toArray();
+
+        $userLevel = new UserLevel();
+        $commentService = $this->getCommentServiceByType($type);
+        foreach ($commentIds as $comment)
+        {
+            $id = $comment->id;
+            if ($comment->parent_id == 0)
+            {
+                // 主评论
+                $comment = $commentService->getMainCommentItem($id);
+                if (is_null($comment))
+                {
+                    return $this->resNoContent();
+                }
+                $commentService->deleteMainComment(
+                    $id,
+                    $comment['modal_id'],
+                    $comment['from_user_id'],
+                    true
+                );
+                $userLevel->change($comment['from_user_id'], -2, false);
+            }
+            else
+            {
+                // 子评论
+                $comment = $commentService->getSubCommentItem($id);
+                if (is_null($comment))
+                {
+                    return $this->resNoContent();
+                }
+                $commentService->deleteSubComment($id, $comment['parent_id']);
+
+                $userLevel->change($comment['from_user_id'], -1, false);
+            }
+        }
+        return $this->resNoContent();
+    }
+
     protected function getCommentServiceByType($type)
     {
         if ($type === 'post')

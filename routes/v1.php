@@ -499,6 +499,8 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/ban', 'App\Api\V1\Controllers\CommentController@ban');
 
                 $api->post('/pass', 'App\Api\V1\Controllers\CommentController@pass');
+
+                $api->post('/batch_ban', 'App\Api\V1\Controllers\CommentController@batchBan');
             });
 
             $api->group(['prefix' => '/bangumi'], function ($api)
