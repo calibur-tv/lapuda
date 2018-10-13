@@ -702,7 +702,7 @@ class CommentController extends Controller
      *
      * @Parameters({
      *      @Parameter("type", description="某种 type", type="string", required=true),
-     *      @Parameter("id", description="父评论 id", type="integer", required=true)
+     *      @Parameter("id", description="子评论 id", type="integer", required=true)
      * })
      *
      * @Transaction({

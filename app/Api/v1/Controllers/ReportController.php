@@ -83,7 +83,7 @@ class ReportController extends Controller
      *   role_comment,
      *   post_reply,
      *   image_reply,
-     *   score_reoly,
+     *   score_reply,
      *   video_reply,
      *   question_reply,
      *   answer_reply,
