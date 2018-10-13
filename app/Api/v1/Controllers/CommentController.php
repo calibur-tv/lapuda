@@ -702,7 +702,7 @@ class CommentController extends Controller
      *
      * @Parameters({
      *      @Parameter("type", description="某种 type", type="string", required=true),
-     *      @Parameter("id", description="父评论 id", type="integer", required=true)
+     *      @Parameter("id", description="子评论 id", type="integer", required=true)
      * })
      *
      * @Transaction({
@@ -792,6 +792,7 @@ class CommentController extends Controller
             $list = DB::table($modal . '_comments')
                 ->where('state', '<>', 0)
                 ->select('id', 'user_id', 'content', 'modal_id', 'parent_id')
+                ->take(15)
                 ->get();
 
             if (is_null($list))
@@ -846,9 +847,35 @@ class CommentController extends Controller
                 'deleted_at' => $now
             ]);
 
+        $userLevel = new UserLevel();
+        $commentService = $this->getCommentServiceByType($type);
         if ($comment->parent_id == 0)
         {
-            Redis::DEL($type . '_comments_' . $comment->modal_id . '_main_comment_ids');
+            // 主评论
+            $comment = $commentService->getMainCommentItem($id);
+            if (is_null($comment))
+            {
+                return $this->resNoContent();
+            }
+            $commentService->deleteMainComment(
+                $id,
+                $comment['modal_id'],
+                $comment['from_user_id'],
+                true
+            );
+            $userLevel->change($comment['from_user_id'], -2, false);
+        }
+        else
+        {
+            // 子评论
+            $comment = $commentService->getSubCommentItem($id);
+            if (is_null($comment))
+            {
+                return $this->resNoContent();
+            }
+            $commentService->deleteSubComment($id, $comment['parent_id']);
+
+            $userLevel->change($comment['from_user_id'], -1, false);
         }
 
         return $this->resNoContent();
@@ -864,12 +891,69 @@ class CommentController extends Controller
             $type = 'cartoon_role';
         }
 
-        DB::table($type . '_comments')->where('id', $id)
+        DB
+            ::table($type . '_comments')
+            ->where('id', $id)
             ->update([
                 'state' => 0,
                 'deleted_at' => null
             ]);
 
+        return $this->resNoContent();
+    }
+
+    // 后台批量删某用户的评论
+    public function batchBan(Request $request)
+    {
+        $userId = $request->get('user_id');
+        $type = $request->get('type');
+        if ($type === 'role')
+        {
+            $type = 'cartoon_role';
+        }
+
+        $commentIds = DB
+            ::table($type . '_comments')
+            ->where('user_id', $userId)
+            ->select('id', 'parent_id')
+            ->whereNull('deleted_at')
+            ->get()
+            ->toArray();
+
+        $userLevel = new UserLevel();
+        $commentService = $this->getCommentServiceByType($type);
+        foreach ($commentIds as $comment)
+        {
+            $id = $comment->id;
+            if ($comment->parent_id == 0)
+            {
+                // 主评论
+                $comment = $commentService->getMainCommentItem($id);
+                if (is_null($comment))
+                {
+                    return $this->resNoContent();
+                }
+                $commentService->deleteMainComment(
+                    $id,
+                    $comment['modal_id'],
+                    $comment['from_user_id'],
+                    true
+                );
+                $userLevel->change($comment['from_user_id'], -2, false);
+            }
+            else
+            {
+                // 子评论
+                $comment = $commentService->getSubCommentItem($id);
+                if (is_null($comment))
+                {
+                    return $this->resNoContent();
+                }
+                $commentService->deleteSubComment($id, $comment['parent_id']);
+
+                $userLevel->change($comment['from_user_id'], -1, false);
+            }
+        }
         return $this->resNoContent();
     }
 

@@ -46,9 +46,8 @@ class UserIpAddress
         return DB
             ::table('user_ip')
             ->where('ip_address', $ipAddress)
-            ->select('user_id', 'created_at', 'blocked', 'updated_at')
-            ->get()
-            ->toArray();
+            ->distinct()
+            ->pluck('user_id');
     }
 
     public function blockedList()

@@ -88,14 +88,22 @@ class UserLevel
                 return 0;
             }
         }
-        User::where('id', $userId)
-            ->increment('exp', $score);
 
-        if (Redis::EXISTS('user_' . $userId))
+        try
         {
-            Redis::HINCRBYFLOAT('user_' . $userId, 'exp', $score);
-        }
+            User::where('id', $userId)
+                ->increment('exp', $score);
 
-        return $score;
+            if (Redis::EXISTS('user_' . $userId))
+            {
+                Redis::HINCRBYFLOAT('user_' . $userId, 'exp', $score);
+            }
+
+            return $score;
+        }
+        catch (\Exception $e)
+        {
+            return 0;
+        }
     }
 }

@@ -11,6 +11,7 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\AnswerRepository;
 use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Services\Trending\AnswerTrendingService;
+use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\AnswerTransformer;
 use App\Models\Answer;
 use Carbon\Carbon;

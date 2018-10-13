@@ -333,6 +333,14 @@ class ScoreController extends Controller
 
         $user = $this->getAuthUser();
         $userId = $user->id;
+
+        $userLevel = new UserLevel();
+        $level = $userLevel->computeExpObject($user->exp);
+        if ($level < 3)
+        {
+            return $this->resErrRole("至少3级才能写漫评");
+        }
+
         $doPublished = $request->get('do_publish');
         $bangumiScoreService = new BangumiScoreService();
         if ($doPublished && $bangumiScoreService->check($userId, $bangumiId))
@@ -387,7 +395,7 @@ class ScoreController extends Controller
         {
             $scoreRepository->doPublish($userId, $newId, $bangumiId);;
         }
-        $userLevel = new UserLevel();
+
         $exp = $userLevel->change($userId, 5, $intro);
 
         return $this->resOK([

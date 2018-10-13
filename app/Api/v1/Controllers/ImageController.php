@@ -88,8 +88,9 @@ class ImageController extends Controller
     public function uptoken()
     {
         $repository = new ImageRepository();
+        $userId = $this->getAuthUserId();
 
-        return $this->resOK($repository->uptoken());
+        return $this->resOK($repository->uptoken($userId));
     }
 
 

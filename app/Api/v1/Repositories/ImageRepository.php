@@ -91,11 +91,13 @@ class ImageRepository extends Repository
         return $newId;
     }
 
-    public function uptoken()
+    public function uptoken($userId)
     {
+        $now = time();
         $auth = new \App\Services\Qiniu\Auth();
         $timeout = 3600;
         $uptoken = $auth->uploadToken(null, $timeout, [
+            'endUser' => "{$userId}",
             'returnBody' => '{
                 "code": 0,
                 "data": {
@@ -106,12 +108,15 @@ class ImageRepository extends Repository
                     "url": "$(key)"
                 }
             }',
+//            'callbackUrl' => 'https://api.calibur.tv/callback/qiniu/uploadimage',
+//            'callbackBodyType' => 'application/json',
+//            'callbackBody' => '{"key":"$(key)","uid": "$(endUser)","type":"$(mimeType)","size":"$(fsize)","width":"$(imageInfo.width)","height":"$(imageInfo.height)"}',
             'mimeLimit' => 'image/jpeg;image/png;image/jpg;image/gif'
         ]);
 
         return [
             'upToken' => $uptoken,
-            'expiredAt' => time() + $timeout
+            'expiredAt' => $now + $timeout
         ];
     }
 

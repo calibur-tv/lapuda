@@ -102,6 +102,33 @@ class QuestionTransformer extends Transformer
         });
     }
 
+    public function answerFlow($list)
+    {
+        return $this->collection($list, function ($item)
+        {
+            return array_merge(
+                $this->baseFlow($item['question']),
+                [
+                    'answer' => $item['answer'] ? $this->transformer($item['answer'], function ($answer)
+                    {
+                        $images = array_filter($answer['content'], function ($item)
+                        {
+                            return $item['type'] === 'img';
+                        });
+
+                        return [
+                            'id' => (int)$answer['id'],
+                            'intro' => $answer['intro'],
+                            'poster' => empty($images) ? null : current($images),
+                            'is_creator' => !(boolean)$answer['source_url'],
+                            'vote_count' => $answer['vote_count']
+                        ];
+                    }) : null
+                ]
+            );
+        });
+    }
+
     protected function baseFlow($item)
     {
         return $this->transformer($item, function ($item)

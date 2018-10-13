@@ -232,6 +232,7 @@ class AnswerRepository extends Repository
             $question = $questionRepository->item($item['question_id']);
             if (is_null($question))
             {
+                unset($list[$i]);
                 continue;
             }
             $item['vote_count'] = $answerVoteService->getVoteCount($item['id']);

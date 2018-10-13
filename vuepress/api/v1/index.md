@@ -2075,7 +2075,7 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
 
 + Parameters
     + type: (string, required) - 某种 type
-    + id: (integer, required) - 父评论 id
+    + id: (integer, required) - 子评论 id
 
 + Request (application/json)
     + Headers
@@ -2344,7 +2344,7 @@ type：like, follow, reward, mark，contributors
             }
 
 ## 收藏或取消收藏 [POST /toggle/mark]
-> 目前支持的 type：post、image、score、answer
+> 目前支持的 type：post、image、score、answer、video
 
 + Parameters
     + type: (string, required) - 要请求的类型
@@ -2485,7 +2485,7 @@ type：like, follow, reward, mark，contributors
   role_comment,
   post_reply,
   image_reply,
-  score_reoly,
+  score_reply,
   video_reply,
   question_reply,
   answer_reply,

@@ -866,6 +866,16 @@ class UserController extends Controller
                 $transaction['type'] = '支出';
                 $transaction['action'] = '删除回答';
             }
+            else if ($item->type == 13)
+            {
+                $transaction['type'] = '支出';
+                $transaction['action'] = '打赏视频';
+            }
+            else if ($item->type == 14)
+            {
+                $transaction['type'] = '支出';
+                $transaction['action'] = '删除视频';
+            }
 
             if ($transaction['type'] === '收入' && $item->from_user_id != 0 && $item->from_user_id != $userId)
             {

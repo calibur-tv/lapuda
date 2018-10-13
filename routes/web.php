@@ -7,5 +7,7 @@ Route::group(['prefix' => '/callback'], function ()
     Route::group(['prefix' => '/qiniu'], function ()
     {
         Route::post('/avthumb', 'CallbackController@qiniuAvthumb');
+
+        Route::post('/uploadimage', 'CallbackController@qiniuUploadImage');
     });
 });

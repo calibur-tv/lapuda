@@ -58,7 +58,7 @@ class PostTrendingService extends TrendingService
                     ->whereNull('top_at');
             })
             ->orderBy('updated_at', 'desc')
-            ->take(100)
+            ->take(300)
             ->pluck('updated_at', 'id');
     }
 

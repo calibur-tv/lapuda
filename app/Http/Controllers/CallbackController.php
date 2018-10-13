@@ -110,4 +110,20 @@ class CallbackController extends Controller
 
         return response('', 200);
     }
+
+    public function qiniuUploadImage(Request $request)
+    {
+        $params = $request->all();
+        $today = date("Y-m-d", time());
+        return response()->json([
+            'code' => 0,
+            'data' => [
+                'height' => (int)$params['height'],
+                'width' => (int)$params['width'],
+                'size' => (int)$params['size'],
+                'type' => $params['type'],
+                'url' => "user/{$params['uid']}/{$today}/{$params['key']}"
+            ]
+        ], 200);
+    }
 }
