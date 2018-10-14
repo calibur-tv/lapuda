@@ -122,6 +122,10 @@ class PostTrendingService extends TrendingService
     {
         $bangumiRepository = new BangumiRepository();
         $ids = $bangumiRepository->getTopPostIds($this->bangumiId);
+        if (!$ids)
+        {
+            return true;
+        }
 
         return !in_array($id, $ids);
     }
