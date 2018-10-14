@@ -146,13 +146,16 @@ class TrendingService extends Repository
             foreach ($this->bangumiId as $bid)
             {
                 $this->SortAdd($this->trendingIdsCacheKey('active', $bid), $id);
+                $this->SortAdd($this->trendingIdsCacheKey('hot', $bid), $id);
             }
         }
         else
         {
             $this->SortAdd($this->trendingIdsCacheKey('active', $this->bangumiId), $id);
+            $this->SortAdd($this->trendingIdsCacheKey('hot', $this->bangumiId), $id);
         }
         $this->SortAdd($this->trendingIdsCacheKey('active', 0), $id);
+        $this->SortAdd($this->trendingIdsCacheKey('hot', 0), $id);
     }
 
     public function delete($id)
