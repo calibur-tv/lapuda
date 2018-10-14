@@ -79,7 +79,7 @@ class TrendingService extends Repository
         $ids = $this->RedisList($this->trendingIdsCacheKey('news', $this->bangumiId), function ()
         {
             return $this->computeNewsIds();
-        }, $start = 0, $count = -1, $exp = 'm');
+        });
 
         return $this->filterIdsByMaxId($ids, $maxId, $take);
     }
@@ -90,7 +90,7 @@ class TrendingService extends Repository
         $ids = $this->RedisSort($this->trendingIdsCacheKey('active', $this->bangumiId), function ()
         {
             return $this->computeActiveIds();
-        }, true, false, 'm');
+        }, true);
 
         return $this->filterIdsBySeenIds($ids, $seenIds, $take);
     }
@@ -101,7 +101,7 @@ class TrendingService extends Repository
         $ids = $this->RedisSort($this->trendingIdsCacheKey('hot', $this->bangumiId), function ()
         {
             return $this->computeHotIds();
-        }, false, false, 'm');
+        });
 
         return $this->filterIdsBySeenIds($ids, $seenIds, $take);
     }

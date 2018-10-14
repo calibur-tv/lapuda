@@ -107,7 +107,7 @@ class AnswerTrendingService extends TrendingService
                     $voteCount +
                     ($likeCount * 2 + $markCount * 2 + $rewardCount * 3) +
                     ($commentCount && log($commentCount, M_E))
-                ) / pow((((time() * 2 - strtotime($item['created_at']) - strtotime($item['updated_at'])) / 2) + 1), 0.3);
+                ) / pow((((time() * 2 - strtotime($item['created_at']) - strtotime($item['updated_at'])) / 2) + 1), 0.1);
         }
 
         return $result;
