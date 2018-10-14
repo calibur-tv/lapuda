@@ -43,9 +43,7 @@ class RelationCounterService extends Repository
     {
         return (int)$this->RedisItem($this->cacheKey($id), function () use ($id)
         {
-           $count = $this->migration($id);
-
-           return $count ? $count : null;
+           return $this->migration($id);
         });
     }
 

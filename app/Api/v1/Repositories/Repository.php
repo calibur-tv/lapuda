@@ -35,7 +35,7 @@ class Repository
         return $result;
     }
 
-    public function RedisList($key, $func, $start = 0, $count = -1)
+    public function RedisList($key, $func, $start = 0, $count = -1, $exp = 'd')
     {
         $cache = Redis::LRANGE($key, $start, $count === -1 ? -1 : $count + $start - 1);
 
@@ -54,12 +54,12 @@ class Repository
 
         if (Redis::SETNX('lock_'.$key, 1))
         {
-            Redis::pipeline(function ($pipe) use ($key, $cache)
+            Redis::pipeline(function ($pipe) use ($key, $cache, $exp)
             {
                 $pipe->EXPIRE('lock_'.$key, 10);
                 $pipe->DEL($key);
                 $pipe->RPUSH($key, $cache);
-                $pipe->EXPIREAT($key, $this->expire());
+                $pipe->EXPIREAT($key, $this->expire($exp));
                 $pipe->DEL('lock_'.$key);
             });
         }
