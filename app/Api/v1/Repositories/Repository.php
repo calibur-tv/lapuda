@@ -329,9 +329,9 @@ class Repository
          * h：缓存一小时
          * m：缓存五分钟
          */
-        $day = strtotime(date('Y-m-d')) + 86400 + rand(3600, 10800);
-        $hour = strtotime(date('Y-m-d')) + 3600;
-        $minute = strtotime(date('Y-m-d')) + 300;
+        $day = time() + 86400 + rand(3600, 10800);
+        $hour = time() + 3600;
+        $minute = time() + 300;
 
         if ($type === 'd')
         {
