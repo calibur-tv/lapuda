@@ -74,7 +74,7 @@ class QuestionTrendingService extends TrendingService
                     ->where('tag.tag_id', $this->bangumiId);
             })
             ->whereNull('deleted_at')
-            ->where('created_at', '>', Carbon::now()->addDays(-100))
+            ->where('created_at', '>', Carbon::now()->addDays(-30))
             ->pluck('qaq.id');
 
         $questionRepository = new QuestionRepository();

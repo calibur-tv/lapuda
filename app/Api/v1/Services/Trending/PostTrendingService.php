@@ -66,7 +66,7 @@ class PostTrendingService extends TrendingService
     {
         $ids = Post
             ::where('state', 0)
-            ->where('created_at', '>', Carbon::now()->addDays(-100))
+            ->where('created_at', '>', Carbon::now()->addDays(-30))
             ->when($this->bangumiId, function ($query)
             {
                 return $query
