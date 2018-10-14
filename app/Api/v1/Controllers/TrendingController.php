@@ -131,10 +131,10 @@ class TrendingController extends Controller
 
         $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
 
-//        if ($sort === 'active')
-//        {
-//            return $this->resOK($trendingService->active($seen, $take));
-//        }
+        if ($sort === 'active')
+        {
+            return $this->resOK($trendingService->active($seen, $take));
+        }
 
         return $this->resOK($trendingService->hot($seen, $take));
     }
