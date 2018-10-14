@@ -66,7 +66,7 @@ class PostTrendingService extends TrendingService
     {
         $ids = Post
             ::where('state', 0)
-            ->where('created_at', '>', Carbon::now()->addDays(-30))
+            ->where('created_at', '>', Carbon::now()->addDays(-100))
             ->when($this->bangumiId, function ($query)
             {
                 return $query
@@ -78,6 +78,8 @@ class PostTrendingService extends TrendingService
         $postRepository = new PostRepository();
         $postLikeService = new PostLikeService();
         $postViewCounter = new PostViewCounter();
+        $postMarkService = new PostMarkService();
+        $postRewardService = new PostRewardService();
         $postCommentService = new PostCommentService();
 
         $list = $postRepository->list($ids);
@@ -93,12 +95,14 @@ class PostTrendingService extends TrendingService
 
             $postId = $item['id'];
             $likeCount = $postLikeService->total($postId);
+            $markCount = $postMarkService->total($postId);
+            $rewardCount = $postRewardService->total($postId);
             $viewCount = $postViewCounter->get($postId);
             $commentCount = $postCommentService->getCommentCount($postId);
 
             $result[$postId] = (
-                    $likeCount +
                     ($viewCount && log($viewCount, 10) * 4) +
+                    ($likeCount * 2 + $markCount * 2 + $rewardCount * 3) +
                     ($commentCount && log($commentCount, M_E))
                 ) / pow((((time() * 2 - strtotime($item['created_at']) - strtotime($item['updated_at'])) / 2) + 1), 0.3);
         }

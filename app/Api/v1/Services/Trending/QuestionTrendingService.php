@@ -20,6 +20,7 @@ use App\Api\V1\Services\Trending\Base\TrendingService;
 use App\Api\V1\Services\Vote\AnswerVoteService;
 use App\Api\V1\Transformers\QuestionTransformer;
 use App\Models\Question;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
@@ -59,6 +60,54 @@ class QuestionTrendingService extends TrendingService
                 ->whereNull('deleted_at')
                 ->orderBy('created_at', 'desc')
                 ->pluck('id');
+    }
+
+    public function computeHotIds()
+    {
+        $ids = DB
+            ::table('questions AS qaq')
+            ->where('qaq.state', 0)
+            ->when($this->bangumiId, function ($query)
+            {
+                return $query
+                    ->leftJoin('question_tag_relations AS tag', 'tag.model_id', '=', 'qaq.id')
+                    ->where('tag.tag_id', $this->bangumiId);
+            })
+            ->whereNull('deleted_at')
+            ->where('created_at', '>', Carbon::now()->addDays(-100))
+            ->pluck('qaq.id');
+
+        $questionRepository = new QuestionRepository();
+        $questionFollowCount = new QuestionFollowService();
+        $qaqAnswerCount = new QuestionAnswerCounter();
+        $questionViewCounter = new QuestionViewCounter();
+        $questionCommentService = new QuestionCommentService();
+
+        $list = $questionRepository->list($ids);
+
+        $result = [];
+        // https://segmentfault.com/a/1190000004253816
+        foreach ($list as $item)
+        {
+            if (is_null($item))
+            {
+                continue;
+            }
+
+            $questionId = $item['id'];
+            $followCount = $questionFollowCount->total($questionId);
+            $answerCount = $qaqAnswerCount->get($questionId);
+            $viewCount = $questionViewCounter->get($questionId);
+            $commentCount = $questionCommentService->getCommentCount($questionId);
+
+            $result[$questionId] = (
+                    ($viewCount && log($viewCount, 10) * 4) +
+                    ($followCount * 2 + $answerCount * 2) +
+                    ($commentCount && log($commentCount, M_E))
+                ) / pow((((time() * 2 - strtotime($item['created_at']) - strtotime($item['updated_at'])) / 2) + 1), 0.3);
+        }
+
+        return $result;
     }
 
     public function getListByIds($ids, $flowType)

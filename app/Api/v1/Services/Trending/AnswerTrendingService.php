@@ -18,9 +18,11 @@ use App\Api\V1\Services\Toggle\Question\AnswerMarkService;
 use App\Api\V1\Services\Toggle\Question\AnswerRewardService;
 use App\Api\V1\Services\Toggle\Question\QuestionFollowService;
 use App\Api\V1\Services\Trending\Base\TrendingService;
+use App\Api\V1\Services\Vote\AnswerVoteService;
 use App\Api\V1\Transformers\AnswerTransformer;
 use App\Api\V1\Transformers\QuestionTransformer;
 use App\Models\Answer;
+use Carbon\Carbon;
 
 class AnswerTrendingService extends TrendingService
 {
@@ -61,6 +63,54 @@ class AnswerTrendingService extends TrendingService
             ->take(100)
             ->whereNotNull('published_at')
             ->pluck('updated_at', 'id');
+    }
+
+    public function computeHotIds()
+    {
+        $ids = Answer
+            ::where('state', 0)
+            ->where('created_at', '>', Carbon::now()->addDays(-100))
+            ->when($this->bangumiId, function ($query)
+            {
+                return $query
+                    ->where('question_id', $this->bangumiId);
+            })
+            ->pluck('id');
+
+        $answerRepository = new AnswerRepository();
+        $answerLikeService = new AnswerLikeService();
+        $answerVoteCounter = new AnswerVoteService();
+        $answerMarkService = new AnswerMarkService();
+        $answerRewardService = new AnswerRewardService();
+        $answerCommentService = new AnswerCommentService();
+
+        $list = $answerRepository->list($ids);
+
+        $result = [];
+        // https://segmentfault.com/a/1190000004253816
+        foreach ($list as $item)
+        {
+            if (is_null($item))
+            {
+                continue;
+            }
+
+            $answerId = $item['id'];
+            $likeCount = $answerLikeService->total($answerId);
+            $markCount = $answerMarkService->total($answerId);
+            $rewardCount = $answerRewardService->total($answerId);
+            $voteCount = $answerVoteCounter->getVoteCount($answerId);
+            $commentCount = $answerCommentService->getCommentCount($answerId);
+
+            $result[$answerId] = (
+//                    ($voteCount && log($voteCount, 10) * 4) +
+                    $voteCount +
+                    ($likeCount * 2 + $markCount * 2 + $rewardCount * 3) +
+                    ($commentCount && log($commentCount, M_E))
+                ) / pow((((time() * 2 - strtotime($item['created_at']) - strtotime($item['updated_at'])) / 2) + 1), 0.3);
+        }
+
+        return $result;
     }
 
     public function computeUserIds()

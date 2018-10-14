@@ -77,7 +77,7 @@ class ImageTrendingService extends TrendingService
     {
         $ids = Image
             ::where('state', 0)
-            ->where('created_at', '>', Carbon::now()->addDays(-30))
+            ->where('created_at', '>', Carbon::now()->addDays(-100))
             ->when($this->bangumiId, function ($query)
             {
                 return $query->where('bangumi_id', $this->bangumiId);
@@ -95,6 +95,8 @@ class ImageTrendingService extends TrendingService
 
         $imageRepository = new ImageRepository();
         $imageLikeService = new ImageLikeService();
+        $imageMarkService = new ImageMarkService();
+        $imageRewardService = new ImageRewardService();
         $imageViewCounter = new ImageViewCounter();
         $imageCommentService = new ImageCommentService();
 
@@ -109,14 +111,16 @@ class ImageTrendingService extends TrendingService
                 continue;
             }
 
-            $postId = $item['id'];
-            $likeCount = $imageLikeService->total($postId);
-            $viewCount = $imageViewCounter->get($postId);
-            $commentCount = $imageCommentService->getCommentCount($postId);
+            $imageId = $item['id'];
+            $likeCount = $imageLikeService->total($imageId);
+            $markCount = $imageMarkService->total($imageId);
+            $rewardCount = $imageRewardService->total($imageId);
+            $viewCount = $imageViewCounter->get($imageId);
+            $commentCount = $imageCommentService->getCommentCount($imageId);
 
-            $result[$postId] = (
-                    $likeCount +
+            $result[$imageId] = (
                     ($viewCount && log($viewCount, 10) * 4) +
+                    ($likeCount * 2 + $markCount * 2 + $rewardCount * 3) +
                     ($commentCount && log($commentCount, M_E))
                 ) / pow((((time() * 2 - strtotime($item['created_at']) - strtotime($item['updated_at'])) / 2) + 1), 0.3);
         }

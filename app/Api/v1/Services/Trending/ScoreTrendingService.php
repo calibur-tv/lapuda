@@ -13,12 +13,14 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\ScoreCommentService;
+use App\Api\V1\Services\Counter\ScoreViewCounter;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
 use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
 use App\Api\V1\Services\Toggle\Score\ScoreRewardService;
 use App\Api\V1\Services\Trending\Base\TrendingService;
 use App\Api\V1\Transformers\ScoreTransformer;
 use App\Models\Score;
+use Carbon\Carbon;
 
 class ScoreTrendingService extends TrendingService
 {
@@ -60,7 +62,48 @@ class ScoreTrendingService extends TrendingService
 
     public function computeHotIds()
     {
-        return [];
+        $ids = Score
+            ::where('state', 0)
+            ->where('created_at', '>', Carbon::now()->addDays(-100))
+            ->when($this->bangumiId, function ($query)
+            {
+                return $query->where('bangumi_id', $this->bangumiId);
+            })
+            ->pluck('id');
+
+        $scoreRepository = new ScoreRepository();
+        $scoreLikeService = new ScoreLikeService();
+        $scoreMarkService = new ScoreMarkService();
+        $scoreRewardService = new ScoreRewardService();
+        $scoreViewCounter = new ScoreViewCounter();
+        $scoreCommentService = new ScoreCommentService();
+
+        $list = $scoreRepository->list($ids);
+
+        $result = [];
+        // https://segmentfault.com/a/1190000004253816
+        foreach ($list as $item)
+        {
+            if (is_null($item))
+            {
+                continue;
+            }
+
+            $scoreId = $item['id'];
+            $likeCount = $scoreLikeService->total($scoreId);
+            $markCount = $scoreMarkService->total($scoreId);
+            $rewardCount = $scoreRewardService->total($scoreId);
+            $viewCount = $scoreViewCounter->get($scoreId);
+            $commentCount = $scoreCommentService->getCommentCount($scoreId);
+
+            $result[$scoreId] = (
+                    ($viewCount && log($viewCount, 10) * 4) +
+                    ($likeCount * 2 + $markCount * 2 + $rewardCount * 3) +
+                    ($commentCount && log($commentCount, M_E))
+                ) / pow((((time() * 2 - strtotime($item['created_at']) - strtotime($item['updated_at'])) / 2) + 1), 0.3);
+        }
+
+        return $result;
     }
 
     public function computeUserIds()

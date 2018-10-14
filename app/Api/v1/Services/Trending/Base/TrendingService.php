@@ -141,15 +141,18 @@ class TrendingService extends Repository
             {
                 $this->ListInsertBefore($this->trendingIdsCacheKey('news', $bid), $id);
                 $this->SortAdd($this->trendingIdsCacheKey('active', $bid), $id);
+                $this->SortAdd($this->trendingIdsCacheKey('hot', $bid), $id);
             }
         }
         else
         {
             $this->ListInsertBefore($this->trendingIdsCacheKey('news', $this->bangumiId), $id);
             $this->SortAdd($this->trendingIdsCacheKey('active', $this->bangumiId), $id);
+            $this->SortAdd($this->trendingIdsCacheKey('hot', $this->bangumiId), $id);
         }
         $this->ListInsertBefore($this->trendingIdsCacheKey('news', 0), $id);
         $this->SortAdd($this->trendingIdsCacheKey('active', 0), $id);
+        $this->SortAdd($this->trendingIdsCacheKey('hot', 0), $id);
         $this->ListInsertBefore($this->trendingFlowUsersKey(), $id);
     }
 
