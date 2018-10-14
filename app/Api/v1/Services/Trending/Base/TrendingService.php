@@ -16,7 +16,7 @@ class TrendingService extends Repository
     protected $table;
     protected $bangumiId;
     protected $userId;
-    protected $timeout = 1800; // 30 分钟重算一次
+    protected $timeout = 180; // 30 分钟重算一次
     protected $cachePrefix;
 
     public function __construct($table, $bangumiId, $userId, $cachePrefix = 'bangumi')
