@@ -149,13 +149,18 @@ class TrendingService extends Repository
                 $this->SortAdd($this->trendingIdsCacheKey('hot', $bid), $id);
             }
         }
-        else
+        else if ($this->checkCanUpdateBangumiIds($id))
         {
             $this->SortAdd($this->trendingIdsCacheKey('active', $this->bangumiId), $id);
             $this->SortAdd($this->trendingIdsCacheKey('hot', $this->bangumiId), $id);
         }
         $this->SortAdd($this->trendingIdsCacheKey('active', 0), $id);
         $this->SortAdd($this->trendingIdsCacheKey('hot', 0), $id);
+    }
+
+    public function checkCanUpdateBangumiIds($id)
+    {
+        return true;
     }
 
     public function delete($id)

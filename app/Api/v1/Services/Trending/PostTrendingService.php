@@ -118,6 +118,14 @@ class PostTrendingService extends TrendingService
             ->pluck('id');
     }
 
+    public function checkCanUpdateBangumiIds($id)
+    {
+        $bangumiRepository = new BangumiRepository();
+        $ids = $bangumiRepository->getTopPostIds($this->bangumiId);
+
+        return !in_array($id, $ids);
+    }
+
     public function getListByIds($ids, $flowType)
     {
         $store = new PostRepository();
