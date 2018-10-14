@@ -69,6 +69,7 @@ class ScoreTrendingService extends TrendingService
             {
                 return $query->where('bangumi_id', $this->bangumiId);
             })
+            ->whereNotNull('published_at')
             ->pluck('id');
 
         $scoreRepository = new ScoreRepository();

@@ -75,6 +75,7 @@ class AnswerTrendingService extends TrendingService
                 return $query
                     ->where('question_id', $this->bangumiId);
             })
+            ->whereNotNull('published_at')
             ->pluck('id');
 
         $answerRepository = new AnswerRepository();
