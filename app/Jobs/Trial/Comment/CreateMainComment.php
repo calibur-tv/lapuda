@@ -41,30 +41,30 @@ class CreateMainComment implements ShouldQueue
         $service = new CommentService($this->modal);
         $comment = $service->getMainCommentItem($this->id);
 
-        $content = $comment['content'];
-        $images = $comment['images'];
-
-        $badCount = 0;
-        $needDelete = false;
-        $imageFilter = new ImageFilter();
-
-        foreach ($images as $image)
-        {
-            $result = $imageFilter->check($image['url']);
-            if ($result['delete'])
-            {
-                $needDelete = true;
-            }
-            if ($result['review'])
-            {
-                $badCount++;
-            }
-        }
-        if ($needDelete)
-        {
-            $service->deleteMainComment($this->id, 0, 0, false);
-            return;
-        }
+//        $content = $comment['content'];
+//        $images = $comment['images'];
+//
+//        $badCount = 0;
+//        $needDelete = false;
+//        $imageFilter = new ImageFilter();
+//
+//        foreach ($images as $image)
+//        {
+//            $result = $imageFilter->check($image['url']);
+//            if ($result['delete'])
+//            {
+//                $needDelete = true;
+//            }
+//            if ($result['review'])
+//            {
+//                $badCount++;
+//            }
+//        }
+//        if ($needDelete)
+//        {
+//            $service->deleteMainComment($this->id, 0, 0, false);
+//            return;
+//        }
 
         // 全量评论进审核
         $service->changeCommentState($this->id, $comment['from_user_id']);
