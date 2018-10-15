@@ -135,7 +135,8 @@ class ScoreRepository extends Repository
                 ->count();
 
             return [
-                'total' => number_format($total / $count, 1),
+                'total' => number_format($total / $count, 0),
+//                'total' => number_format($total / $count, 1), // 暂时修复小数点N位的Bug
                 'count' => $count,
                 'radar' => [
                     'lol' => number_format($lol / $count, 1),
