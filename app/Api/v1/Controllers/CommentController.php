@@ -789,7 +789,7 @@ class CommentController extends Controller
             }
             $list = DB::table($modal . '_comments')
                 ->where('state', '<>', 0)
-                ->select('id', 'user_id', 'content', 'modal_id', 'parent_id')
+                ->select('id', 'user_id', 'content', 'modal_id', 'parent_id', 'deleted_at')
                 ->take(15)
                 ->get();
 
@@ -900,6 +900,60 @@ class CommentController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台确认删除
+    public function approve(Request $request)
+    {
+        $id = $request->get('id');
+        $type = $request->get('type');
+
+        if ($type === 'role')
+        {
+            $type = 'cartoon_role';
+        }
+
+        DB
+            ::table($type . '_comments')
+            ->where('id', $id)
+            ->update([
+                'state' => 0
+            ]);
+
+        return $this->resNoContent();
+    }
+
+    // 后台驳回删除
+    public function reject(Request $request)
+    {
+        $id = $request->get('id');
+        $type = $request->get('type');
+        $parentId = intval($request->get('parent_id'));
+
+        if ($type === 'role')
+        {
+            $type = 'cartoon_role';
+        }
+
+        DB
+            ::table($type . '_comments')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
+
+        $commentService = $this->getCommentServiceByType($type);
+        if ($parentId)
+        {
+            $commentService->changeSubCommentTotal($id, $parentId);
+        }
+        else
+        {
+            $commentService->changeMainCommentTotal($id);
+        }
+
+        return $this->resNoContent();
+    }
+
     // 后台批量删某用户的评论
     public function batchBan(Request $request)
     {
@@ -957,8 +1011,10 @@ class CommentController extends Controller
 
     public function batchPass(Request $request)
     {
-        $comments = $request->get('arr');
-        foreach ($comments as $comment)
+        $passArr = $request->get('pass_arr');
+        $approveArr = $request->get('approve_arr');
+
+        foreach ($passArr as $comment)
         {
             $id = $comment['id'];
             $type = $comment['type'];
@@ -973,6 +1029,23 @@ class CommentController extends Controller
                 ->update([
                     'state' => 0,
                     'deleted_at' => null
+                ]);
+        }
+
+        foreach ($approveArr as $comment)
+        {
+            $id = $comment['id'];
+            $type = $comment['type'];
+            if ($type === 'role')
+            {
+                $type = 'cartoon_role';
+            }
+
+            DB
+                ::table($type . '_comments')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0
                 ]);
         }
 

@@ -488,6 +488,17 @@ class CommentService extends Repository
         return $counterService->batchGet($list, $key);
     }
 
+    public function changeMainCommentTotal($id, $count = 1)
+    {
+        $counterService = $this->getCommentCounterService();
+        $counterService->add($id, $count);
+    }
+
+    public function changeSubCommentTotal($id, $parentId, $count = 1)
+    {
+        $this->changeSubCommentCount($parentId, $id, $count > 0);
+    }
+
     protected function changeMainCommentCount($modalId, $commentId, $userId, $isMaster, $isCreate)
     {
         // $isMaster 表示这个评论是博主发的

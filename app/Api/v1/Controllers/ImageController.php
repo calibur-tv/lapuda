@@ -966,9 +966,10 @@ class ImageController extends Controller
     {
         $id = $request->get('id');
         $type = $request->get('type');
+        $imageRepository = new ImageRepository();
+
         if ($type === 'album')
         {
-            $imageRepository = new ImageRepository();
             $imageRepository->deleteProcess($id);
         }
         else
@@ -978,26 +979,17 @@ class ImageController extends Controller
                 ->where('id', $id)
                 ->first();
 
-            if ($image->deleted_at)
-            {
-                DB::table('album_images')
-                    ->where('id', $id)
-                    ->update([
-                        'state' => 0
-                    ]);
-            }
-            else
-            {
-                DB::table('album_images')
-                    ->where('id', $id)
-                    ->update([
-                        'state' => 0,
-                        'deleted_at' => Carbon::now()
-                    ]);
+            DB::table('album_images')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => Carbon::now()
+                ]);
 
-                $totalImageCount = new TotalImageCount();
-                $totalImageCount->add(-1);
-            }
+            $totalImageCount = new TotalImageCount();
+            $totalImageCount->add(-1);
+            Redis::DEL($imageRepository->itemCacheKey($image->album_id));
+            Redis::DEL($imageRepository->albumImages($image->album_id));
         }
 
         return $this->resNoContent();
@@ -1013,6 +1005,65 @@ class ImageController extends Controller
         {
             $imageRepository = new ImageRepository();
             $imageRepository->recoverProcess($id);
+        }
+        else
+        {
+            DB::table('album_images')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => null
+                ]);
+
+            $totalImageCount = new TotalImageCount();
+            $totalImageCount->add();
+        }
+
+        return $this->resNoContent();
+    }
+
+    // 后台确认删除
+    public function approve(Request $request)
+    {
+        $id = $request->get('id');
+        $type = $request->get('type');
+
+        if ($type === 'album')
+        {
+            Image::where('id', $id)
+                ->update([
+                    'state' => 0
+                ]);
+        }
+        else
+        {
+            DB::table('album_images')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0
+                ]);
+        }
+
+        return $this->resNoContent();
+    }
+
+    // 后台驳回删除
+    public function reject(Request $request)
+    {
+        $id = $request->get('id');
+        $type = $request->get('type');
+
+        if ($type === 'album')
+        {
+            DB::table('images')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => null
+                ]);
+
+            $imageRepository = new ImageRepository();
+            $imageRepository->createProcess($id);
         }
         else
         {

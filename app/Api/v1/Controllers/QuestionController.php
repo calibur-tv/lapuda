@@ -185,4 +185,38 @@ class QuestionController extends Controller
 
         return $this->resNoContent();
     }
+
+    // 后台确认删除
+    public function approve(Request $request)
+    {
+        $id = $request->get('id');
+
+        DB
+            ::table('questions')
+            ->where('id', $id)
+            ->update([
+                'state' => 0
+            ]);
+
+        return $this->resNoContent();
+    }
+
+    // 后台驳回删除
+    public function reject(Request $request)
+    {
+        $id = $request->get('id');
+
+        DB
+            ::table('questions')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
+
+        $questionRepository = new QuestionRepository();
+        $questionRepository->createProcess($id);
+
+        return $this->resNoContent();
+    }
 }
