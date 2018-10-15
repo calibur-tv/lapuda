@@ -955,6 +955,30 @@ class CommentController extends Controller
         return $this->resNoContent();
     }
 
+    public function batchPass(Request $request)
+    {
+        $comments = $request->get('arr');
+        foreach ($comments as $comment)
+        {
+            $id = $comment['id'];
+            $type = $comment['type'];
+            if ($type === 'role')
+            {
+                $type = 'cartoon_role';
+            }
+
+            DB
+                ::table($type . '_comments')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => null
+                ]);
+        }
+
+        return $this->resNoContent();
+    }
+
     protected function getCommentServiceByType($type)
     {
         if ($type === 'post')

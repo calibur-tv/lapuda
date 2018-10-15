@@ -501,6 +501,8 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/pass', 'App\Api\V1\Controllers\CommentController@pass');
 
                 $api->post('/batch_ban', 'App\Api\V1\Controllers\CommentController@batchBan');
+
+                $api->post('/batch_pass', 'App\Api\V1\Controllers\CommentController@batchPass');
             });
 
             $api->group(['prefix' => '/bangumi'], function ($api)
