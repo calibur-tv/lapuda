@@ -214,6 +214,18 @@ class ToggleController extends Controller
         }
 
         $result = $followService->toggle($userId, $id);
+        if ($result)
+        {
+            if (!in_array($type, ['bangumi']))
+            {
+                $job = (new \App\Jobs\Trending\Active(
+                    $id,
+                    $type,
+                    $item['bangumi_id']
+                ));
+                dispatch($job);
+            }
+        }
 
         return $this->resCreated((boolean)$result);
     }
@@ -281,6 +293,13 @@ class ToggleController extends Controller
                 $item['user_id'],
                 $userId,
                 $item['id']
+            ));
+            dispatch($job);
+
+            $job = (new \App\Jobs\Trending\Active(
+                $id,
+                $type,
+                $item['bangumi_id']
             ));
             dispatch($job);
 
@@ -360,6 +379,13 @@ class ToggleController extends Controller
                 $item['user_id'],
                 $userId,
                 $item['id']
+            ));
+            dispatch($job);
+
+            $job = (new \App\Jobs\Trending\Active(
+                $id,
+                $type,
+                $item['bangumi_id']
             ));
             dispatch($job);
 
@@ -476,7 +502,7 @@ class ToggleController extends Controller
             $job = (new \App\Jobs\Trending\Active(
                 $id,
                 $type,
-                isset($item['bangumi_id']) ? $item['bangumi_id'] : $item['question_id']
+                $item['bangumi_id']
             ));
             dispatch($job);
 
@@ -557,6 +583,14 @@ class ToggleController extends Controller
                     $answer['id']
                 ));
                 dispatch($job);
+
+                $job = (new \App\Jobs\Trending\Active(
+                    $id,
+                    $type,
+                    $answer['bangumi_id']
+                ));
+                dispatch($job);
+
                 $userLevel->change($answer['user_id'], 1, false);
             }
         }
@@ -574,6 +608,7 @@ class ToggleController extends Controller
                 $answer['id']
             ));
             dispatch($job);
+
             $userLevel->change($answer['user_id'], -1, false);
         }
 

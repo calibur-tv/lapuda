@@ -48,6 +48,7 @@ class AnswerRepository extends Repository
             $answer = $answer->toArray();
             $answer['content'] = $this->formatJsonContent($answer['content']);
             $answer['is_creator'] = !$answer['source_url'];
+            $answer['bangumi_id'] = $answer['question_id'];
 
             return $answer;
         });

@@ -8,6 +8,7 @@ namespace App\Jobs\Trending;
  * Date: 2018/8/21
  * Time: 下午7:45
  */
+use App\Api\V1\Services\Trending\AnswerTrendingService;
 use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Services\Trending\QuestionTrendingService;
@@ -77,6 +78,9 @@ class Active implements ShouldQueue
             case 'question':
                 return 'questions';
                 break;
+            case 'answer':
+                return 'question_answers';
+                break;
             default:
                 return '';
                 break;
@@ -101,6 +105,10 @@ class Active implements ShouldQueue
                 break;
             case 'question':
                 return new QuestionTrendingService($this->bangumiId);
+                break;
+            case 'answer':
+                return new AnswerTrendingService($this->bangumiId);
+                break;
             default:
                 return null;
                 break;

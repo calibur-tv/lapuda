@@ -170,14 +170,12 @@ class CommentController extends Controller
         ));
         dispatch($job);
 
-        if (!in_array($type, ['question', 'answer', 'role']))
+        if (!in_array($type, ['role']))
         {
             $job = (new \App\Jobs\Trending\Active(
                 $id,
                 $type,
-                isset($parent['bangumi_id'])
-                    ? $parent['bangumi_id']
-                    : $parent['tag_ids']
+                $parent['bangumi_id']
             ));
             dispatch($job);
         }

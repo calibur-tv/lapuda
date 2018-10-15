@@ -298,7 +298,7 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/toggle'], function ($api)
     {
-        $api->group(['middleware' => ['jwt.auth']], function ($api)
+        $api->group(['middleware' => ['jwt.auth', 'throttle:10,1']], function ($api)
         {
             $api->post('/like', 'App\Api\V1\Controllers\ToggleController@like');
 

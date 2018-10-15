@@ -77,7 +77,7 @@ class ImageTrendingService extends TrendingService
     {
         $ids = Image
             ::where('state', 0)
-            ->where('created_at', '>', Carbon::now()->addDays(-30))
+            ->where('created_at', '>', Carbon::now()->addDays(-100))
             ->when($this->bangumiId, function ($query)
             {
                 return $query->where('bangumi_id', $this->bangumiId);
