@@ -12,6 +12,7 @@ use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Services\UserLevel;
 use App\Models\Question;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Mews\Purifier\Facades\Purifier;
 
