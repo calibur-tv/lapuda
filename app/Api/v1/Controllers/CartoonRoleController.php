@@ -216,7 +216,26 @@ class CartoonRoleController extends Controller
         return $this->resOK($result);
     }
 
-    // 创建偶像
+    /**
+     * 创建偶像
+     *
+     * @Post("/cartoon_role/manager/create")
+     *
+     * @Parameters({
+     *      @Parameter("bangumi_id", description="所选的番剧 id", type="integer", required=true),
+     *      @Parameter("name", description="角色名称", type="string", required=true),
+     *      @Parameter("alias", description="角色别名，逗号分隔的昵称，选填", type="string", required=false),
+     *      @Parameter("intro", description="角色简介，200字以内纯文本", type="string", required=true),
+     *      @Parameter("avatar", description="角色头像，七牛传图返回的url", type="string", required=true),
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(201, body={"code": 0, "data": "角色id"}),
+     *      @Response(400, body={"code": 40003, "message": "角色已存在"}),
+     *      @Response(403, body={"code": 40301, "message": "没有权限"})
+     * })
+     */
     public function create(Request $request)
     {
         $user = $this->getAuthUser();
@@ -233,7 +252,7 @@ class CartoonRoleController extends Controller
         }
 
         $name = Purifier::clean($request->get('name'));
-        $alias = Purifier::clean($request->get('alias'));
+        $alias = $request->get('alias') ? Purifier::clean($request->get('alias')) : $name;
         $time = Carbon::now();
 
         $count = CartoonRole::whereRaw('bangumi_id = ? and name = ?', [$bangumiId, $name])
@@ -244,9 +263,11 @@ class CartoonRoleController extends Controller
             return $this->resErrBad('该角色可能已存在');
         }
 
+        $cartoonRoleRepository = new CartoonRoleRepository();
+
         $id =  CartoonRole::insertGetId([
             'bangumi_id' => $bangumiId,
-            'avatar' => $request->get('avatar'),
+            'avatar' => $cartoonRoleRepository->convertImagePath($request->get('avatar')),
             'name' => $name,
             'intro' => Purifier::clean($request->get('intro')),
             'alias' => $alias,
@@ -255,7 +276,6 @@ class CartoonRoleController extends Controller
             'updated_at' => $time
         ]);
 
-        $cartoonRoleRepository = new CartoonRoleRepository();
         $cartoonRoleRepository->migrateSearchIndex('C', $id);
 
         $cartoonRoleTrendingService = new CartoonRoleTrendingService($bangumiId);
@@ -264,13 +284,40 @@ class CartoonRoleController extends Controller
         return $this->resCreated($id);
     }
 
-    // 编辑偶像
+    /**
+     * 编辑偶像
+     *
+     * @Post("/cartoon_role/manager/edit")
+     *
+     * @Parameters({
+     *      @Parameter("id", description="角色的id", type="integer", required=true),
+     *      @Parameter("name", description="角色名称", type="string", required=true),
+     *      @Parameter("alias", description="角色别名，逗号分隔的昵称，选填", type="string", required=false),
+     *      @Parameter("intro", description="角色简介，200字以内纯文本", type="string", required=true),
+     *      @Parameter("avatar", description="角色头像，七牛传图返回的url", type="string", required=true),
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(204),
+     *      @Response(403, body={"code": 40301, "message": "没有权限"}),
+     *      @Response(404, body={"code": 40401, "message": "角色不存在"})
+     * })
+     */
     public function edit(Request $request)
     {
         $user = $this->getAuthUser();
         $userId = $user->id;
-        $bangumiId = $request->get('bangumi_id');
         $id = $request->get('id');
+
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $cartoonRole = $cartoonRoleRepository->item($id);
+        if (is_null($cartoonRole))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $bangumiId = $cartoonRole['bangumi_id'];
 
         if (!$user->is_admin)
         {
@@ -282,17 +329,19 @@ class CartoonRoleController extends Controller
         }
 
         $alias = Purifier::clean($request->get('alias'));
+        $alias = $alias ? $alias : $cartoonRole['alias'];
 
-        CartoonRole::where('id', $id)->update([
-            'bangumi_id' => $bangumiId,
-            'avatar' => $request->get('avatar'),
-            'name' => Purifier::clean($request->get('name')),
-            'intro' => Purifier::clean($request->get('intro')),
-            'alias' => $alias,
-            'state' => $userId
-        ]);
+        CartoonRole
+            ::where('id', $id)
+            ->update([
+                'bangumi_id' => $bangumiId,
+                'avatar' => $request->get('avatar'),
+                'name' => Purifier::clean($request->get('name')),
+                'intro' => Purifier::clean($request->get('intro')),
+                'alias' => $alias,
+                'state' => $userId
+            ]);
 
-        $cartoonRoleRepository = new CartoonRoleRepository();
         $cartoonRoleRepository->migrateSearchIndex('U', $id);
 
         Redis::DEL('cartoon_role_' . $id);
