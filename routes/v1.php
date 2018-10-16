@@ -112,7 +112,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/soga'], function ($api)
         {
-            $api->post('/create', 'App\Api\V1\Controllers\AnswerController@create')->middleware(['geetest', 'jwt.auth', 'throttle:1,3']);
+            $api->post('/create', 'App\Api\V1\Controllers\AnswerController@create')->middleware(['geetest', 'jwt.auth', 'throttle:5,10']);
 
             $api->get('/drafts', 'App\Api\V1\Controllers\AnswerController@drafts')->middleware(['jwt.auth']);
 

@@ -1025,7 +1025,8 @@ class ImageController extends Controller
 
         if ($type === 'album')
         {
-            Image::where('id', $id)
+            DB::table('images')
+                ->where('id', $id)
                 ->update([
                     'state' => 0
                 ]);
