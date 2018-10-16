@@ -625,6 +625,40 @@ class ScoreController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台确认删除
+    public function approve(Request $request)
+    {
+        $id = $request->get('id');
+
+        DB
+            ::table('scores')
+            ->where('id', $id)
+            ->update([
+                'state' => 0
+            ]);
+
+        return $this->resNoContent();
+    }
+
+    // 后台驳回删除
+    public function reject(Request $request)
+    {
+        $id = $request->get('id');
+
+        DB
+            ::table('scores')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
+
+        $scoreRepository = new ScoreRepository();
+        $scoreRepository->createProcess($id);
+
+        return $this->resNoContent();
+    }
+
     protected function computeBirthday($birthday)
     {
         $age = strtotime($birthday);

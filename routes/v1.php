@@ -112,7 +112,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/soga'], function ($api)
         {
-            $api->post('/create', 'App\Api\V1\Controllers\AnswerController@create')->middleware(['geetest', 'jwt.auth', 'throttle:1,3']);
+            $api->post('/create', 'App\Api\V1\Controllers\AnswerController@create')->middleware(['geetest', 'jwt.auth', 'throttle:5,10']);
 
             $api->get('/drafts', 'App\Api\V1\Controllers\AnswerController@drafts')->middleware(['jwt.auth']);
 
@@ -298,7 +298,7 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/toggle'], function ($api)
     {
-        $api->group(['middleware' => ['jwt.auth']], function ($api)
+        $api->group(['middleware' => ['jwt.auth', 'throttle:10,1']], function ($api)
         {
             $api->post('/like', 'App\Api\V1\Controllers\ToggleController@like');
 
@@ -490,6 +490,10 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/ban', 'App\Api\V1\Controllers\ImageController@ban');
 
                 $api->post('/pass', 'App\Api\V1\Controllers\ImageController@pass');
+
+                $api->post('/approve', 'App\Api\V1\Controllers\ImageController@approve');
+
+                $api->post('/reject', 'App\Api\V1\Controllers\ImageController@reject');
             });
 
             $api->group(['prefix' => '/comment'], function ($api)
@@ -500,7 +504,13 @@ $api->version(['v1', 'latest'], function ($api)
 
                 $api->post('/pass', 'App\Api\V1\Controllers\CommentController@pass');
 
+                $api->post('/approve', 'App\Api\V1\Controllers\CommentController@approve');
+
+                $api->post('/reject', 'App\Api\V1\Controllers\CommentController@reject');
+
                 $api->post('/batch_ban', 'App\Api\V1\Controllers\CommentController@batchBan');
+
+                $api->post('/batch_pass', 'App\Api\V1\Controllers\CommentController@batchPass');
             });
 
             $api->group(['prefix' => '/bangumi'], function ($api)
@@ -518,6 +528,10 @@ $api->version(['v1', 'latest'], function ($api)
 
                 $api->post('/pass', 'App\Api\V1\Controllers\PostController@pass');
 
+                $api->post('/approve', 'App\Api\V1\Controllers\PostController@approve');
+
+                $api->post('/reject', 'App\Api\V1\Controllers\PostController@reject');
+
                 $api->post('/delete_image', 'App\Api\V1\Controllers\PostController@deletePostImage');
             });
 
@@ -528,6 +542,10 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/ban', 'App\Api\V1\Controllers\ScoreController@ban');
 
                 $api->post('/pass', 'App\Api\V1\Controllers\ScoreController@pass');
+
+                $api->post('/approve', 'App\Api\V1\Controllers\ScoreController@approve');
+
+                $api->post('/reject', 'App\Api\V1\Controllers\ScoreController@reject');
             });
 
             $api->group(['prefix' => '/question'], function ($api)
@@ -537,6 +555,10 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/ban', 'App\Api\V1\Controllers\QuestionController@ban');
 
                 $api->post('/pass', 'App\Api\V1\Controllers\QuestionController@pass');
+
+                $api->post('/approve', 'App\Api\V1\Controllers\QuestionController@approve');
+
+                $api->post('/reject', 'App\Api\V1\Controllers\QuestionController@reject');
             });
 
             $api->group(['prefix' => '/answer'], function ($api)
@@ -546,6 +568,10 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/ban', 'App\Api\V1\Controllers\AnswerController@ban');
 
                 $api->post('/pass', 'App\Api\V1\Controllers\AnswerController@pass');
+
+                $api->post('/approve', 'App\Api\V1\Controllers\AnswerController@approve');
+
+                $api->post('/reject', 'App\Api\V1\Controllers\AnswerController@reject');
             });
 
             $api->group(['prefix' => '/cartoon_role'], function ($api)

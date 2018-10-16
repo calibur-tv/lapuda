@@ -47,9 +47,7 @@ class ImageRepository extends Repository
 
             $image = $image->toArray();
 
-            $image['image_count'] = $image['is_album'] == 1
-                ? is_null($image['image_ids']) ? 0 : count(explode(',', $image['image_ids']))
-                : 1;
+            $image['image_count'] = count($this->albumImages($id));
 
             return $image;
         });

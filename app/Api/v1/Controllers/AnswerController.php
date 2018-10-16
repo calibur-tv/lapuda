@@ -16,6 +16,7 @@ use App\Api\V1\Transformers\AnswerTransformer;
 use App\Models\Answer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Mews\Purifier\Facades\Purifier;
@@ -389,6 +390,40 @@ class AnswerController extends Controller
 
         $answerRepository = new AnswerRepository();
         $answerRepository->recoverProcess($id);
+
+        return $this->resNoContent();
+    }
+
+    // 后台确认删除
+    public function approve(Request $request)
+    {
+        $id = $request->get('id');
+
+        DB
+            ::table('question_answers')
+            ->where('id', $id)
+            ->update([
+                'state' => 0
+            ]);
+
+        return $this->resNoContent();
+    }
+
+    // 后台驳回删除
+    public function reject(Request $request)
+    {
+        $id = $request->get('id');
+
+        DB
+            ::table('question_answers')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
+
+        $answerRepository = new AnswerRepository();
+        $answerRepository->createProcess($id);
 
         return $this->resNoContent();
     }

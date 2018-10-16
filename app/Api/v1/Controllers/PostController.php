@@ -21,6 +21,7 @@ use App\Services\OpenSearch\Search;
 use App\Services\Trial\WordsFilter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Mews\Purifier\Facades\Purifier;
@@ -593,6 +594,40 @@ class PostController extends Controller
         }
 
         $postRepository->recoverProcess($postId);
+
+        return $this->resNoContent();
+    }
+
+    // 后台确认删除
+    public function approve(Request $request)
+    {
+        $id = $request->get('id');
+
+        DB
+            ::table('posts')
+            ->where('id', $id)
+            ->update([
+                'state' => 0
+            ]);
+
+        return $this->resNoContent();
+    }
+
+    // 后台驳回删除
+    public function reject(Request $request)
+    {
+        $id = $request->get('id');
+
+        DB
+            ::table('posts')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
+
+        $postRepository = new PostRepository();
+        $postRepository->createProcess($id);
 
         return $this->resNoContent();
     }

@@ -4,18 +4,15 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ImageRepository;
-use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Counter\ImageViewCounter;
-use App\Api\V1\Services\Counter\Stats\TotalImageAlbumCount;
 use App\Api\V1\Services\Counter\Stats\TotalImageCount;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Services\Toggle\Image\ImageMarkService;
 use App\Api\V1\Services\Toggle\Image\ImageRewardService;
-use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\AlbumImage;
@@ -23,8 +20,6 @@ use App\Models\Banner;
 use App\Models\Image;
 use App\Services\Geetest\Captcha;
 use App\Services\OpenSearch\Search;
-use App\Services\Trial\ImageFilter;
-use App\Services\Trial\WordsFilter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -966,9 +961,10 @@ class ImageController extends Controller
     {
         $id = $request->get('id');
         $type = $request->get('type');
+        $imageRepository = new ImageRepository();
+
         if ($type === 'album')
         {
-            $imageRepository = new ImageRepository();
             $imageRepository->deleteProcess($id);
         }
         else
@@ -978,26 +974,17 @@ class ImageController extends Controller
                 ->where('id', $id)
                 ->first();
 
-            if ($image->deleted_at)
-            {
-                DB::table('album_images')
-                    ->where('id', $id)
-                    ->update([
-                        'state' => 0
-                    ]);
-            }
-            else
-            {
-                DB::table('album_images')
-                    ->where('id', $id)
-                    ->update([
-                        'state' => 0,
-                        'deleted_at' => Carbon::now()
-                    ]);
+            DB::table('album_images')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => Carbon::now()
+                ]);
 
-                $totalImageCount = new TotalImageCount();
-                $totalImageCount->add(-1);
-            }
+            $totalImageCount = new TotalImageCount();
+            $totalImageCount->add(-1);
+            Redis::DEL($imageRepository->itemCacheKey($image->album_id));
+            Redis::DEL($imageRepository->albumImages($image->album_id));
         }
 
         return $this->resNoContent();
@@ -1013,6 +1000,66 @@ class ImageController extends Controller
         {
             $imageRepository = new ImageRepository();
             $imageRepository->recoverProcess($id);
+        }
+        else
+        {
+            DB::table('album_images')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => null
+                ]);
+
+            $totalImageCount = new TotalImageCount();
+            $totalImageCount->add();
+        }
+
+        return $this->resNoContent();
+    }
+
+    // 后台确认删除
+    public function approve(Request $request)
+    {
+        $id = $request->get('id');
+        $type = $request->get('type');
+
+        if ($type === 'album')
+        {
+            DB::table('images')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0
+                ]);
+        }
+        else
+        {
+            DB::table('album_images')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0
+                ]);
+        }
+
+        return $this->resNoContent();
+    }
+
+    // 后台驳回删除
+    public function reject(Request $request)
+    {
+        $id = $request->get('id');
+        $type = $request->get('type');
+
+        if ($type === 'album')
+        {
+            DB::table('images')
+                ->where('id', $id)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => null
+                ]);
+
+            $imageRepository = new ImageRepository();
+            $imageRepository->createProcess($id);
         }
         else
         {

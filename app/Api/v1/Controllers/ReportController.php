@@ -229,7 +229,7 @@ class ReportController extends Controller
                 $bangumiManager = new BangumiManager();
                 if ($bangumiManager->isOwner($item['bangumi_id'], $userId))
                 {
-                    $repository->deleteProcess($id, $item['user_id']);
+                    $repository->deleteProcess($id, $userId);
                 }
             }
         }

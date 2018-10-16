@@ -95,6 +95,7 @@ class QuestionRepository extends Repository
                 ->where('model_id', $id)
                 ->pluck('tag_id')
                 ->toArray();
+            $question['bangumi_id'] = $question['tag_ids'];
 
             return $question;
         });

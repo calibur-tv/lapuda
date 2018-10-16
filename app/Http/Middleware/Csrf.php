@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Support\Facades\Log;
 
 class Csrf
 {
@@ -18,10 +19,14 @@ class Csrf
 
     public function handle($request, Closure $next)
     {
+
         if (config('app.env') === 'local')
         {
             return $next($request);
         }
+
+        Log::info("request header x-app-name：" . $request->headers->get('X-APP-NAME'));
+        Log::info("request header x-app-version：" . $request->headers->get('X-APP-VERSION'));
 
         if (in_array($request->headers->get('Origin'), $this->domains))
         {

@@ -2161,6 +2161,78 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
                 "message": "不存在的角色"
             }
 
+## 创建偶像 [POST /cartoon_role/manager/create]
+
+
++ Parameters
+    + bangumi_id: (integer, required) - 所选的番剧 id
+    + name: (string, required) - 角色名称
+    + alias: (string, optional) - 角色别名，逗号分隔的昵称，选填
+    + intro: (string, required) - 角色简介，200字以内纯文本
+    + avatar: (string, required) - 角色头像，七牛传图返回的url
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 201 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "角色id"
+            }
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "角色已存在"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "没有权限"
+            }
+
+## 编辑偶像 [POST /cartoon_role/manager/edit]
+
+
++ Parameters
+    + id: (integer, required) - 角色的id
+    + name: (string, required) - 角色名称
+    + alias: (string, optional) - 角色别名，逗号分隔的昵称，选填
+    + intro: (string, required) - 角色简介，200字以内纯文本
+    + avatar: (string, required) - 角色头像，七牛传图返回的url
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 204 (application/json)
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "没有权限"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "角色不存在"
+            }
+
 # 信息流相关接口
 
 ## 获取信息流列表 [GET /flow/list]
