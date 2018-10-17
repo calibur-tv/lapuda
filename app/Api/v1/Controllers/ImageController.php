@@ -1030,6 +1030,8 @@ class ImageController extends Controller
                 ->update([
                     'state' => 0
                 ]);
+
+            Redis::DEL('image_' . $id);
         }
         else
         {
