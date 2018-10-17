@@ -387,8 +387,8 @@ class BangumiController extends Controller
         }
 
         $summary = Purifier::clean($request->get('summary'));
-        $avatar = $request->get('avatar');
-        $banner = $request->get('banner');
+        $avatar = $bangumiRepository->convertImagePath($request->get('avatar'));
+        $banner = $bangumiRepository->convertImagePath($request->get('banner'));
 
         $wordsFilter = new WordsFilter();
         if ($wordsFilter->count($summary) > 2)
