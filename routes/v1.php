@@ -467,7 +467,7 @@ $api->version(['v1', 'latest'], function ($api)
             {
                 $api->get('/image', 'App\Api\V1\Controllers\TrialController@imageTest');
 
-                $api->get('/text', 'App\Api\V1\Controllers\TrialController@textTest');
+                $api->post('/text', 'App\Api\V1\Controllers\TrialController@textTest');
             });
 
             $api->group(['prefix' => '/user'], function ($api)
