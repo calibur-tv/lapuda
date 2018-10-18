@@ -132,7 +132,7 @@ class PostRepository extends Repository
 
     public function createProcess($id, $state = 0)
     {
-        $post = $this->item($id);
+        $post = $this->item($id, true);
 
         if ($state)
         {

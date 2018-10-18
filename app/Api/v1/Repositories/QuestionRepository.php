@@ -177,7 +177,7 @@ class QuestionRepository extends Repository
 
     public function createProcess($id, $state = 0)
     {
-        $question = $this->item($id);
+        $question = $this->item($id, true);
 
         if ($state)
         {

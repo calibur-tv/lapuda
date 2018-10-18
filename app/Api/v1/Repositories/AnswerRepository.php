@@ -63,7 +63,7 @@ class AnswerRepository extends Repository
 
     public function createProcess($id, $state = 0)
     {
-        $answer = $this->item($id);
+        $answer = $this->item($id, true);
 
         if ($state)
         {

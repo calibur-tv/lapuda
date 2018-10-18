@@ -263,7 +263,7 @@ class ImageRepository extends Repository
 
     public function createProcess($id, $state = 0)
     {
-        $image = $this->item($id);
+        $image = $this->item($id, true);
 
         if ($state)
         {

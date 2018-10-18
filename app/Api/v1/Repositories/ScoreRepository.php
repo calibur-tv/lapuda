@@ -196,7 +196,7 @@ class ScoreRepository extends Repository
 
     public function createProcess($id, $state = 0)
     {
-        $score = $this->item($id);
+        $score = $this->item($id, true);
 
         Redis::DEL($this->cacheKeyBangumiScore($score['bangumi_id']));
 
