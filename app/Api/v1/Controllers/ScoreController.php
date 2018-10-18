@@ -637,6 +637,8 @@ class ScoreController extends Controller
                 'state' => 0
             ]);
 
+        Redis::DEL('score_' . $id);
+
         return $this->resNoContent();
     }
 

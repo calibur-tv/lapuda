@@ -10,6 +10,7 @@ use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Services\Toggle\Post\PostRewardService;
+use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
@@ -421,7 +422,8 @@ class PostController extends Controller
 
         Post::where('id', $postId)
             ->update([
-                'is_nice' => 0
+                'is_nice' => 0,
+                'state' => 0
             ]);
 
         Redis::DEL('post_' . $postId);
@@ -482,6 +484,8 @@ class PostController extends Controller
 
         Redis::DEL('post_' . $postId);
         Redis::DEL('bangumi_' . $post['bangumi_id'] . '_posts_top_ids');
+        $postTrendingService = new PostTrendingService($post['bangumi_id']);
+        $postTrendingService->delete($postId);
 
         return $this->resNoContent();
     }
@@ -529,11 +533,14 @@ class PostController extends Controller
 
         Post::where('id', $postId)
             ->update([
-                'top_at' => null
+                'top_at' => null,
+                'state' => 0
             ]);
 
         Redis::DEL('post_' . $postId);
         Redis::DEL('bangumi_' . $post['bangumi_id'] . '_posts_top_ids');
+        $postTrendingService = new PostTrendingService($post['bangumi_id']);
+        $postTrendingService->update($postId);
 
         return $this->resNoContent();
     }
@@ -609,6 +616,8 @@ class PostController extends Controller
             ->update([
                 'state' => 0
             ]);
+
+        Redis::DEL('post_' . $id);
 
         return $this->resNoContent();
     }

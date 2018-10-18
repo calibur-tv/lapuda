@@ -406,6 +406,8 @@ class AnswerController extends Controller
                 'state' => 0
             ]);
 
+        Redis::DEL('answer_' . $id);
+
         return $this->resNoContent();
     }
 
