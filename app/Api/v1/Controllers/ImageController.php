@@ -984,7 +984,7 @@ class ImageController extends Controller
             $totalImageCount = new TotalImageCount();
             $totalImageCount->add(-1);
             Redis::DEL($imageRepository->itemCacheKey($image->album_id));
-            Redis::DEL($imageRepository->albumImages($image->album_id));
+            Redis::DEL($imageRepository->cacheKeyAlbumImages($image->album_id));
         }
 
         return $this->resNoContent();

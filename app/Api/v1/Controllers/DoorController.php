@@ -304,22 +304,7 @@ class DoorController extends Controller
     // TODO：delete
     public function currentUser()
     {
-        $user = $this->getAuthUser();
-        if (!$user)
-        {
-            return $this->resErrAuth();
-        }
-
-        $user = $user->toArray();
-        $userId = $user['id'];
-        $imageRepository = new ImageRepository();
-        $userRepository = new UserRepository();
-        $user['uptoken'] = $imageRepository->uptoken($userId);
-        $user['daySign'] = $userRepository->daySigned($userId);
-        $user['notification'] = $userRepository->getNotificationCount($userId);
-        $transformer = new UserTransformer();
-
-        return $this->resOK($transformer->self($user));
+        return $this->resOK(null);
     }
 
     /**
