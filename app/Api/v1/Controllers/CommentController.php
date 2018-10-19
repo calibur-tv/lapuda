@@ -1018,7 +1018,7 @@ class CommentController extends Controller
     {
         $passArr = $request->get('pass_arr');
         $approveArr = $request->get('approve_arr');
-        if (!$passArr || !$approveArr)
+        if (is_null($passArr) || is_null($approveArr))
         {
             return $this->resErrBad();
         }
