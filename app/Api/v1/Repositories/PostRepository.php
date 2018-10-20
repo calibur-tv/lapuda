@@ -212,6 +212,11 @@ class PostRepository extends Repository
     {
         $post = $this->item($id, true);
 
+        if ($post['state'])
+        {
+            Redis::DEL($this->itemCacheKey($id));
+        }
+
         if ($post['user_id'] == $post['state'])
         {
             DB::table('posts')
@@ -225,8 +230,6 @@ class PostRepository extends Repository
             $postTrendingService->create($id);
 
             $this->migrateSearchIndex('C', $id, false);
-
-            Redis::DEL($this->itemCacheKey($id));
         }
         else
         {

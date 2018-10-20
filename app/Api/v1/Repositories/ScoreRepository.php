@@ -284,6 +284,11 @@ class ScoreRepository extends Repository
     {
         $score = $this->item($id, true);
 
+        if ($score['state'])
+        {
+            Redis::DEL($this->itemCacheKey($id));
+        }
+
         if ($score['user_id'] == $score['state'])
         {
             DB::table('scores')
@@ -297,8 +302,6 @@ class ScoreRepository extends Repository
             $scoreTrendingService->create($id);
 
             $this->migrateSearchIndex('C', $id, false);
-
-            Redis::DEL($this->itemCacheKey($id));
         }
         else
         {

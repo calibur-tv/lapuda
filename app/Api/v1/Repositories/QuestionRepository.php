@@ -238,6 +238,11 @@ class QuestionRepository extends Repository
     {
         $question = $this->item($id, true);
 
+        if ($question['state'])
+        {
+            Redis::DEL($this->itemCacheKey($id));
+        }
+
         if ($question['user_id'] == $question['state'])
         {
             DB::table('questions')
@@ -251,8 +256,6 @@ class QuestionRepository extends Repository
             $questionTrendingService->create($id);
 
             $this->migrateSearchIndex('C', $id, false);
-
-            Redis::DEL($this->itemCacheKey($id));
         }
         else
         {

@@ -368,6 +368,11 @@ class ImageRepository extends Repository
     {
         $image = $this->item($id, true);
 
+        if ($image['state'])
+        {
+            Redis::DEL($this->itemCacheKey($id));
+        }
+
         if ($image['user_id'] == $image['state'])
         {
             DB::table('images')
@@ -381,8 +386,6 @@ class ImageRepository extends Repository
             $imageTrendingService->create($id);
 
             $this->migrateSearchIndex('C', $id, false);
-
-            Redis::DEL($this->itemCacheKey($id));
         }
         else
         {

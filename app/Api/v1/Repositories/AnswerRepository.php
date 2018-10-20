@@ -167,6 +167,11 @@ class AnswerRepository extends Repository
     {
         $answer = $this->item($id, true);
 
+        if ($answer['state'])
+        {
+            Redis::DEL($this->itemCacheKey($id));
+        }
+
         if ($answer['user_id'] == $answer['state'])
         {
             DB::table('question_answers')
@@ -177,8 +182,6 @@ class AnswerRepository extends Repository
                 ]);
 
             $this->migrateSearchIndex('C', $id, false);
-
-            Redis::DEL($this->itemCacheKey($id));
         }
         else
         {
