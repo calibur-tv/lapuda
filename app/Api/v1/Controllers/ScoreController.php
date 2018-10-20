@@ -655,6 +655,8 @@ class ScoreController extends Controller
                 'deleted_at' => null
             ]);
 
+        Redis::DEL('score_' . $id);
+
         $scoreRepository = new ScoreRepository();
         $scoreRepository->createProcess($id);
 

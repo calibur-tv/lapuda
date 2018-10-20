@@ -1060,6 +1060,8 @@ class ImageController extends Controller
                     'deleted_at' => null
                 ]);
 
+            Redis::DEL('image_' . $id);
+
             $imageRepository = new ImageRepository();
             $imageRepository->createProcess($id);
         }

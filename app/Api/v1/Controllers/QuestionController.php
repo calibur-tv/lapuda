@@ -218,6 +218,8 @@ class QuestionController extends Controller
                 'deleted_at' => null
             ]);
 
+        Redis::DEL('question_' . $id);
+
         $questionRepository = new QuestionRepository();
         $questionRepository->createProcess($id);
 

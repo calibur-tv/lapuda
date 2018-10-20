@@ -635,6 +635,8 @@ class PostController extends Controller
                 'deleted_at' => null
             ]);
 
+        Redis::DEL('post_' . $id);
+
         $postRepository = new PostRepository();
         $postRepository->createProcess($id);
 
