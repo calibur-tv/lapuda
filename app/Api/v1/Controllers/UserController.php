@@ -384,7 +384,7 @@ class UserController extends Controller
         $repository = new UserRepository();
         $count = $repository->getNotificationCount($this->getAuthUserId());
 
-        return $this->resOK($count);
+        return $this->resOK($count < 0 ? 0 : $count);
     }
 
     /**
