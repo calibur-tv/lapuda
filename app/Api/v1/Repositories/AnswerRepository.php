@@ -76,8 +76,8 @@ class AnswerRepository extends Repository
         }
 
         $questionId = $answer['question_id'];
-        $answerTrendingService = new AnswerTrendingService();
-        $answerTrendingService->create($questionId, $answer['user_id']);
+        $answerTrendingService = new AnswerTrendingService($questionId, $answer['user_id']);
+        $answerTrendingService->create($id);
 
         $questionRepository = new QuestionRepository();
         $question = $questionRepository->item($questionId);
