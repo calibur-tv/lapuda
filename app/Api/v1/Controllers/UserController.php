@@ -442,11 +442,26 @@ class UserController extends Controller
     {
         $userId = $this->getAuthUserId();
 
+        $ids = Notifications
+            ::where('to_user_id', $userId)
+            ->pluck('id')
+            ->toArray();
+
+        if (!$ids)
+        {
+            return $this->resNoContent();
+        }
+
         Notifications
             ::where('to_user_id', $userId)
             ->update([
                 'checked' => true
             ]);
+
+        foreach ($ids as $id)
+        {
+            Redis::DEL('notification-' . $id);
+        }
 
         Redis::DEL('user-' . $userId . '-notification-ids');
         Redis::SET('user_' . $userId . '_notification_count', 0);
