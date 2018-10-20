@@ -458,10 +458,13 @@ class UserController extends Controller
                 'checked' => true
             ]);
 
-        foreach ($ids as $id)
+        Redis::pipeline(function ($pipe) use ($ids)
         {
-            Redis::DEL('notification-' . $id);
-        }
+            foreach ($ids as $id)
+            {
+                $pipe->DEL('notification-' . $id);
+            }
+        });
 
         Redis::DEL('user-' . $userId . '-notification-ids');
         Redis::SET('user_' . $userId . '_notification_count', 0);
