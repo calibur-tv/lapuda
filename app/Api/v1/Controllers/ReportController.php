@@ -136,84 +136,83 @@ class ReportController extends Controller
         {
             if (preg_match('/_/', $model))
             {
-                // 是 reply
                 $arr = explode('_', $model);
                 $commentService = $this->getCommentRepositoryByType($arr[0]);
-
-                $subComment = $commentService->getSubCommentItem($arr[1]);
-                if (is_null($subComment))
+                if ($arr[1] === 'reply')
                 {
-                    return $this->resNoContent();
+                    // 是子评论
+                    $subComment = $commentService->getSubCommentItem($id);
+                    if (is_null($subComment))
+                    {
+                        return $this->resNoContent();
+                    }
+
+                    $mainComment = $commentService->getMainCommentItem($subComment['parent_id']);
+                    if (is_null($mainComment))
+                    {
+                        return $this->resNoContent();
+                    }
+
+                    $repository = $this->getRepositoryByType($arr[0]);
+                    if (is_null($repository))
+                    {
+                        return $this->resNoContent();
+                    }
+
+                    $item = $repository->item($mainComment['modal_id']);
+                    if (is_null($item))
+                    {
+                        return $this->resNoContent();
+                    }
+
+                    if (!isset($item['bangumi_id']))
+                    {
+                        return $this->resNoContent();
+                    }
+
+                    $bangumiManager = new BangumiManager();
+                    if ($bangumiManager->isOwner($item['bangumi_id'], $userId))
+                    {
+                        $commentService->deleteSubComment($subComment['id'], $mainComment['id'], $userId);
+                    }
                 }
-
-                $mainComment = $commentService->getMainCommentItem($subComment['parent_id']);
-                if (is_null($mainComment))
+                else
                 {
-                    return $this->resNoContent();
-                }
+                    // 是主评论
+                    $mainComment = $commentService->getMainCommentItem($id);
+                    if (is_null($mainComment))
+                    {
+                        return $this->resNoContent();
+                    }
 
-                $repository = $this->getRepositoryByType($arr[0]);
-                if (is_null($repository))
-                {
-                    return $this->resNoContent();
-                }
+                    $repository = $this->getRepositoryByType($arr[0]);
+                    if (is_null($repository))
+                    {
+                        return $this->resNoContent();
+                    }
 
-                $item = $repository->item($mainComment['modal_id']);
-                if (is_null($item))
-                {
-                    return $this->resNoContent();
-                }
+                    $item = $repository->item($mainComment['modal_id']);
+                    if (is_null($item))
+                    {
+                        return $this->resNoContent();
+                    }
 
-                if (!isset($item['bangumi_id']))
-                {
-                    return $this->resNoContent();
-                }
+                    if (!isset($item['bangumi_id']))
+                    {
+                        return $this->resNoContent();
+                    }
 
-                $bangumiManager = new BangumiManager();
-                if ($bangumiManager->isOwner($item['bangumi_id'], $userId))
-                {
-                    $commentService->deleteSubComment($subComment['id'], $mainComment['id'], $userId);
-                }
-            }
-            else if (preg_match('/-/', $model))
-            {
-                // 是 comment
-                $arr = explode('_', $model);
-                $commentService = $this->getCommentRepositoryByType($arr[0]);
-
-                $mainComment = $commentService->getMainCommentItem($arr[1]);
-                if (is_null($mainComment))
-                {
-                    return $this->resNoContent();
-                }
-
-                $repository = $this->getRepositoryByType($arr[0]);
-                if (is_null($repository))
-                {
-                    return $this->resNoContent();
-                }
-
-                $item = $repository->item($mainComment['modal_id']);
-                if (is_null($item))
-                {
-                    return $this->resNoContent();
-                }
-
-                if (!isset($item['bangumi_id']))
-                {
-                    return $this->resNoContent();
-                }
-
-                $bangumiManager = new BangumiManager();
-                if ($bangumiManager->isOwner($item['bangumi_id'], $userId))
-                {
-                    $commentService->deleteMainComment(
-                        $mainComment['id'],
-                        $mainComment['modal_id'],
-                        $mainComment['from_user_id'],
-                        false,
-                        $userId
-                    );
+                    $bangumiManager = new BangumiManager();
+                    if ($bangumiManager->isOwner($item['bangumi_id'], $userId))
+                    {
+                        $commentService->deleteMainComment(
+                            $mainComment['id'],
+                            $mainComment['modal_id'],
+                            $mainComment['from_user_id'],
+                            false,
+                            $userId
+                        );
+                    }
                 }
             }
             else if (in_array($model, ['post', 'image', 'score', 'question', 'answer']))
