@@ -291,7 +291,6 @@ class CartoonRoleController extends Controller
         ]);
 
         $cartoonRoleRepository->migrateSearchIndex('C', $id);
-
         $cartoonRoleTrendingService = new CartoonRoleTrendingService($bangumiId);
         $cartoonRoleTrendingService->create($id);
 

@@ -67,7 +67,9 @@ class CartoonRoleTrendingService extends TrendingService
 
     public function create($id)
     {
-        $this->ListInsertBefore($this->trendingFlowUsersKey(), $id);
+        $this->ListInsertBefore($this->trendingIdsCacheKey('news', $this->bangumiId), $id);
+        $this->SortAdd($this->trendingIdsCacheKey('active', $this->bangumiId), $id);
+        $this->SortAdd($this->trendingIdsCacheKey('hot', $this->bangumiId), $id);
     }
 
     public function getListByIds($ids, $flowType)
