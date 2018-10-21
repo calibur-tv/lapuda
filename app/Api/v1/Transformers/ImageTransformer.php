@@ -64,8 +64,8 @@ class ImageTransformer extends Transformer
             return [
                 'id' => (int)$album['id'],
                 'name' => $album['name'],
-                'is_cartoon' => $album['is_cartoon'],
-                'is_creator' => $album['is_creator'],
+                'is_cartoon' => (boolean)$album['is_cartoon'],
+                'is_creator' => (boolean)$album['is_creator'],
                 'image_count' => $album['image_count'],
                 'poster' => $album['url']
             ];

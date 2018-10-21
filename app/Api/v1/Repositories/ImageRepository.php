@@ -274,8 +274,11 @@ class ImageRepository extends Repository
                 ]);
         }
 
-        $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
-        $imageTrendingService->create($id);
+        if (!$image['is_album'] || $image['image_count'] > 0)
+        {
+            $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
+            $imageTrendingService->create($id);
+        }
 
         $baiduPush = new BaiduPush();
         $baiduPush->trending('image');

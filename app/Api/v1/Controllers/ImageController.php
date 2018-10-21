@@ -13,6 +13,7 @@ use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Services\Toggle\Image\ImageMarkService;
 use App\Api\V1\Services\Toggle\Image\ImageRewardService;
+use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\AlbumImage;
@@ -512,15 +513,18 @@ class ImageController extends Controller
         }
 
         AlbumImage::insert($saveImages);
-        $nowIds = AlbumImage::where('album_id', $albumId)
+        $nowIds = AlbumImage
+            ::where('album_id', $albumId)
             ->pluck('id')
             ->toArray();
 
         if ($album['image_count'])
         {
-            $imageIds = Image::where('id', $albumId)
+            $imageIds = Image
+                ::where('id', $albumId)
                 ->pluck('image_ids')
                 ->first();
+
             $oldIds = explode(',', $imageIds);
             $newIds = array_diff($nowIds, $oldIds);
 
@@ -533,10 +537,14 @@ class ImageController extends Controller
         {
             $newIds = $nowIds;
 
-            Image::where('id', $albumId)
+            Image
+                ::where('id', $albumId)
                 ->update([
                     'image_ids' => implode(',', $newIds)
                 ]);
+
+            $imageTrendingService = new ImageTrendingService($album['bangumi_id'], $album['user_id']);
+            $imageTrendingService->create($albumId);
         }
 
         if ($album['is_cartoon'])
