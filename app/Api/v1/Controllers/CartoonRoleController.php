@@ -15,6 +15,7 @@ use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Validator;
 use Mews\Purifier\Facades\Purifier;
 
 /**
@@ -238,6 +239,19 @@ class CartoonRoleController extends Controller
      */
     public function create(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'bangumi_id' => 'required|integer',
+            'name' => 'required|min:1|max:35',
+            'alias' => 'required|min:1|max:120',
+            'intro' => 'required|min:1|max:200',
+            'avatar' => 'required'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
         $user = $this->getAuthUser();
         $userId = $user->id;
         $bangumiId = $request->get('bangumi_id');
