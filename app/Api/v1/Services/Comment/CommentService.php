@@ -545,9 +545,13 @@ class CommentService extends Repository
             ? $this->ListInsertAfter($this->subCommentIdsKey($mainCommentId), $subCommentId)
             : $this->ListRemove($this->subCommentIdsKey($mainCommentId), $subCommentId);
 
-        DB::table($this->table)
-            ->where('id', $mainCommentId)
-            ->increment('comment_count', $isCreate ? 1 : -1);
+        try {
+            DB::table($this->table)
+                ->where('id', $mainCommentId)
+                ->increment('comment_count', $isCreate ? 1 : -1);
+        } catch (\Exception $e) {
+            // 说不定评论数就小于0了，catch 不做处理
+        }
     }
 
     protected function userRepository()
