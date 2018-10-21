@@ -14,6 +14,7 @@ use App\Models\CartoonRoleFans;
 use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Mews\Purifier\Facades\Purifier;
@@ -378,7 +379,12 @@ class CartoonRoleController extends Controller
         $id = $request->get('id');
         $bangumiId = $request->get('bangumi_id');
 
-        CartoonRole::where('id', $id)->delete();
+        DB::table('cartoon_role')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => Carbon::now()
+            ]);
 
         $cartoonRoleTrendingService = new CartoonRoleTrendingService($bangumiId);
         $cartoonRoleTrendingService->delete($id);
