@@ -430,6 +430,9 @@ class DoorController extends Controller
 
         $tail = UserZone::where('name', $pinyin)->pluck('count')->first();
 
+        // 如果用户的昵称是中文加数字，生成的拼音会有可能被占用，从而注册的时候就失败了
+        // 可以通过一个递归调用 createUserZone 来解决，但是太危险了，先不修复这个问题
+
         if ($tail)
         {
             UserZone::where('name', $pinyin)->increment('count');
