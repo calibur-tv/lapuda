@@ -321,6 +321,18 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/send', 'App\Api\V1\Controllers\ReportController@send');
     });
 
+    $api->group(['prefix' => '/cm'], function ($api)
+    {
+        $api->group(['prefix' => '/loop'], function ($api)
+        {
+            $api->get('/list', 'App\Api\V1\Controllers\CmController@cmLoop');
+
+            $api->post('/view', 'App\Api\V1\Controllers\CmController@cmView');
+
+            $api->post('/click', 'App\Api\V1\Controllers\CmController@cmClick');
+        });
+    });
+
     $api->group(['prefix' => '/admin', 'middleware' => ['jwt.admin']], function ($api)
     {
         $api->get('/todo', 'App\Api\V1\Controllers\TrialController@todo');
@@ -330,6 +342,22 @@ $api->version(['v1', 'latest'], function ($api)
             $api->get('/realtime', 'App\Api\V1\Controllers\StatsController@realtime');
 
             $api->get('/timeline', 'App\Api\V1\Controllers\StatsController@timeline');
+        });
+
+        $api->group(['prefix' => '/cm'], function ($api)
+        {
+            $api->group(['prefix' => '/loop'], function ($api)
+            {
+                $api->get('/list', 'App\Api\V1\Controllers\LooperController@list');
+
+                $api->post('/update', 'App\Api\V1\Controllers\LooperController@update');
+
+                $api->post('/sort', 'App\Api\V1\Controllers\LooperController@sort');
+
+                $api->post('/delete', 'App\Api\V1\Controllers\LooperController@delete');
+
+                $api->post('/add', 'App\Api\V1\Controllers\LooperController@add');
+            });
         });
 
         $api->group(['prefix' => '/search'], function ($api)

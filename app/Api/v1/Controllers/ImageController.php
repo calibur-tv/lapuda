@@ -4,6 +4,7 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ImageRepository;
+use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Counter\ImageViewCounter;
@@ -19,6 +20,7 @@ use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\AlbumImage;
 use App\Models\Banner;
 use App\Models\Image;
+use App\Models\Looper;
 use App\Services\Geetest\Captcha;
 use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
@@ -34,7 +36,7 @@ use Mews\Purifier\Facades\Purifier;
 class ImageController extends Controller
 {
     /**
-     * 获取首页banner图
+     * 获取PC网页首页banner图
      *
      * @Get("/image/banner")
      *
