@@ -11,7 +11,7 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
 
 + Parameters
     + type: (string, required) - 要检测的类型
-    + key: (string, required) - 搜索的关键词
+    + q: (string, required) - 搜索的关键词
     + page: (integer, required) - 搜索的页码
 
 + Response 200 (application/json)
@@ -690,7 +690,7 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
 
 # 图片相关接口
 
-## 获取首页banner图 [GET /image/banner]
+## 获取PC网页首页banner图 [GET /image/banner]
 
 
 + Response 200 (application/json)
@@ -2582,5 +2582,34 @@ type：like, follow, reward, mark，contributors
     + model: (string, required) - 举报的模型
     + type: (string, required) - 举报的类型
     + message: (string, required) - 举报的留言
+
++ Response 204 (application/json)
+
+# 营销相关接口
+
+## 获取营销轮播图 [GET /cm/loop/list]
+
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "图片列表"
+            }
+
+## 用户查看轮播图的上报统计 [POST /cm/loop/view]
+
+
++ Parameters
+    + id: (integer, required) - id
+
++ Response 204 (application/json)
+
+## 用户点击轮播图的上报统计 [POST /cm/loop/click]
+
+
++ Parameters
+    + id: (integer, required) - id
 
 + Response 204 (application/json)
