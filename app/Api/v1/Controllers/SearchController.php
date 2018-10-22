@@ -23,7 +23,7 @@ class SearchController extends Controller
      *
      * @Parameters({
      *      @Parameter("type", description="要检测的类型", type="string", required=true),
-     *      @Parameter("key", description="搜索的关键词", type="string", required=true),
+     *      @Parameter("q", description="搜索的关键词", type="string", required=true),
      *      @Parameter("page", description="搜索的页码", type="integer", required=true)
      * })
      *

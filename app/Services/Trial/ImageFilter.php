@@ -14,7 +14,7 @@ use App\Services\Qiniu\Http\Client;
 
 class ImageFilter
 {
-    protected $errorLine = 0.7;
+    protected $errorLine = 0.9;
     protected $warningLine = 0.3;
 
     public function test($url)

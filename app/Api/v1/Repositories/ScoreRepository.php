@@ -196,7 +196,7 @@ class ScoreRepository extends Repository
 
     public function createProcess($id, $state = 0)
     {
-        $score = $this->item($id);
+        $score = $this->item($id, true);
 
         Redis::DEL($this->cacheKeyBangumiScore($score['bangumi_id']));
 
@@ -209,20 +209,17 @@ class ScoreRepository extends Repository
                 ]);
         }
 
-        if ($score['created_at'] == $score['updated_at'])
-        {
-            $bangumiScoreService = new BangumiScoreService();
-            $bangumiScoreService->do($score['user_id'], $score['bangumi_id']);
+        $bangumiScoreService = new BangumiScoreService();
+        $bangumiScoreService->do($score['user_id'], $score['bangumi_id']);
 
-            $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
-            $scoreTrendingService->create($id);
+        $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
+        $scoreTrendingService->create($id);
 
-            $baiduPush = new BaiduPush();
-            $baiduPush->trending('score');
-            $baiduPush->bangumi($score['bangumi_id'], 'review');
+        $baiduPush = new BaiduPush();
+        $baiduPush->trending('score');
+        $baiduPush->bangumi($score['bangumi_id'], 'review');
 
-            $this->migrateSearchIndex('C', $id, false);
-        }
+        $this->migrateSearchIndex('C', $id, false);
     }
 
     public function updateProcess($id)
@@ -287,6 +284,11 @@ class ScoreRepository extends Repository
     {
         $score = $this->item($id, true);
 
+        if ($score['state'])
+        {
+            Redis::DEL($this->itemCacheKey($id));
+        }
+
         if ($score['user_id'] == $score['state'])
         {
             DB::table('scores')
@@ -300,8 +302,6 @@ class ScoreRepository extends Repository
             $scoreTrendingService->create($id);
 
             $this->migrateSearchIndex('C', $id, false);
-
-            Redis::DEL($this->itemCacheKey($id));
         }
         else
         {

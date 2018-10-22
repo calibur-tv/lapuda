@@ -838,6 +838,11 @@ class CommentController extends Controller
             ->where('id', $id)
             ->first();
 
+        if (is_null($comment))
+        {
+            return $this->resNoContent();
+        }
+
         DB::table($type . '_comments')
             ->where('id', $id)
             ->update([
@@ -1013,6 +1018,10 @@ class CommentController extends Controller
     {
         $passArr = $request->get('pass_arr');
         $approveArr = $request->get('approve_arr');
+        if (is_null($passArr) || is_null($approveArr))
+        {
+            return $this->resErrBad();
+        }
 
         foreach ($passArr as $comment)
         {

@@ -406,6 +406,8 @@ class AnswerController extends Controller
                 'state' => 0
             ]);
 
+        Redis::DEL('answer_' . $id);
+
         return $this->resNoContent();
     }
 
@@ -421,6 +423,8 @@ class AnswerController extends Controller
                 'state' => 0,
                 'deleted_at' => null
             ]);
+
+        Redis::DEL('answer_' . $id);
 
         $answerRepository = new AnswerRepository();
         $answerRepository->createProcess($id);

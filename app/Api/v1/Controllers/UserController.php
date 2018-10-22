@@ -384,7 +384,7 @@ class UserController extends Controller
         $repository = new UserRepository();
         $count = $repository->getNotificationCount($this->getAuthUserId());
 
-        return $this->resOK($count);
+        return $this->resOK($count < 0 ? 0 : $count);
     }
 
     /**
@@ -442,14 +442,32 @@ class UserController extends Controller
     {
         $userId = $this->getAuthUserId();
 
+        $ids = Notifications
+            ::where('to_user_id', $userId)
+            ->pluck('id')
+            ->toArray();
+
+        if (!$ids)
+        {
+            return $this->resNoContent();
+        }
+
         Notifications
             ::where('to_user_id', $userId)
             ->update([
                 'checked' => true
             ]);
 
-        Redis::DEL('user-' . $userId . '-notification-ids');
-        Redis::SET('user_' . $userId . '_notification_count', 0);
+        Redis::pipeline(function ($pipe) use ($ids, $userId)
+        {
+            foreach ($ids as $id)
+            {
+                $pipe->DEL('notification-' . $id);
+            }
+
+            Redis::DEL('user-' . $userId . '-notification-ids');
+            Redis::SET('user_' . $userId . '_notification_count', 0);
+        });
 
         return $this->resNoContent();
     }
@@ -563,6 +581,10 @@ class UserController extends Controller
         $userRepository = new UserRepository();
         $userLevel = new UserLevel();
         $user = $userRepository->item($userId, true);
+        if (is_null($user))
+        {
+            return $this->resOK(null);
+        }
         $user['coin_count'] = User::where('id', $userId)->pluck('coin_count')->first();
         $user['coin_from_sign'] = $userRepository->userSignCoin($userId);
         $user['ip_address'] = $userIpAddress->userIps($userId);

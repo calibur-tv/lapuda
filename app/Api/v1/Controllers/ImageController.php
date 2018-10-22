@@ -4,6 +4,7 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ImageRepository;
+use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Counter\ImageViewCounter;
@@ -13,11 +14,13 @@ use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Services\Toggle\Image\ImageMarkService;
 use App\Api\V1\Services\Toggle\Image\ImageRewardService;
+use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\AlbumImage;
 use App\Models\Banner;
 use App\Models\Image;
+use App\Models\Looper;
 use App\Services\Geetest\Captcha;
 use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
@@ -33,7 +36,7 @@ use Mews\Purifier\Facades\Purifier;
 class ImageController extends Controller
 {
     /**
-     * 获取首页banner图
+     * 获取PC网页首页banner图
      *
      * @Get("/image/banner")
      *
@@ -512,15 +515,18 @@ class ImageController extends Controller
         }
 
         AlbumImage::insert($saveImages);
-        $nowIds = AlbumImage::where('album_id', $albumId)
+        $nowIds = AlbumImage
+            ::where('album_id', $albumId)
             ->pluck('id')
             ->toArray();
 
         if ($album['image_count'])
         {
-            $imageIds = Image::where('id', $albumId)
+            $imageIds = Image
+                ::where('id', $albumId)
                 ->pluck('image_ids')
                 ->first();
+
             $oldIds = explode(',', $imageIds);
             $newIds = array_diff($nowIds, $oldIds);
 
@@ -533,10 +539,14 @@ class ImageController extends Controller
         {
             $newIds = $nowIds;
 
-            Image::where('id', $albumId)
+            Image
+                ::where('id', $albumId)
                 ->update([
                     'image_ids' => implode(',', $newIds)
                 ]);
+
+            $imageTrendingService = new ImageTrendingService($album['bangumi_id'], $album['user_id']);
+            $imageTrendingService->create($albumId);
         }
 
         if ($album['is_cartoon'])
@@ -984,7 +994,7 @@ class ImageController extends Controller
             $totalImageCount = new TotalImageCount();
             $totalImageCount->add(-1);
             Redis::DEL($imageRepository->itemCacheKey($image->album_id));
-            Redis::DEL($imageRepository->albumImages($image->album_id));
+            Redis::DEL($imageRepository->cacheKeyAlbumImages($image->album_id));
         }
 
         return $this->resNoContent();
@@ -1030,6 +1040,8 @@ class ImageController extends Controller
                 ->update([
                     'state' => 0
                 ]);
+
+            Redis::DEL('image_' . $id);
         }
         else
         {
@@ -1057,6 +1069,8 @@ class ImageController extends Controller
                     'state' => 0,
                     'deleted_at' => null
                 ]);
+
+            Redis::DEL('image_' . $id);
 
             $imageRepository = new ImageRepository();
             $imageRepository->createProcess($id);

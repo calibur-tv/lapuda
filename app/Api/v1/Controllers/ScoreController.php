@@ -637,6 +637,8 @@ class ScoreController extends Controller
                 'state' => 0
             ]);
 
+        Redis::DEL('score_' . $id);
+
         return $this->resNoContent();
     }
 
@@ -652,6 +654,8 @@ class ScoreController extends Controller
                 'state' => 0,
                 'deleted_at' => null
             ]);
+
+        Redis::DEL('score_' . $id);
 
         $scoreRepository = new ScoreRepository();
         $scoreRepository->createProcess($id);

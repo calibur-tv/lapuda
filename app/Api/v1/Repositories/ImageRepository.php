@@ -263,7 +263,7 @@ class ImageRepository extends Repository
 
     public function createProcess($id, $state = 0)
     {
-        $image = $this->item($id);
+        $image = $this->item($id, true);
 
         if ($state)
         {
@@ -274,8 +274,11 @@ class ImageRepository extends Repository
                 ]);
         }
 
-        $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
-        $imageTrendingService->create($id);
+        if (!$image['is_album'] || $image['image_count'] > 0)
+        {
+            $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
+            $imageTrendingService->create($id);
+        }
 
         $baiduPush = new BaiduPush();
         $baiduPush->trending('image');
@@ -368,6 +371,11 @@ class ImageRepository extends Repository
     {
         $image = $this->item($id, true);
 
+        if ($image['state'])
+        {
+            Redis::DEL($this->itemCacheKey($id));
+        }
+
         if ($image['user_id'] == $image['state'])
         {
             DB::table('images')
@@ -381,8 +389,6 @@ class ImageRepository extends Repository
             $imageTrendingService->create($id);
 
             $this->migrateSearchIndex('C', $id, false);
-
-            Redis::DEL($this->itemCacheKey($id));
         }
         else
         {

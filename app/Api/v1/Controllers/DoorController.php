@@ -304,22 +304,7 @@ class DoorController extends Controller
     // TODO：delete
     public function currentUser()
     {
-        $user = $this->getAuthUser();
-        if (!$user)
-        {
-            return $this->resErrAuth();
-        }
-
-        $user = $user->toArray();
-        $userId = $user['id'];
-        $imageRepository = new ImageRepository();
-        $userRepository = new UserRepository();
-        $user['uptoken'] = $imageRepository->uptoken($userId);
-        $user['daySign'] = $userRepository->daySigned($userId);
-        $user['notification'] = $userRepository->getNotificationCount($userId);
-        $transformer = new UserTransformer();
-
-        return $this->resOK($transformer->self($user));
+        return $this->resOK(null);
     }
 
     /**
@@ -444,6 +429,9 @@ class DoorController extends Controller
         $pinyin = strtolower(Overtrue::permalink($name));
 
         $tail = UserZone::where('name', $pinyin)->pluck('count')->first();
+
+        // 如果用户的昵称是中文加数字，生成的拼音会有可能被占用，从而注册的时候就失败了
+        // 可以通过一个递归调用 createUserZone 来解决，但是太危险了，先不修复这个问题
 
         if ($tail)
         {

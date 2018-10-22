@@ -13,6 +13,7 @@ use App\Api\V1\Services\UserLevel;
 use App\Models\Question;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Mews\Purifier\Facades\Purifier;
 
@@ -199,6 +200,8 @@ class QuestionController extends Controller
                 'state' => 0
             ]);
 
+        Redis::DEL('question_' . $id);
+
         return $this->resNoContent();
     }
 
@@ -214,6 +217,8 @@ class QuestionController extends Controller
                 'state' => 0,
                 'deleted_at' => null
             ]);
+
+        Redis::DEL('question_' . $id);
 
         $questionRepository = new QuestionRepository();
         $questionRepository->createProcess($id);

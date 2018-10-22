@@ -63,7 +63,7 @@ class AnswerRepository extends Repository
 
     public function createProcess($id, $state = 0)
     {
-        $answer = $this->item($id);
+        $answer = $this->item($id, true);
 
         if ($state)
         {
@@ -75,40 +75,37 @@ class AnswerRepository extends Repository
                 ]);
         }
 
-        if ($answer['created_at'] === $answer['updated_at'])
-        {
-            $questionId = $answer['question_id'];
-            $answerTrendingService = new AnswerTrendingService();
-            $answerTrendingService->create($questionId, $answer['user_id']);
+        $questionId = $answer['question_id'];
+        $answerTrendingService = new AnswerTrendingService($questionId, $answer['user_id']);
+        $answerTrendingService->create($id);
 
-            $questionRepository = new QuestionRepository();
-            $question = $questionRepository->item($questionId);
+        $questionRepository = new QuestionRepository();
+        $question = $questionRepository->item($questionId);
 
-            $questionTrendingService = new QuestionTrendingService($question['tag_ids']);
-            $questionTrendingService->update($questionId);
+        $questionTrendingService = new QuestionTrendingService($question['tag_ids']);
+        $questionTrendingService->update($questionId);
 
-            $questionAnswerCounter = new QuestionAnswerCounter();
-            $questionAnswerCounter->add($questionId);
+        $questionAnswerCounter = new QuestionAnswerCounter();
+        $questionAnswerCounter->add($questionId);
 
-            DB::table('questions')
-                ->where('id', $questionId)
-                ->update([
-                    'updated_at' => Carbon::now()
-                ]);
+        DB::table('questions')
+            ->where('id', $questionId)
+            ->update([
+                'updated_at' => Carbon::now()
+            ]);
 
-            $job = (new \App\Jobs\Notification\Create(
-                'question-answer',
-                $question['user_id'],
-                $answer['user_id'],
-                $id
-            ));
-            dispatch($job);
+        $job = (new \App\Jobs\Notification\Create(
+            'question-answer',
+            $question['user_id'],
+            $answer['user_id'],
+            $id
+        ));
+        dispatch($job);
 
-            $baiduPush = new BaiduPush();
-            $baiduPush->trending('question');
+        $baiduPush = new BaiduPush();
+        $baiduPush->trending('question');
 
-            $this->migrateSearchIndex('C', $id, false);
-        }
+        $this->migrateSearchIndex('C', $id, false);
     }
 
     public function updateProcess($id)
@@ -170,6 +167,11 @@ class AnswerRepository extends Repository
     {
         $answer = $this->item($id, true);
 
+        if ($answer['state'])
+        {
+            Redis::DEL($this->itemCacheKey($id));
+        }
+
         if ($answer['user_id'] == $answer['state'])
         {
             DB::table('question_answers')
@@ -180,8 +182,6 @@ class AnswerRepository extends Repository
                 ]);
 
             $this->migrateSearchIndex('C', $id, false);
-
-            Redis::DEL($this->itemCacheKey($id));
         }
         else
         {
