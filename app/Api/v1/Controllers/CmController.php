@@ -31,8 +31,8 @@ class CmController extends Controller
             $now = Carbon::now();
 
             return Looper
-                ::where('begin_at', '>=', $now)
-                ->where('end_at', '<=', $now)
+                ::where('begin_at', '<=', $now)
+                ->where('end_at', '>', $now)
                 ->orderBy('updated_at', 'DESC')
                 ->select('id', 'title', 'poster', 'desc', 'link')
                 ->get()
