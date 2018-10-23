@@ -44,7 +44,7 @@ class Invite implements ShouldQueue
         if (
             $inviteUser &&
             $inviteUser->phone &&
-            preg_match('/^(13[0-9]|15[012356789]|166|17[3678]|18[0-9]|14[57])[0-9]{8}$/', $inviteUser->phone) &&
+            // preg_match('/^(13[0-9]|15[012356789]|166|17[3678]|18[0-9]|14[57])[0-9]{8}$/', $inviteUser->phone) &&
             !intval($inviteUser->faker)
         )
         {
