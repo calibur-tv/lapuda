@@ -657,7 +657,7 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
-    // 金币用户排行榜
+    // 团子用户排行榜
     public function coinDescList(Request $request)
     {
         $curPage = $request->get('cur_page') ?: 0;
@@ -941,7 +941,7 @@ class UserController extends Controller
 
         if ($coinCount < 100)
         {
-            return $this->resErrBad('未满100金币');
+            return $this->resErrBad('未满100团子');
         }
 
         $money = $request->get('money');

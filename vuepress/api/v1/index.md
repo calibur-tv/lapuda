@@ -2133,7 +2133,7 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
 
             {
                 "code": 40301,
-                "message": "没有足够的金币"
+                "message": "没有足够的团子"
             }
 
 ## 角色的粉丝列表 [POST /cartoon_role/`roleId`/fans]
@@ -2486,7 +2486,7 @@ type：like, follow, reward, mark，contributors
 
             {
                 "code": 40303,
-                "message": "非原创内容只能喜欢，不能打赏 | 金币不足 | 未打赏过 | 不能打赏自己的内容"
+                "message": "非原创内容只能喜欢，不能打赏 | 团子不足 | 未打赏过 | 不能打赏自己的内容"
             }
 
 + Response 404 (application/json)
@@ -2575,7 +2575,7 @@ type：like, follow, reward, mark，contributors
 8：恶意引战
 9：重复内容/刷屏
 10：内容不相关
-11：互刷金币
+11：互刷团子
 
 + Parameters
     + id: (integer, required) - 举报的 id

@@ -101,7 +101,7 @@ class ReportController extends Controller
      * 8：恶意引战
      * 9：重复内容/刷屏
      * 10：内容不相关
-     * 11：互刷金币
+     * 11：互刷团子
      *
      * @Post("/report/send")
      *

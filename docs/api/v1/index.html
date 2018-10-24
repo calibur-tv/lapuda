@@ -7,7 +7,7 @@
     <meta name="description" content="Just playing around">
     <link rel="icon" href="https://static.calibur.tv/favicon.ico">
     
-    <link rel="preload" href="/Laputa/assets/css/0.styles.c4c0b6bf.css" as="style"><link rel="preload" href="/Laputa/assets/js/app.3eeca33d.js" as="script"><link rel="preload" href="/Laputa/assets/js/15.6666eb7c.js" as="script"><link rel="prefetch" href="/Laputa/assets/js/7.b945083d.js"><link rel="prefetch" href="/Laputa/assets/js/2.cda51ec0.js"><link rel="prefetch" href="/Laputa/assets/js/3.6992acff.js"><link rel="prefetch" href="/Laputa/assets/js/4.d9eba96a.js"><link rel="prefetch" href="/Laputa/assets/js/5.1f0a9a55.js"><link rel="prefetch" href="/Laputa/assets/js/6.060cf774.js"><link rel="prefetch" href="/Laputa/assets/js/8.f3dc8888.js"><link rel="prefetch" href="/Laputa/assets/js/9.bff53713.js"><link rel="prefetch" href="/Laputa/assets/js/10.c94bd25f.js"><link rel="prefetch" href="/Laputa/assets/js/11.96853274.js"><link rel="prefetch" href="/Laputa/assets/js/12.20ccc4de.js"><link rel="prefetch" href="/Laputa/assets/js/13.89aa3bfd.js"><link rel="prefetch" href="/Laputa/assets/js/14.cb8a7ba3.js"><link rel="prefetch" href="/Laputa/assets/js/16.cc72bd45.js">
+    <link rel="preload" href="/Laputa/assets/css/0.styles.c4c0b6bf.css" as="style"><link rel="preload" href="/Laputa/assets/js/app.e9eb0aee.js" as="script"><link rel="preload" href="/Laputa/assets/js/15.f421caf1.js" as="script"><link rel="prefetch" href="/Laputa/assets/js/7.b945083d.js"><link rel="prefetch" href="/Laputa/assets/js/2.cda51ec0.js"><link rel="prefetch" href="/Laputa/assets/js/3.6992acff.js"><link rel="prefetch" href="/Laputa/assets/js/4.d9eba96a.js"><link rel="prefetch" href="/Laputa/assets/js/5.7068bd6d.js"><link rel="prefetch" href="/Laputa/assets/js/6.41d9b7c5.js"><link rel="prefetch" href="/Laputa/assets/js/8.f3dc8888.js"><link rel="prefetch" href="/Laputa/assets/js/9.1c8654ce.js"><link rel="prefetch" href="/Laputa/assets/js/10.6239950a.js"><link rel="prefetch" href="/Laputa/assets/js/11.96853274.js"><link rel="prefetch" href="/Laputa/assets/js/12.20ccc4de.js"><link rel="prefetch" href="/Laputa/assets/js/13.89aa3bfd.js"><link rel="prefetch" href="/Laputa/assets/js/14.cb8a7ba3.js"><link rel="prefetch" href="/Laputa/assets/js/16.cc72bd45.js">
     <link rel="stylesheet" href="/Laputa/assets/css/0.styles.c4c0b6bf.css">
   </head>
   <body>
@@ -742,7 +742,7 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
   }
 </code></pre></li></ul></li> <li><p>Response 403 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
       &quot;code&quot;: 40301,
-      &quot;message&quot;: &quot;没有足够的金币&quot;
+      &quot;message&quot;: &quot;没有足够的团子&quot;
   }
 </code></pre></li></ul></li></ul> <h2 id="角色的粉丝列表-post-cartoon-role-roleid-fans"><a href="#角色的粉丝列表-post-cartoon-role-roleid-fans" aria-hidden="true" class="header-anchor">#</a> 角色的粉丝列表 [POST /cartoon_role/<code>roleId</code>/fans]</h2> <h2 id="角色详情-get-cartoon-role-roleid-show"><a href="#角色详情-get-cartoon-role-roleid-show" aria-hidden="true" class="header-anchor">#</a> 角色详情 [GET /cartoon_role/<code>roleId</code>/show]</h2> <ul><li><p>Response 200 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
       &quot;code&quot;: 0,
@@ -858,7 +858,7 @@ type：like, follow, reward, mark，contributors
   }
 </code></pre></li></ul></li> <li><p>Response 403 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
       &quot;code&quot;: 40303,
-      &quot;message&quot;: &quot;非原创内容只能喜欢，不能打赏 | 金币不足 | 未打赏过 | 不能打赏自己的内容&quot;
+      &quot;message&quot;: &quot;非原创内容只能喜欢，不能打赏 | 团子不足 | 未打赏过 | 不能打赏自己的内容&quot;
   }
 </code></pre></li></ul></li> <li><p>Response 404 (application/json)</p> <ul><li><p>Body</p> <pre><code>  {
       &quot;code&quot;: 40401,
@@ -913,7 +913,7 @@ role_reply</p></blockquote> <blockquote><p>目前支持的 type：
 8：恶意引战
 9：重复内容/刷屏
 10：内容不相关
-11：互刷金币</p></blockquote> <ul><li><p>Parameters</p> <ul><li>id: (integer, required) - 举报的 id</li> <li>model: (string, required) - 举报的模型</li> <li>type: (string, required) - 举报的类型</li> <li>message: (string, required) - 举报的留言</li></ul></li> <li><p>Response 204 (application/json)</p></li></ul> <h1 id="营销相关接口"><a href="#营销相关接口" aria-hidden="true" class="header-anchor">#</a> 营销相关接口</h1> <h2 id="获取营销轮播图-get-cm-loop-list"><a href="#获取营销轮播图-get-cm-loop-list" aria-hidden="true" class="header-anchor">#</a> 获取营销轮播图 [GET /cm/loop/list]</h2> <ul><li>Response 200 (application/json)
+11：互刷团子</p></blockquote> <ul><li><p>Parameters</p> <ul><li>id: (integer, required) - 举报的 id</li> <li>model: (string, required) - 举报的模型</li> <li>type: (string, required) - 举报的类型</li> <li>message: (string, required) - 举报的留言</li></ul></li> <li><p>Response 204 (application/json)</p></li></ul> <h1 id="营销相关接口"><a href="#营销相关接口" aria-hidden="true" class="header-anchor">#</a> 营销相关接口</h1> <h2 id="获取营销轮播图-get-cm-loop-list"><a href="#获取营销轮播图-get-cm-loop-list" aria-hidden="true" class="header-anchor">#</a> 获取营销轮播图 [GET /cm/loop/list]</h2> <ul><li>Response 200 (application/json)
 <ul><li><p>Body</p> <pre><code>  {
       &quot;code&quot;: 0,
       &quot;data&quot;: &quot;图片列表&quot;
@@ -923,6 +923,6 @@ role_reply</p></blockquote> <blockquote><p>目前支持的 type：
         <a href="/Laputa/" class="prev router-link-active">
           首页
         </a></span> <!----></p></div> </div> <!----></div></div>
-    <script src="/Laputa/assets/js/15.6666eb7c.js" defer></script><script src="/Laputa/assets/js/app.3eeca33d.js" defer></script>
+    <script src="/Laputa/assets/js/15.f421caf1.js" defer></script><script src="/Laputa/assets/js/app.e9eb0aee.js" defer></script>
   </body>
 </html>
