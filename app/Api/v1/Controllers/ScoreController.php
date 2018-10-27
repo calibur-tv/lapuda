@@ -546,7 +546,7 @@ class ScoreController extends Controller
 
         if ($doPublished)
         {
-            $scoreRepository->doPublish($userId, $newId, $bangumiId);
+            $scoreRepository->doPublish($userId, $newId, $bangumiId, false);
         }
 
         Redis::DEL($scoreRepository->itemCacheKey($newId));

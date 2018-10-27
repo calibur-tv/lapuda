@@ -176,7 +176,7 @@ class ScoreRepository extends Repository
         }, 1);
     }
 
-    public function doPublish($userId, $scoreId, $bangumiId)
+    public function doPublish($userId, $scoreId, $bangumiId, $isCreate = true)
     {
         $bangumiFollowService = new BangumiFollowService();
         if (!$bangumiFollowService->check($userId, $bangumiId))
@@ -185,8 +185,11 @@ class ScoreRepository extends Repository
             $bangumiFollowService->do($userId, $bangumiId);
         }
 
-        $job = (new \App\Jobs\Trial\Score\Create($scoreId));
-        dispatch($job);
+        if ($isCreate)
+        {
+            $job = (new \App\Jobs\Trial\Score\Create($scoreId));
+            dispatch($job);
+        }
     }
 
     public function cacheKeyBangumiScore($bangumiId)
