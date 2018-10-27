@@ -342,10 +342,17 @@ class ScoreController extends Controller
         }
 
         $doPublished = $request->get('do_publish');
-        $bangumiScoreService = new BangumiScoreService();
-        if ($doPublished && $bangumiScoreService->check($userId, $bangumiId))
+        if ($doPublished)
         {
-            return $this->resErrBad('同一番剧不能重复评分');
+            $hasScore = Score
+                ::whereRaw('user_id = ? and bangumi_id = ?', [$userId, $bangumiId])
+                ->whereNotNull('published_at')
+                ->count();
+
+            if ($hasScore)
+            {
+                return $this->resErrBad('同一番剧不能重复评分');
+            }
         }
 
         $scoreRepository = new ScoreRepository();
@@ -489,7 +496,9 @@ class ScoreController extends Controller
         $bangumiScoreService = new BangumiScoreService();
         if ($doPublished && $bangumiScoreService->check($userId, $bangumiId))
         {
-            $oldId = (int)Score::whereRaw('user_id = ? and bangumi_id = ?', [$userId, $bangumiId])
+            $oldId = (int)Score
+                ::whereRaw('user_id = ? and bangumi_id = ?', [$userId, $bangumiId])
+                ->whereNotNull('published_at')
                 ->pluck('id')
                 ->first();
 
