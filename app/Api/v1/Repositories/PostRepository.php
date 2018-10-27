@@ -226,10 +226,13 @@ class PostRepository extends Repository
                     'deleted_at' => null
                 ]);
 
-            $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
-            $postTrendingService->create($id);
+            if (!$post['top_at'])
+            {
+                $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
+                $postTrendingService->create($id);
 
-            $this->migrateSearchIndex('C', $id, false);
+                $this->migrateSearchIndex('C', $id, false);
+            }
         }
         else
         {
