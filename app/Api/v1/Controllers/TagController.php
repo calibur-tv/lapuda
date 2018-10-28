@@ -9,6 +9,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Services\Tag\BangumiTagService;
+use App\Api\V1\Services\Tag\PostTagService;
 use Illuminate\Http\Request;
 
 class TagController extends Controller
@@ -17,12 +18,16 @@ class TagController extends Controller
     public function all(Request $request)
     {
         $type = $request->get('type');
-        $result = [];
+        $tagService = null;
         if ($type === 'bangumi')
         {
             $tagService = new BangumiTagService();
-            $result = $tagService->all();
         }
+        else if ($type === 'post')
+        {
+            $tagService = new PostTagService();
+        }
+        $result = $tagService ? $tagService->all() : [];
 
         return $this->resOK($result);
     }
@@ -34,12 +39,21 @@ class TagController extends Controller
         $type = $request->get('type');
         $name = $request->get('name');
 
+        $tagService = null;
         if ($type === 'bangumi')
         {
             $tagService = new BangumiTagService();
-            $tagService->updateTag($id, $name);
+        }
+        else if ($type === 'post')
+        {
+            $tagService = new PostTagService();
+        }
+        if (is_null($tagService))
+        {
+            return $this->resErrBad();
         }
 
+        $tagService->updateTag($id, $name);
         return $this->resNoContent();
     }
 
@@ -48,14 +62,22 @@ class TagController extends Controller
     {
         $type = $request->get('type');
         $name = $request->get('name');
-        $newId = 0;
+        $tagService = null;
 
         if ($type === 'bangumi')
         {
             $tagService = new BangumiTagService();
-            $newId = $tagService->createTag($name);
+        }
+        else if ($type === 'post')
+        {
+            $tagService = new PostTagService();
+        }
+        if (is_null($tagService))
+        {
+            return $this->resErrBad();
         }
 
+        $newId = $tagService->createTag($name);
         return $this->resCreated($newId);
     }
 }

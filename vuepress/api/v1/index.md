@@ -414,6 +414,17 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
 
 # 帖子相关接口
 
+## 发帖时可选的所有标签 [GET /post/tags]
+
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "标签列表"
+            }
+
 ## 新建帖子 [POST /post/create]
 > 图片对象示例：
 1. `url` 七牛传图后得到的 url，不包含图片地址的 host，如一张图片 image.calibur.tv/user/1/avatar.png，七牛返回的 url 是：user/1/avatar.png，将这个 url 传到后端

@@ -29,6 +29,7 @@ class PostTransformer extends Transformer
                 'liked' => $post['liked'],
                 'rewarded' => $post['rewarded'],
                 'marked' => $post['marked'],
+                'tags' => isset($post['tags']) ? $post['tags'] : [],
                 'like_users' => $post['like_users'],
                 'mark_users' => $post['mark_users'],
                 'reward_users' => $post['reward_users'],
@@ -167,6 +168,7 @@ class PostTransformer extends Transformer
                 'images' => $item['images'],
                 'top_at' => $item['top_at'],
                 'is_nice' => (boolean)$item['is_nice'],
+                'tags' => isset($item['tags']) ? $item['tags'] : [],
                 //
                 'is_creator' => (boolean)$item['is_creator'],
                 'like_count' => $item['like_count'],

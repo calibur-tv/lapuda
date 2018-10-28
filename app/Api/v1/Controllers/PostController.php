@@ -6,6 +6,7 @@ use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Counter\PostViewCounter;
 use App\Api\V1\Services\Owner\BangumiManager;
+use App\Api\V1\Services\Tag\PostTagService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
@@ -32,6 +33,22 @@ use Mews\Purifier\Facades\Purifier;
  */
 class PostController extends Controller
 {
+    /**
+     * 发帖时可选的所有标签
+     *
+     * @Get("/post/tags")
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "标签列表"})
+     * })
+     */
+    public function tags()
+    {
+        $postTagService = new PostTagService();
+
+        return $this->resOK($postTagService->all());
+    }
+
     /**
      * 新建帖子
      *
@@ -113,7 +130,7 @@ class PostController extends Controller
             'is_creator' => $request->get('is_creator'),
             'created_at' => $now,
             'updated_at' => $now
-        ], $images);
+        ], $images, $request->get("tags"));
 
         $userLevel = new UserLevel();
         $exp = $userLevel->change($userId, 4, $content);
