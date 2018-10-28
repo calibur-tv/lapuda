@@ -428,7 +428,8 @@ class Repository
             {
                 $result[] = [
                     'type' => $item['type'],
-                    'text' => $item['text']
+                    'text' => $item['text'],
+                    'title' => $item['title']
                 ];
             }
             else if ($item['type'] === 'img')
@@ -441,6 +442,21 @@ class Repository
                     'mime' => $item['mime'],
                     'text' => $item['text'],
                     'url' => $this->convertImagePath($item['url'])
+                ];
+            }
+            else if ($item['type'] === 'list')
+            {
+                $result[] = [
+                    'type' => $item['type'],
+                    'text' => $item['text'],
+                    'sort' => $item['sort']
+                ];
+            }
+            else if ($item['type'] === 'use')
+            {
+                $result[] = [
+                    'type' => $item['type'],
+                    'text' => $item['text']
                 ];
             }
         }

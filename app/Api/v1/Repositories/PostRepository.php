@@ -10,6 +10,7 @@ namespace App\Api\V1\Repositories;
 
 
 use App\Api\V1\Services\Comment\PostCommentService;
+use App\Api\V1\Services\Tag\PostTagService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Services\Toggle\Post\PostRewardService;
@@ -55,6 +56,9 @@ class PostRepository extends Repository
 
             $post['images'] = $images;
 
+            $postTagService = new PostTagService();
+            $post['tags'] = $postTagService->tags($id);
+
             return $post;
         });
 
@@ -66,9 +70,15 @@ class PostRepository extends Repository
         return $result;
     }
 
-    public function create($data, $images)
+    public function create($data, $images, $tags)
     {
         $newId = Post::insertGetId($data);
+
+        if ($tags)
+        {
+            $postTagService = new PostTagService();
+            $postTagService->update($newId, $tags);
+        }
 
         $this->savePostImage($newId, 0, $images);
         $job = (new \App\Jobs\Trial\Post\Create($newId));
@@ -226,10 +236,13 @@ class PostRepository extends Repository
                     'deleted_at' => null
                 ]);
 
-            $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
-            $postTrendingService->create($id);
+            if (!$post['top_at'])
+            {
+                $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
+                $postTrendingService->create($id);
 
-            $this->migrateSearchIndex('C', $id, false);
+                $this->migrateSearchIndex('C', $id, false);
+            }
         }
         else
         {

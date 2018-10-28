@@ -34,7 +34,7 @@ class CartoonRoleController extends Controller
      * @Transaction({
      *      @Response(204),
      *      @Response(404, body={"code": 40401, "message": "不存在的角色"}),
-     *      @Response(403, body={"code": 40301, "message": "没有足够的金币"})
+     *      @Response(403, body={"code": 40301, "message": "没有足够的团子"})
      * })
      */
     public function star($id)
@@ -51,7 +51,7 @@ class CartoonRoleController extends Controller
 
         if (!$userRepository->toggleCoin(false, $userId, 0, 3, $id))
         {
-            return $this->resErrRole('没有足够的金币');
+            return $this->resErrRole('没有足够的团子');
         }
 
         $cartoonRoleTrendingService = new CartoonRoleTrendingService($cartoonRole['bangumi_id'], $userId);

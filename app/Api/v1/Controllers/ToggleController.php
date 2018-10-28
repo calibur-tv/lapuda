@@ -423,7 +423,7 @@ class ToggleController extends Controller
      *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(200, body="一个boolean值"),
      *      @Response(400, body={"code": 40003, "message": "请求参数错 | 不支持该类型内容的打赏"}),
-     *      @Response(403, body={"code": 40303, "message": "非原创内容只能喜欢，不能打赏 | 金币不足 | 未打赏过 | 不能打赏自己的内容"}),
+     *      @Response(403, body={"code": 40303, "message": "非原创内容只能喜欢，不能打赏 | 团子不足 | 未打赏过 | 不能打赏自己的内容"}),
      *      @Response(404, body={"code": 40401, "message": "检测的对象不存在"})
      * })
      */
@@ -477,14 +477,14 @@ class ToggleController extends Controller
 
             if (!$userCoin)
             {
-                return $this->resErrRole('金币不足');
+                return $this->resErrRole('团子不足');
             }
         }
 
         $result = $userRepository->toggleCoin($rewarded, $userId, $item['user_id'], $coinType, $item['id']);
         if (!$result)
         {
-            return $this->resErrRole($rewarded ? '未打赏过' : '金币不足');
+            return $this->resErrRole($rewarded ? '未打赏过' : '团子不足');
         }
 
         $rewardId = $rewardService->toggle($userId, $id);

@@ -66,7 +66,14 @@ class UpdateWeight implements ShouldQueue
             ->whereRaw('type_id = ? and modal_id = ?', [$this->id, $searchType])
             ->count();
 
-        if (!$hasData)
+        if ($hasData > 1)
+        {
+            DB
+                ::table('search_v3')
+                ->whereRaw('type_id = ? and modal_id = ?', [$this->id, $searchType])
+                ->delete();
+        }
+        if (!$hasData || $hasData > 1)
         {
             $repository = $search->getRepositoryByType($searchType);
             $repository->migrateSearchIndex('C', $this->id, false);

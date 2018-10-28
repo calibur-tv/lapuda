@@ -69,7 +69,6 @@ class AnswerTrendingService extends TrendingService
     {
         $ids = Answer
             ::where('state', 0)
-            ->where('created_at', '>', Carbon::now()->addDays(-100))
             ->when($this->bangumiId, function ($query)
             {
                 return $query

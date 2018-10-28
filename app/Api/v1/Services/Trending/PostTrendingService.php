@@ -64,9 +64,10 @@ class PostTrendingService extends TrendingService
 
     public function computeHotIds()
     {
+        $beginAt = $this->bangumiId ? Carbon::now()->addDays(-300) : Carbon::now()->addDays(-100);
         $ids = Post
             ::where('state', 0)
-            ->where('created_at', '>', Carbon::now()->addDays(-100))
+            ->where('created_at', '>', $beginAt)
             ->when($this->bangumiId, function ($query)
             {
                 return $query
@@ -101,6 +102,7 @@ class PostTrendingService extends TrendingService
             $commentCount = $postCommentService->getCommentCount($postId);
 
             $result[$postId] = (
+                    strtotime($item['created_at']) +
                     ($viewCount && log($viewCount, 10) * 4) +
                     ($likeCount * 2 + $markCount * 2 + $rewardCount * 3) +
                     ($commentCount && log($commentCount, M_E))

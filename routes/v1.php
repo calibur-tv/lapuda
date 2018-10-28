@@ -175,6 +175,8 @@ $api->version(['v1', 'latest'], function ($api)
 
     $api->group(['prefix' => '/post'], function ($api)
     {
+        $api->get('/tags', 'App\Api\V1\Controllers\PostController@tags');
+
         $api->post('/create', 'App\Api\V1\Controllers\PostController@create')->middleware(['jwt.auth', 'geetest', 'throttle:1,3']);
 
         $api->group(['prefix' => '/{id}'], function ($api)
@@ -292,6 +294,8 @@ $api->version(['v1', 'latest'], function ($api)
     $api->group(['prefix' => '/flow'], function ($api)
     {
         $api->get('/list', 'App\Api\V1\Controllers\TrendingController@flowlist');
+
+        $api->post('/list', 'App\Api\V1\Controllers\TrendingController@flowlist');
 
         $api->get('/meta', 'App\Api\V1\Controllers\TrendingController@meta');
     });

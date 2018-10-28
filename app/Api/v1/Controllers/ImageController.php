@@ -546,6 +546,7 @@ class ImageController extends Controller
                 ]);
 
             $imageTrendingService = new ImageTrendingService($album['bangumi_id'], $album['user_id']);
+            $imageTrendingService->delete($albumId);
             $imageTrendingService->create($albumId);
         }
 

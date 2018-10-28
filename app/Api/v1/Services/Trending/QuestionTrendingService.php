@@ -64,6 +64,8 @@ class QuestionTrendingService extends TrendingService
 
     public function computeHotIds()
     {
+        $beginAt = $this->bangumiId ? Carbon::now()->addDays(-300) : Carbon::now()->addDays(-100);
+
         $ids = DB
             ::table('questions AS qaq')
             ->where('qaq.state', 0)
@@ -74,7 +76,7 @@ class QuestionTrendingService extends TrendingService
                     ->where('tag.tag_id', $this->bangumiId);
             })
             ->whereNull('deleted_at')
-            ->where('created_at', '>', Carbon::now()->addDays(-100))
+            ->where('created_at', '>', $beginAt)
             ->pluck('qaq.id');
 
         $questionRepository = new QuestionRepository();
