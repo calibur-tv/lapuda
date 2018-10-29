@@ -44,7 +44,8 @@ class VideoController extends Controller
             return $this->resErrNotFound('不存在的视频资源');
         }
 
-        $userId = $this->getAuthUserId();
+        $user = $this->getAuthUser();
+        $userId = $user ? $user->id : 0;
         $bangumiRepository = new BangumiRepository();
         $bangumi = $bangumiRepository->item($info['bangumi_id']);
 
@@ -80,13 +81,18 @@ class VideoController extends Controller
         $info['other_site'] = $bangumi['others_site_video'];
 
         $mustReward = $bangumi['released_video_id'] == $id && $bangumi['end'] == 0;
+        $blocked = $userIpAddress->check($userId);
+        if ($user && $user->banned_to)
+        {
+            $blocked = true;
+        }
 
         return $this->resOK([
             'info' => $videoTransformer->show($info),
             'bangumi' => $bangumiTransformer->video($bangumi),
             'season' => $season,
             'list' => $list,
-            'ip_blocked' => $userIpAddress->check($userId),
+            'ip_blocked' => $blocked,
             'must_reward' => $mustReward,
             'need_min_level' => $mustReward ? 0 : 3
         ]);

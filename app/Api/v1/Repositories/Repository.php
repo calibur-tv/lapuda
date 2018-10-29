@@ -429,7 +429,7 @@ class Repository
                 $result[] = [
                     'type' => $item['type'],
                     'text' => $item['text'],
-                    'title' => $item['title']
+                    'title' => isset($item['title']) ? $item['title'] : ""
                 ];
             }
             else if ($item['type'] === 'img')

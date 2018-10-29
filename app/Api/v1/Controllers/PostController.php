@@ -107,8 +107,14 @@ class PostController extends Controller
             }
         }
 
+        $user = $this->getAuthUser();
+        if ($user->banned_to)
+        {
+            return $this->resErrFreeze($user->banned_to);
+        }
+
         $bangumiId = $request->get('bangumiId');
-        $userId = $this->getAuthUserId();
+        $userId = $user->id;
         $postRepository = new PostRepository();
 
         $bangumiFollowService = new BangumiFollowService();

@@ -147,7 +147,13 @@ class AnswerController extends Controller
             return $this->resErrParams($validator);
         }
 
-        $userId = $this->getAuthUserId();
+        $user = $this->getAuthUser();
+        if ($user->banned_to)
+        {
+            return $this->resErrFreeze($user->banned_to);
+        }
+
+        $userId = $user->id;
         $questionId = $request->get('question_id');
         $questionRepository = new QuestionRepository();
         $question = $questionRepository->item($questionId);

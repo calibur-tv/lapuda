@@ -102,7 +102,7 @@ class PostTrendingService extends TrendingService
             $commentCount = $postCommentService->getCommentCount($postId);
 
             $result[$postId] = (
-                    strtotime($item['created_at']) +
+                    strtotime($item['created_at']) * 2 +
                     ($viewCount && log($viewCount, 10) * 4) +
                     ($likeCount * 2 + $markCount * 2 + $rewardCount * 3) +
                     ($commentCount && log($commentCount, M_E))

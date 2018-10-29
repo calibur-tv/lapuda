@@ -116,6 +116,12 @@ class CommentController extends Controller
             return $this->resErrBad('错误的类型');
         }
 
+        $user = $this->getAuthUser();
+        if ($user->banned_to)
+        {
+            return $this->resErrFreeze($user->banned_to);
+        }
+
         $parent = $repository->item($id);
         if (is_null($parent))
         {
@@ -123,7 +129,7 @@ class CommentController extends Controller
         }
 
         $saveContent = [];
-        $userId = $this->getAuthUserId();
+        $userId = $user->id;
         $masterId = isset($parent['user_id']) ? intval($parent['user_id']) : 0;
 
         foreach ($images as $image)
@@ -401,6 +407,12 @@ class CommentController extends Controller
             return $this->resErrBad('错误的类型');
         }
 
+        $user = $this->getAuthUser();
+        if ($user->banned_to)
+        {
+            return $this->resErrFreeze($user->banned_to);
+        }
+
         $comment = $commentService->getMainCommentItem($id);
         if (is_null($comment))
         {
@@ -409,7 +421,7 @@ class CommentController extends Controller
 
         $content = $request->get('content');
         $targetUserId = intval($request->get('targetUserId'));
-        $userId = $this->getAuthUserId();
+        $userId = $user->id;
 
         $newComment = $commentService->create([
             'content' => $content,

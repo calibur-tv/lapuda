@@ -1035,4 +1035,42 @@ class UserController extends Controller
 
         return $this->resNoContent();
     }
+
+    public function freezeUserList()
+    {
+        $list = User
+            ::whereNotNull('banned_to')
+            ->get();
+
+        return $this->resOK($list);
+    }
+
+    public function freezeUser(Request $request)
+    {
+        $userId = $request->get('id');
+        $banned_to = $request->get('banned_to');
+
+        User::where('id', $userId)
+            ->update([
+                'banned_to' => date('Y-m-d H:m:s', strtotime($banned_to))
+            ]);
+
+        Redis::DEL('user_'. $userId);
+
+        return $this->resNoContent();
+    }
+
+    public function freeUser(Request $request)
+    {
+        $userId = $request->get('id');
+
+        User::where('id', $userId)
+            ->update([
+                'banned_to' => null
+            ]);
+
+        Redis::DEL('user_'. $userId);
+
+        return $this->resNoContent();
+    }
 }

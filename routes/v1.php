@@ -466,6 +466,15 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/read', 'App\Api\V1\Controllers\UserController@readFeedback');
             });
 
+            $api->group(['prefix' => '/banned'], function ($api)
+            {
+                $api->get('/freezeUsers', 'App\Api\V1\Controllers\UserController@freezeUserList');
+
+                $api->post('/freeze', 'App\Api\V1\Controllers\UserController@freezeUser');
+
+                $api->post('/free', 'App\Api\V1\Controllers\UserController@freeUser');
+            });
+
             $api->post('/add_to_trial', 'App\Api\V1\Controllers\UserController@addUserToTrial');
 
             $api->post('/transactions', 'App\Api\V1\Controllers\UserController@getUserCoinTransactions');

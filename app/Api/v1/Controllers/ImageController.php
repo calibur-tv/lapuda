@@ -138,6 +138,11 @@ class ImageController extends Controller
         }
 
         $user = $this->getAuthUser();
+        if ($user->banned_to)
+        {
+            return $this->resErrFreeze($user->banned_to);
+        }
+
         $userId = $user->id;
         $isCartoon = $request->get('is_cartoon');
         $bangumiId = $request->get('bangumi_id');
@@ -330,7 +335,13 @@ class ImageController extends Controller
             return $this->resErrParams($validator);
         }
 
-        $userId = $this->getAuthUserId();
+        $user = $this->getAuthUser();
+        if ($user->banned_to)
+        {
+            return $this->resErrFreeze($user->banned_to);
+        }
+
+        $userId = $user->id;
         $bangumiId = $request->get('bangumi_id');
         $bangumiFollowService = new BangumiFollowService();
         if (!$bangumiFollowService->check($userId, $bangumiId))
@@ -463,8 +474,14 @@ class ImageController extends Controller
             return $this->resErrParams($validator);
         }
 
+        $user = $this->getAuthUser();
+        if ($user->banned_to)
+        {
+            return $this->resErrFreeze($user->banned_to);
+        }
+
         $now = Carbon::now();
-        $userId = $this->getAuthUserId();
+        $userId = $user->id;
         $images = $request->get('images');
         $albumId = $request->get('album_id');
         $imageRepository = new ImageRepository();
