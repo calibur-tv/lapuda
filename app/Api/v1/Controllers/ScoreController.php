@@ -332,6 +332,11 @@ class ScoreController extends Controller
         }
 
         $user = $this->getAuthUser();
+        if ($user->banned_to)
+        {
+            return $this->resErrFreeze($user->banned_to);
+        }
+
         $userId = $user->id;
 
         $userLevel = new UserLevel();

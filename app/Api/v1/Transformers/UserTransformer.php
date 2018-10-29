@@ -106,7 +106,8 @@ class UserTransformer extends Transformer
                 'level' => $user['level'],
                 'sex' => $user['sex'],
                 'sexSecret' => (boolean)$user['sex_secret'],
-                'faker' => (boolean)$user['faker']
+                'faker' => (boolean)$user['faker'],
+                'banned_to' => $user['banned_to']
             ];
         });
     }

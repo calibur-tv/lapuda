@@ -88,6 +88,14 @@ class Controller extends BaseController
         ], 403);
     }
 
+    protected function resErrFreeze($time)
+    {
+        return response([
+            'code' => 40302,
+            'message' => '你已被禁言，离解禁还有：' .intval((strtotime($time) - time()) / 3600) . '个小时'
+        ], 403);
+    }
+
     protected function resErrParams($validator)
     {
         return response([
