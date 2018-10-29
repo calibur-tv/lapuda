@@ -90,9 +90,12 @@ class Controller extends BaseController
 
     protected function resErrFreeze($time)
     {
+        $expired = strtotime($time) - time();
+        $text = $expired > 3600 ? intval($expired / 3600) . '个小时' : intval($expired / 60) . '分钟';
+
         return response([
             'code' => 40302,
-            'message' => '你已被禁言，离解禁还有：' .intval((strtotime($time) - time()) / 3600) . '个小时'
+            'message' => '你已被禁言，离解禁还有：' . $text
         ], 403);
     }
 
