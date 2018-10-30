@@ -197,7 +197,7 @@ class CommentController extends Controller
 
         $bangumiManagerService = new BangumiManager();
 
-        $newComment['is_owner'] = $userId === $ownerId;
+        $newComment['is_owner'] = $userId == $ownerId;
         $newComment['is_master'] = $bangumiManagerService->isOwner($bangumiId, $userId);
         $newComment['is_leader'] = $bangumiManagerService->isLeader($bangumiId, $userId);
 
@@ -311,7 +311,7 @@ class CommentController extends Controller
         foreach ($list as $i => $item)
         {
             $fromUserId = $item['from_user_id'];
-            $list[$i]['is_owner'] = $fromUserId === $ownerId;
+            $list[$i]['is_owner'] = $fromUserId == $ownerId;
             $list[$i]['is_master'] = $bangumiManagerService->isOwner($bangumiId, $fromUserId);
             $list[$i]['is_leader'] = $bangumiManagerService->isLeader($bangumiId, $fromUserId);
         }
