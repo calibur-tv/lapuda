@@ -125,9 +125,9 @@ class OwnerService extends Repository
             return false;
         }
 
-        return (boolean)DB::table($this->owner_table)
-            ->whereRaw('modal_id = ? and user_id = ?', [$modalId, $userId])
-            ->count();
+        $ids = $this->managerIds($modalId);
+
+        return in_array($userId, $ids);
     }
 
     public function isLeader($modalId, $userId)
@@ -137,9 +137,21 @@ class OwnerService extends Repository
             return false;
         }
 
-        return (boolean)DB::table($this->owner_table)
-            ->whereRaw('modal_id = ? and user_id = ? and is_leader <> 0', [$modalId, $userId])
-            ->count();
+        $idsObj = $this->users($modalId);
+        if (!$idsObj['total'])
+        {
+            return false;
+        }
+
+        foreach ($idsObj['list'] as $item)
+        {
+            if ($item->is_leader && $item->user['id'] === $userId)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function hasLeader($modalId)
@@ -208,6 +220,21 @@ class OwnerService extends Repository
             'total' => count($result),
             'noMore' => true
         ];
+    }
+
+    public function managerIds($id)
+    {
+        $idsObj = $this->users($id);
+        if (!$idsObj['total'])
+        {
+            return [];
+        }
+
+        return array_map(function ($item)
+        {
+            return $item->user['id'];
+
+        }, $idsObj['list']);
     }
 
     public function total($modalId)

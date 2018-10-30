@@ -57,7 +57,10 @@ class CommentTransformer extends Transformer
                 'from_user_id' => (int)$comment['user_id'],
                 'from_user_name' => $comment['from_user_name'],
                 'from_user_zone' => $comment['from_user_zone'],
-                'from_user_avatar' => $comment['from_user_avatar']
+                'from_user_avatar' => $comment['from_user_avatar'],
+                'is_owner' => $comment['is_owner'],
+                'is_master' => $comment['is_master'],
+                'is_leader' => $comment['is_leader']
             ];
         });
     }

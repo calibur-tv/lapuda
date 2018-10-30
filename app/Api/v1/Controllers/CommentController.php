@@ -24,6 +24,7 @@ use App\Api\V1\Services\Comment\QuestionCommentService;
 use App\Api\V1\Services\Comment\ScoreCommentService;
 use App\Api\V1\Services\Comment\VideoCommentService;
 use App\Api\V1\Services\Counter\Stats\TotalCommentCount;
+use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\UserLevel;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -190,6 +191,17 @@ class CommentController extends Controller
         $newComment['liked'] = false;
         $newComment['like_count'] = 0;
 
+        $isFAQ = $type === 'question' || $type === 'answer';
+        $ownerId = $type === 'role' ? 0 : $parent['user_id'];
+        $bangumiId = $isFAQ ? 0 : $parent['bangumi_id'];
+
+        $bangumiManagerService = new BangumiManager();
+
+        $newComment['is_owner'] = $userId === $ownerId;
+        $newComment['is_master'] = $bangumiManagerService->isOwner($bangumiId, $userId);
+        $newComment['is_leader'] = $bangumiManagerService->isLeader($bangumiId, $userId);
+
+
         $totalCommentCount = new TotalCommentCount();
         $totalCommentCount->add();
 
@@ -289,6 +301,20 @@ class CommentController extends Controller
         $list = $commentService->mainCommentList($idsObject['ids']);
         $list = $commentService->batchCheckLiked($list, $userId, 'liked');
         $list = $commentService->batchGetLikeCount($list, 'like_count');
+
+        $isFAQ = $type === 'question' || $type === 'answer';
+        $ownerId = $type === 'role' ? 0 : $parent['user_id'];
+        $bangumiId = $isFAQ ? 0 : $parent['bangumi_id'];
+
+        $bangumiManagerService = new BangumiManager();
+
+        foreach ($list as $i => $item)
+        {
+            $fromUserId = $item['from_user_id'];
+            $list[$i]['is_owner'] = $fromUserId === $ownerId;
+            $list[$i]['is_master'] = $bangumiManagerService->isOwner($bangumiId, $fromUserId);
+            $list[$i]['is_leader'] = $bangumiManagerService->isLeader($bangumiId, $fromUserId);
+        }
 
         return $this->resOK([
             'list' => $list,

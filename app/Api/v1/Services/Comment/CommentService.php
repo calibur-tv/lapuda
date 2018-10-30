@@ -379,6 +379,9 @@ class CommentService extends Repository
         $result['to_user_name'] = $toUser['nickname'];
         $result['to_user_zone'] = $toUser['zone'];
         $result['to_user_avatar'] = $toUser['avatar'];
+        $result['is_owner'] = false;
+        $result['is_master'] = false;
+        $result['is_leader'] = false;
 
         $result = $this->transformer()->main($result);
 
