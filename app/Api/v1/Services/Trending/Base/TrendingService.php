@@ -3,6 +3,8 @@
 namespace App\Api\V1\Services\Trending\Base;
 
 use App\Api\V1\Repositories\Repository;
+use App\Api\V1\Services\Activity\BangumiActivity;
+use App\Api\V1\Services\Activity\UserActivity;
 
 /**
  * Created by PhpStorm.
@@ -30,6 +32,17 @@ class TrendingService extends Repository
         $idsObject = $this->getNewsIds($minId, $take);
         $list = $this->getListByIds($idsObject['ids'], $this->bangumiId ? 'bangumi' : 'trending');
 
+        if ($this->userId)
+        {
+            $userActivityService = new UserActivity();
+            $userActivityService->update($this->userId);
+        }
+        if ($this->bangumiId)
+        {
+            $bangumiActivity = new BangumiActivity();
+            $bangumiActivity->update($this->bangumiId);
+        }
+
         return [
             'list' => $list,
             'noMore' => $idsObject['noMore'],
@@ -41,6 +54,17 @@ class TrendingService extends Repository
     {
         $idsObject = $this->getActiveIds($seenIds, $take);
         $list = $this->getListByIds($idsObject['ids'], $this->bangumiId ? 'bangumi' : 'trending');
+
+        if ($this->userId)
+        {
+            $userActivityService = new UserActivity();
+            $userActivityService->update($this->userId);
+        }
+        if ($this->bangumiId)
+        {
+            $bangumiActivity = new BangumiActivity();
+            $bangumiActivity->update($this->bangumiId);
+        }
 
         return [
             'list' => $list,
@@ -54,6 +78,17 @@ class TrendingService extends Repository
         $idsObject = $this->getHotIds($seenIds, $take);
         $list = $this->getListByIds($idsObject['ids'], $this->bangumiId ? 'bangumi' : 'trending');
 
+        if ($this->userId)
+        {
+            $userActivityService = new UserActivity();
+            $userActivityService->update($this->userId);
+        }
+        if ($this->bangumiId)
+        {
+            $bangumiActivity = new BangumiActivity();
+            $bangumiActivity->update($this->bangumiId);
+        }
+
         return [
             'list' => $list,
             'noMore' => $idsObject['noMore'],
@@ -65,6 +100,12 @@ class TrendingService extends Repository
     {
         $idsObject = $this->getUserIds($page, $take);
         $list = $this->getListByIds($idsObject['ids'], 'user');
+
+        if ($this->userId)
+        {
+            $userActivityService = new UserActivity();
+            $userActivityService->update($this->userId);
+        }
 
         return [
             'list' => $list,

@@ -15,6 +15,7 @@ use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\VideoRepository;
+use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Comment\AnswerCommentService;
 use App\Api\V1\Services\Comment\CartoonRoleCommentService;
 use App\Api\V1\Services\Comment\ImageCommentService;
@@ -198,6 +199,9 @@ class CommentController extends Controller
             $userLevel = new UserLevel();
             $exp = $userLevel->change($userId, 2, $content);
         }
+
+        $userActivityService = new UserActivity();
+        $userActivityService->update($userId, 3);
 
         return $this->resCreated([
             'data' => $newComment,
@@ -457,6 +461,9 @@ class CommentController extends Controller
             $userLevel = new UserLevel();
             $exp = $userLevel->change($userId, 1, $content);
         }
+
+        $userActivityService = new UserActivity();
+        $userActivityService->update($userId, 2);
 
         return $this->resCreated([
             'data' => $newComment,

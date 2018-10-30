@@ -9,6 +9,7 @@
 namespace App\Api\V1\Repositories;
 
 
+use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
@@ -187,6 +188,9 @@ class ScoreRepository extends Repository
 
         if ($isCreate)
         {
+            $userActivityService = new UserActivity();
+            $userActivityService->update($userId, 10);
+
             $job = (new \App\Jobs\Trial\Score\Create($scoreId));
             dispatch($job);
         }

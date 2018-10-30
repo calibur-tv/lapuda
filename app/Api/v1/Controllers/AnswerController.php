@@ -273,7 +273,7 @@ class AnswerController extends Controller
 
         if ($doPublished)
         {
-            $questionRepository->publishAnswer($userId, $id, $answer['question_id']);
+            $questionRepository->publishAnswer($userId, $id, $answer['question_id'], false);
         }
 
         Redis::DEL($answerRepository->itemCacheKey($id));

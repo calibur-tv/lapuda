@@ -3,6 +3,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Counter\PostViewCounter;
 use App\Api\V1\Services\Owner\BangumiManager;
@@ -140,6 +141,9 @@ class PostController extends Controller
 
         $userLevel = new UserLevel();
         $exp = $userLevel->change($userId, 4, $content);
+
+        $userActivityService = new UserActivity();
+        $userActivityService->update($userId, 5);
 
         return $this->resCreated([
             'data' => $id,

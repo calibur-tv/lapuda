@@ -6,6 +6,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Counter\ImageViewCounter;
 use App\Api\V1\Services\Counter\Stats\TotalImageCount;
@@ -194,6 +195,9 @@ class ImageController extends Controller
         $userLevel = new UserLevel();
         $exp = $userLevel->change($userId, 3, false);
 
+        $userActivityService = new UserActivity();
+        $userActivityService->update($userId, 4);
+
         return $this->resCreated([
             'data' => $imageTransformer->userAlbums([$newAlbum])[0],
             'exp' => $exp,
@@ -369,6 +373,9 @@ class ImageController extends Controller
 
         $userLevel = new UserLevel();
         $exp = $userLevel->change($userId, 3, false);
+
+        $userActivityService = new UserActivity();
+        $userActivityService->update($userId, 4);
 
         return $this->resCreated([
             'data' => $newId,
@@ -577,6 +584,9 @@ class ImageController extends Controller
             $job = (new \App\Jobs\Trial\Image\Append($newIds));
             dispatch($job);
         }
+
+        $userActivityService = new UserActivity();
+        $userActivityService->update($userId, 3);
 
         Redis::DEL($imageRepository->itemCacheKey($albumId));
         Redis::DEL($imageRepository->cacheKeyAlbumImages($albumId));
