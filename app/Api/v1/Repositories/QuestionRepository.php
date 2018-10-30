@@ -9,6 +9,7 @@
 namespace App\Api\V1\Repositories;
 
 
+use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Comment\QuestionCommentService;
 use App\Api\V1\Services\Counter\QuestionAnswerCounter;
 use App\Api\V1\Services\Counter\QuestionViewCounter;
