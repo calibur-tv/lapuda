@@ -1874,6 +1874,36 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
                 "message": "请求参数错误"
             }
 
+## 获取单个主评论 [GET /comment/main/list]
+
+
++ Parameters
+    + type: (string, required) - 某个 type
+    + comment_id: (integer, required) - 主评论的id
+    + reply_id: (integer, required) - 子评论的id
+        + Default: 0
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "主评论"
+            }
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "请求参数错误"
+            }
+
 ## 获取主评论列表 [GET /comment/main/list]
 
 
