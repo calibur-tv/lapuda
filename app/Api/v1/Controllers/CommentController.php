@@ -292,6 +292,7 @@ class CommentController extends Controller
 
         $fromUserId = $comment['from_user_id'];
 
+        $comment['modal_type'] = $type;
         $comment['liked'] = $commentService->checkLiked($userId, $id);
         $comment['like_count'] = $commentService->getLikeCount($id);
         $comment['is_owner'] = $fromUserId == $ownerId;
