@@ -1874,7 +1874,7 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
                 "message": "请求参数错误"
             }
 
-## 获取单个主评论 [GET /comment/main/list]
+## 获取单个主评论 [GET /comment/main/item]
 
 
 + Parameters
