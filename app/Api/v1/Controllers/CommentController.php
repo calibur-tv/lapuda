@@ -223,6 +223,81 @@ class CommentController extends Controller
     }
 
     /**
+     * 获取单个主评论
+     *
+     * @Get("/comment/main/list")
+     *
+     * @Parameters({
+     *      @Parameter("type", description="某个 type", type="string", required=true),
+     *      @Parameter("comment_id", description="主评论的id", type="integer", required=true),
+     *      @Parameter("reply_id", description="子评论的id", type="integer", default="0", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body={"code": 0, "data": "主评论"}),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误"})
+     * })
+     */
+    public function mainItem(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'comment_id' => 'required|integer|min:1',
+            'reply_id' => 'required|integer',
+            'type' => [
+                'required',
+                Rule::in($this->types),
+            ],
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrBad();
+        }
+
+        $type = $request->get('type');
+        $id = $request->get('comment_id');
+
+        $commentService = $this->getCommentServiceByType($type);
+        if (is_null($commentService))
+        {
+            return $this->resErrBad('错误的类型');
+        }
+
+        $repository = $this->getRepositoryByType($type);
+        if (is_null($repository))
+        {
+            return $this->resErrBad('错误的类型');
+        }
+
+
+        $comment = $commentService->getMainCommentItem($id, $request->get('reply_id'));
+        if (is_null($comment))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $parent = $repository->item($comment['modal_id']);
+        if (is_null($parent))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $isFAQ = $type === 'question' || $type === 'answer';
+        $ownerId = $type === 'role' ? 0 : $parent['user_id'];
+        $bangumiId = $isFAQ ? 0 : $parent['bangumi_id'];
+
+        $bangumiManagerService = new BangumiManager();
+
+        $fromUserId = $comment['from_user_id'];
+        $comment['is_owner'] = $fromUserId == $ownerId;
+        $comment['is_master'] = $bangumiManagerService->isOwner($bangumiId, $fromUserId);
+        $comment['is_leader'] = $bangumiManagerService->isLeader($bangumiId, $fromUserId);
+
+        return $this->resOK($comment);
+    }
+
+    /**
      * 获取主评论列表
      *
      * @Get("/comment/main/list")
