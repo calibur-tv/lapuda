@@ -9,6 +9,7 @@
 namespace App\Api\V1\Repositories;
 
 
+use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Comment\QuestionCommentService;
 use App\Api\V1\Services\Counter\QuestionAnswerCounter;
 use App\Api\V1\Services\Counter\QuestionViewCounter;
@@ -163,7 +164,7 @@ class QuestionRepository extends Repository
             ->first();
     }
 
-    public function publishAnswer($userId, $answerId, $questionId)
+    public function publishAnswer($userId, $answerId, $questionId, $isCreate = true)
     {
         $questionFollowService = new QuestionFollowService();
         if (!$questionFollowService->check($userId, $questionId))
@@ -171,8 +172,14 @@ class QuestionRepository extends Repository
             $questionFollowService->do($userId, $questionId);
         }
 
-        $job = (new \App\Jobs\Trial\Answer\Create($answerId));
-        dispatch($job);
+        if ($isCreate)
+        {
+            $userActivityService = new UserActivity();
+            $userActivityService->update($userId, 4);
+
+            $job = (new \App\Jobs\Trial\Answer\Create($answerId));
+            dispatch($job);
+        }
     }
 
     public function createProcess($id, $state = 0)

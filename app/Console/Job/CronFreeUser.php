@@ -12,6 +12,7 @@ namespace App\Console\Job;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Redis;
 
 class CronFreeUser extends Command
 {
@@ -34,10 +35,23 @@ class CronFreeUser extends Command
      */
     public function handle()
     {
-        User::where('banned_to', '<', Carbon::now())
+        $ids = User
+            ::where('banned_to', '<', Carbon::now())
+            ->pluck('id')
+            ->toArray();
+
+        User::whereIn('id', $ids)
             ->update([
                 'banned_to' => null
             ]);
+
+        Redis::pipeline(function ($pipe) use ($ids)
+        {
+            foreach ($ids as $id)
+            {
+                $pipe->DEL('user_' . $id);
+            }
+        });
 
         return true;
     }

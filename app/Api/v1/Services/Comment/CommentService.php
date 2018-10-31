@@ -16,6 +16,7 @@ use App\Api\V1\Transformers\CommentTransformer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
 class CommentService extends Repository
@@ -315,7 +316,7 @@ class CommentService extends Repository
         return $this->transformer()->sub($result);
     }
 
-    public function getMainCommentItem($id)
+    public function getMainCommentItem($id, $subId = 0)
     {
         $result = $this->Cache($this->mainCommentCacheKey($id), function () use ($id)
         {
@@ -379,13 +380,37 @@ class CommentService extends Repository
         $result['to_user_name'] = $toUser['nickname'];
         $result['to_user_zone'] = $toUser['zone'];
         $result['to_user_avatar'] = $toUser['avatar'];
+        $result['is_owner'] = false;
+        $result['is_master'] = false;
+        $result['is_leader'] = false;
 
         $result = $this->transformer()->main($result);
 
         $commentIds = $this->getSubCommentIds($id);
         if (count($commentIds))
         {
-            $commentIdsObj = $this->filterIdsByMaxId($commentIds, 0, 5);
+            if ($subId)
+            {
+                $index = array_search($subId, $commentIds);
+                if (false === $index)
+                {
+                    $commentIdsObj = $this->filterIdsByMaxId($commentIds, 0, 5);
+                }
+                else
+                {
+                    $getLen = 6;
+                    $total = count($commentIds);
+                    $commentIdsObj = [
+                        'ids' => Redis::LRANGE($this->subCommentIdsKey($id), $index - 5, $index),
+                        'total' => $total,
+                        'noMore' => $total <= $getLen
+                    ];
+                }
+            }
+            else
+            {
+                $commentIdsObj = $this->filterIdsByMaxId($commentIds, 0, 5);
+            }
             $result['comments'] = [
                 'list' => $this->subCommentList($commentIdsObj['ids']),
                 'total' => $commentIdsObj['total'],

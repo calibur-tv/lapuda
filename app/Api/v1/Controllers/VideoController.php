@@ -57,11 +57,12 @@ class VideoController extends Controller
         $season = json_decode($bangumi['season']);
         $list = $bangumiRepository->videos($bangumi['id'], $season);
 
-        $bangumiFollowService = new BangumiFollowService();
-        $bangumi['followed'] = $bangumiFollowService->check($userId, $info['bangumi_id']);
+        $others_site_video = $bangumi['others_site_video'];
+        $released_video_id = $bangumi['released_video_id'];
+        $isEnded = $bangumi['end'];
+        $bangumi = $bangumiRepository->panel($info['bangumi_id'], $userId);
 
         $videoTransformer = new VideoTransformer();
-        $bangumiTransformer = new BangumiTransformer();
         $userIpAddress = new UserIpAddress();
 
         $searchService = new Search();
@@ -78,9 +79,9 @@ class VideoController extends Controller
         $info['reward_users'] = $videoRewardService->users($id);
         $info['marked'] = $videoMarkService->check($userId, $id);
         $info['mark_users'] = $videoMarkService->users($id);
-        $info['other_site'] = $bangumi['others_site_video'];
+        $info['other_site'] = $others_site_video;
 
-        $mustReward = $bangumi['released_video_id'] == $id && $bangumi['end'] == 0;
+        $mustReward = $released_video_id == $id && $isEnded == 0;
         $blocked = $userIpAddress->check($userId);
         if ($user && $user->banned_to)
         {
@@ -89,7 +90,7 @@ class VideoController extends Controller
 
         return $this->resOK([
             'info' => $videoTransformer->show($info),
-            'bangumi' => $bangumiTransformer->video($bangumi),
+            'bangumi' => $bangumi,
             'season' => $season,
             'list' => $list,
             'ip_blocked' => $blocked,

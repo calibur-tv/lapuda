@@ -9,6 +9,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\QuestionRepository;
+use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\UserLevel;
 use App\Models\Question;
 use Illuminate\Http\Request;
@@ -131,6 +132,9 @@ class QuestionController extends Controller
         ]);
 
         $exp = $userLevel->change($userId, 3, $content);
+
+        $userActivityService = new UserActivity();
+        $userActivityService->update($userId, 4);
 
         return $this->resCreated([
             'data' => $newId,

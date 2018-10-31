@@ -15,6 +15,7 @@ use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\VideoRepository;
+use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Comment\AnswerCommentService;
 use App\Api\V1\Services\Comment\CartoonRoleCommentService;
 use App\Api\V1\Services\Comment\ImageCommentService;
@@ -23,6 +24,7 @@ use App\Api\V1\Services\Comment\QuestionCommentService;
 use App\Api\V1\Services\Comment\ScoreCommentService;
 use App\Api\V1\Services\Comment\VideoCommentService;
 use App\Api\V1\Services\Counter\Stats\TotalCommentCount;
+use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\UserLevel;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -189,6 +191,17 @@ class CommentController extends Controller
         $newComment['liked'] = false;
         $newComment['like_count'] = 0;
 
+        $isFAQ = $type === 'question' || $type === 'answer';
+        $ownerId = $type === 'role' ? 0 : $parent['user_id'];
+        $bangumiId = $isFAQ ? 0 : $parent['bangumi_id'];
+
+        $bangumiManagerService = new BangumiManager();
+
+        $newComment['is_owner'] = $userId == $ownerId;
+        $newComment['is_master'] = $bangumiManagerService->isOwner($bangumiId, $userId);
+        $newComment['is_leader'] = $bangumiManagerService->isLeader($bangumiId, $userId);
+
+
         $totalCommentCount = new TotalCommentCount();
         $totalCommentCount->add();
 
@@ -199,11 +212,89 @@ class CommentController extends Controller
             $exp = $userLevel->change($userId, 2, $content);
         }
 
+        $userActivityService = new UserActivity();
+        $userActivityService->update($userId, 3);
+
         return $this->resCreated([
             'data' => $newComment,
             'exp' => $exp,
             'message' => $exp ? "评论成功，经验+{$exp}" : "评论成功"
         ]);
+    }
+
+    /**
+     * 获取单个主评论
+     *
+     * @Get("/comment/main/item")
+     *
+     * @Parameters({
+     *      @Parameter("type", description="某个 type", type="string", required=true),
+     *      @Parameter("comment_id", description="主评论的id", type="integer", required=true),
+     *      @Parameter("reply_id", description="子评论的id", type="integer", default="0", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body={"code": 0, "data": "主评论"}),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误"})
+     * })
+     */
+    public function mainItem(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'comment_id' => 'required|integer|min:1',
+            'reply_id' => 'required|integer',
+            'type' => [
+                'required',
+                Rule::in($this->types),
+            ],
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrBad();
+        }
+
+        $type = $request->get('type');
+        $id = $request->get('comment_id');
+
+        $commentService = $this->getCommentServiceByType($type);
+        if (is_null($commentService))
+        {
+            return $this->resErrBad('错误的类型');
+        }
+
+        $repository = $this->getRepositoryByType($type);
+        if (is_null($repository))
+        {
+            return $this->resErrBad('错误的类型');
+        }
+
+
+        $comment = $commentService->getMainCommentItem($id, $request->get('reply_id'));
+        if (is_null($comment))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $parent = $repository->item($comment['modal_id']);
+        if (is_null($parent))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $isFAQ = $type === 'question' || $type === 'answer';
+        $ownerId = $type === 'role' ? 0 : $parent['user_id'];
+        $bangumiId = $isFAQ ? 0 : $parent['bangumi_id'];
+
+        $bangumiManagerService = new BangumiManager();
+
+        $fromUserId = $comment['from_user_id'];
+        $comment['is_owner'] = $fromUserId == $ownerId;
+        $comment['is_master'] = $bangumiManagerService->isOwner($bangumiId, $fromUserId);
+        $comment['is_leader'] = $bangumiManagerService->isLeader($bangumiId, $fromUserId);
+
+        return $this->resOK($comment);
     }
 
     /**
@@ -285,6 +376,20 @@ class CommentController extends Controller
         $list = $commentService->mainCommentList($idsObject['ids']);
         $list = $commentService->batchCheckLiked($list, $userId, 'liked');
         $list = $commentService->batchGetLikeCount($list, 'like_count');
+
+        $isFAQ = $type === 'question' || $type === 'answer';
+        $ownerId = $type === 'role' ? 0 : $parent['user_id'];
+        $bangumiId = $isFAQ ? 0 : $parent['bangumi_id'];
+
+        $bangumiManagerService = new BangumiManager();
+
+        foreach ($list as $i => $item)
+        {
+            $fromUserId = $item['from_user_id'];
+            $list[$i]['is_owner'] = $fromUserId == $ownerId;
+            $list[$i]['is_master'] = $bangumiManagerService->isOwner($bangumiId, $fromUserId);
+            $list[$i]['is_leader'] = $bangumiManagerService->isLeader($bangumiId, $fromUserId);
+        }
 
         return $this->resOK([
             'list' => $list,
@@ -457,6 +562,9 @@ class CommentController extends Controller
             $userLevel = new UserLevel();
             $exp = $userLevel->change($userId, 1, $content);
         }
+
+        $userActivityService = new UserActivity();
+        $userActivityService->update($userId, 2);
 
         return $this->resCreated([
             'data' => $newComment,

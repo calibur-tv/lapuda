@@ -208,6 +208,8 @@ $api->version(['v1', 'latest'], function ($api)
     {
         $api->group(['prefix' => '/main'], function ($api)
         {
+            $api->get('/item', 'App\Api\V1\Controllers\CommentController@mainItem');
+
             $api->get('/list', 'App\Api\V1\Controllers\CommentController@mainList');
 
             $api->post('/create', 'App\Api\V1\Controllers\CommentController@create')->middleware(['jwt.auth', 'throttle:6,1']);
