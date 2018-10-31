@@ -257,6 +257,7 @@ class CommentController extends Controller
 
         $type = $request->get('type');
         $id = $request->get('comment_id');
+        $userId = $this->getAuthUserId();
 
         $commentService = $this->getCommentServiceByType($type);
         if (is_null($commentService))
@@ -290,6 +291,9 @@ class CommentController extends Controller
         $bangumiManagerService = new BangumiManager();
 
         $fromUserId = $comment['from_user_id'];
+
+        $comment['liked'] = $commentService->checkLiked($userId, $id);
+        $comment['like_count'] = $commentService->getLikeCount($id);
         $comment['is_owner'] = $fromUserId == $ownerId;
         $comment['is_master'] = $bangumiManagerService->isOwner($bangumiId, $fromUserId);
         $comment['is_leader'] = $bangumiManagerService->isLeader($bangumiId, $fromUserId);
