@@ -199,6 +199,13 @@ class CommentService extends Repository
 
         $this->changeSubCommentCount($parentId, $id, false);
 
+        $exp = 0;
+        if ($comment['to_user_id'] != 0)
+        {
+            $userLevel = new UserLevel();
+            $exp = $userLevel->change($comment['from_user_id'], -1, $comment['content']);
+        }
+
         $job = (new \App\Jobs\Notification\Delete(
             $this->modal . '-reply',
             $comment['to_user_id'],
@@ -207,13 +214,6 @@ class CommentService extends Repository
             $comment['id']
         ));
         dispatch($job);
-
-        $exp = 0;
-        if ($comment['to_user_id'] != 0)
-        {
-            $userLevel = new UserLevel();
-            $exp = $userLevel->change($comment['from_user_id'], -1, $comment['content']);
-        }
 
         return $exp;
     }
@@ -231,6 +231,13 @@ class CommentService extends Repository
 
         $this->changeMainCommentCount($modalId, $id, $userId, $isMaster, false);
 
+        $exp = 0;
+        if (!$isMaster)
+        {
+            $userLevel = new UserLevel();
+            $exp = $userLevel->change($comment['from_user_id'], -2, $comment['content']);
+        }
+
         $job = (new \App\Jobs\Notification\Delete(
             $this->modal . '-comment',
             $comment['to_user_id'],
@@ -239,13 +246,6 @@ class CommentService extends Repository
             $comment['id']
         ));
         dispatch($job);
-
-        $exp = 0;
-        if (!$isMaster)
-        {
-            $userLevel = new UserLevel();
-            $exp = $userLevel->change($comment['from_user_id'], -2, $comment['content']);
-        }
 
         return $exp;
     }

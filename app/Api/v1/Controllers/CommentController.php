@@ -961,7 +961,7 @@ class CommentController extends Controller
                 $id,
                 $comment['modal_id'],
                 $comment['from_user_id'],
-                true
+                false
             );
         }
         else
@@ -1087,7 +1087,7 @@ class CommentController extends Controller
                     $id,
                     $comment['modal_id'],
                     $comment['from_user_id'],
-                    true
+                    false
                 );
             }
             else
