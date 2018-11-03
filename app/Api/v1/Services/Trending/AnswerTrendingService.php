@@ -38,8 +38,7 @@ class AnswerTrendingService extends TrendingService
     {
         return
             Answer
-                ::where('state', 0)
-                ->when($this->bangumiId, function ($query)
+                ::when($this->bangumiId, function ($query)
                 {
                     return $query
                         ->where('question_id', $this->bangumiId);
@@ -68,8 +67,7 @@ class AnswerTrendingService extends TrendingService
     public function computeHotIds()
     {
         $ids = Answer
-            ::where('state', 0)
-            ->when($this->bangumiId, function ($query)
+            ::when($this->bangumiId, function ($query)
             {
                 return $query
                     ->where('question_id', $this->bangumiId);
