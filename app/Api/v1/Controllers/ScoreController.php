@@ -183,6 +183,9 @@ class ScoreController extends Controller
         $scoreRepository = new ScoreRepository();
         $score = $scoreRepository->bangumiScore($bangumiId);
 
+        $bangumiScoreService = new BangumiScoreService();
+        $score['count'] = $bangumiScoreService->total($bangumiId);
+
         return $this->resOK($score);
     }
 

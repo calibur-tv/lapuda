@@ -70,9 +70,6 @@ class CartoonRoleTrendingService extends TrendingService
     {
         $this->SortAdd($this->trendingIdsCacheKey('active', $this->bangumiId), $id);
         $this->SortAdd($this->trendingIdsCacheKey('hot', $this->bangumiId), $id);
-        // 刷新排行榜
-        $this->SortAdd($this->trendingIdsCacheKey('active', 0), $id);
-        $this->SortAdd($this->trendingIdsCacheKey('hot', 0), $id);
         // 删除个人的缓存，因为插入会有重复
         Redis::DEL($this->trendingFlowUsersKey());
     }

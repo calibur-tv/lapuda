@@ -236,6 +236,9 @@ class ScoreRepository extends Repository
     public function updateProcess($id)
     {
         $this->migrateSearchIndex('U', $id, false);
+        $score = $this->item($id, true);
+
+        Redis::DEL($this->cacheKeyBangumiScore($score['bangumi_id']));
     }
 
     public function deleteProcess($id, $state = 0)
@@ -267,6 +270,8 @@ class ScoreRepository extends Repository
         $scoreRewardService = new ScoreRewardService();
         $scoreRewardService->cancel($id);
 
+        Redis::DEL($this->cacheKeyBangumiScore($score['bangumi_id']));
+
         $userLevel = new UserLevel();
         $exp = $userLevel->change($score['user_id'], -5, $score['intro']);
         if ($score['is_creator'])
@@ -282,6 +287,7 @@ class ScoreRepository extends Repository
             $cancelEXP1 = $total * -2;
             $exp += $cancelEXP1;
         }
+
         $scoreMarkService = new ScoreMarkService();
         $total = $scoreMarkService->total($id);
         $cancelEXP2 = $total * -2;
