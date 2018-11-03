@@ -9,6 +9,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\Repository;
+use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Counter\Stats\TotalUserCount;
 use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\UserTransformer;
@@ -122,8 +123,12 @@ class UserController extends Controller
             $job = (new \App\Jobs\Search\UpdateWeight('user', $userId));
             dispatch($job);
         }
+
         $userLevel = new UserLevel();
         $user['level'] = $userLevel->convertExpToLevel($user['exp']);
+
+        $userActivityService = new UserActivity();
+        $user['power'] = $userActivityService->get($userId);
 
         return $this->resOK($userTransformer->show($user));
     }
@@ -538,6 +543,9 @@ class UserController extends Controller
 
         $userLevel = new UserLevel();
         $user['level'] = $userLevel->convertExpToLevel($user['exp']);
+
+        $userActivityService = new UserActivity();
+        $user['power'] = $userActivityService->get($userId);
 
         $userTransformer = new UserTransformer();
         return $this->resOK($userTransformer->card($user));

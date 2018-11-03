@@ -48,7 +48,8 @@ class UserTransformer extends Transformer
             'birthSecret' => (boolean)$user['birth_secret'],
             'sexSecret' => (boolean)$user['sex_secret'],
             'signature' => $user['signature'],
-            'level' => $user['level']
+            'level' => $user['level'],
+            'power' => $user['power']
         ];
     }
 
@@ -104,6 +105,7 @@ class UserTransformer extends Transformer
                 'nickname' => $user['nickname'],
                 'signature' => $user['signature'],
                 'level' => $user['level'],
+                'power' => $user['power'],
                 'sex' => $user['sex'],
                 'sexSecret' => (boolean)$user['sex_secret'],
                 'faker' => (boolean)$user['faker'],
