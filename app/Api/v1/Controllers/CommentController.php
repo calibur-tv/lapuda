@@ -644,23 +644,12 @@ class CommentController extends Controller
             }
         }
 
-        $commentService->deleteMainComment($id, $comment['modal_id'], $comment['from_user_id'], $isMaster);
-
-        $job = (new \App\Jobs\Notification\Delete(
-            $type . '-comment',
-            $comment['to_user_id'],
-            $comment['from_user_id'],
+        $exp = $commentService->deleteMainComment(
+            $id,
             $comment['modal_id'],
-            $comment['id']
-        ));
-        dispatch($job);
-
-        $exp = 0;
-        if (!$isMaster)
-        {
-            $userLevel = new UserLevel();
-            $exp = $userLevel->change($comment['from_user_id'], -2, $comment['content']);
-        }
+            $comment['from_user_id'],
+            $isMaster
+        );
 
         return $this->resOK([
             'exp' => $exp,
@@ -878,23 +867,7 @@ class CommentController extends Controller
             }
         }
 
-        $commentService->deleteSubComment($id, $comment['parent_id']);
-
-        $job = (new \App\Jobs\Notification\Delete(
-            $type . '-reply',
-            $comment['to_user_id'],
-            $comment['from_user_id'],
-            $comment['parent_id'],
-            $comment['id']
-        ));
-        dispatch($job);
-
-        $exp = 0;
-        if ($comment['to_user_id'] != 0)
-        {
-            $userLevel = new UserLevel();
-            $exp = $userLevel->change($comment['from_user_id'], -1, $comment['content']);
-        }
+        $exp = $commentService->deleteSubComment($id, $comment['parent_id']);
 
         return $this->resOK([
             'exp' => $exp,
@@ -975,7 +948,6 @@ class CommentController extends Controller
                 'deleted_at' => $now
             ]);
 
-        $userLevel = new UserLevel();
         $commentService = $this->getCommentServiceByType($type);
         if ($comment->parent_id == 0)
         {
@@ -991,7 +963,6 @@ class CommentController extends Controller
                 $comment['from_user_id'],
                 true
             );
-            $userLevel->change($comment['from_user_id'], -2, false);
         }
         else
         {
@@ -1002,8 +973,6 @@ class CommentController extends Controller
                 return $this->resNoContent();
             }
             $commentService->deleteSubComment($id, $comment['parent_id']);
-
-            $userLevel->change($comment['from_user_id'], -1, false);
         }
 
         return $this->resNoContent();
@@ -1102,7 +1071,6 @@ class CommentController extends Controller
             ->get()
             ->toArray();
 
-        $userLevel = new UserLevel();
         $commentService = $this->getCommentServiceByType($type);
         foreach ($commentIds as $comment)
         {
@@ -1121,7 +1089,6 @@ class CommentController extends Controller
                     $comment['from_user_id'],
                     true
                 );
-                $userLevel->change($comment['from_user_id'], -2, false);
             }
             else
             {
@@ -1132,8 +1099,6 @@ class CommentController extends Controller
                     return $this->resNoContent();
                 }
                 $commentService->deleteSubComment($id, $comment['parent_id']);
-
-                $userLevel->change($comment['from_user_id'], -1, false);
             }
         }
         return $this->resNoContent();
