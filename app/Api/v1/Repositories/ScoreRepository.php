@@ -178,7 +178,7 @@ class ScoreRepository extends Repository
         }, 1);
     }
 
-    public function doPublish($userId, $scoreId, $bangumiId, $isCreate = true)
+    public function doPublish($userId, $scoreId, $bangumiId, $published)
     {
         $bangumiFollowService = new BangumiFollowService();
         if (!$bangumiFollowService->check($userId, $bangumiId))
@@ -187,7 +187,7 @@ class ScoreRepository extends Repository
             $bangumiFollowService->do($userId, $bangumiId);
         }
 
-        if ($isCreate)
+        if (!$published)
         {
             $userActivityService = new UserActivity();
             $userActivityService->update($userId, 10);

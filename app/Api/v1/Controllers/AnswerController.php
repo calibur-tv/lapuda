@@ -183,7 +183,7 @@ class AnswerController extends Controller
 
         if ($doPublished)
         {
-            $questionRepository->publishAnswer($userId, $newId, $questionId);
+            $questionRepository->publishAnswer($userId, $newId, $questionId, false);
         }
         $userLevel = new UserLevel();
         $exp = $userLevel->change($userId, 4, $intro);
@@ -254,6 +254,7 @@ class AnswerController extends Controller
         }
 
         $now = Carbon::now();
+        $published = !!$answer['published_at'];
         $doPublished = $request->get('do_publish');
         $sourceUrl = $request->get('source_url');
         if (!$sourceUrl && $answer['source_url'])
@@ -273,7 +274,7 @@ class AnswerController extends Controller
 
         if ($doPublished)
         {
-            $questionRepository->publishAnswer($userId, $id, $answer['question_id'], false);
+            $questionRepository->publishAnswer($userId, $id, $answer['question_id'], $published);
         }
 
         Redis::DEL($answerRepository->itemCacheKey($id));

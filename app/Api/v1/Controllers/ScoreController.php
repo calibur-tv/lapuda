@@ -408,7 +408,7 @@ class ScoreController extends Controller
 
         if ($doPublished)
         {
-            $scoreRepository->doPublish($userId, $newId, $bangumiId);
+            $scoreRepository->doPublish($userId, $newId, $bangumiId, false);
         }
 
         $exp = $userLevel->change($userId, 5, $intro);
@@ -500,6 +500,7 @@ class ScoreController extends Controller
             return $this->resErrRole();
         }
 
+        $publised = !!$score['published_at'];
         $doPublished = $request->get('do_publish');
         $bangumiScoreService = new BangumiScoreService();
         if ($doPublished && $bangumiScoreService->check($userId, $bangumiId))
@@ -554,7 +555,7 @@ class ScoreController extends Controller
 
         if ($doPublished)
         {
-            $scoreRepository->doPublish($userId, $newId, $bangumiId, false);
+            $scoreRepository->doPublish($userId, $newId, $bangumiId, $publised);
         }
 
         Redis::DEL($scoreRepository->itemCacheKey($newId));
