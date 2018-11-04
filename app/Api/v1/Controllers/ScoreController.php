@@ -406,21 +406,19 @@ class ScoreController extends Controller
                 'is_creator' => $request->get('is_creator')
             ]);
 
+        $exp = 0;
         if ($doPublished)
         {
             $scoreRepository->doPublish($userId, $newId, $bangumiId, false);
+            $exp = $userLevel->change($userId, 5, $intro);
         }
-
-        $exp = $userLevel->change($userId, 5, $intro);
 
         return $this->resOK([
             'data' => $newId,
             'exp' => $exp,
             'message' => $doPublished ? (
                 $exp ? "发布成功，经验+{$exp}" : "发布成功"
-            ) : (
-                $exp ? "保存成功，经验+{$exp}" : "保存成功"
-            )
+            ) : "保存成功"
         ]);
     }
 
@@ -553,14 +551,25 @@ class ScoreController extends Controller
                 'published_at' => $score['published_at'] ? $score['published_at'] : ($doPublished ? Carbon::now() : null)
             ]);
 
+        $exp = 0;
         if ($doPublished)
         {
             $scoreRepository->doPublish($userId, $newId, $bangumiId, $publised);
+            if (!$publised)
+            {
+                $userLevel = new UserLevel();
+                $exp = $userLevel->change($userId, 5, $intro);
+            }
         }
 
         Redis::DEL($scoreRepository->itemCacheKey($newId));
 
-        return $this->resNoContent();
+        return $this->resOK([
+            'exp' => $exp,
+            'message' => $doPublished ? (
+                $exp ? "发布成功，经验+{$exp}" : "发布成功"
+            ) : "保存成功"
+        ]);
     }
 
     /**
