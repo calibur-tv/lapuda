@@ -390,7 +390,7 @@ class ImageRepository extends Repository
                 ]);
 
             $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
-            $imageTrendingService->create($id);
+            $imageTrendingService->create($id, !$image['is_cartoon']);
 
             $this->migrateSearchIndex('C', $id, false);
         }
