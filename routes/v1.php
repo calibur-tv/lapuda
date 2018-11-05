@@ -387,6 +387,8 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->group(['prefix' => '/manager'], function ($api)
             {
+                $api->get('/list', 'App\Api\V1\Controllers\BangumiController@managers');
+
                 $api->post('/set', 'App\Api\V1\Controllers\BangumiController@setManager');
 
                 $api->post('/remove', 'App\Api\V1\Controllers\BangumiController@removeManager');
