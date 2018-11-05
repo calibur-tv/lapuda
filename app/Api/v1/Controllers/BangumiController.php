@@ -2,6 +2,7 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Services\Activity\BangumiActivity;
 use App\Api\V1\Services\Counter\BangumiScoreCounter;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Tag\BangumiTagService;
@@ -203,6 +204,9 @@ class BangumiController extends Controller
 
         $bangumiTagService = new BangumiTagService();
         $bangumi['tags'] = $bangumiTagService->tags($id);
+
+        $bangumiActivityService = new BangumiActivity();
+        $bangumi['power'] = $bangumiActivityService->get($id);
 
         $bangumiTransformer = new BangumiTransformer();
 
