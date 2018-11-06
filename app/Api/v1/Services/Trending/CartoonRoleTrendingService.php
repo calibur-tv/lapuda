@@ -27,6 +27,17 @@ class CartoonRoleTrendingService extends TrendingService
         parent::__construct('cartoon_role', $bangumiId, $userId);
     }
 
+    public function getHotIds($seenIds, $take)
+    {
+        // 动态无序，使用 seenIds 的 sort set
+        $ids = $this->RedisSort($this->trendingIdsCacheKey('hot', $this->bangumiId), function ()
+        {
+            return $this->computeHotIds();
+        }, false, false, 'm');
+
+        return $this->filterIdsBySeenIds($ids, $seenIds, $take);
+    }
+
     public function computeHotIds()
     {
         return CartoonRole
