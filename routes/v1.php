@@ -38,6 +38,8 @@ $api->version(['v1', 'latest'], function ($api)
     $api->group(['prefix' => '/app'], function ($api)
     {
         $api->get('/version/check', 'App\Api\V1\Controllers\AppVersionController@check');
+
+        $api->get('/template', 'App\Api\V1\Controllers\AppVersionController@getTemplates');
     });
 
     $api->group(['prefix' => '/bangumi'], function ($api)
@@ -661,6 +663,8 @@ $api->version(['v1', 'latest'], function ($api)
 
                 $api->get('/uptoken', 'App\Api\V1\Controllers\AppVersionController@uploadAppToken');
             });
+
+            $api->post('/setTemplates', 'App\Api\V1\Controllers\AppVersionController@setTemplates');
         });
 
         $api->group(['prefix' => '/web'], function ($api)

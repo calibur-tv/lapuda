@@ -9,6 +9,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\Repository;
+use App\Models\AppTemplate;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -158,6 +159,115 @@ class AppVersionController extends Controller
         $uptoken = $auth->uploadToken(null, $timeout);
 
         return $this->resOK($uptoken);
+    }
+
+    public function setTemplates(Request $request)
+    {
+        $list = $request->get('list');
+
+        foreach ($list as $item)
+        {
+            $version = $item['version'];
+            $page = $item['page'];
+            $url = $item['url'];
+
+            $has = DB
+                ::table('app_templates')
+                ->where('version', $version)
+                ->where('page', $page)
+                ->count();
+
+            if ($has)
+            {
+                DB
+                    ::table('app_templates')
+                    ->where('version', $version)
+                    ->where('page', $page)
+                    ->update([
+                        'url' => $url
+                    ]);
+            }
+            else
+            {
+                DB
+                    ::table('app_templates')
+                    ->insert([
+                        'version' => $version,
+                        'page' => $page,
+                        'url' => $url
+                    ]);
+            }
+
+            Redis::DEL($this->templateKey($version, $page));
+            Redis::DEL('app-template-version-' . $version);
+        }
+
+        Redis::DEL('app-template-all');
+
+        return $this->resNoContent();
+    }
+
+    public function getTemplates(Request $request)
+    {
+        $version = $request->get('version');
+        $page = $request->get('page');
+        $repository = new Repository();
+
+        if ($version && $page)
+        {
+            $result = $repository->Cache($this->templateKey($version, $page), function () use ($version, $page)
+            {
+                return DB
+                    ::table('app_templates')
+                    ->where('version', $version)
+                    ->where('page', $page)
+                    ->select('url')
+                    ->first();
+            });
+
+            if (is_null($result))
+            {
+                return $this->resErrNotFound();
+            }
+
+            return $this->resOK($result);
+        }
+
+        if ($version)
+        {
+            $result = $repository->Cache('app-template-version-' . $version, function () use ($version)
+            {
+                return DB
+                    ::table('app_templates')
+                    ->where('version', $version)
+                    ->select('page', 'url')
+                    ->get()
+                    ->toArray();
+            });
+
+            if (empty($result))
+            {
+                return $this->resErrNotFound();
+            }
+
+            return $this->resOK($result);
+        }
+
+        $result = $repository->Cache('app-template-all', function () use ($version)
+        {
+            return DB
+                ::table('app_templates')
+                ->select('page', 'url', 'version')
+                ->get()
+                ->toArray();
+        });
+
+        return $this->resOK($result);
+    }
+
+    protected function templateKey($version, $page)
+    {
+        return 'app-template-' . $page . '-' . $version;
     }
 
     protected function appCacheKey($type, $version)
