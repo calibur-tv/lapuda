@@ -207,6 +207,25 @@ class AppVersionController extends Controller
         return $this->resNoContent();
     }
 
+    /**
+     * 获取 App 的 H5 模板
+     *
+     * > 目前支持的type
+     * transactions
+     *
+     * @Get("/app/template")
+     *
+     *
+     * @Parameters({
+     *      @Parameter("page", description="哪个页面", type="integer", required=false),
+     *      @Parameter("version", description="哪个版本", type="string", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "模板数据"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的模板"})
+     * })
+     */
     public function getTemplates(Request $request)
     {
         $version = $request->get('version');

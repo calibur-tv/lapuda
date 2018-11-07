@@ -155,6 +155,8 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/feedback', 'App\Api\V1\Controllers\UserController@feedback');
 
+        $api->get('/transactions', 'App\Api\V1\Controllers\UserController@transactions')->middleware('jwt.auth');
+
         $api->get('/recommended', 'App\Api\V1\Controllers\UserController@recommendedUsers');
 
         $api->get('/card', 'App\Api\V1\Controllers\UserController@userCard');
