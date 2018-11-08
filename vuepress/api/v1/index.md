@@ -253,6 +253,30 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
                 "message": "参数错误"
             }
 
+## 获取 App 的 H5 模板 [GET /app/template]
+> 目前支持的type
+transactions
+
++ Parameters
+    + page: (integer, optional) - 哪个页面
+    + version: (string, required) - 哪个版本
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "模板数据"
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "不存在的模板"
+            }
+
 # 番剧相关接口
 
 ## 番剧时间轴 [GET /bangumi/timeline]
@@ -1841,6 +1865,47 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
             Authorization: Bearer JWT-Token
 
 + Response 204 (application/json)
+
+## 用户交易记录列表 [GET /user/transactions]
+
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Request (application/json)
+    + Body
+
+            {
+                "min_id": "看过的最小id",
+                "default": 0,
+                "required": true
+            }
+
++ Request (application/json)
+    + Body
+
+            {
+                "take": "条数",
+                "default": 15
+            }
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "消息列表"
+            }
+
++ Response 401 (application/json)
+    + Body
+
+            {
+                "code": 40104,
+                "message": "未登录的用户"
+            }
 
 # 评论相关接口
 

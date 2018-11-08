@@ -521,6 +521,7 @@ class UserController extends Controller
 
             $transaction = [
                 'id' => (int)$item->id,
+                'action_type' => (int)$item->type,
                 'type' => 0, // 0 是支出，1是收入
                 'action' => '',
                 'count' => (int)$item->count, // 金额
