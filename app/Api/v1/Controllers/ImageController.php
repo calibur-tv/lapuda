@@ -1226,7 +1226,7 @@ class ImageController extends Controller
         $item = $list[0];
         Image::where('id', $id)
             ->update([
-                'url' => $item['url'],
+                'url' => $imageRepository->convertImagePath($item['url']),
                 'width' => $item['width'],
                 'height' => $item['height'],
                 'size' => $item['size'],

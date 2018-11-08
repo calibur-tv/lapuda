@@ -546,7 +546,7 @@ $api->version(['v1', 'latest'], function ($api)
 
                 $api->post('/reject', 'App\Api\V1\Controllers\ImageController@reject');
 
-                $api->post('/delete_poster', 'App\Api\V1\Controllers\PostController@deleteAlbumPoster');
+                $api->post('/delete_poster', 'App\Api\V1\Controllers\ImageController@deleteAlbumPoster');
             });
 
             $api->group(['prefix' => '/comment'], function ($api)
