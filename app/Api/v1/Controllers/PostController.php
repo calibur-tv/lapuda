@@ -696,4 +696,19 @@ class PostController extends Controller
 
         return $this->resNoContent();
     }
+
+    // 删除帖子的标题
+    public function deletePostTitle(Request $request)
+    {
+        $id = $request->get('id');
+
+        Post::where('id', $id)
+            ->update([
+                'title' => ''
+            ]);
+
+        Redis::DEL('post_' . $id);
+
+        return $this->resNoContent();
+    }
 }

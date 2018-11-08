@@ -545,6 +545,8 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/approve', 'App\Api\V1\Controllers\ImageController@approve');
 
                 $api->post('/reject', 'App\Api\V1\Controllers\ImageController@reject');
+
+                $api->post('/delete_poster', 'App\Api\V1\Controllers\PostController@deleteAlbumPoster');
             });
 
             $api->group(['prefix' => '/comment'], function ($api)
@@ -584,6 +586,8 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/reject', 'App\Api\V1\Controllers\PostController@reject');
 
                 $api->post('/delete_image', 'App\Api\V1\Controllers\PostController@deletePostImage');
+
+                $api->post('/delete_title', 'App\Api\V1\Controllers\PostController@deletePostTitle');
             });
 
             $api->group(['prefix' => '/score'], function ($api)

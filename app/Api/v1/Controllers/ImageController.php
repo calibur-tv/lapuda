@@ -1209,4 +1209,32 @@ class ImageController extends Controller
 
         return $this->resNoContent();
     }
+
+    // 删除相册的封面
+    public function deleteAlbumPoster(Request $request)
+    {
+        $id = $request->get('id');
+
+        $imageRepository = new ImageRepository();
+
+        $list = $imageRepository->albumImages($id);
+        if (empty($list))
+        {
+            return $this->resNoContent();
+        }
+
+        $item = $list[0];
+        Image::where('id', $id)
+            ->update([
+                'url' => $item['url'],
+                'width' => $item['width'],
+                'height' => $item['height'],
+                'size' => $item['size'],
+                'type' => $item['type']
+            ]);
+
+        Redis::DEL($imageRepository->itemCacheKey($id));
+
+        return $this->resNoContent();
+    }
 }
