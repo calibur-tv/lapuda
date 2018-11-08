@@ -35,7 +35,7 @@ class Message
 
     public function inviteUser($phone, $inviteUser, $newUser)
     {
-        return $this->send($phone, 'SMS_125017290', [
+        return $this->send($phone, 'SMS_150570745', [
             'name' => $inviteUser,
             'time' => $newUser
         ]);
