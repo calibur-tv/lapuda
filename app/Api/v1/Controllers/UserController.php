@@ -690,6 +690,46 @@ class UserController extends Controller
         return $this->resOK($result);
     }
 
+    // 用户邀请注册的列表
+    public function userInviteList(Request $request)
+    {
+        $id = $request->get('id');
+
+        $userRepository = new UserRepository();
+        $user = $userRepository->item($id);
+        if (is_null($user))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $ids = UserCoin
+            ::where('user_id', $id)
+            ->where('type', 2)
+            ->pluck('from_user_id');
+
+        if (!$ids)
+        {
+            return $this->resOK([]);
+        }
+
+        $users = [];
+        $userLevel = new UserLevel();
+        $userActivityService = new UserActivity();
+        foreach ($ids as $userId)
+        {
+            $user = $userRepository->item($userId);
+            if (is_null($user))
+            {
+                continue;
+            }
+            $user['level'] = $userLevel->convertExpToLevel($user['exp']);
+            $user['power'] = $userActivityService->get($userId);
+            $users[] = $user;
+        }
+
+        return $this->resOK($users);
+    }
+
     // 获取推荐用户
     public function recommendedUsers()
     {
@@ -800,16 +840,19 @@ class UserController extends Controller
         }
 
         $userRepository = new UserRepository();
-        $userLevel = new UserLevel();
         $user = $userRepository->item($userId, true);
         if (is_null($user))
         {
             return $this->resOK(null);
         }
+        $userLevel = new UserLevel();
+        $userActivityService = new UserActivity();
+
         $user['coin_count'] = User::where('id', $userId)->pluck('coin_count')->first();
         $user['coin_from_sign'] = $userRepository->userSignCoin($userId);
         $user['ip_address'] = $userIpAddress->userIps($userId);
         $user['level'] = $userLevel->convertExpToLevel($user['exp']);
+        $user['power'] = $userActivityService->get($userId);
 
         return $this->resOK($user);
     }
