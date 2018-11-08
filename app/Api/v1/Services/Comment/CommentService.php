@@ -12,10 +12,10 @@ use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Counter\Base\RelationCounterService;
 use App\Api\V1\Services\Toggle\ToggleService;
+use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\CommentTransformer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
@@ -188,6 +188,8 @@ class CommentService extends Repository
 
     public function deleteSubComment($id, $parentId, $state = 0)
     {
+        $comment = $this->getSubCommentItem($id);
+
         DB::table($this->table)
             ->where('id', $id)
             ->update([
@@ -196,10 +198,30 @@ class CommentService extends Repository
             ]);
 
         $this->changeSubCommentCount($parentId, $id, false);
+
+        $exp = 0;
+        if ($comment['to_user_id'] != 0)
+        {
+            $userLevel = new UserLevel();
+            $exp = $userLevel->change($comment['from_user_id'], -1, $comment['content']);
+        }
+
+        $job = (new \App\Jobs\Notification\Delete(
+            $this->modal . '-reply',
+            $comment['to_user_id'],
+            $comment['from_user_id'],
+            $comment['parent_id'],
+            $comment['id']
+        ));
+        dispatch($job);
+
+        return $exp;
     }
 
     public function deleteMainComment($id, $modalId, $userId = 0, $isMaster = false, $state = 0)
     {
+        $comment = $this->getMainCommentItem($id);
+
         DB::table($this->table)
             ->where('id', $id)
             ->update([
@@ -208,6 +230,24 @@ class CommentService extends Repository
             ]);
 
         $this->changeMainCommentCount($modalId, $id, $userId, $isMaster, false);
+
+        $exp = 0;
+        if (!$isMaster)
+        {
+            $userLevel = new UserLevel();
+            $exp = $userLevel->change($comment['from_user_id'], -2, $comment['content']);
+        }
+
+        $job = (new \App\Jobs\Notification\Delete(
+            $this->modal . '-comment',
+            $comment['to_user_id'],
+            $comment['from_user_id'],
+            $comment['modal_id'],
+            $comment['id']
+        ));
+        dispatch($job);
+
+        return $exp;
     }
 
     public function getMainCommentIds($modalId)

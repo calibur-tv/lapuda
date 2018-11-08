@@ -6,6 +6,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Activity\BangumiActivity;
 use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Comment\ImageCommentService;
 use App\Api\V1\Services\Counter\ImageViewCounter;
@@ -198,6 +199,9 @@ class ImageController extends Controller
         $userActivityService = new UserActivity();
         $userActivityService->update($userId, 4);
 
+        $bangumiActivityService = new BangumiActivity();
+        $bangumiActivityService->update($bangumiId, 3);
+
         return $this->resCreated([
             'data' => $imageTransformer->userAlbums([$newAlbum])[0],
             'exp' => $exp,
@@ -376,6 +380,9 @@ class ImageController extends Controller
 
         $userActivityService = new UserActivity();
         $userActivityService->update($userId, 4);
+
+        $bangumiActivityService = new BangumiActivity();
+        $bangumiActivityService->update($bangumiId, 3);
 
         return $this->resCreated([
             'data' => $newId,
@@ -571,7 +578,7 @@ class ImageController extends Controller
 
             $imageTrendingService = new ImageTrendingService($album['bangumi_id'], $album['user_id']);
             $imageTrendingService->delete($albumId);
-            $imageTrendingService->create($albumId);
+            $imageTrendingService->create($albumId, !$album['is_cartoon']);
         }
 
         if ($album['is_cartoon'])

@@ -11,11 +11,8 @@ namespace App\Console\Job;
 
 use App\Api\V1\Services\Activity\BangumiActivity;
 use App\Api\V1\Services\Activity\UserActivity;
-use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 
 class CronComputedActivity extends Command
 {
@@ -43,12 +40,12 @@ class CronComputedActivity extends Command
         DB
             ::table('users')
             ->orderBy('id')
-            ->pluck('id')
-            ->chunk(100, function($ids) use ($userActivityService)
+            ->select('id')
+            ->chunk(100, function($users) use ($userActivityService)
             {
-                foreach ($ids as $id)
+                foreach ($users as $user)
                 {
-                    $userActivityService->migrate($id);
+                    $userActivityService->migrate($user->id);
                 }
             });
 
@@ -57,12 +54,12 @@ class CronComputedActivity extends Command
         DB
             ::table('bangumis')
             ->orderBy('id')
-            ->pluck('id')
-            ->chunk(100, function($ids) use ($bangumiActivityService)
+            ->select('id')
+            ->chunk(100, function($users) use ($bangumiActivityService)
             {
-                foreach ($ids as $id)
+                foreach ($users as $user)
                 {
-                    $bangumiActivityService->migrate($id);
+                    $bangumiActivityService->migrate($user->id);
                 }
             });
 

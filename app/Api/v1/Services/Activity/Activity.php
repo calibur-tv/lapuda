@@ -60,7 +60,7 @@ class Activity
     {
         $repository = new Repository();
 
-        return $repository->RedisItem($this->table . '_' . $id . '_activities', function () use ($id)
+        return (int)$repository->RedisItem($this->table . '_' . $id . '_activities', function () use ($id)
         {
             $list = DB
                 ::table($this->table)
@@ -79,13 +79,13 @@ class Activity
 
             foreach ($list as $item)
             {
-                $value = intval($item['value']);
+                $value = intval($item->value);
                 if ($value === 0)
                 {
                     continue;
                 }
                 // http://www.ruanyifeng.com/blog/2012/03/ranking_algorithm_newton_s_law_of_cooling.html
-                $result += $value / pow((($today - strtotime($item['day'])) / 3600), 0.3);
+                $result += $value / pow((($today - strtotime($item->day)) / 3600), 0.3);
             }
 
             return $result;

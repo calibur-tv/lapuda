@@ -164,7 +164,7 @@ class QuestionRepository extends Repository
             ->first();
     }
 
-    public function publishAnswer($userId, $answerId, $questionId, $isCreate = true)
+    public function publishAnswer($userId, $answerId, $questionId, $published)
     {
         $questionFollowService = new QuestionFollowService();
         if (!$questionFollowService->check($userId, $questionId))
@@ -172,7 +172,7 @@ class QuestionRepository extends Repository
             $questionFollowService->do($userId, $questionId);
         }
 
-        if ($isCreate)
+        if (!$published)
         {
             $userActivityService = new UserActivity();
             $userActivityService->update($userId, 4);

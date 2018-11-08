@@ -16,6 +16,7 @@ use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Repositories\VideoRepository;
+use App\Api\V1\Services\Activity\BangumiActivity;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Owner\QuestionLog;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
@@ -225,6 +226,12 @@ class ToggleController extends Controller
                 ));
                 dispatch($job);
             }
+        }
+
+        if ($type === 'bangumi')
+        {
+            $bangumiActivityService = new BangumiActivity();
+            $bangumiActivityService->update($id, $result ? 2 : -2);
         }
 
         return $this->resCreated((boolean)$result);

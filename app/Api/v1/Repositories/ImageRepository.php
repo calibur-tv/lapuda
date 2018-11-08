@@ -274,18 +274,22 @@ class ImageRepository extends Repository
                 ]);
         }
 
+        $updateTrending = !$image['is_cartoon'];
         if (!$image['is_album'] || $image['image_count'] > 0)
         {
             $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
-            $imageTrendingService->create($id);
+            $imageTrendingService->create($id, $updateTrending);
         }
 
         $baiduPush = new BaiduPush();
-        $baiduPush->trending('image');
-        $baiduPush->bangumi($image['bangumi_id'], 'pins');
-
-        if ($image['is_cartoon'])
+        if ($updateTrending)
         {
+            $baiduPush->trending('image');
+            $baiduPush->bangumi($image['bangumi_id'], 'pins');
+        }
+        else
+        {
+            // 是漫画
             Redis::DEL($this->cacheKeyCartoonParts($image['bangumi_id']));
         }
 
@@ -386,7 +390,7 @@ class ImageRepository extends Repository
                 ]);
 
             $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
-            $imageTrendingService->create($id);
+            $imageTrendingService->create($id, !$image['is_cartoon']);
 
             $this->migrateSearchIndex('C', $id, false);
         }

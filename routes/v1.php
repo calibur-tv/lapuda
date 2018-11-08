@@ -38,6 +38,8 @@ $api->version(['v1', 'latest'], function ($api)
     $api->group(['prefix' => '/app'], function ($api)
     {
         $api->get('/version/check', 'App\Api\V1\Controllers\AppVersionController@check');
+
+        $api->get('/template', 'App\Api\V1\Controllers\AppVersionController@getTemplates');
     });
 
     $api->group(['prefix' => '/bangumi'], function ($api)
@@ -153,7 +155,11 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/feedback', 'App\Api\V1\Controllers\UserController@feedback');
 
+        $api->get('/transactions', 'App\Api\V1\Controllers\UserController@transactions')->middleware('jwt.auth');
+
         $api->get('/recommended', 'App\Api\V1\Controllers\UserController@recommendedUsers');
+
+        $api->get('/invite/list', 'App\Api\V1\Controllers\UserController@userInviteList');
 
         $api->get('/card', 'App\Api\V1\Controllers\UserController@userCard');
 
@@ -387,6 +393,8 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->group(['prefix' => '/manager'], function ($api)
             {
+                $api->get('/list', 'App\Api\V1\Controllers\BangumiController@managers');
+
                 $api->post('/set', 'App\Api\V1\Controllers\BangumiController@setManager');
 
                 $api->post('/remove', 'App\Api\V1\Controllers\BangumiController@removeManager');
@@ -659,6 +667,8 @@ $api->version(['v1', 'latest'], function ($api)
 
                 $api->get('/uptoken', 'App\Api\V1\Controllers\AppVersionController@uploadAppToken');
             });
+
+            $api->post('/setTemplates', 'App\Api\V1\Controllers\AppVersionController@setTemplates');
         });
 
         $api->group(['prefix' => '/web'], function ($api)

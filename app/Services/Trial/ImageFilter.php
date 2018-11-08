@@ -28,7 +28,7 @@ class ImageFilter
             ],
             'warn' => [
                 'delete' => false,
-                'review' => true,
+                'review' => false, // 默认设置成 false，不审核暴恐
                 'label' => '未知', // 0 正常，1 暴恐
                 'score' => 0
             ],
@@ -166,6 +166,7 @@ class ImageFilter
         }
 
         $resp = $response->result;
+        /* 使用宽松策略，不删除图片，只进入审核，注意政治敏感
         if ($resp->label === 1 && $resp->score > $this->errorLine)
         {
             return [
@@ -177,6 +178,7 @@ class ImageFilter
         {
             return $defaultResult;
         }
+        */
         return [
             'delete' => false,
             'review' => $resp->label === 1
@@ -217,7 +219,7 @@ class ImageFilter
                 'uri' => $src
             ],
             'params' => [
-                'type' => ['pulp', 'terror', 'politician']
+                'type' => ['pulp', 'politician']
             ]
         ]);
 

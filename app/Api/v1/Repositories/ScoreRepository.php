@@ -9,6 +9,7 @@
 namespace App\Api\V1\Repositories;
 
 
+use App\Api\V1\Services\Activity\BangumiActivity;
 use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
@@ -177,7 +178,7 @@ class ScoreRepository extends Repository
         }, 1);
     }
 
-    public function doPublish($userId, $scoreId, $bangumiId, $isCreate = true)
+    public function doPublish($userId, $scoreId, $bangumiId, $published)
     {
         $bangumiFollowService = new BangumiFollowService();
         if (!$bangumiFollowService->check($userId, $bangumiId))
@@ -186,10 +187,13 @@ class ScoreRepository extends Repository
             $bangumiFollowService->do($userId, $bangumiId);
         }
 
-        if ($isCreate)
+        if (!$published)
         {
             $userActivityService = new UserActivity();
             $userActivityService->update($userId, 10);
+
+            $bangumiActivityService = new BangumiActivity();
+            $bangumiActivityService->update($bangumiId, 7);
 
             $job = (new \App\Jobs\Trial\Score\Create($scoreId));
             dispatch($job);
@@ -232,6 +236,9 @@ class ScoreRepository extends Repository
     public function updateProcess($id)
     {
         $this->migrateSearchIndex('U', $id, false);
+        $score = $this->item($id, true);
+
+        Redis::DEL($this->cacheKeyBangumiScore($score['bangumi_id']));
     }
 
     public function deleteProcess($id, $state = 0)
@@ -263,6 +270,8 @@ class ScoreRepository extends Repository
         $scoreRewardService = new ScoreRewardService();
         $scoreRewardService->cancel($id);
 
+        Redis::DEL($this->cacheKeyBangumiScore($score['bangumi_id']));
+
         $userLevel = new UserLevel();
         $exp = $userLevel->change($score['user_id'], -5, $score['intro']);
         if ($score['is_creator'])
@@ -278,6 +287,7 @@ class ScoreRepository extends Repository
             $cancelEXP1 = $total * -2;
             $exp += $cancelEXP1;
         }
+
         $scoreMarkService = new ScoreMarkService();
         $total = $scoreMarkService->total($id);
         $cancelEXP2 = $total * -2;

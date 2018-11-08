@@ -15,6 +15,7 @@ use App\Api\V1\Services\Trending\Base\TrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
+use Illuminate\Support\Facades\Redis;
 
 class CartoonRoleTrendingService extends TrendingService
 {
@@ -24,6 +25,17 @@ class CartoonRoleTrendingService extends TrendingService
     public function __construct($bangumiId = 0, $userId = 0)
     {
         parent::__construct('cartoon_role', $bangumiId, $userId);
+    }
+
+    public function getHotIds($seenIds, $take)
+    {
+        // 动态无序，使用 seenIds 的 sort set
+        $ids = $this->RedisSort($this->trendingIdsCacheKey('hot', $this->bangumiId), function ()
+        {
+            return $this->computeHotIds();
+        }, false, false, 'm');
+
+        return $this->filterIdsBySeenIds($ids, $seenIds, $take);
     }
 
     public function computeHotIds()
@@ -65,11 +77,12 @@ class CartoonRoleTrendingService extends TrendingService
         ];
     }
 
-    public function create($id)
+    public function create($id, $publish = true)
     {
-        $this->ListInsertBefore($this->trendingIdsCacheKey('news', $this->bangumiId), $id);
         $this->SortAdd($this->trendingIdsCacheKey('active', $this->bangumiId), $id);
         $this->SortAdd($this->trendingIdsCacheKey('hot', $this->bangumiId), $id);
+        // 删除个人的缓存，因为插入会有重复
+        Redis::DEL($this->trendingFlowUsersKey());
     }
 
     public function getListByIds($ids, $flowType)

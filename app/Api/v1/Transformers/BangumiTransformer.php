@@ -58,7 +58,8 @@ class BangumiTransformer extends Transformer
                 'follow_users' => $bangumi['follow_users'],
                 'manager_users' => $bangumi['manager_users'],
                 'has_video' => (boolean)$bangumi['has_video'],
-                'has_cartoon' => (boolean)$bangumi['has_cartoon']
+                'has_cartoon' => (boolean)$bangumi['has_cartoon'],
+                'power' => $bangumi['power']
             ];
         });
     }

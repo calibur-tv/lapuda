@@ -8,7 +8,14 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\AnswerRepository;
+use App\Api\V1\Repositories\CartoonRoleRepository;
+use App\Api\V1\Repositories\ImageRepository;
+use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\Repository;
+use App\Api\V1\Repositories\ScoreRepository;
+use App\Api\V1\Repositories\VideoRepository;
+use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Counter\Stats\TotalUserCount;
 use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\UserTransformer;
@@ -122,8 +129,12 @@ class UserController extends Controller
             $job = (new \App\Jobs\Search\UpdateWeight('user', $userId));
             dispatch($job);
         }
+
         $userLevel = new UserLevel();
         $user['level'] = $userLevel->convertExpToLevel($user['exp']);
+
+        $userActivityService = new UserActivity();
+        $user['power'] = $userActivityService->get($userId);
 
         return $this->resOK($userTransformer->show($user));
     }
@@ -472,6 +483,254 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
+    /**
+     * 用户交易记录列表
+     *
+     * @Get("/user/transactions")
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Request({"min_id": "看过的最小id", "default": 0, "required": true}),
+     *      @Request({"take": "条数", "default": 15}),
+     *      @Response(200, body={"code": 0, "data": "消息列表"}),
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户"})
+     * })
+     */
+    public function transactions(Request $request)
+    {
+        $minId = $request->get('min_id') ?: 0;
+        $take = $request->get('take') ?: 15;
+        $userId = $this->getAuthUserId();
+
+        $list = DB::table('user_coin')
+            ->where('user_id', $userId)
+            ->orWhere('from_user_id', $userId)
+            ->when($minId, function ($query) use ($minId)
+            {
+                return $query->where('id', '<', $minId);
+            })
+            ->select('id', 'created_at', 'from_user_id', 'user_id', 'type', 'type_id', 'id', 'count')
+            ->orderBy('id', 'DESC')
+            ->take($take)
+            ->get();
+
+        $result = [];
+        foreach ($list as $item)
+        {
+            $actionId = (int)$item->type_id;
+
+            $transaction = [
+                'id' => (int)$item->id,
+                'action_type' => (int)$item->type,
+                'type' => 0, // 0 是支出，1是收入
+                'action' => '',
+                'count' => (int)$item->count, // 金额
+                'about' => [
+                    'id' => $actionId
+                ],
+                'created_at' => $item->created_at, // 创建时间
+            ];
+
+            if ($item->type == 0)
+            {
+                $transaction['type'] = 1;
+                $transaction['action'] = '每日签到（旧）';
+            }
+            else if ($item->type == 1)
+            {
+                $transaction['action'] = '打赏帖子';
+                if ($item->from_user_id == $userId)
+                {
+                    $transaction['type'] = 0;
+                }
+                else
+                {
+                    $transaction['type'] = 1;
+                }
+
+                $postRepository = new PostRepository();
+                $post = $postRepository->item($actionId);
+                $transaction['about']['title'] = $post['title'];
+            }
+            else if ($item->type == 2)
+            {
+                $transaction['action'] = '邀请注册';
+                $transaction['type'] = 1;
+
+                $userRepository = new UserRepository();
+                $user = $userRepository->item($actionId);
+                $transaction['about']['nickname'] = $user['nickname'];
+                $transaction['about']['zone'] = $user['zone'];
+            }
+            else if ($item->type == 3)
+            {
+                $transaction['action'] = '偶像应援';
+                $transaction['type'] = 0;
+
+                $cartoonRoleRepository = new CartoonRoleRepository();
+                $role = $cartoonRoleRepository->item($actionId);
+                $transaction['about']['name'] = $role['name'];
+            }
+            else if ($item->type == 4)
+            {
+                $transaction['action'] = '打赏图片';
+                if ($item->from_user_id == $userId)
+                {
+                    $transaction['type'] = 0;
+                }
+                else
+                {
+                    $transaction['type'] = 1;
+                }
+
+                $imageRepository = new ImageRepository();
+                $image = $imageRepository->item($actionId);
+                $transaction['about']['title'] = $image['name'];
+            }
+            else if ($item->type == 5)
+            {
+                $transaction['action'] = '提现';
+                $transaction['type'] = 0;
+            }
+            else if ($item->type == 6)
+            {
+                $transaction['action'] = '打赏漫评';
+                if ($item->from_user_id == $userId)
+                {
+                    $transaction['type'] = 0;
+                }
+                else
+                {
+                    $transaction['type'] = 1;
+                }
+
+                $scoreRepository = new ScoreRepository();
+                $score = $scoreRepository->item($actionId);
+                $transaction['about']['title'] = $score['title'];
+            }
+            else if ($item->type == 7)
+            {
+                $transaction['action'] = '打赏回答';
+                if ($item->from_user_id == $userId)
+                {
+                    $transaction['type'] = 0;
+                }
+                else
+                {
+                    $transaction['type'] = 1;
+                }
+
+                $answerRepository = new AnswerRepository();
+                $answer = $answerRepository->item($actionId);
+                $transaction['about']['intro'] = $answer['intro'];
+            }
+            else if ($item->type == 8)
+            {
+                $transaction['type'] = 1;
+                $transaction['action'] = '每日签到';
+            }
+            else if ($item->type == 9)
+            {
+                $transaction['type'] = 0;
+                $transaction['action'] = '删除帖子';
+
+                $postRepository = new PostRepository();
+                $post = $postRepository->item($actionId, true);
+                $transaction['about']['title'] = $post['title'];
+            }
+            else if ($item->type == 10)
+            {
+                $transaction['type'] = 0;
+                $transaction['action'] = '删除图片';
+
+                $imageRepository = new ImageRepository();
+                $image = $imageRepository->item($actionId, true);
+                $transaction['about']['title'] = $image['name'];
+            }
+            else if ($item->type == 11)
+            {
+                $transaction['type'] = 0;
+                $transaction['action'] = '删除漫评';
+
+                $scoreRepository = new ScoreRepository();
+                $score = $scoreRepository->item($actionId, true);
+                $transaction['about']['title'] = $score['title'];
+            }
+            else if ($item->type == 12)
+            {
+                $transaction['type'] = 0;
+                $transaction['action'] = '删除回答';
+
+
+                $answerRepository = new AnswerRepository();
+                $answer = $answerRepository->item($actionId, true);
+                $transaction['about']['intro'] = $answer['intro'];
+            }
+            else if ($item->type == 13)
+            {
+                $transaction['type'] = 0;
+                $transaction['action'] = '打赏视频';
+
+                $videoRepository = new VideoRepository();
+                $video = $videoRepository->item($actionId);
+                $transaction['about']['title'] = $video['name'];
+            }
+            else if ($item->type == 14)
+            {
+                $transaction['type'] = 0;
+                $transaction['action'] = '删除视频';
+
+                $videoRepository = new VideoRepository();
+                $video = $videoRepository->item($actionId, true);
+                $transaction['about']['title'] = $video['name'];
+            }
+
+            $result[] = $transaction;
+        }
+
+        return $this->resOK($result);
+    }
+
+    // 用户邀请注册的列表
+    public function userInviteList(Request $request)
+    {
+        $id = $request->get('id');
+
+        $userRepository = new UserRepository();
+        $user = $userRepository->item($id);
+        if (is_null($user))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $ids = UserCoin
+            ::where('user_id', $id)
+            ->where('type', 2)
+            ->pluck('from_user_id');
+
+        if (!$ids)
+        {
+            return $this->resOK([]);
+        }
+
+        $users = [];
+        $userLevel = new UserLevel();
+        $userActivityService = new UserActivity();
+        foreach ($ids as $userId)
+        {
+            $user = $userRepository->item($userId);
+            if (is_null($user))
+            {
+                continue;
+            }
+            $user['level'] = $userLevel->convertExpToLevel($user['exp']);
+            $user['power'] = $userActivityService->get($userId);
+            $users[] = $user;
+        }
+
+        return $this->resOK($users);
+    }
+
     // 获取推荐用户
     public function recommendedUsers()
     {
@@ -539,6 +798,9 @@ class UserController extends Controller
         $userLevel = new UserLevel();
         $user['level'] = $userLevel->convertExpToLevel($user['exp']);
 
+        $userActivityService = new UserActivity();
+        $user['power'] = $userActivityService->get($userId);
+
         $userTransformer = new UserTransformer();
         return $this->resOK($userTransformer->card($user));
     }
@@ -579,16 +841,19 @@ class UserController extends Controller
         }
 
         $userRepository = new UserRepository();
-        $userLevel = new UserLevel();
         $user = $userRepository->item($userId, true);
         if (is_null($user))
         {
             return $this->resOK(null);
         }
+        $userLevel = new UserLevel();
+        $userActivityService = new UserActivity();
+
         $user['coin_count'] = User::where('id', $userId)->pluck('coin_count')->first();
         $user['coin_from_sign'] = $userRepository->userSignCoin($userId);
         $user['ip_address'] = $userIpAddress->userIps($userId);
         $user['level'] = $userLevel->convertExpToLevel($user['exp']);
+        $user['power'] = $userActivityService->get($userId);
 
         return $this->resOK($user);
     }
@@ -1036,6 +1301,7 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
+    // 被禁言的用户列表
     public function freezeUserList()
     {
         $list = User
@@ -1045,6 +1311,7 @@ class UserController extends Controller
         return $this->resOK($list);
     }
 
+    // 禁言用户
     public function freezeUser(Request $request)
     {
         $userId = $request->get('id');
@@ -1060,6 +1327,7 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
+    // 解禁用户
     public function freeUser(Request $request)
     {
         $userId = $request->get('id');

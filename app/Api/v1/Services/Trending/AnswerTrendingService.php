@@ -38,8 +38,7 @@ class AnswerTrendingService extends TrendingService
     {
         return
             Answer
-                ::where('state', 0)
-                ->when($this->bangumiId, function ($query)
+                ::when($this->bangumiId, function ($query)
                 {
                     return $query
                         ->where('question_id', $this->bangumiId);
@@ -54,22 +53,21 @@ class AnswerTrendingService extends TrendingService
     {
         return
             Answer
-            ::when($this->bangumiId, function ($query)
-            {
-                return $query
-                    ->where('question_id', $this->bangumiId);
-            })
-            ->orderBy('updated_at', 'desc')
-            ->take(100)
-            ->whereNotNull('published_at')
-            ->pluck('updated_at', 'id');
+                ::when($this->bangumiId, function ($query)
+                {
+                    return $query
+                        ->where('question_id', $this->bangumiId);
+                })
+                ->orderBy('updated_at', 'desc')
+                ->take(100)
+                ->whereNotNull('published_at')
+                ->pluck('updated_at', 'id');
     }
 
     public function computeHotIds()
     {
         $ids = Answer
-            ::where('state', 0)
-            ->when($this->bangumiId, function ($query)
+            ::when($this->bangumiId, function ($query)
             {
                 return $query
                     ->where('question_id', $this->bangumiId);

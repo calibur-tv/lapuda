@@ -2,6 +2,9 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Activity\BangumiActivity;
+use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Counter\BangumiScoreCounter;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Tag\BangumiTagService;
@@ -203,6 +206,9 @@ class BangumiController extends Controller
 
         $bangumiTagService = new BangumiTagService();
         $bangumi['tags'] = $bangumiTagService->tags($id);
+
+        $bangumiActivityService = new BangumiActivity();
+        $bangumi['power'] = $bangumiActivityService->get($id);
 
         $bangumiTransformer = new BangumiTransformer();
 
@@ -730,5 +736,49 @@ class BangumiController extends Controller
             ]);
 
         return $this->resNoContent();
+    }
+
+    public function managers(Request $request)
+    {
+        $curPage = $request->get('cur_page') ?: 0;
+        $toPage = $request->get('to_page') ?: 1;
+        $take = $request->get('take') ?: 10;
+
+        $list = DB::table('bangumi_managers')
+            ->orderBy('id', 'DESC')
+            ->take(($toPage - $curPage) * $take)
+            ->skip($curPage * $take)
+            ->select('user_id', 'modal_id', 'is_leader', 'created_at')
+            ->get();
+
+        $bangumiRepository = new BangumiRepository();
+        $userRepository = new UserRepository();
+        $bangumiActivityService = new BangumiActivity();
+        $userActivityService = new UserActivity();
+
+        foreach ($list as $i => $item)
+        {
+            $user = $userRepository->item($item->user_id);
+            if (is_null($user))
+            {
+                continue;
+            }
+            $bangumi = $bangumiRepository->item($item->modal_id);
+            if (is_null($bangumi))
+            {
+                continue;
+            }
+
+            $user['power'] = $userActivityService->get($user['id']);
+            $bangumi['power'] = $bangumiActivityService->get($bangumi['id']);
+
+            $list[$i]->user = $user;
+            $list[$i]->bangumi = $bangumi;
+        }
+
+        return $this->resOK([
+            'list' => $list,
+            'total' => DB::table('bangumi_managers')->count()
+        ]);
     }
 }
