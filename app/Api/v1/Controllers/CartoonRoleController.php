@@ -5,6 +5,8 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Activity\BangumiActivity;
+use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Trending\CartoonRoleTrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
@@ -294,6 +296,11 @@ class CartoonRoleController extends Controller
         $cartoonRoleRepository->migrateSearchIndex('C', $id);
         $cartoonRoleTrendingService = new CartoonRoleTrendingService($bangumiId);
         $cartoonRoleTrendingService->create($id);
+
+        $bangumiActivityService = new BangumiActivity();
+        $bangumiActivityService->update($bangumiId, 3);
+        $userActivityService = new UserActivity();
+        $userActivityService->update($userId, 3);
 
         return $this->resCreated($id);
     }
