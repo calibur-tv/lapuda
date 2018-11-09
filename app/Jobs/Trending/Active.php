@@ -55,6 +55,18 @@ class Active implements ShouldQueue
             return;
         }
 
+        /*
+        if ($this->type === 'image')
+        {
+            $repository = $this->getRepositoryByType();
+            $image = $repository->item($this->id);
+            if ($image['is_cartoon'])
+            {
+                return;
+            }
+        }
+        */
+
         DB::table($table)
             ->where('id', $this->id)
             ->update([
