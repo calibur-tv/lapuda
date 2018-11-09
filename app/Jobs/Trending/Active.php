@@ -8,6 +8,11 @@ namespace App\Jobs\Trending;
  * Date: 2018/8/21
  * Time: 下午7:45
  */
+use App\Api\V1\Repositories\AnswerRepository;
+use App\Api\V1\Repositories\ImageRepository;
+use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Repositories\QuestionRepository;
+use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Services\Trending\AnswerTrendingService;
 use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Services\Trending\PostTrendingService;
@@ -52,7 +57,8 @@ class Active implements ShouldQueue
 
         if ($this->type === 'image')
         {
-            $image = $service->item($this->id);
+            $repository = $this->getRepositoryByType();
+            $image = $repository->item($this->id);
             if ($image['is_cartoon'])
             {
                 return;
@@ -117,6 +123,34 @@ class Active implements ShouldQueue
                 break;
             case 'answer':
                 return new AnswerTrendingService($this->bangumiId);
+                break;
+            default:
+                return null;
+                break;
+        }
+    }
+
+    protected function getRepositoryByType()
+    {
+        switch ($this->type)
+        {
+            case 'post':
+                return new PostRepository();
+                break;
+            case 'video':
+                return null;
+                break;
+            case 'image':
+                return new ImageRepository();
+                break;
+            case 'score':
+                return new ScoreRepository();
+                break;
+            case 'question':
+                return new QuestionRepository();
+                break;
+            case 'answer':
+                return new AnswerRepository();
                 break;
             default:
                 return null;
