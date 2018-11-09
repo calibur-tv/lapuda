@@ -6,6 +6,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Activity\BangumiActivity;
+use App\Api\V1\Services\Activity\CartoonRoleActivity;
 use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Trending\CartoonRoleTrendingService;
@@ -103,6 +104,15 @@ class CartoonRoleController extends Controller
         CartoonRole
             ::where('id', $id)
             ->increment('star_count');
+
+        $userActivityService = new UserActivity();
+        $userActivityService->update($userId, 3);
+
+        $cartoonRoleActivityService = new CartoonRoleActivity();
+        $cartoonRoleActivityService->update($id, 1);
+
+        $bangumiActivityService = new BangumiActivity();
+        $bangumiActivityService->update($cartoonRole['bangumi_id']);
 
         return $this->resNoContent();
     }
