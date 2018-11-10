@@ -18,7 +18,7 @@ class PostTransformer extends Transformer
         {
             return [
                 'id' => (int)$post['id'],
-                'title' => $post['title'],
+                'title' => $post['title'] ?: '标题什么的不重要~',
                 'desc' => $post['desc'],
                 'content' => $post['content'],
                 'images' => $post['images'],
@@ -163,7 +163,7 @@ class PostTransformer extends Transformer
             return [
                 'id' => (int)$item['id'],
                 //
-                'title' => $item['title'] ? $item['title'] : '标题什么的不重要',
+                'title' => $item['title'] ? $item['title'] : '标题什么的不重要~',
                 'desc' => $item['desc'],
                 'images' => $item['images'],
                 'top_at' => $item['top_at'],
