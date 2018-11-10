@@ -89,6 +89,8 @@ class CartoonRoleController extends Controller
             }
         }
         $cartoonRoleTrendingService->create($id, $starded);
+        // 今日动态榜单
+        $cartoonRoleRepository->SortAdd('cartoon_role_today_activity_ids', $id, 1);
 
         $newCacheKey = 'cartoon_role_' . $id . '_new_fans_ids';
         $hotCacheKey = 'cartoon_role_' . $id . '_hot_fans_ids';

@@ -82,8 +82,6 @@ class CartoonRoleTrendingService extends TrendingService
         $this->SortAdd($this->trendingIdsCacheKey('hot', $this->bangumiId), $id);
         // 刷新排行榜
         $this->SortAdd($this->trendingIdsCacheKey('hot', 0), $id, 1);
-        // 今日动态榜单
-        $this->SortAdd('cartoon_role_today_activity_ids', $id, 1);
         // 删除个人的缓存，因为插入会有重复
         if (!$publish)
         {
