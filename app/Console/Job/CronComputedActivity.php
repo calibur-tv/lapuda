@@ -40,6 +40,7 @@ class CronComputedActivity extends Command
         DB
             ::table('users')
             ->orderBy('id')
+            ->where('exp', '<>', 0)
             ->select('id')
             ->chunk(100, function($users) use ($userActivityService)
             {
