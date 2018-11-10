@@ -15,6 +15,7 @@ use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
+use App\Models\UserCoin;
 use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -262,6 +263,89 @@ class CartoonRoleController extends Controller
         }
 
         return $this->resOK($list);
+    }
+
+    /**
+     * 贡献最多的10人
+     *
+     * @Get("/cartoon_role/list/dalao")
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "偶像列表"})
+     * })
+     */
+    public function dalaoUsers()
+    {
+        $userRepository = new UserRepository();
+        $result = $userRepository->Cache('cartoon_role_star_trending_users', function () use ($userRepository)
+        {
+            $list = UserCoin::where('type', 3)
+                ->select(DB::raw('count(*) as count, from_user_id as id'))
+                ->groupBy('from_user_id')
+                ->orderBy('count', 'DESC')
+                ->take(10)
+                ->get()
+                ->toArray();
+
+            foreach ($list as $i => $item)
+            {
+                $user = $userRepository->item($item['id']);
+                $user['contribution'] = $item['count'];
+                $list[$i] = [
+                    'id' => $user['id'],
+                    'contribution' => (int)$item['count'],
+                    'nickname' => $user['nickname'],
+                    'avatar' => $user['avatar'],
+                    'zone' => $user['zone']
+                ];
+            }
+
+            return $list;
+        });
+
+        return $this->resOK($result);
+    }
+
+    /**
+     * 今天最活跃的10个人
+     *
+     * @Get("/cartoon_role/list/newbie")
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "偶像列表"})
+     * })
+     */
+    public function newbieUsers()
+    {
+        $userRepository = new UserRepository();
+        $result = $userRepository->Cache('cartoon_role_star_trending_users', function () use ($userRepository)
+        {
+            $list = UserCoin::where('type', 3)
+                ->where('created_at', '>', Carbon::now()->addDays(-1))
+                ->select(DB::raw('count(*) as count, from_user_id as id'))
+                ->groupBy('from_user_id')
+                ->orderBy('count', 'DESC')
+                ->take(10)
+                ->get()
+                ->toArray();
+
+            foreach ($list as $i => $item)
+            {
+                $user = $userRepository->item($item['id']);
+                $user['contribution'] = $item['count'];
+                $list[$i] = [
+                    'id' => $user['id'],
+                    'contribution' => (int)$item['count'],
+                    'nickname' => $user['nickname'],
+                    'avatar' => $user['avatar'],
+                    'zone' => $user['zone']
+                ];
+            }
+
+            return $list;
+        }, 'm');
+
+        return $this->resOK($result);
     }
 
     /**

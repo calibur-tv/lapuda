@@ -301,6 +301,10 @@ $api->version(['v1', 'latest'], function ($api)
         $api->group(['prefix' => '/list'], function ($api)
         {
             $api->get('/today', 'App\Api\V1\Controllers\CartoonRoleController@todayActivity');
+
+            $api->get('/dalao', 'App\Api\V1\Controllers\CartoonRoleController@dalaoUsers');
+
+            $api->get('/newbie', 'App\Api\V1\Controllers\CartoonRoleController@newbieUsers');
         });
     });
 
