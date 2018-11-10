@@ -44,6 +44,12 @@ class Activity
             return;
         }
 
+        $value = intval($value);
+        if ($value < 0)
+        {
+            return;
+        }
+
         DB
             ::table($this->table)
             ->insert([
