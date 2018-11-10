@@ -297,6 +297,11 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/star', 'App\Api\V1\Controllers\CartoonRoleController@star')->middleware(['jwt.auth']);
         });
+
+        $api->group(['prefix' => '/list'], function ($api)
+        {
+            $api->get('/today', 'App\Api\V1\Controllers\CartoonRoleController@todayActivity');
+        });
     });
 
     $api->group(['prefix' => '/flow'], function ($api)
