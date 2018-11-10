@@ -55,10 +55,12 @@ class Activity
             ->insert([
                 'model_id' => $id,
                 'day' => Carbon::now()->yesterday(),
-                'value' => intval($value),
+                'value' => $value,
             ]);
 
         Redis::DEL($key);
+
+        $this->hook($id, $value);
     }
 
     // 查看当前跃度
@@ -104,6 +106,11 @@ class Activity
         $toget = $this->get($id, $day);
 
         return $today - $toget;
+    }
+
+    protected function hook($id, $score)
+    {
+
     }
 
     protected function todayActivityKey($id, $tail = null)

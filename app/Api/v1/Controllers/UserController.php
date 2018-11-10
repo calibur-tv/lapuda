@@ -684,6 +684,20 @@ class UserController extends Controller
                 $video = $videoRepository->item($actionId, true);
                 $transaction['about']['title'] = $video['name'];
             }
+            else if ($item->type == 15)
+            {
+                $transaction['type'] = 1;
+                $transaction['action'] = '活跃奖励';
+
+                $transaction['about']['title'] = '你昨天的战斗力超过了100，赠送一个团子~';
+            }
+            else if ($item->type == 16)
+            {
+                $transaction['type'] = 1;
+                $transaction['action'] = '活跃奖励';
+
+                $transaction['about']['title'] = '活跃版主每天赠送一个团子，请查收~';
+            }
 
             $result[] = $transaction;
         }
@@ -1162,6 +1176,16 @@ class UserController extends Controller
             {
                 $transaction['type'] = '支出';
                 $transaction['action'] = '删除视频';
+            }
+            else if ($item->type == 15)
+            {
+                $transaction['type'] = '收入';
+                $transaction['action'] = '普通用户100战斗力送团子';
+            }
+            else if ($item->type == 16)
+            {
+                $transaction['type'] = '收入';
+                $transaction['action'] = '番剧管理者100战斗力送团子';
             }
 
             if ($transaction['type'] === '收入' && $item->from_user_id != 0 && $item->from_user_id != $userId)
