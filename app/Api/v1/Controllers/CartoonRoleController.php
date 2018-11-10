@@ -283,7 +283,7 @@ class CartoonRoleController extends Controller
                 ->select(DB::raw('count(*) as count, from_user_id'))
                 ->groupBy('from_user_id')
                 ->orderBy('count', 'DESC')
-                ->take(10)
+                ->take(11)
                 ->get()
                 ->toArray();
 
@@ -325,7 +325,7 @@ class CartoonRoleController extends Controller
                 ->select(DB::raw('count(*) as count, from_user_id'))
                 ->groupBy('from_user_id')
                 ->orderBy('count', 'DESC')
-                ->take(10)
+                ->take(11)
                 ->get()
                 ->toArray();
 
