@@ -237,7 +237,9 @@ class CartoonRoleController extends Controller
         $cartoonRoleRepository = new CartoonRoleRepository();
         $ids = $cartoonRoleRepository->RedisSort('cartoon_role_today_activity_ids', function ()
         {
-            return CartoonRole::orderBy('fans_count', 'ASC')
+            return CartoonRole
+                ::orderBy('fans_count', 'DESC')
+                ->where('fans_count', '>', 0)
                 ->take(100)
                 ->pluck('id');
         });
