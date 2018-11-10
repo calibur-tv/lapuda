@@ -198,8 +198,14 @@ class Repository
     {
         if (Redis::EXISTS($key))
         {
-            $score = $score === 0 ? strtotime('now') : $score;
-            Redis::ZADD($key, $score, $value);
+            if ($score)
+            {
+                Redis::ZINCRBY($key, $score, $value);
+            }
+            else
+            {
+                Redis::ZADD($key, strtotime('now'), $value);
+            }
         }
     }
 

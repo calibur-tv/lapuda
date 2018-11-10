@@ -62,16 +62,16 @@ class Activity
     }
 
     // 查看当前跃度
-    public function get($id)
+    public function get($id, $delta = 0)
     {
         $repository = new Repository();
 
-        return (int)$repository->RedisItem($this->table . '_' . $id . '_activities', function () use ($id)
+        return (int)$repository->RedisItem($this->table . '_' . $id . '_activities', function () use ($id, $delta)
         {
             $list = DB
                 ::table($this->table)
                 ->where('model_id', $id)
-                ->where('day', '>', Carbon::now()->addDays(-31))
+                ->where('day', '>', Carbon::now()->addDays(-(31 + $delta)))
                 ->select('day', 'value')
                 ->get();
 
@@ -81,7 +81,7 @@ class Activity
             }
 
             $result = 0;
-            $today = strtotime(date('Y-m-d'));
+            $today = strtotime(date('Y-m-d')) - ($delta * 86400);
 
             foreach ($list as $item)
             {
@@ -96,6 +96,14 @@ class Activity
 
             return $result;
         });
+    }
+
+    public function activity($id, $day = 1)
+    {
+        $today = $this->get($id);
+        $toget = $this->get($id, $day);
+
+        return $today - $toget;
     }
 
     protected function todayActivityKey($id, $tail = null)

@@ -10,6 +10,7 @@
 namespace App\Console\Job;
 
 use App\Api\V1\Services\Activity\BangumiActivity;
+use App\Api\V1\Services\Activity\CartoonRoleActivity;
 use App\Api\V1\Services\Activity\UserActivity;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -42,11 +43,11 @@ class CronComputedActivity extends Command
             ->orderBy('id')
             ->where('exp', '<>', 0)
             ->select('id')
-            ->chunk(100, function($users) use ($userActivityService)
+            ->chunk(100, function($list) use ($userActivityService)
             {
-                foreach ($users as $user)
+                foreach ($list as $item)
                 {
-                    $userActivityService->migrate($user->id);
+                    $userActivityService->migrate($item->id);
                 }
             });
 
@@ -56,11 +57,25 @@ class CronComputedActivity extends Command
             ::table('bangumis')
             ->orderBy('id')
             ->select('id')
-            ->chunk(100, function($users) use ($bangumiActivityService)
+            ->chunk(100, function($list) use ($bangumiActivityService)
             {
-                foreach ($users as $user)
+                foreach ($list as $item)
                 {
-                    $bangumiActivityService->migrate($user->id);
+                    $bangumiActivityService->migrate($item->id);
+                }
+            });
+
+        $cartoonRoleActivityService = new CartoonRoleActivity();
+
+        DB
+            ::table('cartoon_role')
+            ->orderBy('id')
+            ->select('id')
+            ->chunk(100, function($list) use ($cartoonRoleActivityService)
+            {
+                foreach ($list as $item)
+                {
+                    $cartoonRoleActivityService->migrate($item->id);
                 }
             });
 
