@@ -49,6 +49,7 @@ class UserRepository extends Repository
             }
             $user = $user->toArray();
             $user['sex'] = $this->maskSex($user['sex']);
+            $user['nickname'] = trim($user['nickname']) ? $user['nickname'] : '空白';
 
             return $user;
         });
