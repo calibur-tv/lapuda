@@ -277,10 +277,10 @@ class CartoonRoleController extends Controller
     public function dalaoUsers()
     {
         $userRepository = new UserRepository();
-        $result = $userRepository->Cache('cartoon_role_star_trending_users', function () use ($userRepository)
+        $result = $userRepository->Cache('cartoon_role_star_dalao_users', function () use ($userRepository)
         {
             $list = UserCoin::where('type', 3)
-                ->select(DB::raw('count(*) as count, from_user_id as id'))
+                ->select(DB::raw('count(*) as count, from_user_id'))
                 ->groupBy('from_user_id')
                 ->orderBy('count', 'DESC')
                 ->take(10)
@@ -289,7 +289,7 @@ class CartoonRoleController extends Controller
 
             foreach ($list as $i => $item)
             {
-                $user = $userRepository->item($item['id']);
+                $user = $userRepository->item($item['from_user_id']);
                 $user['contribution'] = $item['count'];
                 $list[$i] = [
                     'id' => $user['id'],
@@ -318,11 +318,11 @@ class CartoonRoleController extends Controller
     public function newbieUsers()
     {
         $userRepository = new UserRepository();
-        $result = $userRepository->Cache('cartoon_role_star_trending_users', function () use ($userRepository)
+        $result = $userRepository->Cache('cartoon_role_star_newbie_users', function () use ($userRepository)
         {
             $list = UserCoin::where('type', 3)
                 ->where('created_at', '>', Carbon::now()->addDays(-1))
-                ->select(DB::raw('count(*) as count, from_user_id as id'))
+                ->select(DB::raw('count(*) as count, from_user_id'))
                 ->groupBy('from_user_id')
                 ->orderBy('count', 'DESC')
                 ->take(10)
@@ -331,7 +331,7 @@ class CartoonRoleController extends Controller
 
             foreach ($list as $i => $item)
             {
-                $user = $userRepository->item($item['id']);
+                $user = $userRepository->item($item['from_user_id']);
                 $user['contribution'] = $item['count'];
                 $list[$i] = [
                     'id' => $user['id'],
