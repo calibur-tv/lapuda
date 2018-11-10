@@ -243,7 +243,7 @@ class CartoonRoleController extends Controller
                 ::orderBy('fans_count', 'DESC')
                 ->where('fans_count', '>', 0)
                 ->take(100)
-                ->pluck('id');
+                ->pluck('fans_count', 'id');
         });
 
         $list = $cartoonRoleRepository->list($ids);
