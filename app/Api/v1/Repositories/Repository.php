@@ -434,8 +434,8 @@ class Repository
             {
                 $result[] = [
                     'type' => $item['type'],
-                    'text' => $item['text'],
-                    'title' => isset($item['title']) ? $item['title'] : ""
+                    'text' => Purifier::clean($item['text']),
+                    'title' => Purifier::clean(isset($item['title']) ? $item['title'] : "")
                 ];
             }
             else if ($item['type'] === 'img')
@@ -454,7 +454,7 @@ class Repository
             {
                 $result[] = [
                     'type' => $item['type'],
-                    'text' => $item['text'],
+                    'text' => Purifier::clean($item['text']),
                     'sort' => $item['sort']
                 ];
             }
@@ -462,11 +462,12 @@ class Repository
             {
                 $result[] = [
                     'type' => $item['type'],
-                    'text' => $item['text']
+                    'text' => Purifier::clean($item['text'])
                 ];
             }
         }
-        return Purifier::clean(json_encode($result));
+
+        return json_encode($result);
     }
 
     protected function formatJsonContent($content)
