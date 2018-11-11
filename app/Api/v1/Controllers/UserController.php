@@ -757,18 +757,13 @@ class UserController extends Controller
                 ->select(DB::raw('count(*) as count, from_user_id'))
                 ->groupBy('from_user_id')
                 ->orderBy('count', 'DESC')
-                ->take(50)
+                ->take(20)
                 ->get()
                 ->toArray();
 
-            if (empty($ids))
-            {
-                return [];
-            }
-
             $userActivityService = new UserActivity();
             $result = [];
-            foreach ($ids as $i => $item)
+            foreach ($ids as $item)
             {
                 $power = $userActivityService->get($item['from_user_id']);
                 if (!$power)
@@ -778,8 +773,26 @@ class UserController extends Controller
 
                 $result[] = [
                     'id' => $item['from_user_id'],
-                    'power' => $power,
-                    'coin' => $item['count']
+                    'power' => $power + (int)$item['count']
+                ];
+            }
+
+            $seenIds = array_map(function ($item)
+            {
+                return $item['from_user_id'];
+            }, $ids);
+            $rencentIds = array_slice($userActivityService->recentIds(), 0, 20);
+
+            foreach ($rencentIds as $id)
+            {
+                if (in_array($id, $seenIds))
+                {
+                    continue;
+                }
+                $power = $userActivityService->get($id);
+                $result[] = [
+                    'id' => $id,
+                    'power' => $power
                 ];
             }
 

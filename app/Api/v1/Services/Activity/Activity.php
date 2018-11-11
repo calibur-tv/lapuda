@@ -100,6 +100,22 @@ class Activity
         });
     }
 
+    // 昨天活跃排行
+    public function recentIds()
+    {
+        $repository = new Repository();
+
+        return $repository->RedisList($this->table . '_rencent_activities', function ()
+        {
+            return DB
+                ::table($this->table)
+                ->where('value', '>', 0)
+                ->where('day', '>', Carbon::now()->addDays(-300))
+                ->orderBy('value', 'DESC')
+                ->pluck('model_id');
+        });
+    }
+
     public function activity($id, $day = 1)
     {
         $today = $this->get($id);
