@@ -112,9 +112,6 @@ class CartoonRoleController extends Controller
         $userActivityService = new UserActivity();
         $userActivityService->update($userId, 3);
 
-        $cartoonRoleActivityService = new CartoonRoleActivity();
-        $cartoonRoleActivityService->update($id, 1);
-
         $bangumiActivityService = new BangumiActivity();
         $bangumiActivityService->update($cartoonRole['bangumi_id']);
 
@@ -248,7 +245,6 @@ class CartoonRoleController extends Controller
         });
 
         $list = $cartoonRoleRepository->list($ids);
-        $cartoonRoleActivityService = new CartoonRoleActivity();
 
         foreach ($list as $i => $item)
         {
@@ -259,7 +255,6 @@ class CartoonRoleController extends Controller
                 'intro' => $item['intro'],
                 'star_count' => (int)$item['star_count'],
                 'fans_count' => (int)$item['fans_count'],
-                'activity' => $cartoonRoleActivityService->activity($item['id'])
             ];
         }
 
