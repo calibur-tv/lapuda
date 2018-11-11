@@ -757,7 +757,7 @@ class UserController extends Controller
                 ->select(DB::raw('count(*) as count, from_user_id'))
                 ->groupBy('from_user_id')
                 ->orderBy('count', 'DESC')
-                ->take(100)
+                ->take(50)
                 ->get()
                 ->toArray();
 
