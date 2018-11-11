@@ -750,30 +750,54 @@ class UserController extends Controller
     {
         $userRepository = new UserRepository();
 
-        $ids = $userRepository->Cache('the-world-recommended-user-ids', function ()
+        $ids = $userRepository->Cache('recommended-activity-user-ids', function () use ($userRepository)
         {
-            return UserCoin
+            $ids = UserCoin
                 ::whereIn('type', [1, 4, 6, 7])
                 ->select(DB::raw('count(*) as count, from_user_id'))
                 ->groupBy('from_user_id')
                 ->orderBy('count', 'DESC')
-                ->take(10)
+                ->take(100)
                 ->get()
                 ->toArray();
+
+            if (empty($ids))
+            {
+                return [];
+            }
+
+            $userActivityService = new UserActivity();
+            $result = [];
+            foreach ($ids as $i => $item)
+            {
+                $result = [
+                    'id' => $item['from_user_id'],
+                    'power' => $userActivityService->get($item['from_user_id'])
+                ];
+            }
+
+            return array_values(array_sort($result, function ($value)
+            {
+                return -$value['power'];
+            }));
         });
+
+        if (empty($ids))
+        {
+            return [];
+        }
 
         $result = [];
         foreach ($ids as $item)
         {
-            $user = $userRepository->item($item['from_user_id']);
-            if (is_null($user))
+            $user = $userRepository->item($item['id']);
+            if (is_null($user) || $user['is_admin'])
             {
                 continue;
             }
-            $user['desc'] = $user['signature'];
             $result[] = $user;
+            $user['desc'] = $user['signature'];
         }
-
         $userTransformer = new UserTransformer();
 
         return $this->resOK($userTransformer->recommended($result));
