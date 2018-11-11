@@ -246,6 +246,11 @@ class UserRepository extends Repository
             {
                 $type = (int)$item['type'];
                 $link = $notificationPresenter->computeNotificationLink($type, $item['model_id'], $item['comment_id'], $item['reply_id']);
+                if (!$link)
+                {
+                    // APP 消息通知崩溃了
+                    return null;
+                }
                 $template = $notificationPresenter->computeNotificationMessage($type);
 
                 $notification = [
