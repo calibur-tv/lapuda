@@ -281,31 +281,34 @@ class CartoonRoleController extends Controller
     public function dalaoUsers()
     {
         $userRepository = new UserRepository();
-        $result = $userRepository->Cache('cartoon_role_star_dalao_users', function () use ($userRepository)
+        $list = $userRepository->Cache('cartoon_role_star_dalao_user_ids', function ()
         {
-            $list = UserCoin::where('type', 3)
+            return UserCoin::where('type', 3)
                 ->select(DB::raw('count(*) as count, from_user_id'))
                 ->groupBy('from_user_id')
                 ->orderBy('count', 'DESC')
                 ->take(11)
                 ->get()
                 ->toArray();
+        });
 
-            foreach ($list as $i => $item)
+        $result = [];
+        foreach ($list as $i => $item)
+        {
+            $user = $userRepository->item($item['from_user_id']);
+            if (is_null($user))
             {
-                $user = $userRepository->item($item['from_user_id']);
-                $user['contribution'] = $item['count'];
-                $list[$i] = [
-                    'id' => $user['id'],
-                    'contribution' => (int)$item['count'],
-                    'nickname' => $user['nickname'],
-                    'avatar' => $user['avatar'],
-                    'zone' => $user['zone']
-                ];
+                continue;
             }
 
-            return $list;
-        });
+            $result[] = [
+                'id' => $user['id'],
+                'contribution' => (int)$item['count'],
+                'nickname' => $user['nickname'],
+                'avatar' => $user['avatar'],
+                'zone' => $user['zone']
+            ];
+        }
 
         return $this->resOK($result);
     }
@@ -322,9 +325,9 @@ class CartoonRoleController extends Controller
     public function newbieUsers()
     {
         $userRepository = new UserRepository();
-        $result = $userRepository->Cache('cartoon_role_star_newbie_users', function () use ($userRepository)
+        $list = $userRepository->Cache('cartoon_role_star_newbie_users', function ()
         {
-            $list = UserCoin::where('type', 3)
+            return UserCoin::where('type', 3)
                 ->where('created_at', '>', Carbon::now()->addDays(-1))
                 ->select(DB::raw('count(*) as count, from_user_id'))
                 ->groupBy('from_user_id')
@@ -332,22 +335,25 @@ class CartoonRoleController extends Controller
                 ->take(11)
                 ->get()
                 ->toArray();
+        }, 'm');
 
-            foreach ($list as $i => $item)
+        $result = [];
+        foreach ($list as $i => $item)
+        {
+            $user = $userRepository->item($item['from_user_id']);
+            if (is_null($user))
             {
-                $user = $userRepository->item($item['from_user_id']);
-                $user['contribution'] = $item['count'];
-                $list[$i] = [
-                    'id' => $user['id'],
-                    'contribution' => (int)$item['count'],
-                    'nickname' => $user['nickname'],
-                    'avatar' => $user['avatar'],
-                    'zone' => $user['zone']
-                ];
+                continue;
             }
 
-            return $list;
-        }, 'm');
+            $result[] = [
+                'id' => $user['id'],
+                'contribution' => (int)$item['count'],
+                'nickname' => $user['nickname'],
+                'avatar' => $user['avatar'],
+                'zone' => $user['zone']
+            ];
+        }
 
         return $this->resOK($result);
     }

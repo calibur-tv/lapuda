@@ -748,47 +748,29 @@ class UserController extends Controller
     // 获取推荐用户
     public function recommendedUsers()
     {
-        $ids = [
-            [
-                'id' => 24702,
-                'desc' => '看板娘'
-            ],
-            [
-                'id' => 5499,
-                'desc' => '萌宠'
-            ],
-            [
-                'id' => 14609,
-                'desc' => 'B站大V'
-            ],
-            [
-                'id' => 559,
-                'desc' => '文学部长'
-            ],
-            [
-                'id' => 148,
-                'desc' => '学生会长'
-            ],
-            [
-                'id' => 5732,
-                'desc' => '风纪委员'
-            ],
-            [
-                'id' => 5379,
-                'desc' => '程序媛'
-            ]
-        ];
-
         $userRepository = new UserRepository();
+
+        $ids = $userRepository->Cache('the-world-recommended-user-ids', function ()
+        {
+            return UserCoin
+                ::whereIn('type', [1, 4, 6, 7])
+                ->select(DB::raw('count(*) as count, from_user_id'))
+                ->groupBy('from_user_id')
+                ->orderBy('count', 'DESC')
+                ->take(10)
+                ->get()
+                ->toArray();
+        });
+
         $result = [];
         foreach ($ids as $item)
         {
-            $user = $userRepository->item($item['id']);
+            $user = $userRepository->item($item['from_user_id']);
             if (is_null($user))
             {
                 continue;
             }
-            $user['desc'] = $item['desc'];
+            $user['desc'] = $user['signature'];
             $result[] = $user;
         }
 
