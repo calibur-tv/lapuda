@@ -256,6 +256,7 @@ class CartoonRoleController extends Controller
                 'id' => (int)$item['id'],
                 'name' => $item['name'],
                 'avatar' => $item['avatar'],
+                'intro' => $item['intro'],
                 'star_count' => (int)$item['star_count'],
                 'fans_count' => (int)$item['fans_count'],
                 'activity' => $cartoonRoleActivityService->activity($item['id'])
