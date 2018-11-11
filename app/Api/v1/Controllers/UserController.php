@@ -811,7 +811,7 @@ class UserController extends Controller
         foreach ($ids as $item)
         {
             $user = $userRepository->item($item['id']);
-            if (is_null($user))
+            if (is_null($user) || $user['banned_to'])
             {
                 continue;
             }
