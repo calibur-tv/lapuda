@@ -792,7 +792,7 @@ class UserController extends Controller
         foreach ($ids as $item)
         {
             $user = $userRepository->item($item['id']);
-            if (is_null($user) || $user['is_admin'])
+            if (is_null($user))
             {
                 continue;
             }
