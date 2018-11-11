@@ -796,7 +796,6 @@ class UserController extends Controller
             {
                 continue;
             }
-            $user['desc'] = $user['signature'];
             $result[] = $user;
         }
         $userTransformer = new UserTransformer();
