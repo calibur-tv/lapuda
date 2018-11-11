@@ -473,6 +473,11 @@ class Repository
     {
         $content = json_decode($content, true);
         $result = [];
+        if (gettype($content) !== 'array')
+        {
+            return [];
+        }
+
         foreach ($content as $item)
         {
             unset($item['id']);
