@@ -770,9 +770,10 @@ class UserController extends Controller
             $result = [];
             foreach ($ids as $i => $item)
             {
-                $result = [
+                $result[] = [
                     'id' => $item['from_user_id'],
-                    'power' => $userActivityService->get($item['from_user_id'])
+                    'power' => $userActivityService->get($item['from_user_id']),
+                    'coin' => $item['count']
                 ];
             }
 
@@ -795,8 +796,8 @@ class UserController extends Controller
             {
                 continue;
             }
-            $result[] = $user;
             $user['desc'] = $user['signature'];
+            $result[] = $user;
         }
         $userTransformer = new UserTransformer();
 
