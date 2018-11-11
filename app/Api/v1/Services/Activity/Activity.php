@@ -110,7 +110,7 @@ class Activity
             return DB
                 ::table($this->table)
                 ->where('value', '>', 0)
-                ->where('day', '>', Carbon::now()->addDays(-300))
+                ->where('day', '>', Carbon::now()->addDays(-1))
                 ->orderBy('value', 'DESC')
                 ->pluck('model_id');
         });
