@@ -249,6 +249,10 @@ class BangumiController extends Controller
     {
         $ids = [
             [
+                'id' => 1,
+                'tag' => '虚拟的世界'
+            ],
+            [
                 'id' => 7,
                 'tag' => '泪腺崩坏'
             ],
