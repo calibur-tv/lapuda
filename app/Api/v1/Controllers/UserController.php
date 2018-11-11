@@ -770,9 +770,15 @@ class UserController extends Controller
             $result = [];
             foreach ($ids as $i => $item)
             {
+                $power = $userActivityService->get($item['from_user_id']);
+                if (!$power)
+                {
+                    continue;
+                }
+
                 $result[] = [
                     'id' => $item['from_user_id'],
-                    'power' => $userActivityService->get($item['from_user_id']),
+                    'power' => $power,
                     'coin' => $item['count']
                 ];
             }
