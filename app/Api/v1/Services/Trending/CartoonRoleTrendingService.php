@@ -77,7 +77,7 @@ class CartoonRoleTrendingService extends TrendingService
         ];
     }
 
-    public function create($id, $publish = true)
+    public function update($id, $publish = true)
     {
         $this->SortAdd($this->trendingIdsCacheKey('hot', $this->bangumiId), $id);
         // 刷新排行榜
@@ -87,6 +87,11 @@ class CartoonRoleTrendingService extends TrendingService
         {
             Redis::DEL($this->trendingFlowUsersKey());
         }
+    }
+
+    public function create($id, $publish = true)
+    {
+        $this->SortAdd($this->trendingIdsCacheKey('hot', $this->bangumiId), $id);
     }
 
     public function getListByIds($ids, $flowType)

@@ -89,7 +89,7 @@ class CartoonRoleController extends Controller
                 Redis::HINCRBYFLOAT('cartoon_role_'.$id, 'star_count', 1);
             }
         }
-        $cartoonRoleTrendingService->create($id, $starded);
+        $cartoonRoleTrendingService->update($id, $starded);
         // 今日动态榜单
         $cartoonRoleRepository->SortAdd('cartoon_role_today_activity_ids', $id, 1);
 
