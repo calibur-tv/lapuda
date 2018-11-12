@@ -202,6 +202,12 @@ class ImageController extends Controller
         $bangumiActivityService = new BangumiActivity();
         $bangumiActivityService->update($bangumiId, 3);
 
+        if ($isCartoon)
+        {
+            $job = (new \App\Jobs\Push\Baidu('bangumi/' . $bangumiId . '/cartoon', 'update'));
+            dispatch($job);
+        }
+
         return $this->resCreated([
             'data' => $imageTransformer->userAlbums([$newAlbum])[0],
             'exp' => $exp,

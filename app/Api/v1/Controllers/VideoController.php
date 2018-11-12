@@ -182,10 +182,12 @@ class VideoController extends Controller
         $data = $request->all();
         $time = Carbon::now();
         $videoRepository = new VideoRepository();
+        $bangumiId = 0;
 
         foreach ($data as $video)
         {
             $id = Video::whereRaw('bangumi_id = ? and part = ?', [$video['bangumiId'], $video['part']])->pluck('id')->first();
+            $bangumiId = $video['bangumiId'];
             if (is_null($id))
             {
                 $newId = Video::insertGetId([
@@ -221,6 +223,11 @@ class VideoController extends Controller
             }
             Redis::DEL('bangumi_'.$video['bangumiId'].'_videos');
         }
+
+        $job = (new \App\Jobs\Push\Baidu('bangumi/news', 'update'));
+        dispatch($job);
+        $job = (new \App\Jobs\Push\Baidu('bangumi/' . $bangumiId . '/video', 'update'));
+        dispatch($job);
 
         return $this->resNoContent();
     }
