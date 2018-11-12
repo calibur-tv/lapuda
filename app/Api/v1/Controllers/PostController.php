@@ -685,10 +685,7 @@ class PostController extends Controller
 
         PostImages
             ::where('id', $id)
-            ->update([
-                'url' => '',
-                'origin_url' => $request->get('url')
-            ]);
+            ->delete();
 
         Redis::DEL('post_'.$postId);
         Redis::DEL('post_'.$postId.'_images');
