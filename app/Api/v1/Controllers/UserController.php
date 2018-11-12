@@ -684,6 +684,20 @@ class UserController extends Controller
                 $video = $videoRepository->item($actionId, true);
                 $transaction['about']['title'] = $video['name'];
             }
+            else if ($item->type == 15)
+            {
+                $transaction['type'] = 1;
+                $transaction['action'] = '活跃奖励';
+
+                $transaction['about']['title'] = '你昨天的战斗力超过了100，赠送一个团子~';
+            }
+            else if ($item->type == 16)
+            {
+                $transaction['type'] = 1;
+                $transaction['action'] = '活跃奖励';
+
+                $transaction['about']['title'] = '活跃版主每天赠送一个团子，请查收~';
+            }
 
             $result[] = $transaction;
         }
@@ -734,50 +748,75 @@ class UserController extends Controller
     // 获取推荐用户
     public function recommendedUsers()
     {
-        $ids = [
-            [
-                'id' => 24702,
-                'desc' => '看板娘'
-            ],
-            [
-                'id' => 5499,
-                'desc' => '萌宠'
-            ],
-            [
-                'id' => 14609,
-                'desc' => 'B站大V'
-            ],
-            [
-                'id' => 559,
-                'desc' => '文学部长'
-            ],
-            [
-                'id' => 148,
-                'desc' => '学生会长'
-            ],
-            [
-                'id' => 5732,
-                'desc' => '风纪委员'
-            ],
-            [
-                'id' => 5379,
-                'desc' => '程序媛'
-            ]
-        ];
-
         $userRepository = new UserRepository();
+
+        $ids = $userRepository->Cache('recommended-activity-user-ids', function () use ($userRepository)
+        {
+            $ids = UserCoin
+                ::whereIn('type', [1, 4, 6, 7])
+                ->select(DB::raw('count(*) as count, from_user_id'))
+                ->groupBy('from_user_id')
+                ->orderBy('count', 'DESC')
+                ->take(20)
+                ->get()
+                ->toArray();
+
+            $userActivityService = new UserActivity();
+            $result = [];
+            foreach ($ids as $item)
+            {
+                $power = $userActivityService->get($item['from_user_id']);
+                if (!$power)
+                {
+                    continue;
+                }
+
+                $result[] = [
+                    'id' => $item['from_user_id'],
+                    'power' => $power + (int)$item['count']
+                ];
+            }
+
+            $seenIds = array_map(function ($item)
+            {
+                return $item['from_user_id'];
+            }, $ids);
+            $rencentIds = array_slice($userActivityService->recentIds(), 0, 20);
+
+            foreach ($rencentIds as $id)
+            {
+                if (in_array($id, $seenIds))
+                {
+                    continue;
+                }
+                $power = $userActivityService->get($id);
+                $result[] = [
+                    'id' => $id,
+                    'power' => $power
+                ];
+            }
+
+            return array_values(array_sort($result, function ($value)
+            {
+                return -$value['power'];
+            }));
+        });
+
+        if (empty($ids))
+        {
+            return [];
+        }
+
         $result = [];
         foreach ($ids as $item)
         {
             $user = $userRepository->item($item['id']);
-            if (is_null($user))
+            if (is_null($user) || $user['banned_to'])
             {
                 continue;
             }
-            $user['desc'] = $item['desc'];
             $result[] = $user;
         }
-
         $userTransformer = new UserTransformer();
 
         return $this->resOK($userTransformer->recommended($result));
@@ -1162,6 +1201,16 @@ class UserController extends Controller
             {
                 $transaction['type'] = '支出';
                 $transaction['action'] = '删除视频';
+            }
+            else if ($item->type == 15)
+            {
+                $transaction['type'] = '收入';
+                $transaction['action'] = '普通用户100战斗力送团子';
+            }
+            else if ($item->type == 16)
+            {
+                $transaction['type'] = '收入';
+                $transaction['action'] = '番剧管理者100战斗力送团子';
             }
 
             if ($transaction['type'] === '收入' && $item->from_user_id != 0 && $item->from_user_id != $userId)

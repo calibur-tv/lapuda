@@ -685,14 +685,43 @@ class PostController extends Controller
 
         PostImages
             ::where('id', $id)
-            ->update([
-                'url' => '',
-                'origin_url' => $request->get('url')
-            ]);
+            ->delete();
 
+        Redis::DEL('post_'.$postId);
         Redis::DEL('post_'.$postId.'_images');
         Redis::DEL('post_'.$postId.'_preview_images_1');
         Redis::DEL('post_'.$postId.'_preview_images_0');
+
+        return $this->resNoContent();
+    }
+
+    // 删除帖子的标题
+    public function deletePostTitle(Request $request)
+    {
+        $id = $request->get('id');
+
+        Post::where('id', $id)
+            ->update([
+                'title' => ''
+            ]);
+
+        Redis::DEL('post_' . $id);
+
+        return $this->resNoContent();
+    }
+
+    // 修改帖子分区
+    public function changePostArea(Request $request)
+    {
+        $postId = $request->get('post_id');
+        $bangumiId = $request->get('bangumi_id');
+
+        Post::where('id', $postId)
+            ->update([
+                'bangumi_id' => $bangumiId
+            ]);
+
+        Redis::DEL('post_' . $postId);
 
         return $this->resNoContent();
     }

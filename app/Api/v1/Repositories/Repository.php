@@ -198,8 +198,14 @@ class Repository
     {
         if (Redis::EXISTS($key))
         {
-            $score = $score === 0 ? strtotime('now') : $score;
-            Redis::ZADD($key, $score, $value);
+            if ($score)
+            {
+                Redis::ZINCRBY($key, $score, $value);
+            }
+            else
+            {
+                Redis::ZADD($key, strtotime('now'), $value);
+            }
         }
     }
 
@@ -329,7 +335,7 @@ class Repository
          * h：缓存一小时
          * m：缓存五分钟
          */
-        $day = time() + 86400 + rand(3600, 10800);
+        $day = strtotime(date('Y-m-d'), time()) + 86400 + rand(3600, 10800);
         $hour = time() + 3600;
         $minute = time() + 300;
 
@@ -428,8 +434,8 @@ class Repository
             {
                 $result[] = [
                     'type' => $item['type'],
-                    'text' => $item['text'],
-                    'title' => isset($item['title']) ? $item['title'] : ""
+                    'text' => Purifier::clean($item['text']),
+                    'title' => Purifier::clean(isset($item['title']) ? $item['title'] : "")
                 ];
             }
             else if ($item['type'] === 'img')
@@ -448,7 +454,7 @@ class Repository
             {
                 $result[] = [
                     'type' => $item['type'],
-                    'text' => $item['text'],
+                    'text' => Purifier::clean($item['text']),
                     'sort' => $item['sort']
                 ];
             }
@@ -456,17 +462,23 @@ class Repository
             {
                 $result[] = [
                     'type' => $item['type'],
-                    'text' => $item['text']
+                    'text' => Purifier::clean($item['text'])
                 ];
             }
         }
-        return Purifier::clean(json_encode($result));
+
+        return json_encode($result);
     }
 
     protected function formatJsonContent($content)
     {
         $content = json_decode($content, true);
         $result = [];
+        if (gettype($content) !== 'array')
+        {
+            return [];
+        }
+
         foreach ($content as $item)
         {
             unset($item['id']);

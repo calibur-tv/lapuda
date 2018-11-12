@@ -297,6 +297,15 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/star', 'App\Api\V1\Controllers\CartoonRoleController@star')->middleware(['jwt.auth']);
         });
+
+        $api->group(['prefix' => '/list'], function ($api)
+        {
+            $api->get('/today', 'App\Api\V1\Controllers\CartoonRoleController@todayActivity');
+
+            $api->get('/dalao', 'App\Api\V1\Controllers\CartoonRoleController@dalaoUsers');
+
+            $api->get('/newbie', 'App\Api\V1\Controllers\CartoonRoleController@newbieUsers');
+        });
     });
 
     $api->group(['prefix' => '/flow'], function ($api)
@@ -545,6 +554,8 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/approve', 'App\Api\V1\Controllers\ImageController@approve');
 
                 $api->post('/reject', 'App\Api\V1\Controllers\ImageController@reject');
+
+                $api->post('/delete_poster', 'App\Api\V1\Controllers\ImageController@deleteAlbumPoster');
             });
 
             $api->group(['prefix' => '/comment'], function ($api)
@@ -584,6 +595,10 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/reject', 'App\Api\V1\Controllers\PostController@reject');
 
                 $api->post('/delete_image', 'App\Api\V1\Controllers\PostController@deletePostImage');
+
+                $api->post('/delete_title', 'App\Api\V1\Controllers\PostController@deletePostTitle');
+
+                $api->post('/change_area', 'App\Api\V1\Controllers\PostController@changePostArea');
             });
 
             $api->group(['prefix' => '/score'], function ($api)

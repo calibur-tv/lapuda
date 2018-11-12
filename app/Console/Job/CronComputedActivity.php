@@ -40,12 +40,13 @@ class CronComputedActivity extends Command
         DB
             ::table('users')
             ->orderBy('id')
+            ->where('exp', '<>', 0)
             ->select('id')
-            ->chunk(100, function($users) use ($userActivityService)
+            ->chunk(100, function($list) use ($userActivityService)
             {
-                foreach ($users as $user)
+                foreach ($list as $item)
                 {
-                    $userActivityService->migrate($user->id);
+                    $userActivityService->migrate($item->id);
                 }
             });
 
@@ -55,11 +56,11 @@ class CronComputedActivity extends Command
             ::table('bangumis')
             ->orderBy('id')
             ->select('id')
-            ->chunk(100, function($users) use ($bangumiActivityService)
+            ->chunk(100, function($list) use ($bangumiActivityService)
             {
-                foreach ($users as $user)
+                foreach ($list as $item)
                 {
-                    $bangumiActivityService->migrate($user->id);
+                    $bangumiActivityService->migrate($item->id);
                 }
             });
 

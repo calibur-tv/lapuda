@@ -49,6 +49,7 @@ class UserRepository extends Repository
             }
             $user = $user->toArray();
             $user['sex'] = $this->maskSex($user['sex']);
+            $user['nickname'] = trim($user['nickname']) ?: '空白';
 
             return $user;
         });
@@ -163,7 +164,7 @@ class UserRepository extends Repository
         else
         {
             // 邀请他人注册
-            if ($type !== 2)
+            if ($type !== 2 && $fromUserId)
             {
                 $count = User::where('id', $fromUserId)->pluck('coin_count')->first();
 
@@ -185,7 +186,7 @@ class UserRepository extends Repository
                 User::where('id', $toUserId)->increment('coin_count', 1);
             }
 
-            if ($type !== 2)
+            if ($type !== 2 && $fromUserId)
             {
                 User::where('id', $fromUserId)->increment('coin_count', -1);
             }
@@ -247,6 +248,7 @@ class UserRepository extends Repository
                 $link = $notificationPresenter->computeNotificationLink($type, $item['model_id'], $item['comment_id'], $item['reply_id']);
                 if (!$link)
                 {
+                    // APP 消息通知崩溃了
                     return null;
                 }
                 $template = $notificationPresenter->computeNotificationMessage($type);

@@ -792,7 +792,7 @@ transactions
     + height: (integer, required) - 图片高度
     + size: (string, required) - 图片尺寸
     + type: (string, required) - 图片类型
-    + part: (integer, required) - 漫画是第几集，非漫画传0
+    + part: (number, required) - 漫画是第几集，非漫画传0
 
 + Request (application/json)
     + Headers
@@ -2216,7 +2216,7 @@ transactions
 
 # 偶像相关接口
 
-## 给角色应援 [POST /cartoon_role/`roleId`/star]
+## 给偶像应援 [POST /cartoon_role/`roleId`/star]
 
 
 + Request (application/json)
@@ -2231,7 +2231,7 @@ transactions
 
             {
                 "code": 40401,
-                "message": "不存在的角色"
+                "message": "不存在的偶像"
             }
 
 + Response 403 (application/json)
@@ -2242,10 +2242,10 @@ transactions
                 "message": "没有足够的团子"
             }
 
-## 角色的粉丝列表 [POST /cartoon_role/`roleId`/fans]
+## 偶像的粉丝列表 [POST /cartoon_role/`roleId`/fans]
 
 
-## 角色详情 [GET /cartoon_role/`roleId`/show]
+## 偶像详情 [GET /cartoon_role/`roleId`/show]
 
 
 + Response 200 (application/json)
@@ -2255,7 +2255,7 @@ transactions
                 "code": 0,
                 "data": {
                     "bangumi": "番剧简介",
-                    "data": "角色信息"
+                    "data": "偶像信息"
                 }
             }
 
@@ -2264,7 +2264,40 @@ transactions
 
             {
                 "code": 40401,
-                "message": "不存在的角色"
+                "message": "不存在的偶像"
+            }
+
+## 24小时偶像动态榜单 [GET /cartoon_role/list/today]
+
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "偶像列表"
+            }
+
+## 贡献最多的10人 [GET /cartoon_role/list/dalao]
+
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "偶像列表"
+            }
+
+## 今天最活跃的10个人 [GET /cartoon_role/list/newbie]
+
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "偶像列表"
             }
 
 ## 创建偶像 [POST /cartoon_role/manager/create]
@@ -2272,10 +2305,10 @@ transactions
 
 + Parameters
     + bangumi_id: (integer, required) - 所选的番剧 id
-    + name: (string, required) - 角色名称
-    + alias: (string, optional) - 角色别名，逗号分隔的昵称，选填
-    + intro: (string, required) - 角色简介，200字以内纯文本
-    + avatar: (string, required) - 角色头像，七牛传图返回的url
+    + name: (string, required) - 偶像名称
+    + alias: (string, optional) - 偶像别名，逗号分隔的昵称，选填
+    + intro: (string, required) - 偶像简介，200字以内纯文本
+    + avatar: (string, required) - 偶像头像，七牛传图返回的url
 
 + Request (application/json)
     + Headers
@@ -2287,7 +2320,7 @@ transactions
 
             {
                 "code": 0,
-                "data": "角色id"
+                "data": "偶像id"
             }
 
 + Response 400 (application/json)
@@ -2295,7 +2328,7 @@ transactions
 
             {
                 "code": 40003,
-                "message": "角色已存在"
+                "message": "偶像已存在"
             }
 
 + Response 403 (application/json)
@@ -2310,11 +2343,11 @@ transactions
 
 
 + Parameters
-    + id: (integer, required) - 角色的id
-    + name: (string, required) - 角色名称
-    + alias: (string, optional) - 角色别名，逗号分隔的昵称，选填
-    + intro: (string, required) - 角色简介，200字以内纯文本
-    + avatar: (string, required) - 角色头像，七牛传图返回的url
+    + id: (integer, required) - 偶像的id
+    + name: (string, required) - 偶像名称
+    + alias: (string, optional) - 偶像别名，逗号分隔的昵称，选填
+    + intro: (string, required) - 偶像简介，200字以内纯文本
+    + avatar: (string, required) - 偶像头像，七牛传图返回的url
 
 + Request (application/json)
     + Headers
@@ -2336,7 +2369,7 @@ transactions
 
             {
                 "code": 40401,
-                "message": "角色不存在"
+                "message": "偶像不存在"
             }
 
 # 信息流相关接口

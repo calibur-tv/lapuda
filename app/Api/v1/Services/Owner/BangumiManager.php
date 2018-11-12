@@ -15,6 +15,6 @@ class BangumiManager extends OwnerService
 {
     public function __construct()
     {
-        parent::__construct('bangumi_managers', 5);
+        parent::__construct('bangumi_managers', 10);
     }
 }

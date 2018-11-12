@@ -109,7 +109,7 @@ class ImageController extends Controller
      *      @Parameter("height", description="图片高度", type="integer", required=true),
      *      @Parameter("size", description="图片尺寸", type="string", required=true),
      *      @Parameter("type", description="图片类型", type="string", required=true),
-     *      @Parameter("part", description="漫画是第几集，非漫画传0", type="integer", required=true)
+     *      @Parameter("part", description="漫画是第几集，非漫画传0", type="number", required=true)
      * })
      *
      * @Transaction({
@@ -131,7 +131,7 @@ class ImageController extends Controller
             'height' => 'required|integer',
             'size' => 'required|integer',
             'type' => 'required|string',
-            'part' => 'required|integer|min:0',
+            'part' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails())
@@ -1206,6 +1206,34 @@ class ImageController extends Controller
 
         Redis::DEL('loop_banners');
         Redis::DEL('loop_banners_all');
+
+        return $this->resNoContent();
+    }
+
+    // 删除相册的封面
+    public function deleteAlbumPoster(Request $request)
+    {
+        $id = $request->get('id');
+
+        $imageRepository = new ImageRepository();
+
+        $list = $imageRepository->albumImages($id);
+        if (empty($list))
+        {
+            return $this->resNoContent();
+        }
+
+        $item = $list[0];
+        Image::where('id', $id)
+            ->update([
+                'url' => $imageRepository->convertImagePath($item['url']),
+                'width' => $item['width'],
+                'height' => $item['height'],
+                'size' => $item['size'],
+                'type' => $item['type']
+            ]);
+
+        Redis::DEL($imageRepository->itemCacheKey($id));
 
         return $this->resNoContent();
     }

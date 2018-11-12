@@ -77,12 +77,21 @@ class CartoonRoleTrendingService extends TrendingService
         ];
     }
 
+    public function update($id, $publish = true)
+    {
+        $this->SortAdd($this->trendingIdsCacheKey('hot', $this->bangumiId), $id);
+        // 刷新排行榜
+        $this->SortAdd($this->trendingIdsCacheKey('hot', 0), $id, 1);
+        // 删除个人的缓存，因为插入会有重复
+        if (!$publish)
+        {
+            Redis::DEL($this->trendingFlowUsersKey());
+        }
+    }
+
     public function create($id, $publish = true)
     {
-        $this->SortAdd($this->trendingIdsCacheKey('active', $this->bangumiId), $id);
         $this->SortAdd($this->trendingIdsCacheKey('hot', $this->bangumiId), $id);
-        // 删除个人的缓存，因为插入会有重复
-        Redis::DEL($this->trendingFlowUsersKey());
     }
 
     public function getListByIds($ids, $flowType)

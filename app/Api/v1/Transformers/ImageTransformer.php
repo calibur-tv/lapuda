@@ -81,7 +81,7 @@ class ImageTransformer extends Transformer
                 'user_id' => (int)$image['user_id'],
                 'bangumi_id' => (int)$image['bangumi_id'],
                 'name' => $image['name'] ? $image['name'] : '未命名',
-                'part' => (int)$image['part'],
+                'part' => (float)$image['part'],
                 'image_count' => (int)$image['image_count'],
                 'user' => $this->transformer($image['user'], function ($user)
                 {

@@ -75,11 +75,8 @@ class ImageTrendingService extends TrendingService
 
     public function computeHotIds()
     {
-        $beginAt = $this->bangumiId ? Carbon::now()->addDays(-300) : Carbon::now()->addDays(-100);
-
         $ids = Image
             ::where('state', 0)
-            ->where('created_at', '>', $beginAt)
             ->when($this->bangumiId, function ($query)
             {
                 return $query->where('bangumi_id', $this->bangumiId);

@@ -137,7 +137,7 @@ class UserTransformer extends Transformer
                 'zone' => $user['zone'],
                 'avatar' => $user['avatar'],
                 'nickname' => $user['nickname'],
-                'desc' => $user['desc']
+                'signature' => $user['signature']
             ];
         });
     }

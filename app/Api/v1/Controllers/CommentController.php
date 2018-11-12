@@ -201,7 +201,6 @@ class CommentController extends Controller
         $newComment['is_master'] = $bangumiManagerService->isOwner($bangumiId, $userId);
         $newComment['is_leader'] = $bangumiManagerService->isLeader($bangumiId, $userId);
 
-
         $totalCommentCount = new TotalCommentCount();
         $totalCommentCount->add();
 

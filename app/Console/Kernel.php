@@ -33,9 +33,9 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('BlackWords')->everyFiveMinutes();
         $schedule->command('CronPush')->dailyAt('23:33');
-        $schedule->command('DayStats')->dailyAt('00:01');
-        $schedule->command('ClearSearch')->dailyAt('02:01');
-        $schedule->command('CronComputedActivity')->dailyAt('01:00');
+        $schedule->command('CronComputedActivity')->dailyAt('00:01');
+        $schedule->command('ClearSearch')->dailyAt('01:01');
+        $schedule->command('DayStats')->dailyAt('02:01');
 //        $schedule->command('CronAvthumb')->hourly();
         $schedule->command('CronFreeUser')->everyFiveMinutes();
         $schedule->command('Trending')->hourly();

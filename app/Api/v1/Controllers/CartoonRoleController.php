@@ -4,13 +4,18 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
+use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Activity\BangumiActivity;
+use App\Api\V1\Services\Activity\CartoonRoleActivity;
+use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Trending\CartoonRoleTrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
+use App\Models\UserCoin;
 use App\Services\OpenSearch\Search;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -25,7 +30,7 @@ use Mews\Purifier\Facades\Purifier;
 class CartoonRoleController extends Controller
 {
     /**
-     * 给角色应援
+     * 给偶像应援
      *
      * @Post("/cartoon_role/`roleId`/star")
      *
@@ -33,7 +38,7 @@ class CartoonRoleController extends Controller
      *
      * @Transaction({
      *      @Response(204),
-     *      @Response(404, body={"code": 40401, "message": "不存在的角色"}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的偶像"}),
      *      @Response(403, body={"code": 40301, "message": "没有足够的团子"})
      * })
      */
@@ -55,8 +60,9 @@ class CartoonRoleController extends Controller
         }
 
         $cartoonRoleTrendingService = new CartoonRoleTrendingService($cartoonRole['bangumi_id'], $userId);
+        $starded = $cartoonRoleRepository->checkHasStar($id, $userId);
 
-        if ($cartoonRoleRepository->checkHasStar($id, $userId))
+        if ($starded)
         {
             CartoonRoleFans
                 ::whereRaw('role_id = ? and user_id = ?', [$id, $userId])
@@ -82,9 +88,10 @@ class CartoonRoleController extends Controller
                 Redis::HINCRBYFLOAT('cartoon_role_'.$id, 'fans_count', 1);
                 Redis::HINCRBYFLOAT('cartoon_role_'.$id, 'star_count', 1);
             }
-
-            $cartoonRoleTrendingService->create($id);
         }
+        $cartoonRoleTrendingService->update($id, $starded);
+        // 今日动态榜单
+        $cartoonRoleRepository->SortAdd('cartoon_role_today_activity_ids', $id, 1);
 
         $newCacheKey = 'cartoon_role_' . $id . '_new_fans_ids';
         $hotCacheKey = 'cartoon_role_' . $id . '_hot_fans_ids';
@@ -102,11 +109,17 @@ class CartoonRoleController extends Controller
             ::where('id', $id)
             ->increment('star_count');
 
+        $userActivityService = new UserActivity();
+        $userActivityService->update($userId, 3);
+
+        $bangumiActivityService = new BangumiActivity();
+        $bangumiActivityService->update($cartoonRole['bangumi_id']);
+
         return $this->resNoContent();
     }
 
     /**
-     * 角色的粉丝列表
+     * 偶像的粉丝列表
      *
      * @Post("/cartoon_role/`roleId`/fans")
      *
@@ -162,13 +175,13 @@ class CartoonRoleController extends Controller
     }
 
     /**
-     * 角色详情
+     * 偶像详情
      *
      * @Get("/cartoon_role/`roleId`/show")
      *
      * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"bangumi": "番剧简介", "data": "角色信息"}}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的角色"}),
+     *      @Response(200, body={"code": 0, "data": {"bangumi": "番剧简介", "data": "偶像信息"}}),
+     *      @Response(404, body={"code": 40401, "message": "不存在的偶像"}),
      * })
      */
     public function show($id)
@@ -210,10 +223,137 @@ class CartoonRoleController extends Controller
         ]));
     }
 
-    // 后台展示偶像详情
-    public function adminShow(Request $request)
+    /**
+     * 24小时偶像动态榜单
+     *
+     * @Get("/cartoon_role/list/today")
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "偶像列表"})
+     * })
+     */
+    public function todayActivity()
     {
-        $result = CartoonRole::find($request->get('id'));
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $ids = $cartoonRoleRepository->RedisSort('cartoon_role_today_activity_ids', function ()
+        {
+            $list = CartoonRole
+                ::orderBy('fans_count', 'DESC')
+                ->where('fans_count', '>', 0)
+                ->take(100)
+                ->pluck('id');
+            $result = [];
+            $total = count($list);
+            foreach ($list as $i => $item)
+            {
+                $result[$item] = $total - $i;
+            }
+
+            return $result;
+        });
+
+        $list = $cartoonRoleRepository->list($ids);
+
+        foreach ($list as $i => $item)
+        {
+            $list[$i] = [
+                'id' => (int)$item['id'],
+                'name' => $item['name'],
+                'avatar' => $item['avatar'],
+                'intro' => $item['intro'],
+                'star_count' => (int)$item['star_count'],
+                'fans_count' => (int)$item['fans_count'],
+            ];
+        }
+
+        return $this->resOK($list);
+    }
+
+    /**
+     * 贡献最多的10人
+     *
+     * @Get("/cartoon_role/list/dalao")
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "偶像列表"})
+     * })
+     */
+    public function dalaoUsers()
+    {
+        $userRepository = new UserRepository();
+        $list = $userRepository->Cache('cartoon_role_star_dalao_user_ids', function ()
+        {
+            return UserCoin::where('type', 3)
+                ->select(DB::raw('count(*) as count, from_user_id'))
+                ->groupBy('from_user_id')
+                ->orderBy('count', 'DESC')
+                ->take(11)
+                ->get()
+                ->toArray();
+        });
+
+        $result = [];
+        foreach ($list as $i => $item)
+        {
+            $user = $userRepository->item($item['from_user_id']);
+            if (is_null($user))
+            {
+                continue;
+            }
+
+            $result[] = [
+                'id' => $user['id'],
+                'contribution' => (int)$item['count'],
+                'nickname' => $user['nickname'],
+                'avatar' => $user['avatar'],
+                'zone' => $user['zone']
+            ];
+        }
+
+        return $this->resOK($result);
+    }
+
+    /**
+     * 今天最活跃的10个人
+     *
+     * @Get("/cartoon_role/list/newbie")
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "偶像列表"})
+     * })
+     */
+    public function newbieUsers()
+    {
+        $userRepository = new UserRepository();
+        $list = $userRepository->Cache('cartoon_role_star_newbie_users', function ()
+        {
+            return UserCoin::where('type', 3)
+                ->where('created_at', '>', Carbon::now()->addDays(-1))
+                ->select(DB::raw('count(*) as count, from_user_id'))
+                ->groupBy('from_user_id')
+                ->orderBy('count', 'DESC')
+                ->take(11)
+                ->get()
+                ->toArray();
+        }, 'm');
+
+        $result = [];
+        foreach ($list as $i => $item)
+        {
+            $user = $userRepository->item($item['from_user_id']);
+            if (is_null($user))
+            {
+                continue;
+            }
+
+            $result[] = [
+                'id' => $user['id'],
+                'contribution' => (int)$item['count'],
+                'nickname' => $user['nickname'],
+                'avatar' => $user['avatar'],
+                'zone' => $user['zone']
+            ];
+        }
 
         return $this->resOK($result);
     }
@@ -225,16 +365,16 @@ class CartoonRoleController extends Controller
      *
      * @Parameters({
      *      @Parameter("bangumi_id", description="所选的番剧 id", type="integer", required=true),
-     *      @Parameter("name", description="角色名称", type="string", required=true),
-     *      @Parameter("alias", description="角色别名，逗号分隔的昵称，选填", type="string", required=false),
-     *      @Parameter("intro", description="角色简介，200字以内纯文本", type="string", required=true),
-     *      @Parameter("avatar", description="角色头像，七牛传图返回的url", type="string", required=true),
+     *      @Parameter("name", description="偶像名称", type="string", required=true),
+     *      @Parameter("alias", description="偶像别名，逗号分隔的昵称，选填", type="string", required=false),
+     *      @Parameter("intro", description="偶像简介，200字以内纯文本", type="string", required=true),
+     *      @Parameter("avatar", description="偶像头像，七牛传图返回的url", type="string", required=true),
      * })
      *
      * @Transaction({
      *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(201, body={"code": 0, "data": "角色id"}),
-     *      @Response(400, body={"code": 40003, "message": "角色已存在"}),
+     *      @Response(201, body={"code": 0, "data": "偶像id"}),
+     *      @Response(400, body={"code": 40003, "message": "偶像已存在"}),
      *      @Response(403, body={"code": 40301, "message": "没有权限"})
      * })
      */
@@ -275,7 +415,7 @@ class CartoonRoleController extends Controller
 
         if ($count)
         {
-            return $this->resErrBad('该角色可能已存在');
+            return $this->resErrBad('该偶像可能已存在');
         }
 
         $cartoonRoleRepository = new CartoonRoleRepository();
@@ -295,6 +435,11 @@ class CartoonRoleController extends Controller
         $cartoonRoleTrendingService = new CartoonRoleTrendingService($bangumiId);
         $cartoonRoleTrendingService->create($id);
 
+        $bangumiActivityService = new BangumiActivity();
+        $bangumiActivityService->update($bangumiId, 3);
+        $userActivityService = new UserActivity();
+        $userActivityService->update($userId, 3);
+
         return $this->resCreated($id);
     }
 
@@ -304,18 +449,18 @@ class CartoonRoleController extends Controller
      * @Post("/cartoon_role/manager/edit")
      *
      * @Parameters({
-     *      @Parameter("id", description="角色的id", type="integer", required=true),
-     *      @Parameter("name", description="角色名称", type="string", required=true),
-     *      @Parameter("alias", description="角色别名，逗号分隔的昵称，选填", type="string", required=false),
-     *      @Parameter("intro", description="角色简介，200字以内纯文本", type="string", required=true),
-     *      @Parameter("avatar", description="角色头像，七牛传图返回的url", type="string", required=true),
+     *      @Parameter("id", description="偶像的id", type="integer", required=true),
+     *      @Parameter("name", description="偶像名称", type="string", required=true),
+     *      @Parameter("alias", description="偶像别名，逗号分隔的昵称，选填", type="string", required=false),
+     *      @Parameter("intro", description="偶像简介，200字以内纯文本", type="string", required=true),
+     *      @Parameter("avatar", description="偶像头像，七牛传图返回的url", type="string", required=true),
      * })
      *
      * @Transaction({
      *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(204),
      *      @Response(403, body={"code": 40301, "message": "没有权限"}),
-     *      @Response(404, body={"code": 40401, "message": "角色不存在"})
+     *      @Response(404, body={"code": 40401, "message": "偶像不存在"})
      * })
      */
     public function edit(Request $request)
@@ -361,6 +506,14 @@ class CartoonRoleController extends Controller
         Redis::DEL('cartoon_role_' . $id);
 
         return $this->resNoContent();
+    }
+
+    // 后台展示偶像详情
+    public function adminShow(Request $request)
+    {
+        $result = CartoonRole::find($request->get('id'));
+
+        return $this->resOK($result);
     }
 
     // 后台偶像列表

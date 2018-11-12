@@ -74,6 +74,14 @@ class OwnerService extends Repository
         return true;
     }
 
+    public function isAManager($userId)
+    {
+        return (boolean)DB
+            ::table($this->owner_table)
+            ->where('user_id', $userId)
+            ->count();
+    }
+
     public function upgrade($modalId, $userId)
     {
         if (!$this->isOwner($modalId, $userId))

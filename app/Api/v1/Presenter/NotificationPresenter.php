@@ -143,6 +143,12 @@ class NotificationPresenter
             case 'video-like':
                 return 41;
                 break;
+            case 'seed-coin-for-user':
+                return 42;
+                break;
+            case 'seed-coin-for-manager':
+                return 43;
+                break;
             default:
                 return 0;
                 break;
@@ -279,6 +285,12 @@ class NotificationPresenter
             case 41:
                 return '/video/' . $modalId;
                 break;
+            case 42:
+                return '';
+                break;
+            case 43:
+                return '';
+                break;
             default:
                 return '';
                 break;
@@ -414,6 +426,12 @@ class NotificationPresenter
                 break;
             case 41:
                 return '${user}收藏了你的视频${title}';
+                break;
+            case 42:
+                return '你昨天的战斗力超过了100，赠送一个团子~';
+                break;
+            case 43:
+                return '活跃版主每天赠送一个团子，请查收~';
                 break;
             default:
                 return '';

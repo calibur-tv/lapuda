@@ -36,6 +36,8 @@ class UserCoin extends Model
      * 12：删除回答
      * 13：视频
      * 14：删除视频
+     * 15：普通用户100战斗力送团子
+     * 16：番剧管理者100战斗力送团子
      */
 
     protected $casts = [

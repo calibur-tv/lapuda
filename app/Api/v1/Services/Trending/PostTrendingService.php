@@ -64,10 +64,8 @@ class PostTrendingService extends TrendingService
 
     public function computeHotIds()
     {
-        $beginAt = $this->bangumiId ? Carbon::now()->addDays(-300) : Carbon::now()->addDays(-100);
         $ids = Post
             ::where('state', 0)
-            ->where('created_at', '>', $beginAt)
             ->when($this->bangumiId, function ($query)
             {
                 return $query

@@ -44,28 +44,36 @@ class Activity
             return;
         }
 
+        $value = intval($value);
+        if ($value < 0)
+        {
+            return;
+        }
+
         DB
             ::table($this->table)
             ->insert([
                 'model_id' => $id,
                 'day' => Carbon::now()->yesterday(),
-                'value' => intval($value),
+                'value' => $value,
             ]);
 
         Redis::DEL($key);
+
+        $this->hook($id, $value);
     }
 
     // 查看当前跃度
-    public function get($id)
+    public function get($id, $delta = 0)
     {
         $repository = new Repository();
 
-        return (int)$repository->RedisItem($this->table . '_' . $id . '_activities', function () use ($id)
+        return (int)$repository->RedisItem($this->table . '_' . $id . '_activities', function () use ($id, $delta)
         {
             $list = DB
                 ::table($this->table)
                 ->where('model_id', $id)
-                ->where('day', '>', Carbon::now()->addDays(-31))
+                ->where('day', '>', Carbon::now()->addDays(-(31 + $delta)))
                 ->select('day', 'value')
                 ->get();
 
@@ -75,7 +83,7 @@ class Activity
             }
 
             $result = 0;
-            $today = strtotime(date('Y-m-d'));
+            $today = strtotime(date('Y-m-d')) - ($delta * 86400);
 
             foreach ($list as $item)
             {
@@ -90,6 +98,35 @@ class Activity
 
             return $result;
         });
+    }
+
+    // 昨天活跃排行
+    public function recentIds()
+    {
+        $repository = new Repository();
+
+        return $repository->RedisList($this->table . '_rencent_activities', function ()
+        {
+            return DB
+                ::table($this->table)
+                ->where('value', '>', 0)
+                ->where('day', '>', Carbon::now()->addDays(-2))
+                ->orderBy('value', 'DESC')
+                ->pluck('model_id');
+        });
+    }
+
+    public function activity($id, $day = 1)
+    {
+        $today = $this->get($id);
+        $toget = $this->get($id, $day);
+
+        return $today - $toget;
+    }
+
+    protected function hook($id, $score)
+    {
+
     }
 
     protected function todayActivityKey($id, $tail = null)
