@@ -690,6 +690,7 @@ class PostController extends Controller
                 'origin_url' => $request->get('url')
             ]);
 
+        Redis::DEL('post_'.$postId);
         Redis::DEL('post_'.$postId.'_images');
         Redis::DEL('post_'.$postId.'_preview_images_1');
         Redis::DEL('post_'.$postId.'_preview_images_0');
