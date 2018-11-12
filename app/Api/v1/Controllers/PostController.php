@@ -711,4 +711,20 @@ class PostController extends Controller
 
         return $this->resNoContent();
     }
+
+    // 修改帖子分区
+    public function changePostArea(Request $request)
+    {
+        $postId = $request->get('post_id');
+        $bangumiId = $request->get('bangumi_id');
+
+        Post::where('id', $postId)
+            ->update([
+                'bangumi_id' => $bangumiId
+            ]);
+
+        Redis::DEL('post_' . $postId);
+
+        return $this->resNoContent();
+    }
 }

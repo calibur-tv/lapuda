@@ -597,6 +597,8 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/delete_image', 'App\Api\V1\Controllers\PostController@deletePostImage');
 
                 $api->post('/delete_title', 'App\Api\V1\Controllers\PostController@deletePostTitle');
+
+                $api->post('/change_area', 'App\Api\V1\Controllers\PostController@changePostArea');
             });
 
             $api->group(['prefix' => '/score'], function ($api)
