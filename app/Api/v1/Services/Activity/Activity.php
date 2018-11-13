@@ -60,7 +60,7 @@ class Activity
 
         Redis::DEL($key);
 
-        $this->hook($id, $value);
+        $this->hook($id, $this->get($id));
     }
 
     // 查看当前跃度
