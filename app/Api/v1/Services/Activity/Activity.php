@@ -59,6 +59,7 @@ class Activity
             ]);
 
         Redis::DEL($key);
+        Redis::DEL($this->table . '_' . $id . '_activities');
 
         $this->hook($id, $this->get($id));
     }
