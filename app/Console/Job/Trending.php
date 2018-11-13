@@ -8,6 +8,7 @@
 
 namespace App\Console\Job;
 
+use App\Api\V1\Services\Trending\CartoonRoleTrendingService;
 use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Services\Trending\QuestionTrendingService;
@@ -47,6 +48,9 @@ class Trending extends Command
 
         $questionTrendingService = new QuestionTrendingService();
         $questionTrendingService->computeHotIds();
+
+        $cartoonRoleTrendingService = new CartoonRoleTrendingService();
+        $cartoonRoleTrendingService->computeHotIds();
 
         return true;
     }

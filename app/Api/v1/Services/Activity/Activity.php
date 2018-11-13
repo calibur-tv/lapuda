@@ -44,6 +44,8 @@ class Activity
             return;
         }
 
+        Redis::DEL($key);
+
         $value = intval($value);
         if ($value < 0)
         {
@@ -58,7 +60,6 @@ class Activity
                 'value' => $value,
             ]);
 
-        Redis::DEL($key);
         Redis::DEL($this->table . '_' . $id . '_activities');
 
         $this->hook($id, $this->get($id));
