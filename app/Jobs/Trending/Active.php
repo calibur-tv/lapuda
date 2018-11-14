@@ -55,7 +55,6 @@ class Active implements ShouldQueue
             return;
         }
 
-        /*
         if ($this->type === 'image')
         {
             $repository = $this->getRepositoryByType();
@@ -65,7 +64,6 @@ class Active implements ShouldQueue
                 return;
             }
         }
-        */
 
         DB::table($table)
             ->where('id', $this->id)
