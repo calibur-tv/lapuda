@@ -438,10 +438,6 @@ $api->version(['v1', 'latest'], function ($api)
         {
             $api->get('/bangumis', 'App\Api\V1\Controllers\CartoonController@bangumis');
 
-            $api->get('/list_of_bangumi', 'App\Api\V1\Controllers\CartoonController@listOfBangumi');
-
-            $api->post('/sort', 'App\Api\V1\Controllers\CartoonController@sortOfBangumi');
-
             $api->post('/edit', 'App\Api\V1\Controllers\CartoonController@edit');
         });
 

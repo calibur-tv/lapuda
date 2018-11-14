@@ -8,6 +8,7 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\BangumiRepository;
 use App\Models\Bangumi;
 use App\Models\Image;
 use Illuminate\Http\Request;
@@ -20,48 +21,16 @@ class CartoonController extends Controller
     // 后台展示有漫画的番剧列表
     public function bangumis()
     {
-        $bangumis = Bangumi::where('cartoon', '<>', '')
-            ->select('id', 'name')
-            ->get();
+        $ids = Image
+            ::where('is_cartoon', 1)
+            ->groupBy('bangumi_id')
+            ->pluck('bangumi_id')
+            ->toArray();
 
-        return $this->resOK($bangumis);
-    }
+        $bangumiRepository = new BangumiRepository();
+        $list = $bangumiRepository->list($ids);
 
-    // 后台展示番剧的漫画列表
-    public function listOfBangumi(Request $request)
-    {
-        $bangumiId = $request->get('id');
-
-        $ids = Bangumi::where('id', $bangumiId)
-            ->pluck('cartoon')
-            ->first();
-        $ids = explode(',', $ids);
-
-        $result = [];
-        foreach ($ids as $id)
-        {
-            $image = Image::where('id', $id)->first();
-            if (is_null($image))
-            {
-                continue;
-            }
-            $result[] = $image;
-        }
-
-        return $this->resOK($result);
-    }
-
-    // 后台对番剧的漫画进行排序
-    public function sortOfBangumi(Request $request)
-    {
-        $bangumiId = $request->get('id');
-
-        Bangumi::where('id', $bangumiId)
-            ->update([
-                'cartoon' => $request->get('cartoon')
-            ]);
-
-        return $this->resNoContent();
+        return $this->resOK($list);
     }
 
     // 后台编辑漫画
