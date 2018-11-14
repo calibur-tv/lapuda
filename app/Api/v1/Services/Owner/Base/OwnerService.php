@@ -153,7 +153,7 @@ class OwnerService extends Repository
 
         foreach ($idsObj['list'] as $item)
         {
-            if ($item->is_leader && $item->user['id'] === $userId)
+            if ($item->is_leader && $item->user['id'] == $userId)
             {
                 return true;
             }
