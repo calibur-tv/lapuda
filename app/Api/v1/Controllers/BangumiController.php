@@ -744,45 +744,74 @@ class BangumiController extends Controller
 
     public function managers(Request $request)
     {
-        $curPage = $request->get('cur_page') ?: 0;
-        $toPage = $request->get('to_page') ?: 1;
-        $take = $request->get('take') ?: 10;
-
-        $list = DB::table('bangumi_managers')
-            ->orderBy('id', 'DESC')
-            ->take(($toPage - $curPage) * $take)
-            ->skip($curPage * $take)
-            ->select('user_id', 'modal_id', 'is_leader', 'created_at')
-            ->get();
+        $sort = $request->get('sort') ?: 'bangumi';
 
         $bangumiRepository = new BangumiRepository();
         $userRepository = new UserRepository();
         $bangumiActivityService = new BangumiActivity();
         $userActivityService = new UserActivity();
+        $bangumiManager = new BangumiManager();
 
-        foreach ($list as $i => $item)
+        $result = [];
+        if ($sort === 'bangumi')
         {
-            $user = $userRepository->item($item->user_id);
-            if (is_null($user))
-            {
-                continue;
-            }
-            $bangumi = $bangumiRepository->item($item->modal_id);
-            if (is_null($bangumi))
-            {
-                continue;
-            }
+            $bangumiIds = DB::table('bangumi_managers')
+                ->groupBy('modal_id')
+                ->pluck('modal_id');
 
-            $user['power'] = $userActivityService->get($user['id']);
-            $bangumi['power'] = $bangumiActivityService->get($bangumi['id']);
+            foreach ($bangumiIds as $id)
+            {
+                $item = [];
 
-            $list[$i]->user = $user;
-            $list[$i]->bangumi = $bangumi;
+                $userIds = DB
+                    ::table('bangumi_managers')
+                    ->where('modal_id', $id)
+                    ->pluck('user_id')
+                    ->toArray();
+
+                $item['data'] = $bangumiRepository->item($id);
+                $users = $userRepository->list($userIds);
+                foreach ($users as $i => $user)
+                {
+                    $users[$i]['power'] = $userActivityService->get($user['id']);
+                    $users[$i]['is_leader'] = $bangumiManager->isLeader($id, $user['id']);
+                }
+                $item['list'] = $users;
+                $item['power'] = $bangumiActivityService->get($id);
+
+                $result[] = $item;
+            }
+        }
+        else
+        {
+            $userIds = DB::table('bangumi_managers')
+                ->groupBy('user_id')
+                ->pluck('user_id');
+
+            foreach ($userIds as $id)
+            {
+                $item = [];
+
+                $userIds = DB
+                    ::table('bangumi_managers')
+                    ->where('user_id', $id)
+                    ->pluck('modal_id')
+                    ->toArray();
+
+                $item['data'] = $userRepository->item($id);
+                $bangumis = $bangumiRepository->list($userIds);
+                foreach ($bangumis as $i => $bangumi)
+                {
+                    $bangumis[$i]['power'] = $bangumiActivityService->get($bangumi['id']);
+                    $bangumis[$i]['is_leader'] = $bangumiManager->isLeader($bangumi['id'], $id);
+                }
+                $item['list'] = $bangumis;
+                $item['power'] = $userActivityService->get($id);
+
+                $result[] = $item;
+            }
         }
 
-        return $this->resOK([
-            'list' => $list,
-            'total' => DB::table('bangumi_managers')->count()
-        ]);
+        return $this->resOK($result);
     }
 }
