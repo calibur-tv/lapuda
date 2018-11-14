@@ -59,6 +59,7 @@ class ClearSearch extends Command
 
     protected function getDeleteIds()
     {
+        // select MIN(id) AS id from `search_v3` group by `type_id`, `modal_id` having COUNT(id) > 1
         $ids = DB
             ::table('search_v3')
             ->select(DB::raw('MIN(id) AS id'))
