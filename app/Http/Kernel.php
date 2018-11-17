@@ -23,7 +23,8 @@ class Kernel extends HttpKernel
     protected $middlewareGroups = [
         'web' => [
             \Barryvdh\Cors\HandleCors::class,
-            \App\Http\Middleware\Csrf::class
+            \App\Http\Middleware\Csrf::class,
+            \Illuminate\Session\Middleware\StartSession::class,
         ],
         'api' => [
             \Barryvdh\Cors\HandleCors::class,

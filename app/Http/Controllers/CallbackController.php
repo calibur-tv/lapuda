@@ -9,11 +9,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Video;
-use App\Services\OvertrueSocialite;
 use App\Services\Qiniu\Config;
 use App\Services\Qiniu\Processing\PersistentFop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
+use Socialite;
 
 class CallbackController extends Controller
 {
@@ -129,17 +129,17 @@ class CallbackController extends Controller
 
     public function qqAuthEntry()
     {
-        return OvertrueSocialite::driver('qq')->redirect();
+        return Socialite::driver('qq')->redirect();
     }
 
     public function wechatAuthEntry()
     {
-        return OvertrueSocialite::driver('wechat')->redirect();
+        return Socialite::driver('wechat')->redirect();
     }
 
     public function qqAuthRedirect()
     {
-        $user = OvertrueSocialite::driver('qq')->user();
+        $user = Socialite::driver('qq')->user();
 
         return response([
             'data' => $user
@@ -148,7 +148,7 @@ class CallbackController extends Controller
 
     public function wechatAuthRedirect()
     {
-        $user = OvertrueSocialite::driver('wechat')->user();
+        $user = Socialite::driver('wechat')->user();
 
         return response([
             'data' => $user
