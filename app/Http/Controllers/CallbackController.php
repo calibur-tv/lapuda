@@ -13,7 +13,7 @@ use App\Services\Qiniu\Config;
 use App\Services\Qiniu\Processing\PersistentFop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
-
+use Socialite;
 
 class CallbackController extends Controller
 {
@@ -124,6 +124,34 @@ class CallbackController extends Controller
                 'type' => $params['type'],
                 'url' => "user/{$params['uid']}/{$today}/{$params['key']}"
             ]
+        ], 200);
+    }
+
+    public function qqAuthEntry()
+    {
+        return Socialite::driver('qq')->redirect();
+    }
+
+    public function wechatAuthEntry()
+    {
+        return Socialite::driver('wechat')->redirect();
+    }
+
+    public function qqAuthRedirect()
+    {
+        $user = Socialite::driver('qq')->user();
+
+        return response([
+            'data' => $user
+        ], 200);
+    }
+
+    public function wechatAuthRedirect()
+    {
+        $user = Socialite::driver('wechat')->user();
+
+        return response([
+            'data' => $user
         ], 200);
     }
 }
