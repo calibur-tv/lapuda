@@ -127,17 +127,17 @@ class CallbackController extends Controller
         ], 200);
     }
 
-    public function qqAuthEntry(Request $request)
+    public function qqAuthEntry()
     {
         return Socialite::driver('qq')->redirect();
     }
 
-    public function wechatAuthEntry(Request $request)
+    public function wechatAuthEntry()
     {
         return Socialite::driver('wechat')->redirect();
     }
 
-    public function qqAuthRedirect(Request $request)
+    public function qqAuthRedirect()
     {
         $user = Socialite::driver('qq')->user();
 
@@ -146,7 +146,7 @@ class CallbackController extends Controller
         ], 200);
     }
 
-    public function wechatAuthRedirect(Request $request)
+    public function wechatAuthRedirect()
     {
         $user = Socialite::driver('wechat')->user();
 
