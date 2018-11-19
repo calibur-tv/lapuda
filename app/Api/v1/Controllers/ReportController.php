@@ -173,7 +173,7 @@ class ReportController extends Controller
                     }
 
                     $bangumiManager = new BangumiManager();
-                    if ($isAdmin || $bangumiManager->isOwner($item['bangumi_id'], $userId))
+                    if ($isAdmin || $bangumiManager->isALeader($userId) ||$bangumiManager->isOwner($item['bangumi_id'], $userId))
                     {
                         $commentService->deleteSubComment($subComment['id'], $mainComment['id'], $userId);
                     }
@@ -205,7 +205,7 @@ class ReportController extends Controller
                     }
 
                     $bangumiManager = new BangumiManager();
-                    if ($isAdmin || $bangumiManager->isOwner($item['bangumi_id'], $userId))
+                    if ($isAdmin || $bangumiManager->isALeader($userId) || $bangumiManager->isOwner($item['bangumi_id'], $userId))
                     {
                         $commentService->deleteMainComment(
                             $mainComment['id'],
@@ -228,7 +228,7 @@ class ReportController extends Controller
                 }
 
                 $bangumiManager = new BangumiManager();
-                if ($isAdmin || $bangumiManager->isOwner($item['bangumi_id'], $userId))
+                if ($isAdmin || $bangumiManager->isALeader($userId) || $bangumiManager->isOwner($item['bangumi_id'], $userId))
                 {
                     $repository->deleteProcess($id, $userId);
                 }

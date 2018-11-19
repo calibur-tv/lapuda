@@ -82,6 +82,15 @@ class OwnerService extends Repository
             ->count();
     }
 
+    public function isALeader($userId)
+    {
+        return (boolean)DB
+            ::table($this->owner_table)
+            ->where('user_id', $userId)
+            ->where('is_leader', '<>', 0)
+            ->count();
+    }
+
     public function upgrade($modalId, $userId)
     {
         if (!$this->isOwner($modalId, $userId))
