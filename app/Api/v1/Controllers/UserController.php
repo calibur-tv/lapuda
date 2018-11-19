@@ -394,7 +394,17 @@ class UserController extends Controller
             ]);
         }
 
-        $list = $repository->list($idsObj['ids'], true);
+        $list = [];
+        foreach ($idsObj['ids'] as $id => $time)
+        {
+            $item = $repository->item($id, true);
+            if (is_null($item))
+            {
+                continue;
+            }
+            $item['created_at'] = $time;
+            $list[] = $item;
+        }
 
         return $this->resOK([
             'list' => $list,

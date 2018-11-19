@@ -159,14 +159,13 @@ class ToggleService extends Repository
     public function usersDoIds($userId, $page = 0, $count = 10)
     {
         Redis::DEL($this->usersDoCacheKey($userId));
-        $ids = $this->RedisList($this->usersDoCacheKey($userId), function () use ($userId)
+        $ids = $this->RedisSort($this->usersDoCacheKey($userId), function () use ($userId)
         {
             return DB::table($this->table)
                 ->where('user_id', $userId)
                 ->orderBy('id', 'DESC')
-                ->pluck('modal_id');
-
-        }, 0, -1, 'm');
+                ->pluck('created_at', 'modal_id AS id');
+        }, true, true, 'm');
 
         if (empty($ids))
         {

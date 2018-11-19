@@ -322,7 +322,6 @@ class UserRepository extends Repository
     public function followedBangumis($userId, $page = -1, $count = 10)
     {
         $bangumiFollowService = new BangumiFollowService();
-
         $idsObj = $bangumiFollowService->usersDoIds($userId, $page, $count);
         $bangumiIds = $idsObj['ids'];
         if (empty($bangumiIds))
@@ -331,7 +330,17 @@ class UserRepository extends Repository
         }
 
         $bangumiRepository = new BangumiRepository();
-        $bangumis = $bangumiRepository->list($bangumiIds);
+        $bangumis = [];
+        foreach ($bangumiIds as $id => $time)
+        {
+            $bangumi = $bangumiRepository->item($id);
+            if (is_null($bangumi))
+            {
+                continue;
+            }
+            $bangumi['created_at'] = $time;
+            $bangumis[] = $bangumi;
+        }
 
         $bangumiTransformer = new BangumiTransformer();
 
