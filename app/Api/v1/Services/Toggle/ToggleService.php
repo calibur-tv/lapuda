@@ -8,6 +8,7 @@ use App\Api\V1\Transformers\UserTransformer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Api\V1\Repositories\Repository;
+use Illuminate\Support\Facades\Redis;
 
 /**
  * Created by PhpStorm.
@@ -157,6 +158,7 @@ class ToggleService extends Repository
     // 某个用户的文章收藏列表
     public function usersDoIds($userId, $page = 0, $count = 10)
     {
+        Redis::DEL($this->usersDoCacheKey($userId));
         $ids = $this->RedisList($this->usersDoCacheKey($userId), function () use ($userId)
         {
             return DB::table($this->table)
