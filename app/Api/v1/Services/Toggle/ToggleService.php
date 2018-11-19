@@ -157,14 +157,14 @@ class ToggleService extends Repository
     // 某个用户的文章收藏列表
     public function usersDoIds($userId, $page = 0, $count = 10)
     {
-        $ids = $this->RedisSort($this->usersDoCacheKey($userId), function () use ($userId)
+        $ids = $this->RedisList($this->usersDoCacheKey($userId), function () use ($userId)
         {
             return DB::table($this->table)
                 ->where('user_id', $userId)
                 ->orderBy('id', 'DESC')
-                ->pluck('created_at', 'modal_id AS id');
+                ->pluck('modal_id');
 
-        }, true, true);
+        }, 0, -1, 'm');
 
         if (empty($ids))
         {
@@ -186,7 +186,7 @@ class ToggleService extends Repository
 
         return $this->filterIdsByPage($ids, $page, $count, true);
     }
-    // 谋篇文章的收藏者们
+    // 某篇文章的收藏者们
     protected function doUsersIds($modalId, $lastId, $count)
     {
         $ids = $this->RedisSort($this->doUsersCacheKey($modalId), function () use ($modalId)

@@ -140,7 +140,7 @@ class PostRepository extends Repository
         });
     }
 
-    public function createProcess($id, $state = 0)
+    public function createProcess($id, $state = 0, $publish = true)
     {
         $post = $this->item($id, true);
 
@@ -154,7 +154,14 @@ class PostRepository extends Repository
         }
 
         $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
-        $postTrendingService->create($id);
+        if ($publish)
+        {
+            $postTrendingService->create($id);
+        }
+        else
+        {
+            $postTrendingService->update($id);
+        }
 
         $baiduPush = new BaiduPush();
         $baiduPush->trending('post');
