@@ -624,6 +624,7 @@ class ImageController extends Controller
 
         $albumIds = Image::where('user_id', $userId)
             ->where('is_album', 1)
+            ->where('state', 0)
             ->pluck('id')
             ->toArray();
 
