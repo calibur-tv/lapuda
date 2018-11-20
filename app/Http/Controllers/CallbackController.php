@@ -10,7 +10,6 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Video;
-use App\Services\OvertrueOauth2;
 use App\Services\Qiniu\Config;
 use App\Services\Qiniu\Processing\PersistentFop;
 use Illuminate\Http\Request;

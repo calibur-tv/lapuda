@@ -228,7 +228,7 @@ class UserController extends Controller
         $birthday = $request->get('birthday') ? date('Y-m-d H:m:s', (int)$request->get('birthday')) : null;
 
         User::where('id', $userId)->update([
-            'nickname' => Purifier::clean($request->get('nickname')),
+            'nickname' => $request->get('nickname'),
             'signature' => Purifier::clean($request->get('signature')),
             'sex' => $request->get('sex'),
             'sex_secret' => $request->get('sex_secret'),

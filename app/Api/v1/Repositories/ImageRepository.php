@@ -71,7 +71,7 @@ class ImageRepository extends Repository
                 'is_cartoon' => $params['is_cartoon'],
                 'is_creator' => $params['is_creator'],
                 'is_album' => $params['is_album'],
-                'name' => Purifier::clean($params['name']),
+                'name' => $params['name'],
                 'url' => $this->convertImagePath($params['url']),
                 'width' => $params['width'],
                 'height' => $params['height'],
