@@ -135,7 +135,7 @@ class CallbackController extends Controller
 
         return Socialite
             ::driver('qq')
-            ->redirect('https://api.calibur.tv/callback/auth/qq?' . $from);
+            ->redirect('https://api.calibur.tv/callback/auth/qq?from=' . $from);
     }
 
     public function wechatAuthEntry(Request $request)
@@ -144,7 +144,7 @@ class CallbackController extends Controller
 
         return Socialite
             ::driver('wechat')
-            ->redirect('https://api.calibur.tv/callback/auth/wechat?' . $from);
+            ->redirect('https://api.calibur.tv/callback/auth/wechat?from=' . $from);
     }
 
     public function qqAuthRedirect()
