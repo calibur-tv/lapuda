@@ -10,6 +10,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Video;
+use App\Services\OvertrueOauth2;
 use App\Services\Qiniu\Config;
 use App\Services\Qiniu\Processing\PersistentFop;
 use Illuminate\Http\Request;
@@ -132,20 +133,18 @@ class CallbackController extends Controller
     {
         $from = $request->get('from')  === 'sign' ? 'sign' : 'bind';
 
-        return Socialite
+        return OvertrueOauth2
             ::driver('qq')
-            ->with(['from' => $from])
-            ->redirect();
+            ->redirect($from);
     }
 
     public function wechatAuthEntry(Request $request)
     {
         $from = $request->get('from')  === 'sign' ? 'sign' : 'bind';
 
-        return Socialite
+        return OvertrueOauth2
             ::driver('wechat')
-            ->with(['from' => $from])
-            ->redirect();
+            ->redirect($from);
     }
 
     public function qqAuthRedirect()
