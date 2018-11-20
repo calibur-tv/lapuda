@@ -158,7 +158,6 @@ class ToggleService extends Repository
     // 某个用户的文章收藏列表
     public function usersDoIds($userId, $page = 0, $count = 10)
     {
-        Redis::DEL($this->usersDoCacheKey($userId));
         $ids = $this->RedisSort($this->usersDoCacheKey($userId), function () use ($userId)
         {
             return DB::table($this->table)
