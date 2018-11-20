@@ -133,18 +133,18 @@ class CallbackController extends Controller
     {
         $from = $request->get('from')  === 'sign' ? 'sign' : 'bind';
 
-        return OvertrueOauth2
+        return Socialite
             ::driver('qq')
-            ->redirect($from);
+            ->redirect('https://api.calibur.tv/callback/auth/qq?' . $from);
     }
 
     public function wechatAuthEntry(Request $request)
     {
         $from = $request->get('from')  === 'sign' ? 'sign' : 'bind';
 
-        return OvertrueOauth2
+        return Socialite
             ::driver('wechat')
-            ->redirect($from);
+            ->redirect('https://api.calibur.tv/callback/auth/wechat?' . $from);
     }
 
     public function qqAuthRedirect()
