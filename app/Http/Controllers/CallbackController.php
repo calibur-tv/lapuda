@@ -8,6 +8,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\Video;
 use App\Services\Qiniu\Config;
 use App\Services\Qiniu\Processing\PersistentFop;
@@ -127,19 +128,42 @@ class CallbackController extends Controller
         ], 200);
     }
 
-    public function qqAuthEntry()
+    public function qqAuthEntry(Request $request)
     {
-        return Socialite::driver('qq')->redirect();
+        $from = $request->get('from')  === 'sign' ? 'sign' : 'bind';
+
+        return Socialite
+            ::driver('qq')
+            ->with(['from' => $from])
+            ->redirect();
     }
 
-    public function wechatAuthEntry()
+    public function wechatAuthEntry(Request $request)
     {
-        return Socialite::driver('wechat')->redirect();
+        $from = $request->get('from')  === 'sign' ? 'sign' : 'bind';
+
+        return Socialite
+            ::driver('wechat')
+            ->with(['from' => $from])
+            ->redirect();
     }
 
     public function qqAuthRedirect()
     {
-        $user = Socialite::driver('qq')->user();
+        $user = Socialite
+            ::driver('qq')
+            ->user();
+        $openId = $user['id'];
+
+        if ($this->isNewUser('qq_open_id', $openId))
+        {
+            // signUp
+            $nickname = $this->getNickname($user['nickname']);
+        }
+        else
+        {
+            // signIn
+        }
 
         return response([
             'data' => $user
@@ -148,10 +172,37 @@ class CallbackController extends Controller
 
     public function wechatAuthRedirect()
     {
-        $user = Socialite::driver('wechat')->user();
+        $user = Socialite
+            ::driver('wechat')
+            ->user();
+
+        $openId = $user['original']['openid'];
+
+        if ($this->isNewUser('wechat_open_id', $openId))
+        {
+            // signUp
+            $nickname = $this->getNickname($user['nickname']);
+            $uniqueId = $user['original']['unionid'];
+        }
+        else
+        {
+            // signIn
+        }
 
         return response([
             'data' => $user
         ], 200);
+    }
+
+    protected function isNewUser($key, $value)
+    {
+        return !User::where($key, $value)->count();
+    }
+
+    protected function getNickname($nickname)
+    {
+        preg_match_all('/([a-zA-Z]+|[0-9]+|[\x{4e00}-\x{9fa5}]+)*/u', $nickname, $matches);
+
+        return implode('', $matches[0]) ?: 'zero';
     }
 }
