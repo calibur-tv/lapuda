@@ -76,7 +76,8 @@ class UserTransformer extends Transformer
                 'is_admin' => (boolean)$user['is_admin'],
                 'notification' => $user['notification'],
                 'exp' => $user['exp'],
-                'power' => $user['power']
+                'power' => $user['power'],
+                'providers' => $user['providers']
             ];
         });
     }

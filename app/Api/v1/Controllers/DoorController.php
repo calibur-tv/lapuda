@@ -302,12 +302,29 @@ class DoorController extends Controller
     }
 
 
-    // TODO：delete
-    public function currentUser()
+    // Todo：绑定第三方账号
+    public function bindProvider()
     {
-        return $this->resOK(null);
+
     }
 
+    // Todo：绑定手机号，同时设置密码
+    public function bindPhone()
+    {
+
+    }
+
+    // Todo：解绑第三方账号
+    public function unbindProvider()
+    {
+
+    }
+
+    // Todo：更换手机号，需要发短信验证
+    public function changePhone()
+    {
+
+    }
     /**
      * 获取用户信息
      *
@@ -343,6 +360,10 @@ class DoorController extends Controller
         $user['coin_from_sign'] = $userRepository->userSignCoin($userId);
         $user['exp'] = $userLevel->computeExpObject($user['exp']);
         $user['power'] = $userActivityService->get($userId);
+        $user['providers'] = [
+            'bind_qq' => !!$user['qq_open_id'],
+            'bind_wechat' => !!$user['wechat_open_id']
+        ];
 
         $transformer = new UserTransformer();
 
