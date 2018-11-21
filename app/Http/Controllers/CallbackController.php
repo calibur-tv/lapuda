@@ -226,7 +226,7 @@ class CallbackController extends Controller
             $userId
         );
 
-        return redirect('https://www.calibur.tv/callback/auth-redirect/' . $this->responseUser($user));
+        return redirect('https://www.calibur.tv/callback/auth-redirect?message=登录成功&token=' . $this->responseUser($user));
     }
 
     public function wechatAuthRedirect(Request $request)
@@ -307,7 +307,7 @@ class CallbackController extends Controller
             $userId
         );
 
-        return redirect('https://www.calibur.tv/callback/auth-redirect/' . $this->responseUser($user));
+        return redirect('https://www.calibur.tv/callback/auth-redirect?message=登录成功&token=' . $this->responseUser($user));
     }
 
     protected function responseUser($user)
