@@ -196,7 +196,8 @@ class CallbackController extends Controller
             $data = [
                 'nickname' => $nickname,
                 'zone' => $zone,
-                'qq_open_id' => $openId
+                'qq_open_id' => $openId,
+                'password' => bcrypt('calibur')
             ];
 
             try
@@ -283,7 +284,8 @@ class CallbackController extends Controller
                 'nickname' => $nickname,
                 'zone' => $zone,
                 'wechat_open_id' => $openId,
-                'wechat_unique_id' => $uniqueId
+                'wechat_unique_id' => $uniqueId,
+                'password' => bcrypt('calibur')
             ];
 
             try
