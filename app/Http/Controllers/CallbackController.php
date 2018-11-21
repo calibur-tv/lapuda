@@ -164,15 +164,21 @@ class CallbackController extends Controller
 
         if ($from === 'bind')
         {
-            $userId = $this->getAuthUserId();
-            if (!$userId)
-            {
-                return redirect('https://www.calibur.tv/callback/auth-error?message=' . '继续操作前请先登录');
-            }
-
             if (!$isNewUser)
             {
                 return redirect('https://www.calibur.tv/callback/auth-error?message=' . '该QQ号已绑定其它账号');
+            }
+
+            $userId = $request->get('id');
+            $userZone = $request->get('zone');
+            $hasUser = User
+                ::where('id', $userId)
+                ->where('zone', $userZone)
+                ->count();
+
+            if (!$hasUser)
+            {
+                return redirect('https://www.calibur.tv/callback/auth-error?message=' . '继续操作前请先登录');
             }
 
             User
@@ -243,15 +249,21 @@ class CallbackController extends Controller
 
         if ($from === 'bind')
         {
-            $userId = $this->getAuthUserId();
-            if (!$userId)
-            {
-                return redirect('https://www.calibur.tv/callback/auth-error?message=' . '继续操作前请先登录');
-            }
-
             if (!$isNewUser)
             {
                 return redirect('https://www.calibur.tv/callback/auth-error?message=' . '该微信号已绑定其它账号');
+            }
+
+            $userId = $request->get('id');
+            $userZone = $request->get('zone');
+            $hasUser = User
+                ::where('id', $userId)
+                ->where('zone', $userZone)
+                ->count();
+
+            if (!$hasUser)
+            {
+                return redirect('https://www.calibur.tv/callback/auth-error?message=' . '继续操作前请先登录');
             }
 
             User
