@@ -337,6 +337,7 @@ class CallbackController extends Controller
 
         $user = Socialite
             ::driver('wework')
+            ->scopes(['snsapi_userinfo'])
             ->user();
 
         return response()->json(['data' => $user], 200);
