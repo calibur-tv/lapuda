@@ -29,7 +29,10 @@ class User extends Authenticatable
         'remember_token',
         'phone',
         'is_admin',
-        'faker'
+        'faker',
+        'qq_open_id',
+        'wechat_unique_id',
+        'wechat_open_id'
     ];
 
     protected $hidden = ['password'];
