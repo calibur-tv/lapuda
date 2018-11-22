@@ -151,7 +151,7 @@ class CallbackController extends Controller
             ->redirect('https://api.calibur.tv/callback/auth/wechat?' . http_build_query($request->all()));
     }
     // 微信公众平台登录 - H5
-    public function wexinAuthEntry(Request $request)
+    public function weixinAuthEntry(Request $request)
     {
         $socialite = new SocialiteManager(config('services', []));
 
