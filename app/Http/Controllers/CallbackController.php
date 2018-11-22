@@ -163,9 +163,16 @@ class CallbackController extends Controller
             return redirect('https://www.calibur.tv/callback/auth-error?message=' . '请求参数错误');
         }
 
-        $user = Socialite
-            ::driver('qq')
-            ->user();
+        try
+        {
+            $user = Socialite
+                ::driver('qq')
+                ->user();
+        }
+        catch (\Overtrue\Socialite\InvalidStateException $e)
+        {
+            return redirect('https://www.calibur.tv/callback/auth-error?message=' . '登录失败了~');
+        }
 
         $openId = $user['id'];
         $isNewUser = $this->isNewUser('qq_open_id', $openId);
@@ -254,9 +261,16 @@ class CallbackController extends Controller
             return redirect('https://www.calibur.tv/callback/auth-error?message=' . '请求参数错误');
         }
 
-        $user = Socialite
-            ::driver('wechat')
-            ->user();
+        try
+        {
+            $user = Socialite
+                ::driver('wechat')
+                ->user();
+        }
+        catch (\Overtrue\Socialite\InvalidStateException $e)
+        {
+            return redirect('https://www.calibur.tv/callback/auth-error?message=' . '登录失败了~');
+        }
 
         $openId = $user['original']['openid'];
         $uniqueId = $user['original']['unionid'];
