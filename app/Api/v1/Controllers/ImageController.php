@@ -202,6 +202,12 @@ class ImageController extends Controller
         $bangumiActivityService = new BangumiActivity();
         $bangumiActivityService->update($bangumiId, 3);
 
+        if ($isCartoon)
+        {
+            $job = (new \App\Jobs\Push\Baidu('bangumi/' . $bangumiId . '/cartoon', 'update'));
+            dispatch($job);
+        }
+
         return $this->resCreated([
             'data' => $imageTransformer->userAlbums([$newAlbum])[0],
             'exp' => $exp,
@@ -242,7 +248,7 @@ class ImageController extends Controller
             'height' => 'required|integer',
             'size' => 'required|integer',
             'type' => 'required|string',
-            'part' => 'required|integer|min:0',
+            'part' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails())
@@ -618,6 +624,7 @@ class ImageController extends Controller
 
         $albumIds = Image::where('user_id', $userId)
             ->where('is_album', 1)
+            ->where('state', 0)
             ->pluck('id')
             ->toArray();
 

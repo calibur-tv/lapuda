@@ -72,6 +72,7 @@ class TrialController extends Controller
         {
             Redis::LREM('blackwords', 1, $item);
         }
+        $this->changeBlackWordsFile();
 
         return $this->resNoContent();
     }
@@ -80,6 +81,8 @@ class TrialController extends Controller
     public function addWords(Request $request)
     {
         Redis::LPUSH('blackwords', $request->get('words'));
+
+        $this->changeBlackWordsFile();
 
         return $this->resNoContent();
     }
@@ -110,5 +113,76 @@ class TrialController extends Controller
         $wordFilter = new WordsFilter();
 
         return $this->resOK($wordFilter->filter($content));
+    }
+
+    // 修改敏感词库的文件
+    protected function changeBlackWordsFile()
+    {
+        $path = base_path() . '/storage/app/' . $this->filename;
+        $data = Redis::LRANGE($this->cacheKey, 0, -1);
+
+        if (empty($data))
+        {
+            $keys = $this->readKeysFromFile($path);
+            Redis::RPUSH($this->cacheKey, $keys);
+        }
+        else
+        {
+            $this->syncWordsFromCache($data, $path);
+        }
+
+        $resTrie = trie_filter_new();
+        $fp = fopen($path, 'r');
+        if ( ! $fp)
+        {
+            return;
+        }
+
+        while ( ! feof($fp))
+        {
+            $word = fgets($fp, 1024);
+            if ( ! empty($word))
+            {
+                trie_filter_store($resTrie, $word);
+            }
+        }
+
+        trie_filter_save($resTrie,  base_path() . '/app/Services/Trial/' . 'blackword.tree');
+    }
+
+    protected function readKeysFromFile($path)
+    {
+        if (!file_exists($path))
+        {
+            return [];
+        }
+
+        $fp = fopen($path, 'r');
+        $words = [];
+        while( ! feof($fp))
+        {
+            if ($line = rtrim(fgets($fp))) {
+                $words[] = $line;
+            }
+        }
+        fclose($fp);
+
+        return $words;
+    }
+
+    protected function syncWordsFromCache($keys, $path)
+    {
+        $fp = fopen($path, 'w');
+
+        if ( ! $fp)
+        {
+            return;
+        }
+
+        foreach ($keys as $v)
+        {
+            fwrite($fp, "$v\r\n");
+        }
+        fclose($fp);
     }
 }

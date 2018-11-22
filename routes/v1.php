@@ -159,6 +159,8 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/recommended', 'App\Api\V1\Controllers\UserController@recommendedUsers');
 
+        $api->get('/bookmarks', 'App\Api\V1\Controllers\UserController@bookmarks')->middleware('jwt.auth');
+
         $api->get('/invite/list', 'App\Api\V1\Controllers\UserController@userInviteList');
 
         $api->get('/card', 'App\Api\V1\Controllers\UserController@userCard');
@@ -437,10 +439,6 @@ $api->version(['v1', 'latest'], function ($api)
         $api->group(['prefix' => '/cartoon'], function ($api)
         {
             $api->get('/bangumis', 'App\Api\V1\Controllers\CartoonController@bangumis');
-
-            $api->get('/list_of_bangumi', 'App\Api\V1\Controllers\CartoonController@listOfBangumi');
-
-            $api->post('/sort', 'App\Api\V1\Controllers\CartoonController@sortOfBangumi');
 
             $api->post('/edit', 'App\Api\V1\Controllers\CartoonController@edit');
         });

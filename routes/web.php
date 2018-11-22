@@ -10,4 +10,18 @@ Route::group(['prefix' => '/callback'], function ()
 
         Route::post('/uploadimage', 'CallbackController@qiniuUploadImage');
     });
+
+    Route::group(['prefix' => '/auth'], function ()
+    {
+        Route::get('/qq', 'CallbackController@qqAuthRedirect');
+
+        Route::get('/wechat', 'CallbackController@wechatAuthRedirect');
+    });
+
+    Route::group(['prefix' => '/oauth2'], function ()
+    {
+        Route::get('/qq', 'CallbackController@qqAuthEntry');
+
+        Route::get('/wechat', 'CallbackController@wechatAuthEntry');
+    });
 });

@@ -17,6 +17,11 @@ use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Counter\Stats\TotalUserCount;
+use App\Api\V1\Services\Toggle\Image\ImageMarkService;
+use App\Api\V1\Services\Toggle\Post\PostMarkService;
+use App\Api\V1\Services\Toggle\Question\AnswerMarkService;
+use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
+use App\Api\V1\Services\Toggle\Video\VideoMarkService;
 use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
@@ -223,7 +228,7 @@ class UserController extends Controller
         $birthday = $request->get('birthday') ? date('Y-m-d H:m:s', (int)$request->get('birthday')) : null;
 
         User::where('id', $userId)->update([
-            'nickname' => Purifier::clean($request->get('nickname')),
+            'nickname' => $request->get('nickname'),
             'signature' => Purifier::clean($request->get('signature')),
             'sex' => $request->get('sex'),
             'sex_secret' => $request->get('sex_secret'),
@@ -318,6 +323,93 @@ class UserController extends Controller
             'list' => $result,
             'total' => $idsObject['total'],
             'noMore' => $idsObject['noMore']
+        ]);
+    }
+
+    /**
+     * 获取当前用户的收藏列表
+     *
+     * @Get("/user/bookmarks")
+     *
+     * @Parameter("type", description="类型", type="string", required=true),
+     * @Parameter("page", description="页码", type="integer", required=true, default=0),
+     * @Parameter("take", description="个数", type="integer", required=false, default=15),
+     *
+     * @Transaction({
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body={"code": 0, "data": "data"}),
+     *      @Response(403, body={"code": 40003, "message": "请求参数错误"})
+     * })
+     */
+    public function bookmarks(Request $request)
+    {
+        $type = $request->get('type');
+        $page = $request->get('page') ?: 0;
+        $take = $request->get('take') ?: 15;
+        $userId = $this->getAuthUserId();
+
+        if (!in_array($type, ['post', 'image', 'video', 'score', 'answer']))
+        {
+            return $this->resErrBad();
+        }
+
+        $markService = null;
+        $repository = null;
+        if ($type === 'post')
+        {
+            $markService = new PostMarkService();
+            $repository = new PostRepository();
+        }
+        else if ($type === 'image')
+        {
+            $markService = new ImageMarkService();
+            $repository = new ImageRepository();
+        }
+        else if ($type === 'video')
+        {
+            $markService = new VideoMarkService();
+            $repository = new VideoRepository();
+        }
+        else if ($type === 'score')
+        {
+            $markService = new ScoreMarkService();
+            $repository = new ScoreRepository();
+        }
+        else if ($type === 'answer')
+        {
+            $markService = new AnswerMarkService();
+            $repository = new AnswerRepository();
+        }
+        else
+        {
+            return $this->resErrBad();
+        }
+        $idsObj = $markService->usersDoIds($userId, $page, $take);
+        if (!$idsObj['total'])
+        {
+            return $this->resOK([
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ]);
+        }
+
+        $list = [];
+        foreach ($idsObj['ids'] as $id => $time)
+        {
+            $item = $repository->item($id, true);
+            if (is_null($item))
+            {
+                continue;
+            }
+            $item['created_at'] = $time;
+            $list[] = $item;
+        }
+
+        return $this->resOK([
+            'list' => $list,
+            'total' => $idsObj['total'],
+            'noMore' => $idsObj['noMore']
         ]);
     }
 
@@ -488,10 +580,13 @@ class UserController extends Controller
      *
      * @Get("/user/transactions")
      *
+     * @Parameters({
+     *      @Parameter("min_id": "看过的最小id", "default": 0, "required": true),
+     *      @Parameter(take": "条数", "default": 15)
+     * })
+     *
      * @Transaction({
      *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Request({"min_id": "看过的最小id", "default": 0, "required": true}),
-     *      @Request({"take": "条数", "default": 15}),
      *      @Response(200, body={"code": 0, "data": "消息列表"}),
      *      @Response(401, body={"code": 40104, "message": "未登录的用户"})
      * })
@@ -702,7 +797,9 @@ class UserController extends Controller
             $result[] = $transaction;
         }
 
-        return $this->resOK($result);
+        return $this->resOK([
+            'list' => $result
+        ]);
     }
 
     // 用户邀请注册的列表

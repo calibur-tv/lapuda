@@ -130,7 +130,7 @@ class PostController extends Controller
         $content = Purifier::clean($request->get('content'));
 
         $id = $postRepository->create([
-            'title' => Purifier::clean($request->get('title')),
+            'title' => $request->get('title'),
             'content' => $postRepository->formatRichContent($content),
             'desc' => mb_substr($content, 0, 120, 'UTF-8'),
             'bangumi_id' => $bangumiId,

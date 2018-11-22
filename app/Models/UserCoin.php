@@ -39,7 +39,6 @@ class UserCoin extends Model
      * 15：普通用户100战斗力送团子
      * 16：番剧管理者100战斗力送团子
      */
-
     protected $casts = [
         'id' => 'integer',
         'user_id' => 'integer',

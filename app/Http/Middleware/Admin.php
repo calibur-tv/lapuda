@@ -17,6 +17,11 @@ class Admin extends GetUserFromToken
 {
     public function handle($request, \Closure $next)
     {
+        if (config('app.env') === 'local')
+        {
+            return $next($request);
+        }
+
         if (! $token = $this->auth->setRequest($request)->getToken())
         {
             return response([

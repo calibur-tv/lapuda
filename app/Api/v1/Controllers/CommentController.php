@@ -178,7 +178,9 @@ class CommentController extends Controller
         ));
         dispatch($job);
 
-        if (!in_array($type, ['role']))
+        $dontUpdateTrending = $type === 'role' || ($type === 'image' && $parent['is_cartoon']);
+
+        if (!$dontUpdateTrending)
         {
             $job = (new \App\Jobs\Trending\Active(
                 $id,

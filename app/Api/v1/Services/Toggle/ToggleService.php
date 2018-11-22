@@ -8,6 +8,7 @@ use App\Api\V1\Transformers\UserTransformer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Api\V1\Repositories\Repository;
+use Illuminate\Support\Facades\Redis;
 
 /**
  * Created by PhpStorm.
@@ -163,8 +164,7 @@ class ToggleService extends Repository
                 ->where('user_id', $userId)
                 ->orderBy('id', 'DESC')
                 ->pluck('created_at', 'modal_id AS id');
-
-        }, true, true);
+        }, true, true, 'm');
 
         if (empty($ids))
         {
@@ -186,7 +186,7 @@ class ToggleService extends Repository
 
         return $this->filterIdsByPage($ids, $page, $count, true);
     }
-    // 谋篇文章的收藏者们
+    // 某篇文章的收藏者们
     protected function doUsersIds($modalId, $lastId, $count)
     {
         $ids = $this->RedisSort($this->doUsersCacheKey($modalId), function () use ($modalId)

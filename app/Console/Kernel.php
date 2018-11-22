@@ -13,8 +13,6 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        Trail\BlackWords::class,
-        Job\CronPush::class,
         Job\CronFreeUser::class,
         Job\CronComputedActivity::class,
         Job\ClearSearch::class,
@@ -31,12 +29,10 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('BlackWords')->everyFiveMinutes();
-        $schedule->command('CronPush')->dailyAt('23:33');
         $schedule->command('CronComputedActivity')->dailyAt('00:01');
-        $schedule->command('ClearSearch')->dailyAt('01:01');
-        $schedule->command('DayStats')->dailyAt('02:01');
+        $schedule->command('DayStats')->dailyAt('01:01');
 //        $schedule->command('CronAvthumb')->hourly();
+        $schedule->command('ClearSearch')->dailyAt('05:00');
         $schedule->command('CronFreeUser')->everyFiveMinutes();
         $schedule->command('Trending')->hourly();
     }

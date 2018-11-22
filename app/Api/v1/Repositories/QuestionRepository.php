@@ -45,7 +45,7 @@ class QuestionRepository extends Repository
 
         $now = Carbon::now();
         // TODO：去掉 title 前后的标点，并给后面补上中文的问号
-        $title = Purifier::clean($params['title']);
+        $title = $params['title'];
         $newId = Question::insertGetId([
             'user_id' => $params['user_id'],
             'title' => $title,

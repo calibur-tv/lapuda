@@ -406,8 +406,8 @@ class CartoonRoleController extends Controller
             }
         }
 
-        $name = Purifier::clean($request->get('name'));
-        $alias = $request->get('alias') ? Purifier::clean($request->get('alias')) : $name;
+        $name = $request->get('name');
+        $alias = $request->get('alias') ? $request->get('alias') : $name;
         $time = Carbon::now();
 
         $count = CartoonRole::whereRaw('bangumi_id = ? and name = ?', [$bangumiId, $name])

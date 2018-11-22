@@ -53,8 +53,11 @@ class Invite implements ShouldQueue
 
             $newUser = $userRepository->item($this->inviteUserId);
 
-            $sms = new Message();
-            $sms->inviteUser($inviteUser->phone, $inviteUser->nickname, $newUser['nickname']);
+            if ($inviteUser->id !== 43819)
+            {
+                $sms = new Message();
+                $sms->inviteUser($inviteUser->phone, $inviteUser->nickname, $newUser['nickname']);
+            }
         }
     }
 }

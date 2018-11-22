@@ -18,7 +18,8 @@ class Csrf
 
     public function handle($request, Closure $next)
     {
-
+        return $next($request);
+        /*
         if (config('app.env') === 'local')
         {
             return $next($request);
@@ -33,5 +34,6 @@ class Csrf
             'code' => 40301,
             'message' => config('error.40301')
         ], 403);
+        */
     }
 }
