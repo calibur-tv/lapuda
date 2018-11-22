@@ -155,7 +155,7 @@ class CallbackController extends Controller
         return Socialite
             ::driver('wework')
             ->scopes(['snsapi_userinfo'])
-            ->redirect('https://api.calibur.tv/callback/auth/wework?' . http_build_query($request->all()));
+            ->redirect('https://api.calibur.tv/callback/auth/wework');
     }
 
     public function qqAuthRedirect(Request $request)
