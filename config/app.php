@@ -185,7 +185,6 @@ return [
         Barryvdh\Cors\ServiceProvider::class,
         Mews\Purifier\PurifierServiceProvider::class,
         Sentry\SentryLaravel\SentryLaravelServiceProvider::class,
-        Overtrue\LaravelSocialite\ServiceProvider::class,
     ],
 
     /*
@@ -238,7 +237,6 @@ return [
         'Pinyin' => Overtrue\LaravelPinyin\Facades\Pinyin::class,
         'Purifier' => Mews\Purifier\Facades\Purifier::class,
         'Sentry' => Sentry\SentryLaravel\SentryFacade::class,
-        'Socialite' => Overtrue\LaravelSocialite\Socialite::class,
     ],
 
 ];

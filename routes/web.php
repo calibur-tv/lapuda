@@ -16,6 +16,8 @@ Route::group(['prefix' => '/callback'], function ()
         Route::get('/qq', 'CallbackController@qqAuthRedirect');
 
         Route::get('/wechat', 'CallbackController@wechatAuthRedirect');
+
+        Route::get('/weixin', 'CallbackController@weixinAuthRedirect');
     });
 
     Route::group(['prefix' => '/oauth2'], function ()
@@ -23,5 +25,7 @@ Route::group(['prefix' => '/callback'], function ()
         Route::get('/qq', 'CallbackController@qqAuthEntry');
 
         Route::get('/wechat', 'CallbackController@wechatAuthEntry');
+
+        Route::get('/weixin', 'CallbackController@weixinAuthEntry');
     });
 });

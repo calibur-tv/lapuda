@@ -12,43 +12,21 @@ return [
     | to have a conventional place to find your various credentials.
     |
     */
-
-    'mailgun' => [
-        'domain' => env('MAILGUN_DOMAIN'),
-        'secret' => env('MAILGUN_SECRET'),
-    ],
-
-    'ses' => [
-        'key' => env('SES_KEY'),
-        'secret' => env('SES_SECRET'),
-        'region' => 'us-east-1',
-    ],
-
-    'sparkpost' => [
-        'secret' => env('SPARKPOST_SECRET'),
-    ],
-
-    'stripe' => [
-        'model' => App\Models\User::class,
-        'key' => env('STRIPE_KEY'),
-        'secret' => env('STRIPE_SECRET'),
-    ],
-
     'qq' => [
         'client_id' => env('QQ_AUTH_APP_ID'),
         'client_secret' => env('QQ_AUTH_APP_KEY'),
         'redirect' => 'https://api.calibur.tv/callback/auth/qq'
     ],
-
+    // PC 微信登录
     'wechat' => [
         'client_id' => env('WECHAT_APP_OPEN_ID'),
         'client_secret' => env('WECHAT_APP_OPEN_SECRET'),
         'redirect' => 'https://api.calibur.tv/callback/auth/wechat'
     ],
-
-    'wework' => [
+    // H5 微信登录
+    'weixin' => [
         'client_id' => env('WECHAT_APP_OWNER_ID'),
         'client_secret' => env('WECHAT_APP_OWNER_SECRET'),
-        'redirect' => 'https://api.calibur.tv/callback/auth/wework'
+        'redirect' => 'https://api.calibur.tv/callback/auth/weixin'
     ]
 ];
