@@ -144,23 +144,24 @@ class CallbackController extends Controller
     // 微信开放平台登录
     public function wechatAuthEntry(Request $request)
     {
+        $device = $request->get('device') === 'h5' ? 'h5' : 'pc';
+        $scope = $device === 'h5' ? 'snsapi_userinfo' : 'snsapi_login';
+
         return Socialite
             ::driver('wechat')
+            ->scopes([$scope])
             ->redirect('https://api.calibur.tv/callback/auth/wechat?' . http_build_query($request->all()));
-    }
-
-    // 微信公众平台登录
-    public function weworkAuthEntry(Request $request)
-    {
-        return Socialite
-            ::driver('wework')
-            ->scopes(['snsapi_userinfo'])
-            ->redirect('https://api.calibur.tv/callback/auth/wework');
     }
 
     public function qqAuthRedirect(Request $request)
     {
         $from = $request->get('from') === 'bind' ? 'bind' : 'sign';
+        $code = $request->get('code');
+        $state = $request->get('state');
+        if (!$code || !$state)
+        {
+            return redirect('https://www.calibur.tv/callback/auth-error?message=' . '请求参数错误');
+        }
 
         $user = Socialite
             ::driver('qq')
@@ -246,6 +247,12 @@ class CallbackController extends Controller
     public function wechatAuthRedirect(Request $request)
     {
         $from = $request->get('from') === 'bind' ? 'bind' : 'sign';
+        $code = $request->get('code');
+        $state = $request->get('state');
+        if (!$code || !$state)
+        {
+            return redirect('https://www.calibur.tv/callback/auth-error?message=' . '请求参数错误');
+        }
 
         $user = Socialite
             ::driver('wechat')
@@ -329,18 +336,6 @@ class CallbackController extends Controller
         );
 
         return redirect('https://www.calibur.tv/callback/auth-redirect?message=登录成功&token=' . $this->responseUser($user));
-    }
-
-    public function weworkAuthRedirect(Request $request)
-    {
-        $from = $request->get('from') === 'bind' ? 'bind' : 'sign';
-
-        $user = Socialite
-            ::driver('wework')
-            ->scopes(['snsapi_userinfo'])
-            ->user();
-
-        return response()->json(['data' => $user], 200);
     }
 
     protected function responseUser($user)
