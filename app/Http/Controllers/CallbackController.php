@@ -336,7 +336,7 @@ class CallbackController extends Controller
         $from = $request->get('from') === 'bind' ? 'bind' : 'sign';
 
         $user = Socialite
-            ::driver('wechat')
+            ::driver('wework')
             ->user();
 
         return response()->json(['data' => $user], 200);
