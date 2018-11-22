@@ -248,7 +248,7 @@ class ImageController extends Controller
             'height' => 'required|integer',
             'size' => 'required|integer',
             'type' => 'required|string',
-            'part' => 'required|integer|min:0',
+            'part' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails())
