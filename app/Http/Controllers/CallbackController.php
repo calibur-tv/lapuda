@@ -171,6 +171,8 @@ class CallbackController extends Controller
         }
         catch (\Overtrue\Socialite\InvalidStateException $e)
         {
+            app('sentry')->captureException($e);
+
             return redirect('https://www.calibur.tv/callback/auth-error?message=' . '登录失败了~');
         }
 
@@ -269,6 +271,8 @@ class CallbackController extends Controller
         }
         catch (\Overtrue\Socialite\InvalidStateException $e)
         {
+            app('sentry')->captureException($e);
+
             return redirect('https://www.calibur.tv/callback/auth-error?message=' . '登录失败了~');
         }
 
