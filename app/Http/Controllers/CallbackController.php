@@ -164,8 +164,7 @@ class CallbackController extends Controller
     {
         $from = $request->get('from') === 'bind' ? 'bind' : 'sign';
         $code = $request->get('code');
-        $state = $request->get('state');
-        if (!$code || !$state)
+        if (!$code)
         {
             return redirect('https://www.calibur.tv/callback/auth-error?message=' . '请求参数错误');
         }
@@ -266,8 +265,7 @@ class CallbackController extends Controller
     {
         $from = $request->get('from') === 'bind' ? 'bind' : 'sign';
         $code = $request->get('code');
-        $state = $request->get('state');
-        if (!$code || !$state)
+        if (!$code)
         {
             return redirect('https://www.calibur.tv/callback/auth-error?message=' . '请求参数错误');
         }
@@ -371,8 +369,7 @@ class CallbackController extends Controller
     {
         $from = $request->get('from') === 'bind' ? 'bind' : 'sign';
         $code = $request->get('code');
-        $state = $request->get('state');
-        if (!$code || !$state)
+        if (!$code)
         {
             return redirect('https://www.calibur.tv/callback/auth-error?message=' . '请求参数错误');
         }
