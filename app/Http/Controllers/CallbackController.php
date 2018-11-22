@@ -133,6 +133,7 @@ class CallbackController extends Controller
         ], 200);
     }
 
+    // QQ第三方登录
     public function qqAuthEntry(Request $request)
     {
         return Socialite
@@ -140,11 +141,20 @@ class CallbackController extends Controller
             ->redirect('https://api.calibur.tv/callback/auth/qq?' . http_build_query($request->all()));
     }
 
+    // 微信开放平台登录
     public function wechatAuthEntry(Request $request)
     {
         return Socialite
             ::driver('wechat')
             ->redirect('https://api.calibur.tv/callback/auth/wechat?' . http_build_query($request->all()));
+    }
+
+    // 微信公众平台登录
+    public function weworkAuthEntry(Request $request)
+    {
+        return Socialite
+            ::driver('wework')
+            ->redirect('https://api.calibur.tv/callback/auth/wework?' . http_build_query($request->all()));
     }
 
     public function qqAuthRedirect(Request $request)
@@ -318,6 +328,17 @@ class CallbackController extends Controller
         );
 
         return redirect('https://www.calibur.tv/callback/auth-redirect?message=登录成功&token=' . $this->responseUser($user));
+    }
+
+    public function weworkAuthRedirect(Request $request)
+    {
+        $from = $request->get('from') === 'bind' ? 'bind' : 'sign';
+
+        $user = Socialite
+            ::driver('wechat')
+            ->user();
+
+        return response()->json(['data' => $user], 200);
     }
 
     protected function responseUser($user)
