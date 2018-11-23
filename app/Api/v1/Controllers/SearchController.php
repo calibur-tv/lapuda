@@ -3,11 +3,8 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
-use App\Api\V1\Repositories\ScoreRepository;
-use App\Models\Score;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
-use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
 /**
@@ -68,56 +65,5 @@ class SearchController extends Controller
         $bangumiRepository = new BangumiRepository();
 
         return $this->resOK($bangumiRepository->searchAll());
-    }
-
-    public function migrate()
-    {
-        $ids = Score
-            ::pluck('id')
-            ->toArray();
-        $scoreRepository = new ScoreRepository();
-
-        foreach ($ids as $id)
-        {
-            $score = $scoreRepository->item($id);
-            $content = $score['content'];
-            $hasTitle = false;
-            foreach ($content as $item)
-            {
-                if ($item['type'] === 'txt' && isset($item['title']))
-                {
-                    $hasTitle = true;
-                }
-            }
-            if (!$hasTitle)
-            {
-                continue;
-            }
-            $newContent = [];
-            foreach ($content as $item)
-            {
-                if ($item['type'] === 'txt' && isset($item['title']))
-                {
-                    $newContent[] = [
-                        'type' => 'title',
-                        'text' => $item['title']
-                    ];
-                    $newContent[] = [
-                        'type' => 'txt',
-                        'text' => $item['text']
-                    ];
-                }
-                $newContent[] = $item;
-            }
-
-            Score::where('id', $id)
-                ->update([
-                   'content' => $scoreRepository->filterJsonContent($newContent)
-                ]);
-
-            Redis::DEL('score_' . $id);
-        }
-
-        return $this->resOK('success');
     }
 }
