@@ -177,7 +177,7 @@ class CallbackController extends Controller
                 ->driver('qq')
                 ->user();
         }
-        catch (\Overtrue\Socialite\InvalidStateException $e)
+        catch (\Exception $e)
         {
             app('sentry')->captureException($e);
 
@@ -278,7 +278,7 @@ class CallbackController extends Controller
                 ->driver('wechat')
                 ->user();
         }
-        catch (\Overtrue\Socialite\InvalidStateException $e)
+        catch (\Exception $e)
         {
             app('sentry')->captureException($e);
 
@@ -382,7 +382,7 @@ class CallbackController extends Controller
                 ->driver('weixin')
                 ->user();
         }
-        catch (\Overtrue\Socialite\InvalidStateException $e)
+        catch (\Exception $e)
         {
             app('sentry')->captureException($e);
 
