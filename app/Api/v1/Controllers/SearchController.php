@@ -2,14 +2,9 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Api\V1\Repositories\AnswerRepository;
 use App\Api\V1\Repositories\BangumiRepository;
-use App\Api\V1\Repositories\ScoreRepository;
-use App\Models\Answer;
-use App\Models\Score;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
-use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
 /**
@@ -70,56 +65,5 @@ class SearchController extends Controller
         $bangumiRepository = new BangumiRepository();
 
         return $this->resOK($bangumiRepository->searchAll());
-    }
-
-    public function migrate()
-    {
-        $ids = Answer
-            ::pluck('id')
-            ->toArray();
-        $answerRepository = new AnswerRepository();
-
-        foreach ($ids as $id)
-        {
-            $answer = $answerRepository->item($id);
-            $content = $answer['content'];
-            $hasTitle = false;
-            foreach ($content as $item)
-            {
-                if ($item['type'] === 'txt' && isset($item['title']))
-                {
-                    $hasTitle = true;
-                }
-            }
-            if (!$hasTitle)
-            {
-                continue;
-            }
-            $newContent = [];
-            foreach ($content as $item)
-            {
-                if ($item['type'] === 'txt' && isset($item['title']))
-                {
-                    $newContent[] = [
-                        'type' => 'title',
-                        'text' => $item['title']
-                    ];
-                    $newContent[] = [
-                        'type' => 'txt',
-                        'text' => $item['text']
-                    ];
-                }
-                $newContent[] = $item;
-            }
-
-            Answer::where('id', $id)
-                ->update([
-                   'content' => $answerRepository->filterJsonContent($newContent)
-                ]);
-
-            Redis::DEL('answer_' . $id);
-        }
-
-        return $this->resOK('success');
     }
 }
