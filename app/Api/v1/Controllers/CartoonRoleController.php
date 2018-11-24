@@ -17,6 +17,7 @@ use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
 use App\Models\UserCoin;
 use App\Services\OpenSearch\Search;
+use App\Services\Trial\UserIpAddress;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -52,6 +53,13 @@ class CartoonRoleController extends Controller
         }
 
         $userId = $this->getAuthUserId();
+        $userIpAddress = new UserIpAddress();
+        $blocked = $userIpAddress->check($userId);
+        if ($blocked)
+        {
+            return $this->resErrRole('你已被封禁，无权应援');
+        }
+
         $userRepository = new UserRepository();
 
         if (!$userRepository->toggleCoin(false, $userId, 0, 3, $id))
