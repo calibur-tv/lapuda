@@ -276,11 +276,13 @@ class CartoonRoleController extends Controller
                 'id' => (int)$item['id'],
                 'name' => $item['name'],
                 'avatar' => $item['avatar'],
-                'intro' => $item['intro'],
-                'star_count' => (int)$item['star_count'],
-                'fans_count' => (int)$item['fans_count'],
+                'intro' => $item['intro']
             ];
         }
+        $cartoonRoleStarCounter = new CartoonRoleStarCounter();
+        $cartoonRoleFansCounter = new CartoonRoleFansCounter();
+        $list = $cartoonRoleFansCounter->batchGet($list, 'fans_count');
+        $list = $cartoonRoleStarCounter->batchGet($list, 'star_count');
 
         return $this->resOK($list);
     }
@@ -610,6 +612,8 @@ class CartoonRoleController extends Controller
             $cartoonRoleFansCounter->deleteCache($roleId);
             $cartoonRoleStarCounter->deleteCache($roleId);
         }
+        Redis::DEL('cartoon_role_star_dalao_user_ids');
+        Redis::DEL('cartoon_role_star_newbie_users');
 
         return $this->resNoContent();
     }
