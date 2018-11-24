@@ -57,6 +57,11 @@ class RelationCounterService extends Repository
         return $list;
     }
 
+    public function deleteCache($id)
+    {
+        Redis::DEL($this->cacheKey($id));
+    }
+
     protected function migration($id)
     {
         return DB::table($this->table)

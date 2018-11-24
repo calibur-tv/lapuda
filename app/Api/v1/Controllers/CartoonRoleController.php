@@ -574,4 +574,43 @@ class CartoonRoleController extends Controller
 
         return $this->resNoContent();
     }
+
+    public function removeStarByIp(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        if ($userId !== 1)
+        {
+            return $this->resErrRole();
+        }
+
+        $ip = $request->get('ip');
+        $userIpAddress = new UserIpAddress();
+
+        $userIds = $userIpAddress->addressUsers($ip);
+        if (!$userIds)
+        {
+            return $this->resNoContent();
+        }
+
+        $cartoonRoleIds = CartoonRoleFans
+            ::whereIn('role_id', $userIds)
+            ->pluck('role_id');
+
+        foreach ($userIds as $userId)
+        {
+            CartoonRoleFans
+                ::where('user_id', $userId)
+                ->delete();
+        }
+
+        $cartoonRoleFansCounter = new CartoonRoleFansCounter();
+        $cartoonRoleStarCounter = new CartoonRoleStarCounter();
+        foreach ($cartoonRoleIds as $roleId)
+        {
+            $cartoonRoleFansCounter->deleteCache($roleId);
+            $cartoonRoleStarCounter->deleteCache($roleId);
+        }
+
+        return $this->resNoContent();
+    }
 }
