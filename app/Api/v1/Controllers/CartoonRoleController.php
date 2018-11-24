@@ -9,6 +9,8 @@ use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Activity\BangumiActivity;
 use App\Api\V1\Services\Activity\CartoonRoleActivity;
 use App\Api\V1\Services\Activity\UserActivity;
+use App\Api\V1\Services\Counter\CartoonRoleFansCounter;
+use App\Api\V1\Services\Counter\CartoonRoleStarCounter;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Trending\CartoonRoleTrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
@@ -89,7 +91,8 @@ class CartoonRoleController extends Controller
                 'star_count' => 1
             ]);
 
-            CartoonRole::where('id', $id)->increment('fans_count');
+            $cartoonRoleFansCounter = new CartoonRoleFansCounter();
+            $cartoonRoleFansCounter->add($id);
 
             if (Redis::EXISTS('cartoon_role_'.$id))
             {
@@ -113,9 +116,8 @@ class CartoonRoleController extends Controller
             Redis::ZINCRBY($hotCacheKey, 1, $userId);
         }
 
-        CartoonRole
-            ::where('id', $id)
-            ->increment('star_count');
+        $cartoonRoleStarCounter = new CartoonRoleStarCounter();
+        $cartoonRoleStarCounter->add($id);
 
         $userActivityService = new UserActivity();
         $userActivityService->update($userId, 3);
@@ -212,6 +214,8 @@ class CartoonRoleController extends Controller
 
         $userRepository = new UserRepository();
         $userTransformer = new UserTransformer();
+        $cartoonRoleStarCounter = new CartoonRoleStarCounter();
+        $cartoonRoleFansCounter = new CartoonRoleFansCounter();
 
         $role['lover'] = $role['loverId'] ? $userTransformer->item($userRepository->item($role['loverId'])) : null;
         $role['hasStar'] = $cartoonRoleRepository->checkHasStar($role['id'], $userId);
@@ -224,6 +228,8 @@ class CartoonRoleController extends Controller
             $job = (new \App\Jobs\Search\UpdateWeight('role', $id));
             dispatch($job);
         }
+        $role['star_count'] = $cartoonRoleStarCounter->get($id);
+        $role['fans_count'] = $cartoonRoleFansCounter->get($id);
 
         return $this->resOK($cartoonTransformer->show([
             'bangumi' => $bangumi,
@@ -245,11 +251,13 @@ class CartoonRoleController extends Controller
         $cartoonRoleRepository = new CartoonRoleRepository();
         $ids = $cartoonRoleRepository->RedisSort('cartoon_role_today_activity_ids', function ()
         {
-            $list = CartoonRole
-                ::orderBy('fans_count', 'DESC')
-                ->where('fans_count', '>', 0)
+            $list = CartoonRoleFans
+                ::select(DB::raw('count(*) as count, role_id'))
+                ->orderBy('count', 'DESC')
+                ->groupBy('role_id')
                 ->take(100)
-                ->pluck('id');
+                ->pluck('role_id');
+
             $result = [];
             $total = count($list);
             foreach ($list as $i => $item)

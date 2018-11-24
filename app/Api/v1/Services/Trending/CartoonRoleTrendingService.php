@@ -11,6 +11,8 @@ namespace App\Api\V1\Services\Trending;
 
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Counter\CartoonRoleFansCounter;
+use App\Api\V1\Services\Counter\CartoonRoleStarCounter;
 use App\Api\V1\Services\Trending\Base\TrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Models\CartoonRole;
@@ -116,6 +118,11 @@ class CartoonRoleTrendingService extends TrendingService
                 $list[$i]['lover_zone'] = $user['zone'];
             }
         }
+        $cartoonRoleStarCounter = new CartoonRoleStarCounter();
+        $cartoonRoleFansCounter = new CartoonRoleFansCounter();
+
+        $list = $cartoonRoleStarCounter->batchGet($list, 'star_count');
+        $list = $cartoonRoleFansCounter->batchGet($list, 'fans_count');
 
         $transformer = new CartoonRoleTransformer();
 
