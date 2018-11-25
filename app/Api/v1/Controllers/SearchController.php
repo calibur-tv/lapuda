@@ -2,8 +2,10 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\AnswerRepository;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ScoreRepository;
+use App\Models\Answer;
 use App\Models\Score;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
@@ -72,14 +74,14 @@ class SearchController extends Controller
 
     public function migrate()
     {
-        $ids = Score
+        $ids = Answer
             ::pluck('id')
             ->toArray();
-        $scoreRepository = new ScoreRepository();
+        $answerRepisotory = new AnswerRepository();
         foreach ($ids as $id)
         {
-            $SCORE = $scoreRepository->item($id);
-            $content = $SCORE['content'];
+            $answer = $answerRepisotory->item($id);
+            $content = $answer['content'];
             $hasTitle = false;
             foreach ($content as $item)
             {
@@ -102,11 +104,11 @@ class SearchController extends Controller
                 }
                 $newContent[] = $item;
             }
-            Score::where('id', $id)
+            Answer::where('id', $id)
                 ->update([
-                    'content' => $scoreRepository->filterJsonContent($newContent)
+                    'content' => $answerRepisotory->filterJsonContent($newContent)
                 ]);
-            Redis::DEL('score_' . $id);
+            Redis::DEL('answer_' . $id);
         }
         return $this->resOK('success');
     }
