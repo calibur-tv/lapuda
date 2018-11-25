@@ -2,14 +2,9 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Api\V1\Repositories\AnswerRepository;
 use App\Api\V1\Repositories\BangumiRepository;
-use App\Api\V1\Repositories\ScoreRepository;
-use App\Models\Answer;
-use App\Models\Score;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
-use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
 /**
@@ -70,46 +65,5 @@ class SearchController extends Controller
         $bangumiRepository = new BangumiRepository();
 
         return $this->resOK($bangumiRepository->searchAll());
-    }
-
-    public function migrate()
-    {
-        $ids = Answer
-            ::pluck('id')
-            ->toArray();
-        $answerRepisotory = new AnswerRepository();
-        foreach ($ids as $id)
-        {
-            $answer = $answerRepisotory->item($id);
-            $content = $answer['content'];
-            $hasTitle = false;
-            foreach ($content as $item)
-            {
-                if ($item['type'] === 'title')
-                {
-                    $hasTitle = true;
-                    break;
-                }
-            }
-            if (!$hasTitle)
-            {
-                continue;
-            }
-            $newContent = [];
-            foreach ($content as $i => $item)
-            {
-                if ($item['type'] === 'txt' && isset($content[$i - 2]) && $content[$i - 2]['type'] === 'title' && $item['text'] === $content[$i - 1]['text'])
-                {
-                    continue;
-                }
-                $newContent[] = $item;
-            }
-            Answer::where('id', $id)
-                ->update([
-                    'content' => $answerRepisotory->filterJsonContent($newContent)
-                ]);
-            Redis::DEL('answer_' . $id);
-        }
-        return $this->resOK('success');
     }
 }
