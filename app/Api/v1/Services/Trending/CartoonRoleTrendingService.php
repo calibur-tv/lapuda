@@ -45,9 +45,29 @@ class CartoonRoleTrendingService extends TrendingService
     {
         if ($this->bangumiId)
         {
-            return CartoonRole
+            $list = CartoonRoleFans
+                ::select(DB::raw('SUM(cartoon_role_fans.star_count) as count, role_id'))
+                ->orderBy('count', 'DESC')
+                ->groupBy('role_id')
+                ->leftJoin('cartoon_role', 'cartoon_role.id', '=', 'cartoon_role_fans.role_id')
+                ->where('cartoon_role.bangumi_id', $this->bangumiId)
+                ->take(100)
+                ->pluck('count', 'role_id')
+                ->toArray();
+
+            $ids = array_keys($list);
+            $otherIds = CartoonRole
                 ::where('bangumi_id', $this->bangumiId)
-                ->pluck('star_count', 'id');
+                ->whereNotIn('id', $ids)
+                ->pluck('id')
+                ->toArray();
+
+            foreach ($otherIds as $id)
+            {
+                $list[$id] = '0';
+            }
+
+            return $list;
         }
 
         return CartoonRoleFans
