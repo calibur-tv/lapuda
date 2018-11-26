@@ -42,15 +42,24 @@ class CartoonRoleTrendingService extends TrendingService
 
     public function computeHotIds()
     {
-        return CartoonRole
-            ::orderBy('star_count', 'desc')
-            ->when($this->bangumiId, function ($query)
-            {
-                return $query->where('bangumi_id', $this->bangumiId);
-            })
-            ->latest()
+        if ($this->bangumiId)
+        {
+            return CartoonRoleFans
+                ::select(DB::raw('SUM(cartoon_role_fans.star_count) as count, role_id'))
+                ->orderBy('count', 'DESC')
+                ->groupBy('role_id')
+                ->leftJoin('cartoon_role', 'cartoon_role.id', '=', 'cartoon_role_fans.role_id')
+                ->where('cartoon_role.bangumi_id', $this->bangumiId)
+                ->take(100)
+                ->pluck('count', 'role_id');
+        }
+
+        return CartoonRoleFans
+            ::select(DB::raw('SUM(star_count) as count, role_id'))
+            ->orderBy('count', 'DESC')
+            ->groupBy('role_id')
             ->take(100)
-            ->pluck('star_count', 'id');
+            ->pluck('count', 'role_id');
     }
 
     public function computeUserIds()
