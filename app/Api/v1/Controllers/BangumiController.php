@@ -245,6 +245,15 @@ class BangumiController extends Controller
         return $this->resOK($repository->videos($id, json_decode($bangumi['season'])));
     }
 
+    /**
+     * 推荐番剧列表
+     *
+     * @Get("/bangumi/recommended")
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "番剧列表"}),
+     * })
+     */
     public function recommendedBangumis()
     {
         $ids = [
@@ -346,6 +355,31 @@ class BangumiController extends Controller
         $bangumiTransformer = new BangumiTransformer();
 
         return $this->resOK($bangumiTransformer->recommended($result));
+    }
+
+    /**
+     * 热门番剧列表
+     *
+     * @Get("/bangumi/hots")
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "番剧列表"}),
+     * })
+     */
+    public function hotBangumis()
+    {
+        $bangumiActivityService = new BangumiActivity();
+        $ids = $bangumiActivityService->recentIds();
+        if (empty($ids))
+        {
+            return $this->resOK([]);
+        }
+
+        $bangumiRepository = new BangumiRepository();
+        $list = $bangumiRepository->list($ids);
+        $bangumiTransformer = new BangumiTransformer();
+
+        return $this->resOK($bangumiTransformer->list($list));
     }
 
     /**
