@@ -44,7 +44,7 @@ class SearchController extends Controller
         $page = intval($request->get('page')) ?: 0;
 
         $search = new Search();
-        $result = $search->retrieve($key, $type, $page);
+        $result = $search->retrieve(strtolower($key), $type, $page);
 
         return $this->resOK($result);
     }

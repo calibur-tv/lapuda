@@ -84,7 +84,7 @@ class Search
             ->insertGetId([
                 'modal_id' => $modalId,
                 'type_id' => $id,
-                'content' => $content,
+                'content' => strtolower($content),
                 'created_at' => $ts,
                 'updated_at' => $ts
             ]);
