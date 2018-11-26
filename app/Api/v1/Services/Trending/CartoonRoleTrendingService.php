@@ -47,7 +47,7 @@ class CartoonRoleTrendingService extends TrendingService
         {
             return CartoonRole
                 ::where('bangumi_id', $this->bangumiId)
-                ->pluck('star_count', 'role_id');
+                ->pluck('star_count', 'id');
         }
 
         return CartoonRoleFans
