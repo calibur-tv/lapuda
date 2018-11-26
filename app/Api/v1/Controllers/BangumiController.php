@@ -376,7 +376,7 @@ class BangumiController extends Controller
         }
 
         $bangumiRepository = new BangumiRepository();
-        $list = $bangumiRepository->list($ids);
+        $list = $bangumiRepository->list(array_slice($ids, 0, 20));
         $bangumiTransformer = new BangumiTransformer();
 
         return $this->resOK($bangumiTransformer->list($list));
