@@ -17,6 +17,7 @@ use App\Api\V1\Services\Trending\Base\TrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
 class CartoonRoleTrendingService extends TrendingService
