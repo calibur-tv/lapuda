@@ -54,25 +54,6 @@ class ClearSearch extends Command
             $this->ids = $this->getDeleteIds();
         }
 
-        DB
-            ::table('search_v3')
-            ->select('id')
-            ->chunk(100, function($list)
-            {
-                foreach ($list as $item)
-                {
-                    $one = DB::table('search_v3')
-                        ->where('id', $item->id)
-                        ->first();
-
-                    DB::table('search_v3')
-                        ->where('id', $item->id)
-                        ->update([
-                           'content' => strtolower($one['content'])
-                        ]);
-                }
-            });
-
         return true;
     }
 
