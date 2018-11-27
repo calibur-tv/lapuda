@@ -407,7 +407,7 @@ class PostController extends Controller
 
         Redis::DEL('post_' . $postId);
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     /**
@@ -459,7 +459,7 @@ class PostController extends Controller
 
         Redis::DEL('post_' . $postId);
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     /**
@@ -518,7 +518,7 @@ class PostController extends Controller
         $postTrendingService = new PostTrendingService($post['bangumi_id']);
         $postTrendingService->delete($postId);
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     /**

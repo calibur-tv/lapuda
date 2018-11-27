@@ -482,7 +482,7 @@ class BangumiController extends Controller
             $bangumiRepository = new BangumiRepository();
             $bangumiRepository->migrateSearchIndex('U', $id);
 
-            return $this->resNoContent();
+            return $this->resOK();
         }
     }
 

@@ -298,7 +298,7 @@ class DoorController extends Controller
      */
     public function logout()
     {
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
 

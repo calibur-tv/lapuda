@@ -182,7 +182,7 @@ class UserController extends Controller
         $job = (new \App\Jobs\Trial\User\Image($userId, $key));
         dispatch($job);
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     /**
@@ -241,7 +241,7 @@ class UserController extends Controller
         $job = (new \App\Jobs\Trial\User\Text($userId));
         dispatch($job);
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     /**
@@ -446,7 +446,7 @@ class UserController extends Controller
             'user_id' => $userId
         ]);
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     /**

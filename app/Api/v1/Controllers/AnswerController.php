@@ -279,7 +279,7 @@ class AnswerController extends Controller
 
         Redis::DEL($answerRepository->itemCacheKey($id));
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     /**

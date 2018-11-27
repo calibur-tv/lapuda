@@ -521,7 +521,7 @@ class CartoonRoleController extends Controller
 
         Redis::DEL('cartoon_role_' . $id);
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     // 后台展示偶像详情
