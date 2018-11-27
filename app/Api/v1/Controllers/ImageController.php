@@ -605,7 +605,7 @@ class ImageController extends Controller
         Redis::DEL($imageRepository->cacheKeyAlbumImages($albumId));
         $imageRepository->updateProcess($albumId);
 
-        return $this->resOK();
+        return $this->resNoContent();
     }
 
     /**
