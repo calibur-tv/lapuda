@@ -528,7 +528,7 @@ class ScoreController extends Controller
         $total = $lol + $cry + $fight + $moe + $sound + $vision + $role + $story + $express + $style;
         $content = $scoreRepository->filterJsonContent($request->get('content'));
         $intro = $request->get('intro');
-        $title = Purifier::clean($request->get('title'));
+        $title = $request->get('title');
 
         Score::where('id', $newId)
             ->update([
