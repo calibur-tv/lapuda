@@ -508,14 +508,14 @@ class UserController extends Controller
 
         if (is_null($notification))
         {
-            return $this->resNoContent();
+            return $this->resOK();
         }
 
         $userId =  $this->getAuthUserId();
 
         if (intval($notification['to_user_id']) !== $userId)
         {
-            return $this->resNoContent();
+            return $this->resOK();
         }
 
         Notifications::where('id', $id)->update([
@@ -528,7 +528,7 @@ class UserController extends Controller
             Redis::INCRBY('user_' . $userId . '_notification_count', -1);
         }
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     /**
@@ -552,7 +552,7 @@ class UserController extends Controller
 
         if (!$ids)
         {
-            return $this->resNoContent();
+            return $this->resOK();
         }
 
         Notifications
@@ -572,7 +572,7 @@ class UserController extends Controller
             Redis::SET('user_' . $userId . '_notification_count', 0);
         });
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     /**
