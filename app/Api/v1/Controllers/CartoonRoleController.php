@@ -123,7 +123,7 @@ class CartoonRoleController extends Controller
         $bangumiActivityService = new BangumiActivity();
         $bangumiActivityService->update($cartoonRole['bangumi_id']);
 
-        return $this->resOK();
+        return $this->resNoContent();
     }
 
     /**
