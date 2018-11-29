@@ -79,8 +79,21 @@ class Search
             return 0;
         }
 
+        $hasId = DB
+            ::table($this->table)
+            ->where('modal_id', $modalId)
+            ->where('type_id', $id)
+            ->pluck('id')
+            ->first();
+
+        if ($hasId)
+        {
+            return $hasId;
+        }
+
         $ts = $time ?: time();
-        return DB::table($this->table)
+        return DB
+            ::table($this->table)
             ->insertGetId([
                 'modal_id' => $modalId,
                 'type_id' => $id,

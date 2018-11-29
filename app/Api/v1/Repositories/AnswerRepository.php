@@ -167,29 +167,29 @@ class AnswerRepository extends Repository
     {
         $answer = $this->item($id, true);
 
-        if ($answer['state'])
-        {
-            Redis::DEL($this->itemCacheKey($id));
-        }
+        $answerTrendingService = new AnswerTrendingService($answer['question_id'], $answer['user_id']);
+        $isDeleted = $answer['deleted_at'];
 
-        if ($answer['user_id'] == $answer['state'])
+        if ($isDeleted)
         {
-            DB::table('question_answers')
-                ->where('id', $id)
-                ->update([
-                    'state' => 0,
-                    'deleted_at' => null
-                ]);
-
+            $answerTrendingService->create($id);
             $this->migrateSearchIndex('C', $id, false);
         }
-        else
+
+        DB::table('question_answers')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
+
+        if ($answer['state'])
         {
-            DB::table('question_answers')
-                ->where('id', $id)
-                ->update([
-                    'state' => 0
-                ]);
+            if (!$isDeleted)
+            {
+                $answerTrendingService->update($id);
+            }
+            Redis::DEL($this->itemCacheKey($id));
         }
     }
 

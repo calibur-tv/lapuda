@@ -229,35 +229,30 @@ class PostRepository extends Repository
     {
         $post = $this->item($id, true);
 
+        $isDeleted = $post['deleted_at'];
+        $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
+
+        if ($isDeleted)
+        {
+            $postTrendingService->create($id);
+
+            $this->migrateSearchIndex('C', $id, false);
+        }
+
+        DB::table('posts')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
+
         if ($post['state'])
         {
-            Redis::DEL($this->itemCacheKey($id));
-        }
-
-        if ($post['user_id'] == $post['state'])
-        {
-            DB::table('posts')
-                ->where('id', $id)
-                ->update([
-                    'state' => 0,
-                    'deleted_at' => null
-                ]);
-
-            if (!$post['top_at'])
+            if (!$isDeleted)
             {
-                $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
-                $postTrendingService->create($id);
-
-                $this->migrateSearchIndex('C', $id, false);
+                $postTrendingService->update($id);
             }
-        }
-        else
-        {
-            DB::table('posts')
-                ->where('id', $id)
-                ->update([
-                    'state' => 0
-                ]);
+            Redis::DEL($this->itemCacheKey($id));
         }
     }
 

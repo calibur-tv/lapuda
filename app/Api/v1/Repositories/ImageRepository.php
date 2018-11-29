@@ -375,32 +375,31 @@ class ImageRepository extends Repository
     {
         $image = $this->item($id, true);
 
-        if ($image['state'])
-        {
-            Redis::DEL($this->itemCacheKey($id));
-        }
+        $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
+        $isDeleted = $image['deleted_at'];
+        $isCartoon = $image['is_cartoon'];
 
-        if ($image['user_id'] == $image['state'])
+        if ($isDeleted)
         {
-            DB::table('images')
-                ->where('id', $id)
-                ->update([
-                    'state' => 0,
-                    'deleted_at' => null
-                ]);
-
-            $imageTrendingService = new ImageTrendingService($image['bangumi_id'], $image['user_id']);
-            $imageTrendingService->create($id, !$image['is_cartoon']);
+            $imageTrendingService->create($id, !$isCartoon);
 
             $this->migrateSearchIndex('C', $id, false);
         }
-        else
+
+        DB::table('images')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
+
+        if ($image['state'])
         {
-            DB::table('images')
-                ->where('id', $id)
-                ->update([
-                    'state' => 0
-                ]);
+            if (!$isDeleted && !$isCartoon)
+            {
+                $imageTrendingService->update($id, !$image['is_cartoon']);
+            }
+            Redis::DEL($this->itemCacheKey($id));
         }
     }
 
