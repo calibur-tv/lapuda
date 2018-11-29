@@ -1429,6 +1429,7 @@ class UserController extends Controller
         User::withTrashed()->where('id', $userId)->restore();
 
         $userRepository->migrateSearchIndex('C', $userId);
+        Redis::DEL('user_' . $userId);
 
         return $this->resNoContent();
     }
