@@ -580,12 +580,8 @@ class UserController extends Controller
      *
      * @Get("/user/transactions")
      *
-     * @Parameters({
-     *      @Parameter("min_id": "看过的最小id", "default": 0, "required": true),
-     *      @Parameter(take": "条数", "default": 15)
-     * })
-     *
      * @Transaction({
+     *      @Request({"min_id": "看过的最小id", "default": 0, "required": true}),
      *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(200, body={"code": 0, "data": "消息列表"}),
      *      @Response(401, body={"code": 40104, "message": "未登录的用户"})

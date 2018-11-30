@@ -396,6 +396,28 @@ transactions
                 "message": "不存在的番剧"
             }
 
+## 推荐番剧列表 [GET /bangumi/recommended]
+
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "番剧列表"
+            }
+
+## 热门番剧列表 [GET /bangumi/hots]
+
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "番剧列表"
+            }
+
 ## 吧主编辑番剧信息 [POST /bangumi/`bangumiId`/edit]
 
 
@@ -1767,6 +1789,30 @@ transactions
                 "message": "找不到用户"
             }
 
+## 获取当前用户的收藏列表 [GET /user/bookmarks]
+
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "data"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "请求参数错误"
+            }
+
 ## 用户反馈 [POST /user/feedback]
 
 
@@ -1870,11 +1916,6 @@ transactions
 
 
 + Request (application/json)
-    + Headers
-
-            Authorization: Bearer JWT-Token
-
-+ Request (application/json)
     + Body
 
             {
@@ -1884,12 +1925,9 @@ transactions
             }
 
 + Request (application/json)
-    + Body
+    + Headers
 
-            {
-                "take": "条数",
-                "default": 15
-            }
+            Authorization: Bearer JWT-Token
 
 + Response 200 (application/json)
     + Body
