@@ -66,13 +66,12 @@ class UserIpAddress
 
     public function blockUserByIp($ipAddress)
     {
-        $userId = DB
+        $userIds = DB
             ::table('user_ip')
             ->where('ip_address', $ipAddress)
-            ->pluck('user_id')
-            ->first();
+            ->pluck('user_id');
 
-        if (is_null($userId))
+        if (empty($userIds))
         {
             $this->add($ipAddress, 0, 1);
         }
@@ -80,7 +79,7 @@ class UserIpAddress
         {
             DB
                 ::table('user_ip')
-                ->where('user_id', $userId)
+                ->whereIn('user_id', $userIds)
                 ->update([
                     'blocked' => 1
                 ]);

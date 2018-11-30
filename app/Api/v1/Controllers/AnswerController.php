@@ -72,12 +72,17 @@ class AnswerController extends Controller
         if (!$isDeleted)
         {
             $answerTrendingService = new AnswerTrendingService($questionId, $userId);
-            $answer = $answerTrendingService->getListByIds([$id], '')[0];
+            $answer = $answerTrendingService->getListByIds([$id], '');
+
+            if (empty($answer))
+            {
+                return $this->resErrNotFound();
+            }
         }
 
         return $this->resOK([
             'question' => $question,
-            'answer' => $isDeleted ? null : $answer
+            'answer' => $isDeleted ? null : $answer[0]
         ]);
     }
 
@@ -279,7 +284,7 @@ class AnswerController extends Controller
 
         Redis::DEL($answerRepository->itemCacheKey($id));
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     /**

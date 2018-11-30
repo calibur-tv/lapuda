@@ -26,8 +26,6 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/login', 'App\Api\V1\Controllers\DoorController@login')->middleware(['geetest']);
 
-        $api->post('/user', 'App\Api\V1\Controllers\DoorController@currentUser')->middleware(['jwt.refresh']);
-
         $api->post('/refresh', 'App\Api\V1\Controllers\DoorController@refreshUser')->middleware(['jwt.refresh']);
 
         $api->post('/reset', 'App\Api\V1\Controllers\DoorController@resetPassword');
@@ -53,6 +51,8 @@ $api->version(['v1', 'latest'], function ($api)
         $api->get('/category', 'App\Api\V1\Controllers\BangumiController@category');
 
         $api->get('/recommended', 'App\Api\V1\Controllers\BangumiController@recommendedBangumis');
+
+        $api->get('/hots', 'App\Api\V1\Controllers\BangumiController@hotBangumis');
 
         $api->group(['prefix' => '/{id}'], function ($api)
         {
@@ -463,6 +463,8 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/edit', 'App\Api\V1\Controllers\CartoonRoleController@edit');
 
             $api->post('/create', 'App\Api\V1\Controllers\CartoonRoleController@create');
+
+            $api->post('/remove_star', 'App\Api\V1\Controllers\CartoonRoleController@removeStarByIp');
         });
 
         $api->group(['prefix' => '/user'], function ($api)

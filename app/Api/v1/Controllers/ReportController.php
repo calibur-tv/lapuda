@@ -146,30 +146,30 @@ class ReportController extends Controller
                     $subComment = $commentService->getSubCommentItem($id);
                     if (is_null($subComment))
                     {
-                        return $this->resNoContent();
+                        return $this->resOK();
                     }
 
                     $mainComment = $commentService->getMainCommentItem($subComment['parent_id']);
                     if (is_null($mainComment))
                     {
-                        return $this->resNoContent();
+                        return $this->resOK();
                     }
 
                     $repository = $this->getRepositoryByType($arr[0]);
                     if (is_null($repository))
                     {
-                        return $this->resNoContent();
+                        return $this->resOK();
                     }
 
                     $item = $repository->item($mainComment['modal_id']);
                     if (is_null($item))
                     {
-                        return $this->resNoContent();
+                        return $this->resOK();
                     }
 
                     if (!isset($item['bangumi_id']))
                     {
-                        return $this->resNoContent();
+                        return $this->resOK();
                     }
 
                     $bangumiManager = new BangumiManager();
@@ -184,24 +184,24 @@ class ReportController extends Controller
                     $mainComment = $commentService->getMainCommentItem($id);
                     if (is_null($mainComment))
                     {
-                        return $this->resNoContent();
+                        return $this->resOK();
                     }
 
                     $repository = $this->getRepositoryByType($arr[0]);
                     if (is_null($repository))
                     {
-                        return $this->resNoContent();
+                        return $this->resOK();
                     }
 
                     $item = $repository->item($mainComment['modal_id']);
                     if (is_null($item))
                     {
-                        return $this->resNoContent();
+                        return $this->resOK();
                     }
 
                     if (!isset($item['bangumi_id']))
                     {
-                        return $this->resNoContent();
+                        return $this->resOK();
                     }
 
                     $bangumiManager = new BangumiManager();
@@ -224,7 +224,7 @@ class ReportController extends Controller
                 $item = $repository->item($id);
                 if (is_null($item))
                 {
-                    return $this->resNoContent();
+                    return $this->resOK();
                 }
 
                 $bangumiManager = new BangumiManager();
@@ -235,7 +235,7 @@ class ReportController extends Controller
             }
         }
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     public function list()

@@ -14,10 +14,10 @@ use App\Models\UserZone;
 use App\Models\Video;
 use App\Services\Qiniu\Config;
 use App\Services\Qiniu\Processing\PersistentFop;
+use App\Services\Socialite\SocialiteManager;
 use App\Services\Trial\UserIpAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
-use Socialite;
 use Overtrue\LaravelPinyin\Facades\Pinyin as Overtrue;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -132,40 +132,57 @@ class CallbackController extends Controller
             ]
         ], 200);
     }
-
     // QQ第三方登录
     public function qqAuthEntry(Request $request)
     {
-        return Socialite
-            ::driver('qq')
+        $socialite = new SocialiteManager(config('services', []));
+
+        return $socialite
+            ->driver('qq')
             ->redirect('https://api.calibur.tv/callback/auth/qq?' . http_build_query($request->all()));
     }
-
-    // 微信开放平台登录
+    // 微信开放平台登录 - PC
     public function wechatAuthEntry(Request $request)
     {
-        $device = $request->get('device') === 'h5' ? 'h5' : 'pc';
-        $scope = $device === 'h5' ? 'snsapi_userinfo' : 'snsapi_login';
+        $socialite = new SocialiteManager(config('services', []));
 
-        return Socialite
-            ::driver('wechat')
-            ->scopes([$scope])
+        return $socialite
+            ->driver('wechat')
             ->redirect('https://api.calibur.tv/callback/auth/wechat?' . http_build_query($request->all()));
+    }
+    // 微信公众平台登录 - H5
+    public function weixinAuthEntry(Request $request)
+    {
+        $socialite = new SocialiteManager(config('services', []));
+
+        return $socialite
+            ->driver('weixin')
+            ->redirect('https://api.calibur.tv/callback/auth/weixin?' . http_build_query($request->all()));
     }
 
     public function qqAuthRedirect(Request $request)
     {
         $from = $request->get('from') === 'bind' ? 'bind' : 'sign';
         $code = $request->get('code');
-        $state = $request->get('state');
-        if (!$code || !$state)
+        if (!$code)
         {
             return redirect('https://www.calibur.tv/callback/auth-error?message=' . '请求参数错误');
         }
 
-        $user = Socialite
-            ::driver('qq')
-            ->user();
+        try
+        {
+            $socialite = new SocialiteManager(config('services', []));
+
+            $user = $socialite
+                ->driver('qq')
+                ->user();
+        }
+        catch (\Exception $e)
+        {
+            app('sentry')->captureException($e);
+
+            return redirect('https://www.calibur.tv/callback/auth-error?message=' . '登录失败了~');
+        }
 
         $openId = $user['id'];
         $isNewUser = $this->isNewUser('qq_open_id', $openId);
@@ -248,15 +265,129 @@ class CallbackController extends Controller
     {
         $from = $request->get('from') === 'bind' ? 'bind' : 'sign';
         $code = $request->get('code');
-        $state = $request->get('state');
-        if (!$code || !$state)
+        if (!$code)
         {
             return redirect('https://www.calibur.tv/callback/auth-error?message=' . '请求参数错误');
         }
 
-        $user = Socialite
-            ::driver('wechat')
-            ->user();
+        try
+        {
+            $socialite = new SocialiteManager(config('services', []));
+
+            $user = $socialite
+                ->driver('wechat')
+                ->user();
+        }
+        catch (\Exception $e)
+        {
+            app('sentry')->captureException($e);
+
+            return redirect('https://www.calibur.tv/callback/auth-error?message=' . '登录失败了~');
+        }
+
+        $openId = $user['original']['openid'];
+        $uniqueId = $user['original']['unionid'];
+        $isNewUser = $this->isNewUser('wechat_unique_id', $uniqueId);
+
+        if ($from === 'bind')
+        {
+            if (!$isNewUser)
+            {
+                return redirect('https://www.calibur.tv/callback/auth-error?message=' . '该微信号已绑定其它账号');
+            }
+
+            $userId = $request->get('id');
+            $userZone = $request->get('zone');
+            $hasUser = User
+                ::where('id', $userId)
+                ->where('zone', $userZone)
+                ->count();
+
+            if (!$hasUser)
+            {
+                return redirect('https://www.calibur.tv/callback/auth-error?message=' . '继续操作前请先登录');
+            }
+
+            User
+                ::where('id', $userId)
+                ->update([
+                    'wechat_open_id' => $openId,
+                    'wechat_unique_id' => $uniqueId
+                ]);
+
+            Redis::DEL('user_' . $userId);
+
+            return redirect('https://www.calibur.tv/callback/auth-success?message=' . '已成功绑定微信号');
+        }
+
+        if ($isNewUser)
+        {
+            // signUp
+            $nickname = $this->getNickname($user['nickname']);
+            $zone = $this->createUserZone($nickname);
+            $data = [
+                'nickname' => $nickname,
+                'zone' => $zone,
+                'wechat_open_id' => $openId,
+                'wechat_unique_id' => $uniqueId,
+                'password' => bcrypt('calibur')
+            ];
+
+            try
+            {
+                $user = User::create($data);
+            }
+            catch (\Exception $e)
+            {
+                app('sentry')->captureException($e);
+
+                return redirect('https://www.calibur.tv/callback/auth-error?message=' . '请修改微信昵称后重试');
+            }
+
+            $userRepository = new UserRepository();
+            $userRepository->migrateSearchIndex('C', $user->id);
+        }
+        else
+        {
+            // signIn
+            $user = User
+                ::where('wechat_unique_id', $uniqueId)
+                ->first();
+        }
+
+        $userId = $user->id;
+        $UserIpAddress = new UserIpAddress();
+        $UserIpAddress->add(
+            explode(', ', $request->headers->get('X-Forwarded-For'))[0],
+            $userId
+        );
+
+        return redirect('https://www.calibur.tv/callback/auth-redirect?message=登录成功&token=' . $this->responseUser($user));
+    }
+
+    public function weixinAuthRedirect(Request $request)
+    {
+        $from = $request->get('from') === 'bind' ? 'bind' : 'sign';
+        $code = $request->get('code');
+        if (!$code)
+        {
+            return redirect('https://www.calibur.tv/callback/auth-error?message=' . '请求参数错误');
+        }
+
+        try
+        {
+            $socialite = new SocialiteManager(config('services', []));
+
+            $user = $socialite
+                ->driver('weixin')
+                ->user();
+        }
+        catch (\Exception $e)
+        {
+            app('sentry')->captureException($e);
+
+            return redirect('https://www.calibur.tv/callback/auth-error?message=' . '登录失败了~');
+        }
 
         $openId = $user['original']['openid'];
         $uniqueId = $user['original']['unionid'];

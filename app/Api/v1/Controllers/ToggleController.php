@@ -38,6 +38,7 @@ use App\Api\V1\Services\Toggle\Video\VideoRewardService;
 use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Services\Vote\AnswerVoteService;
 use App\Models\User;
+use App\Services\Trial\UserIpAddress;
 use Illuminate\Http\Request;
 
 /**
@@ -439,6 +440,12 @@ class ToggleController extends Controller
         $id = $request->get('id');
         $type = $request->get('type');
         $userId = $this->getAuthUserId();
+        $userIpAddress = new UserIpAddress();
+        $blocked = $userIpAddress->check($userId);
+        if ($blocked)
+        {
+            return $this->resErrRole('你已被封禁，无权打赏');
+        }
 
         $rewardService = $this->getRewardServiceByType($type);
         if (is_null($rewardService))

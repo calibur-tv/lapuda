@@ -233,7 +233,8 @@ class BangumiRepository extends Repository
     {
         return $this->RedisList('bangumi_'.$id.'_posts_top_ids', function () use ($id)
         {
-            return Post::where('bangumi_id', $id)
+            return Post
+                ::where('bangumi_id', $id)
                 ->whereNotNull('top_at')
                 ->orderBy('top_at', 'DESC')
                 ->pluck('id');

@@ -11,10 +11,13 @@ namespace App\Api\V1\Services\Trending;
 
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Counter\CartoonRoleFansCounter;
+use App\Api\V1\Services\Counter\CartoonRoleStarCounter;
 use App\Api\V1\Services\Trending\Base\TrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
 class CartoonRoleTrendingService extends TrendingService
@@ -40,15 +43,39 @@ class CartoonRoleTrendingService extends TrendingService
 
     public function computeHotIds()
     {
-        return CartoonRole
-            ::orderBy('star_count', 'desc')
-            ->when($this->bangumiId, function ($query)
+        if ($this->bangumiId)
+        {
+            $list = CartoonRoleFans
+                ::select(DB::raw('SUM(cartoon_role_fans.star_count) as count, role_id'))
+                ->orderBy('count', 'DESC')
+                ->groupBy('role_id')
+                ->leftJoin('cartoon_role', 'cartoon_role.id', '=', 'cartoon_role_fans.role_id')
+                ->where('cartoon_role.bangumi_id', $this->bangumiId)
+                ->take(100)
+                ->pluck('count', 'role_id')
+                ->toArray();
+
+            $ids = array_keys($list);
+            $otherIds = CartoonRole
+                ::where('bangumi_id', $this->bangumiId)
+                ->whereNotIn('id', $ids)
+                ->pluck('id')
+                ->toArray();
+
+            foreach ($otherIds as $id)
             {
-                return $query->where('bangumi_id', $this->bangumiId);
-            })
-            ->latest()
+                $list[$id] = '0';
+            }
+
+            return $list;
+        }
+
+        return CartoonRoleFans
+            ::select(DB::raw('SUM(star_count) as count, role_id'))
+            ->orderBy('count', 'DESC')
+            ->groupBy('role_id')
             ->take(100)
-            ->pluck('star_count', 'id');
+            ->pluck('count', 'role_id');
     }
 
     public function computeUserIds()
@@ -116,6 +143,11 @@ class CartoonRoleTrendingService extends TrendingService
                 $list[$i]['lover_zone'] = $user['zone'];
             }
         }
+        $cartoonRoleStarCounter = new CartoonRoleStarCounter();
+        $cartoonRoleFansCounter = new CartoonRoleFansCounter();
+
+        $list = $cartoonRoleStarCounter->batchGet($list, 'star_count');
+        $list = $cartoonRoleFansCounter->batchGet($list, 'fans_count');
 
         $transformer = new CartoonRoleTransformer();
 

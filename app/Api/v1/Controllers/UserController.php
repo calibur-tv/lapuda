@@ -182,7 +182,7 @@ class UserController extends Controller
         $job = (new \App\Jobs\Trial\User\Image($userId, $key));
         dispatch($job);
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     /**
@@ -241,7 +241,7 @@ class UserController extends Controller
         $job = (new \App\Jobs\Trial\User\Text($userId));
         dispatch($job);
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     /**
@@ -446,7 +446,7 @@ class UserController extends Controller
             'user_id' => $userId
         ]);
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     /**
@@ -508,14 +508,14 @@ class UserController extends Controller
 
         if (is_null($notification))
         {
-            return $this->resNoContent();
+            return $this->resOK();
         }
 
         $userId =  $this->getAuthUserId();
 
         if (intval($notification['to_user_id']) !== $userId)
         {
-            return $this->resNoContent();
+            return $this->resOK();
         }
 
         Notifications::where('id', $id)->update([
@@ -528,7 +528,7 @@ class UserController extends Controller
             Redis::INCRBY('user_' . $userId . '_notification_count', -1);
         }
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     /**
@@ -552,7 +552,7 @@ class UserController extends Controller
 
         if (!$ids)
         {
-            return $this->resNoContent();
+            return $this->resOK();
         }
 
         Notifications
@@ -572,7 +572,7 @@ class UserController extends Controller
             Redis::SET('user_' . $userId . '_notification_count', 0);
         });
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     /**
@@ -580,12 +580,8 @@ class UserController extends Controller
      *
      * @Get("/user/transactions")
      *
-     * @Parameters({
-     *      @Parameter("min_id": "看过的最小id", "default": 0, "required": true),
-     *      @Parameter(take": "条数", "default": 15)
-     * })
-     *
      * @Transaction({
+     *      @Request({"min_id": "看过的最小id", "default": 0, "required": true}),
      *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(200, body={"code": 0, "data": "消息列表"}),
      *      @Response(401, body={"code": 40104, "message": "未登录的用户"})
@@ -1429,6 +1425,7 @@ class UserController extends Controller
         User::withTrashed()->where('id', $userId)->restore();
 
         $userRepository->migrateSearchIndex('C', $userId);
+        Redis::DEL('user_' . $userId);
 
         return $this->resNoContent();
     }

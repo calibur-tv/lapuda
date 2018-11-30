@@ -306,7 +306,7 @@ class ImageController extends Controller
         $job = (new \App\Jobs\Trial\Image\Create($id));
         dispatch($job);
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     /**
@@ -454,7 +454,7 @@ class ImageController extends Controller
         Redis::DEL($imageRepository->itemCacheKey($imageId));
         $imageRepository->updateProcess($imageId);
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     /**
@@ -905,7 +905,7 @@ class ImageController extends Controller
 
         Redis::DEL($imageRepository->itemCacheKey($id));
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     /**
@@ -989,7 +989,7 @@ class ImageController extends Controller
         $totalImageCount = new TotalImageCount();
         $totalImageCount->add(-1);
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     // 后台待审图片列表

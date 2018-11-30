@@ -245,32 +245,30 @@ class QuestionRepository extends Repository
     {
         $question = $this->item($id, true);
 
-        if ($question['state'])
-        {
-            Redis::DEL($this->itemCacheKey($id));
-        }
+        $questionTrendingService = new QuestionTrendingService($question['tag_ids'], $question['user_id']);
+        $isDeleted = $question['deleted_at'];
 
-        if ($question['user_id'] == $question['state'])
+        if ($isDeleted)
         {
-            DB::table('questions')
-                ->where('id', $id)
-                ->update([
-                    'state' => 0,
-                    'deleted_at' => null
-                ]);
-
-            $questionTrendingService = new QuestionTrendingService($question['tag_ids'], $question['user_id']);
             $questionTrendingService->create($id);
 
             $this->migrateSearchIndex('C', $id, false);
         }
-        else
+
+        DB::table('questions')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
+
+        if ($question['state'])
         {
-            DB::table('questions')
-                ->where('id', $id)
-                ->update([
-                    'state' => 0
-                ]);
+            if (!$isDeleted)
+            {
+                $questionTrendingService->update($id);
+            }
+            Redis::DEL($this->itemCacheKey($id));
         }
     }
 

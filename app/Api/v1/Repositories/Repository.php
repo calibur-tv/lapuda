@@ -434,8 +434,7 @@ class Repository
             {
                 $result[] = [
                     'type' => $item['type'],
-                    'text' => Purifier::clean($item['text']),
-                    'title' => Purifier::clean(isset($item['title']) ? $item['title'] : "")
+                    'text' => Purifier::clean($item['text'])
                 ];
             }
             else if ($item['type'] === 'img')
@@ -463,6 +462,13 @@ class Repository
                 $result[] = [
                     'type' => $item['type'],
                     'text' => Purifier::clean($item['text'])
+                ];
+            }
+            else if ($item['type'] === 'title')
+            {
+                $result[] = [
+                    'type' => $item['type'],
+                    'text' => $item['text']
                 ];
             }
         }

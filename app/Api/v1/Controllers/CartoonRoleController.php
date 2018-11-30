@@ -4,11 +4,11 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
-use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Activity\BangumiActivity;
-use App\Api\V1\Services\Activity\CartoonRoleActivity;
 use App\Api\V1\Services\Activity\UserActivity;
+use App\Api\V1\Services\Counter\CartoonRoleFansCounter;
+use App\Api\V1\Services\Counter\CartoonRoleStarCounter;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Trending\CartoonRoleTrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
@@ -17,6 +17,7 @@ use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
 use App\Models\UserCoin;
 use App\Services\OpenSearch\Search;
+use App\Services\Trial\UserIpAddress;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -52,6 +53,13 @@ class CartoonRoleController extends Controller
         }
 
         $userId = $this->getAuthUserId();
+        $userIpAddress = new UserIpAddress();
+        $blocked = $userIpAddress->check($userId);
+        if ($blocked)
+        {
+            return $this->resErrRole('你已被封禁，无权应援');
+        }
+
         $userRepository = new UserRepository();
 
         if (!$userRepository->toggleCoin(false, $userId, 0, 3, $id))
@@ -81,7 +89,8 @@ class CartoonRoleController extends Controller
                 'star_count' => 1
             ]);
 
-            CartoonRole::where('id', $id)->increment('fans_count');
+            $cartoonRoleFansCounter = new CartoonRoleFansCounter();
+            $cartoonRoleFansCounter->add($id);
 
             if (Redis::EXISTS('cartoon_role_'.$id))
             {
@@ -105,9 +114,8 @@ class CartoonRoleController extends Controller
             Redis::ZINCRBY($hotCacheKey, 1, $userId);
         }
 
-        CartoonRole
-            ::where('id', $id)
-            ->increment('star_count');
+        $cartoonRoleStarCounter = new CartoonRoleStarCounter();
+        $cartoonRoleStarCounter->add($id);
 
         $userActivityService = new UserActivity();
         $userActivityService->update($userId, 3);
@@ -204,6 +212,8 @@ class CartoonRoleController extends Controller
 
         $userRepository = new UserRepository();
         $userTransformer = new UserTransformer();
+        $cartoonRoleStarCounter = new CartoonRoleStarCounter();
+        $cartoonRoleFansCounter = new CartoonRoleFansCounter();
 
         $role['lover'] = $role['loverId'] ? $userTransformer->item($userRepository->item($role['loverId'])) : null;
         $role['hasStar'] = $cartoonRoleRepository->checkHasStar($role['id'], $userId);
@@ -216,6 +226,8 @@ class CartoonRoleController extends Controller
             $job = (new \App\Jobs\Search\UpdateWeight('role', $id));
             dispatch($job);
         }
+        $role['star_count'] = $cartoonRoleStarCounter->get($id);
+        $role['fans_count'] = $cartoonRoleFansCounter->get($id);
 
         return $this->resOK($cartoonTransformer->show([
             'bangumi' => $bangumi,
@@ -237,11 +249,13 @@ class CartoonRoleController extends Controller
         $cartoonRoleRepository = new CartoonRoleRepository();
         $ids = $cartoonRoleRepository->RedisSort('cartoon_role_today_activity_ids', function ()
         {
-            $list = CartoonRole
-                ::orderBy('fans_count', 'DESC')
-                ->where('fans_count', '>', 0)
+            $list = CartoonRoleFans
+                ::select(DB::raw('count(*) as count, role_id'))
+                ->orderBy('count', 'DESC')
+                ->groupBy('role_id')
                 ->take(100)
-                ->pluck('id');
+                ->pluck('role_id');
+
             $result = [];
             $total = count($list);
             foreach ($list as $i => $item)
@@ -260,11 +274,13 @@ class CartoonRoleController extends Controller
                 'id' => (int)$item['id'],
                 'name' => $item['name'],
                 'avatar' => $item['avatar'],
-                'intro' => $item['intro'],
-                'star_count' => (int)$item['star_count'],
-                'fans_count' => (int)$item['fans_count'],
+                'intro' => $item['intro']
             ];
         }
+        $cartoonRoleStarCounter = new CartoonRoleStarCounter();
+        $cartoonRoleFansCounter = new CartoonRoleFansCounter();
+        $list = $cartoonRoleFansCounter->batchGet($list, 'fans_count');
+        $list = $cartoonRoleStarCounter->batchGet($list, 'star_count');
 
         return $this->resOK($list);
     }
@@ -505,7 +521,7 @@ class CartoonRoleController extends Controller
 
         Redis::DEL('cartoon_role_' . $id);
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     // 后台展示偶像详情
@@ -555,6 +571,47 @@ class CartoonRoleController extends Controller
             ->update([
                 'state' => 0
             ]);
+
+        return $this->resNoContent();
+    }
+
+    public function removeStarByIp(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        if ($userId !== 1)
+        {
+            return $this->resErrRole();
+        }
+
+        $ip = $request->get('ip');
+        $userIpAddress = new UserIpAddress();
+
+        $userIds = $userIpAddress->addressUsers($ip);
+        if (!$userIds)
+        {
+            return $this->resNoContent();
+        }
+
+        $cartoonRoleIds = CartoonRoleFans
+            ::whereIn('role_id', $userIds)
+            ->pluck('role_id');
+
+        foreach ($userIds as $userId)
+        {
+            CartoonRoleFans
+                ::where('user_id', $userId)
+                ->delete();
+        }
+
+        $cartoonRoleFansCounter = new CartoonRoleFansCounter();
+        $cartoonRoleStarCounter = new CartoonRoleStarCounter();
+        foreach ($cartoonRoleIds as $roleId)
+        {
+            $cartoonRoleFansCounter->deleteCache($roleId);
+            $cartoonRoleStarCounter->deleteCache($roleId);
+        }
+        Redis::DEL('cartoon_role_star_dalao_user_ids');
+        Redis::DEL('cartoon_role_star_newbie_users');
 
         return $this->resNoContent();
     }

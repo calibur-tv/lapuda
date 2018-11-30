@@ -301,32 +301,30 @@ class ScoreRepository extends Repository
     {
         $score = $this->item($id, true);
 
-        if ($score['state'])
-        {
-            Redis::DEL($this->itemCacheKey($id));
-        }
+        $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
+        $isDeleted = $score['deleted_at'];
 
-        if ($score['user_id'] == $score['state'])
+        if ($isDeleted)
         {
-            DB::table('scores')
-                ->where('id', $id)
-                ->update([
-                    'state' => 0,
-                    'deleted_at' => null
-                ]);
-
-            $scoreTrendingService = new ScoreTrendingService($score['bangumi_id'], $score['user_id']);
             $scoreTrendingService->create($id);
 
             $this->migrateSearchIndex('C', $id, false);
         }
-        else
+
+        DB::table('scores')
+            ->where('id', $id)
+            ->update([
+                'state' => 0,
+                'deleted_at' => null
+            ]);
+
+        if ($score['state'])
         {
-            DB::table('scores')
-                ->where('id', $id)
-                ->update([
-                    'state' => 0
-                ]);
+            if (!$isDeleted)
+            {
+                $scoreTrendingService->update($id);
+            }
+            Redis::DEL($this->itemCacheKey($id));
         }
     }
 
