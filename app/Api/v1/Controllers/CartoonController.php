@@ -12,6 +12,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Models\Bangumi;
 use App\Models\Image;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redis;
 
 /**
  * @Resource("漫画相关接口")
@@ -36,11 +37,14 @@ class CartoonController extends Controller
     // 后台编辑漫画
     public function edit(Request $request)
     {
-        Image::where('id', $request->get('id'))
+        $id = $request->get('id');
+
+        Image::where('id', $id)
             ->update([
-                'name' => $request->get('name'),
-                'url' => $request->get('url')
+                'name' => $request->get('name')
             ]);
+
+        Redis::DEL('image_' . $id);
 
         return $this->resOK();
     }
