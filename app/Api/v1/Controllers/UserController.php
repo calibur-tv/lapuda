@@ -897,7 +897,7 @@ class UserController extends Controller
 
         if (empty($ids))
         {
-            return [];
+            return $this->resOK([]);
         }
 
         $result = [];
