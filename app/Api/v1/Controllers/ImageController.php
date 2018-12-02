@@ -904,6 +904,7 @@ class ImageController extends Controller
             ]);
 
         Redis::DEL($imageRepository->itemCacheKey($id));
+        Redis::DEL($imageRepository->cacheKeyAlbumImages($id));
 
         return $this->resOK();
     }
