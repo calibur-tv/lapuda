@@ -48,30 +48,31 @@ class Role
 
         if (!$roleId)
         {
-            return false;
+            return 0;
         }
 
-        $hasRole = (boolean)DB
+        $hasRole = DB
             ::table($this->user_table)
             ->where('user_id', $userId)
             ->where('role_id', $roleId)
-            ->count();
+            ->pluck('id')
+            ->first();
 
         if ($hasRole)
         {
-            return true;
+            return $hasRole;
         }
 
-        DB
+        $newId = DB
             ::table($this->user_table)
-            ->insert([
+            ->insertGetId([
                 'user_id' => $userId,
                 'role_id' => $roleId
             ]);
 
         Redis::DEL($this->userRolesCachekey($userId));
 
-        return true;
+        return $newId;
     }
 
     // 清除用户某条权限
@@ -153,7 +154,7 @@ class Role
     public function create($roleName, $desc = '')
     {
         $roleId = $this->getRoleIdByName($roleName);
-        if (!$roleId)
+        if ($roleId)
         {
             return $roleId;
         }
@@ -167,14 +168,8 @@ class Role
     }
 
     // 更新某个权限
-    public function update($roleName, $updatedName, $updatedDesc = '')
+    public function update($roleId, $updatedName, $updatedDesc = '')
     {
-        $roleId = $this->getRoleIdByName($roleName);
-        if (!$roleId)
-        {
-            return false;
-        }
-
         DB
             ::table($this->role_table)
             ->where('id', $roleId)
@@ -187,14 +182,8 @@ class Role
     }
 
     // 移除某个权限
-    public function destroy($roleName)
+    public function destroy($roleId)
     {
-        $roleId = $this->getRoleIdByName($roleName);
-        if (!$roleId)
-        {
-            return true;
-        }
-
         DB
             ::table($this->user_table)
             ->where('role_id', $roleId)

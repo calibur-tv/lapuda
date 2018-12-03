@@ -24,7 +24,7 @@ class Kernel extends HttpKernel
         'web' => [
             \Barryvdh\Cors\HandleCors::class,
             \App\Http\Middleware\Csrf::class,
-            \Illuminate\Session\Middleware\StartSession::class,
+            \Illuminate\Session\Middleware\StartSession::class
         ],
         'api' => [
             \Barryvdh\Cors\HandleCors::class,
