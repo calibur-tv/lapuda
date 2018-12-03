@@ -4,6 +4,7 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Activity\UserActivity;
+use App\Api\V1\Services\Role;
 use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\User;
@@ -364,6 +365,15 @@ class DoorController extends Controller
             'bind_qq' => !!$user['qq_open_id'],
             'bind_wechat' => !!$user['wechat_open_id']
         ];
+        if ($user['is_admin'])
+        {
+            $role = new Role();
+            $user['roles'] = $role->roles($userId);
+        }
+        else
+        {
+            $user['roles'] = [];
+        }
 
         $transformer = new UserTransformer();
 
