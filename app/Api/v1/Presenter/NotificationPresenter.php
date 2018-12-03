@@ -317,7 +317,7 @@ class NotificationPresenter
                 return '${user}评论了你的帖子${title}';
                 break;
             case 5:
-                return '${user}回复了你在的帖子${title}下的评论';
+                return '${user}回复了你在帖子${title}下的评论';
                 break;
             case 6:
                 return '${user}喜欢了你的图片${title}';
@@ -332,7 +332,7 @@ class NotificationPresenter
                 return '${user}评论了你的图片${title}';
                 break;
             case 10:
-                return '${user}回复了你在的图片${title}下的评论';
+                return '${user}回复了你在图片${title}下的评论';
                 break;
             case 11:
                 return '${user}喜欢了你的漫评${title}';
@@ -347,37 +347,37 @@ class NotificationPresenter
                 return '${user}评论了你的漫评${title}';
                 break;
             case 15:
-                return '${user}回复了你在的漫评${title}下的评论';
+                return '${user}回复了你在漫评${title}下的评论';
                 break;
             case 16:
                 return '${user}评论了你的视频${title}';
                 break;
             case 17:
-                return '${user}回复了你在的视频${title}下的评论';
+                return '${user}回复了你在视频${title}下的评论';
                 break;
             case 18:
-                return '${user}赞了你在的帖子${title}下的评论';
+                return '${user}赞了你在帖子${title}下的评论';
                 break;
             case 19:
-                return '${user}赞了你在的帖子${title}下的回复';
+                return '${user}赞了你在帖子${title}下的回复';
                 break;
             case 20:
-                return '${user}赞了你在的图片${title}下的评论';
+                return '${user}赞了你在图片${title}下的评论';
                 break;
             case 21:
-                return '${user}赞了你在的图片${title}下的回复';
+                return '${user}赞了你在图片${title}下的回复';
                 break;
             case 22:
-                return '${user}赞了你在的评分${title}下的评论';
+                return '${user}赞了你在漫评${title}下的评论';
                 break;
             case 23:
-                return '${user}赞了你在的评分${title}下的回复';
+                return '${user}赞了你在漫评${title}下的回复';
                 break;
             case 24:
-                return '${user}赞了你在的视频${title}下的评论';
+                return '${user}赞了你在视频${title}下的评论';
                 break;
             case 25:
-                return '${user}赞了你在的视频${title}下的回复';
+                return '${user}赞了你在视频${title}下的回复';
                 break;
             case 26:
                 return '${user}关注了你提的问题${title}';
