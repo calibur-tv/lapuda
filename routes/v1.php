@@ -697,5 +697,26 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->get('/list', 'App\Api\V1\Controllers\FriendLinkController@list');
             });
         });
+
+        $api->group(['prefix' => '/role'], function ($api)
+        {
+            $api->post('/set_role', 'App\Api\V1\Controllers\UserRoleController@setRole');
+
+            $api->post('/delete_role', 'App\Api\V1\Controllers\UserRoleController@deleteRole');
+
+            $api->post('/clear_role', 'App\Api\V1\Controllers\UserRoleController@clearRole');
+
+            $api->post('/create_role', 'App\Api\V1\Controllers\UserRoleController@createRole');
+
+            $api->post('/update_role', 'App\Api\V1\Controllers\UserRoleController@updateRole');
+
+            $api->post('/destroy_role', 'App\Api\V1\Controllers\UserRoleController@destroyRole');
+
+            $api->get('/user_roles', 'App\Api\V1\Controllers\UserRoleController@userRoles');
+
+            $api->get('/role_users', 'App\Api\V1\Controllers\UserRoleController@roleUsers');
+
+            $api->get('/all', 'App\Api\V1\Controllers\UserRoleController@all');
+        });
     });
 });

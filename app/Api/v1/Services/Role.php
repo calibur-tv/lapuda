@@ -9,7 +9,9 @@
 namespace App\Api\V1\Services;
 
 
+use App\Api\V1\Repositories\Repository;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class Role
 {
@@ -67,6 +69,8 @@ class Role
                 'role_id' => $roleId
             ]);
 
+        Redis::DEL($this->userRolesCachekey($userId));
+
         return true;
     }
 
@@ -86,6 +90,8 @@ class Role
             ->where('role_id', $roleId)
             ->delete();
 
+        Redis::DEL($this->userRolesCachekey($userId));
+
         return true;
     }
 
@@ -97,27 +103,34 @@ class Role
             ->where('user_id', $userId)
             ->delete();
 
+        Redis::DEL($this->userRolesCachekey($userId));
+
         return true;
     }
 
     // 用户的所有权限
     public function roles($userId)
     {
-        $ids = DB
-            ::table($this->user_table)
-            ->where('user_id', $userId)
-            ->pluck('role_id');
+        $repository = new Repository();
 
-        if (empty($ids))
+        return $repository->Cache($this->userRolesCachekey($userId), function () use ($userId)
         {
-            return [];
-        }
+            $ids = DB
+                ::table($this->user_table)
+                ->where('user_id', $userId)
+                ->pluck('role_id');
 
-        return DB
-            ::table($this->role_table)
-            ->whereIn('id', $ids)
-            ->pluck('name')
-            ->toArray();
+            if (empty($ids))
+            {
+                return [];
+            }
+
+            return DB
+                ::table($this->role_table)
+                ->whereIn('id', $ids)
+                ->pluck('name')
+                ->toArray();
+        });
     }
 
     // 权限的所有用户
@@ -195,6 +208,25 @@ class Role
         return true;
     }
 
+    // 查看所有用户的权限
+    public function all()
+    {
+        $users = DB
+            ::table($this->user_table)
+            ->get()
+            ->toArray();
+
+        $roles = DB
+            ::table($this->role_table)
+            ->get()
+            ->toArray();
+
+        return [
+            'users' => $users,
+            'roles' => $roles
+        ];
+    }
+
     // 根据权限名拿权限id
     protected function getRoleIdByName($roleName)
     {
@@ -203,5 +235,11 @@ class Role
             ->where('name', $roleName)
             ->pluck('id')
             ->first();
+    }
+
+    // 用户的权限缓存key
+    protected function userRolesCachekey($userId)
+    {
+        return 'user_' . $userId . '_all_roles';
     }
 }

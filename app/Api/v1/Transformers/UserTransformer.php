@@ -77,7 +77,8 @@ class UserTransformer extends Transformer
                 'notification' => $user['notification'],
                 'exp' => $user['exp'],
                 'power' => $user['power'],
-                'providers' => $user['providers']
+                'providers' => $user['providers'],
+                'roles' => $user['roles']
             ];
         });
     }
