@@ -14,9 +14,5 @@ class AppTemplate extends Model
 {
     protected $table = 'app_templates';
 
-    protected $fillable = [
-        'version',
-        'page',
-        'url'
-    ];
+    protected $fillable = ['version', 'page', 'url'];
 }

@@ -17,6 +17,7 @@ use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Counter\Stats\TotalUserCount;
+use App\Api\V1\Services\Role;
 use App\Api\V1\Services\Toggle\Image\ImageMarkService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Services\Toggle\Question\AnswerMarkService;
@@ -1138,6 +1139,9 @@ class UserController extends Controller
             ->update([
                 'is_admin' => 0
             ]);
+
+        $role = new Role();
+        $role->clear($id);
 
         return $this->resNoContent();
     }
