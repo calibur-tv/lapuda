@@ -56,6 +56,16 @@ class TrialController extends Controller
         return $this->resOK($result);
     }
 
+    // console.calibur.tv 的 TODO
+    public function consoleTodo()
+    {
+        $result = [
+            'feedback' => Feedback::where('stage', 0)->count()
+        ];
+
+        return $this->resOK($result);
+    }
+
     // 敏感词列表
     public function words()
     {
