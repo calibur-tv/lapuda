@@ -20,9 +20,15 @@ class UserRoleController extends Controller
         $roleName = $request->get('role_name');
         $userId = $request->get('user_id');
 
-        $id = $this->role->set($userId, $roleName);
+        $userRepository = new UserRepository();
+        $user = $userRepository->item($userId);
+        if (is_null($user))
+        {
+            return $this->resErrNotFound();
+        }
+        $this->role->set($userId, $roleName);
 
-        return $this->resCreated($id);
+        return $this->resCreated($user);
     }
 
     public function deleteRole(Request $request)
