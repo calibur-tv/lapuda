@@ -86,9 +86,11 @@ class VideoRepository extends Repository
             return null;
         }
 
+        $otherSiteResource = $result['src_other'] ?: '';
+
         if ($result['other_site'])
         {
-            $result['src'] = $result['src_other'];
+            $result['src'] = $otherSiteResource;
         }
         else if (!$isPC && $result['src_480'])
         {
@@ -98,6 +100,7 @@ class VideoRepository extends Repository
         {
             $result['src'] = $result['src_720'] ? $result['src_720'] : $result['src_1080'];
         }
+        $result['src'] = $result['src'] ?: $otherSiteResource;
 
         return $result;
     }
