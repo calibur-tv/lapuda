@@ -66,14 +66,6 @@ class TrialController extends Controller
         return $this->resOK($result);
     }
 
-    // 敏感词列表
-    public function words()
-    {
-        $words = Redis::LRANGE('blackwords', 0, -1);
-
-        return $this->resOK($words);
-    }
-
     // 删除敏感词
     public function deleteWords(Request $request)
     {
@@ -125,16 +117,29 @@ class TrialController extends Controller
         return $this->resOK($wordFilter->filter($content));
     }
 
+    public function words()
+    {
+        $data = Redis::LRANGE('blackwords', 0, -1);
+        if (empty($data))
+        {
+            $path = base_path() . '/storage/app/words.txt';
+            $data = $this->readKeysFromFile($path);
+            Redis::RPUSH('blackwords', $data);
+        }
+
+        return $data;
+    }
+
     // 修改敏感词库的文件
     protected function changeBlackWordsFile()
     {
-        $path = base_path() . '/storage/app/' . $this->filename;
-        $data = Redis::LRANGE($this->cacheKey, 0, -1);
+        $path = base_path() . '/storage/app/words.txt';
+        $data = Redis::LRANGE('blackwords', 0, -1);
 
         if (empty($data))
         {
             $keys = $this->readKeysFromFile($path);
-            Redis::RPUSH($this->cacheKey, $keys);
+            Redis::RPUSH('blackwords', $keys);
         }
         else
         {
