@@ -127,7 +127,7 @@ class TrialController extends Controller
             Redis::RPUSH('blackwords', $data);
         }
 
-        return $data;
+        return $this->resOK($data);
     }
 
     // 修改敏感词库的文件
