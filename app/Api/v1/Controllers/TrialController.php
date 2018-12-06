@@ -56,11 +56,38 @@ class TrialController extends Controller
         return $this->resOK($result);
     }
 
-    // console.calibur.tv 的 TODO
     public function consoleTodo()
     {
         $result = [
             'feedback' => Feedback::where('stage', 0)->count()
+        ];
+
+        return $this->resOK($result);
+    }
+
+    public function trialTodo()
+    {
+        $comments = 0;
+        $comments = $comments + DB::table('post_comments')->where('state', '<>', 0)->count();
+        $comments = $comments + DB::table('image_comments')->where('state', '<>', 0)->count();
+        $comments = $comments + DB::table('video_comments')->where('state', '<>', 0)->count();
+        $comments = $comments + DB::table('score_comments')->where('state', '<>', 0)->count();
+        $comments = $comments + DB::table('question_comments')->where('state', '<>', 0)->count();
+        $comments = $comments + DB::table('answer_comments')->where('state', '<>', 0)->count();
+
+        $images = Image::withTrashed()->where('state', '<>', 0)->count() + AlbumImage::withTrashed()->where('state', '<>', 0)->count();
+
+        $result = [
+            'users' => User::withTrashed()->where('state', '<>', 0)->count(),
+            'posts' => Post::withTrashed()->where('state', '<>', 0)->count(),
+            'images' => $images,
+            'comments' => $comments,
+            'bangumi' => Bangumi::withTrashed()->where('state', '<>', 0)->count(),
+            'role' => CartoonRole::withTrashed()->where('state', '<>', 0)->count(),
+            'score' => Score::withTrashed()->where('state', '<>', 0)->count(),
+            'question' => Question::withTrashed()->where('state', '<>', 0)->count(),
+            'answer' => Answer::withTrashed()->where('state', '<>', 0)->count(),
+            'report' => Redis::ZCARD('user-report-trending-ids')
         ];
 
         return $this->resOK($result);
