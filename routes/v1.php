@@ -362,6 +362,8 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/console_todo', 'App\Api\V1\Controllers\TrialController@consoleTodo');
 
+        $api->get('/trial_todo', 'App\Api\V1\Controllers\TrialController@trialTodo');
+
         $api->group(['prefix' => '/stats'], function ($api)
         {
             $api->get('/realtime', 'App\Api\V1\Controllers\StatsController@realtime');
