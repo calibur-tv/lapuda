@@ -182,6 +182,54 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
                 "message": "未登录的用户"
             }
 
+## 刷新用户的 jwt-token [POST /door/refresh_token]
+每次`启动应用`时调用，新的 token 会在 response header 里返回
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "success"
+            }
+
++ Response 401 (application/json)
+    + Body
+
+            {
+                "code": 40107,
+                "message": "登录凭证获取失败"
+            }
+
+## 获取当前登录用户的信息 [POST /door/current_user]
+每次`启动应用`成功后调用
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer JWT-Token
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "用户对象"
+            }
+
++ Response 401 (application/json)
+    + Body
+
+            {
+                "code": 40104,
+                "message": "未登录的用户"
+            }
+
 ## 重置密码 [POST /door/reset]
 
 

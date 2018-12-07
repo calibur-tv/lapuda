@@ -38,17 +38,12 @@ class VideoRepository extends Repository
             $src_1080 = "";
             $src_720 = "";
             $src_480 = "";
-            $src_other = "";
+            $src_other = $video['url'];
+            $other_site = !!$bangumi['others_site_video'];
 
-            if ($bangumi['others_site_video'] == 1)
-            {
-                $src_other = $video['url'];
-                $other_site = 1;
-            }
-            else
+            if (!$other_site)
             {
                 $resource = $video['resource'] === 'null' ? null : json_decode($video['resource'], true);
-                $other_site = 0;
 
                 if (isset($resource['video'][720]) && isset($resource['video'][720]['src']) && $resource['video'][720]['src'])
                 {
@@ -98,7 +93,7 @@ class VideoRepository extends Repository
         }
         else
         {
-            $result['src'] = $result['src_720'] ? $result['src_720'] : $result['src_1080'];
+            $result['src'] = $result['src_720'] ?: $result['src_1080'];
         }
         $result['src'] = $result['src'] ?: $otherSiteResource;
 

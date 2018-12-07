@@ -326,6 +326,7 @@ class DoorController extends Controller
     {
 
     }
+
     /**
      * 获取用户信息
      *
@@ -340,6 +341,87 @@ class DoorController extends Controller
      * })
      */
     public function refreshUser()
+    {
+        $user = $this->getAuthUser();
+        if (!$user)
+        {
+            return $this->resErrAuth();
+        }
+
+        $user = $user->toArray();
+        $userId = $user['id'];
+
+        $imageRepository = new ImageRepository();
+        $userRepository = new UserRepository();
+        $userActivityService = new UserActivity();
+        $userLevel = new UserLevel();
+
+        $user['uptoken'] = $imageRepository->uptoken($userId);
+        $user['daySign'] = $userRepository->daySigned($userId);
+        $user['notification'] = $userRepository->getNotificationCount($userId);
+        $user['coin_from_sign'] = $userRepository->userSignCoin($userId);
+        $user['exp'] = $userLevel->computeExpObject($user['exp']);
+        $user['power'] = $userActivityService->get($userId);
+        $user['providers'] = [
+            'bind_qq' => !!$user['qq_open_id'],
+            'bind_wechat' => !!$user['wechat_open_id']
+        ];
+        if ($user['is_admin'])
+        {
+            $role = new Role();
+            $user['roles'] = $role->roles($userId);
+        }
+        else
+        {
+            $user['roles'] = [];
+        }
+
+        $transformer = new UserTransformer();
+
+        return $this->resOK($transformer->refresh($user));
+    }
+
+    /**
+     * 刷新用户的 jwt-token
+     *
+     * 每次`启动应用`时调用，新的 token 会在 response header 里返回
+     *
+     * @Post("/door/refresh_token")
+     *
+     * @Request(headers={"Authorization": "Bearer JWT-Token"})
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "success"}),
+     *      @Response(401, body={"code": 40107, "message": "登录凭证获取失败"})
+     * })
+     */
+    public function refreshJwtToken()
+    {
+        $userId = $this->getAuthUserId();
+        if (!$userId)
+        {
+            return response([
+                'code' => 40107,
+                'message' => config('error.40107')
+            ], 401);
+        }
+
+        return $this->resOK('success');
+    }
+
+    /**
+     * 获取当前登录用户的信息
+     *
+     * 每次`启动应用`成功后调用
+     *
+     * @Post("/door/current_user")
+     *
+     * @Request(headers={"Authorization": "Bearer JWT-Token"})
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "用户对象"}),
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户"})
+     * })
+     */
+    public function currentUser()
     {
         $user = $this->getAuthUser();
         if (!$user)

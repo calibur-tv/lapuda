@@ -28,6 +28,10 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/refresh', 'App\Api\V1\Controllers\DoorController@refreshUser')->middleware(['jwt.refresh']);
 
+        $api->post('/refresh_token', 'App\Api\V1\Controllers\DoorController@refreshJwtToken')->middleware(['jwt.refresh']);
+
+        $api->post('/current_user', 'App\Api\V1\Controllers\DoorController@currentUser')->middleware(['jwt.auth']);
+
         $api->post('/reset', 'App\Api\V1\Controllers\DoorController@resetPassword');
 
         $api->post('/logout', 'App\Api\V1\Controllers\DoorController@logout')->middleware(['jwt.auth']);
@@ -361,6 +365,8 @@ $api->version(['v1', 'latest'], function ($api)
         $api->get('/todo', 'App\Api\V1\Controllers\TrialController@todo');
 
         $api->get('/console_todo', 'App\Api\V1\Controllers\TrialController@consoleTodo');
+
+        $api->get('/trial_todo', 'App\Api\V1\Controllers\TrialController@trialTodo');
 
         $api->group(['prefix' => '/stats'], function ($api)
         {

@@ -56,7 +56,6 @@ class TrialController extends Controller
         return $this->resOK($result);
     }
 
-    // console.calibur.tv 的 TODO
     public function consoleTodo()
     {
         $result = [
@@ -66,12 +65,32 @@ class TrialController extends Controller
         return $this->resOK($result);
     }
 
-    // 敏感词列表
-    public function words()
+    public function trialTodo()
     {
-        $words = Redis::LRANGE('blackwords', 0, -1);
+        $comments = 0;
+        $comments = $comments + DB::table('post_comments')->where('state', '<>', 0)->count();
+        $comments = $comments + DB::table('image_comments')->where('state', '<>', 0)->count();
+        $comments = $comments + DB::table('video_comments')->where('state', '<>', 0)->count();
+        $comments = $comments + DB::table('score_comments')->where('state', '<>', 0)->count();
+        $comments = $comments + DB::table('question_comments')->where('state', '<>', 0)->count();
+        $comments = $comments + DB::table('answer_comments')->where('state', '<>', 0)->count();
 
-        return $this->resOK($words);
+        $images = Image::withTrashed()->where('state', '<>', 0)->count() + AlbumImage::withTrashed()->where('state', '<>', 0)->count();
+
+        $result = [
+            'users' => User::withTrashed()->where('state', '<>', 0)->count(),
+            'posts' => Post::withTrashed()->where('state', '<>', 0)->count(),
+            'images' => $images,
+            'comments' => $comments,
+            'bangumi' => Bangumi::withTrashed()->where('state', '<>', 0)->count(),
+            'role' => CartoonRole::withTrashed()->where('state', '<>', 0)->count(),
+            'score' => Score::withTrashed()->where('state', '<>', 0)->count(),
+            'question' => Question::withTrashed()->where('state', '<>', 0)->count(),
+            'answer' => Answer::withTrashed()->where('state', '<>', 0)->count(),
+            'report' => Redis::ZCARD('user-report-trending-ids')
+        ];
+
+        return $this->resOK($result);
     }
 
     // 删除敏感词
@@ -125,16 +144,29 @@ class TrialController extends Controller
         return $this->resOK($wordFilter->filter($content));
     }
 
+    public function words()
+    {
+        $data = Redis::LRANGE('blackwords', 0, -1);
+        if (empty($data))
+        {
+            $path = base_path() . '/storage/app/words.txt';
+            $data = $this->readKeysFromFile($path);
+            Redis::RPUSH('blackwords', $data);
+        }
+
+        return $this->resOK($data);
+    }
+
     // 修改敏感词库的文件
     protected function changeBlackWordsFile()
     {
-        $path = base_path() . '/storage/app/' . $this->filename;
-        $data = Redis::LRANGE($this->cacheKey, 0, -1);
+        $path = base_path() . '/storage/app/words.txt';
+        $data = Redis::LRANGE('blackwords', 0, -1);
 
         if (empty($data))
         {
             $keys = $this->readKeysFromFile($path);
-            Redis::RPUSH($this->cacheKey, $keys);
+            Redis::RPUSH('blackwords', $keys);
         }
         else
         {
