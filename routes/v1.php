@@ -189,7 +189,7 @@ $api->version(['v1', 'latest'], function ($api)
     {
         $api->get('/tags', 'App\Api\V1\Controllers\PostController@tags');
 
-        $api->post('/create', 'App\Api\V1\Controllers\PostController@create')->middleware(['jwt.auth', 'geetest', 'throttle:1,3']);
+        $api->post('/create', 'App\Api\V1\Controllers\PostController@create')->middleware(['jwt.auth', 'geetest', 'throttle:10,30']);
 
         $api->group(['prefix' => '/{id}'], function ($api)
         {

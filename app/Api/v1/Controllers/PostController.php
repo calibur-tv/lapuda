@@ -93,6 +93,17 @@ class PostController extends Controller
         }
 
         $images = $request->get('images');
+        $title = $request->get('title');
+        $content = $request->get('content');
+
+        if (empty($images) && strlen($title . $content) < 30)
+        {
+            return response([
+                'code' => 42901,
+                'message' => config('error.42901')
+            ], 429);
+        }
+
         foreach ($images as $i => $image)
         {
             $validator = Validator::make($image, [
