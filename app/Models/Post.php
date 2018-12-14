@@ -15,6 +15,9 @@ class Post extends Model
 {
     use SoftDeletes;
 
+    const IMAGE = 1;
+    const VOTE  = 1 << 1;
+
     protected $table = 'posts';
 
     protected $fillable = [
@@ -56,5 +59,14 @@ class Post extends Model
     public function images()
     {
         return $this->hasMany(PostImages::class);
+    }
+
+    public function vote()
+    {
+        if ($this->items & self::VOTE) {
+            return $this->hasOne(Vote::class);
+        } else {
+            return null;
+        }
     }
 }
