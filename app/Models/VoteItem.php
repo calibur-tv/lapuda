@@ -6,8 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class VoteItem extends Model
 {
-   public function vote()
-   {
-       return $this->belongsTo(Vote::class);
-   }
+    protected $fillable = [
+        'title', 'vote_id',
+    ];
+    public function vote()
+    {
+        return $this->belongsTo(Vote::class);
+    }
 }

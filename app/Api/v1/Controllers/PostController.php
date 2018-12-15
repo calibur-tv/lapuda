@@ -3,6 +3,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\v1\Repositories\VoteRepository;
 use App\Api\V1\Services\Activity\BangumiActivity;
 use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Comment\PostCommentService;
@@ -15,6 +16,7 @@ use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Services\Toggle\Post\PostRewardService;
 use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Services\UserLevel;
+use App\Api\v1\Services\VoteService;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Api\V1\Repositories\BangumiRepository;
@@ -29,6 +31,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Mews\Purifier\Facades\Purifier;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * @Resource("帖子相关接口")
@@ -120,6 +123,12 @@ class PostController extends Controller
             }
         }
 
+        $validator = $this->validateItems($request);
+
+        if (!is_null($validator) && $validator->fails()) {
+            return $this->resErrParams($validator);
+        }
+
         $user = $this->getAuthUser();
         if ($user->banned_to)
         {
@@ -140,16 +149,34 @@ class PostController extends Controller
         $now = Carbon::now();
         $content = Purifier::clean($request->get('content'));
 
-        $id = $postRepository->create([
-            'title' => $request->get('title'),
-            'content' => $postRepository->formatRichContent($content),
-            'desc' => mb_substr($content, 0, 120, 'UTF-8'),
-            'bangumi_id' => $bangumiId,
-            'user_id' => $userId,
-            'is_creator' => $request->get('is_creator'),
-            'created_at' => $now,
-            'updated_at' => $now
-        ], $images, $request->get("tags"));
+        DB::beginTransaction();
+
+        try {
+            $id = $postRepository->create([
+                'title' => $request->get('title'),
+                'content' => $postRepository->formatRichContent($content),
+                'desc' => mb_substr($content, 0, 120, 'UTF-8'),
+                'bangumi_id' => $bangumiId,
+                'user_id' => $userId,
+                'is_creator' => $request->get('is_creator'),
+                'types' => $request->get('types'),
+                'created_at' => $now,
+                'updated_at' => $now
+            ], $images, $request->get("tags"));
+
+            $this->createPostItems($request, $id);
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            \Log::warning($e);
+
+            return response([
+                'code' => Response::HTTP_INTERNAL_SERVER_ERROR,
+                'message' => '发帖失败',
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
 
         $userLevel = new UserLevel();
         $exp = $userLevel->change($userId, 4, $content);
@@ -165,6 +192,63 @@ class PostController extends Controller
             'exp' => $exp,
             'message' => $exp ? "发表成功，经验+{$exp}" : '发表成功'
         ]);
+    }
+
+    private function createPostItems(Request $request, $postId)
+    {
+        $types = intval($request->get('types'));
+        if ($types & Post::VOTE) {
+            $this->validateVote($request);
+            $vote = $request->get('vote');
+            $service = new VoteService();
+            $service->create($postId, $vote['title'], $vote['description'] ?? '', $vote['items']);
+        }
+    }
+
+    private function validateItems(Request $request)
+    {
+        $types = intval($request->get('types'));
+        if ($types & Post::VOTE) {
+            $validator = $this->validateVote($request);
+
+            if ($validator->fails()) {
+                return $validator;
+            }
+        }
+    }
+
+    private function validateVote(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'vote' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return $validator;
+        }
+
+        $vote = $request->get('vote');
+
+        $validator = Validator::make($vote, [
+            'title' => 'required|string',
+            'items' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return $validator;
+        }
+
+        foreach ($vote['items'] as $item) {
+            $validator = Validator::make($item, [
+                'title' => 'required|string',
+            ]);
+
+            if ($validator->fails()) {
+                return $validator;
+            }
+        }
+
+        return $validator;
     }
 
     /**
@@ -216,6 +300,8 @@ class PostController extends Controller
         {
             return $this->resErrNotFound('不存在的番剧');
         }
+
+        $post = $this->getSubItems($post);
 
         $postCommentService = new PostCommentService();
         $post['commented'] = $postCommentService->checkCommented($userId, $id);
@@ -274,6 +360,25 @@ class PostController extends Controller
             'post' => $postTransformer->show($post),
             'user' => $userTransformer->item($author)
         ]);
+    }
+
+    private function getSubItems($post)
+    {
+        if (intval($post['types']) & Post::VOTE) {
+            $vote = $this->getVote($post['id']);
+            if (!is_null($vote)) {
+                $post['vote'] = $vote;
+            }
+        }
+
+        return $post;
+    }
+
+    private function getVote($postId)
+    {
+        $voteRepository = new VoteRepository();
+        $vote = $voteRepository->getVoteByPostId($postId);
+        return $vote;
     }
 
     /**

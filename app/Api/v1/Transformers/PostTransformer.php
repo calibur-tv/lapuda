@@ -10,13 +10,15 @@
 namespace App\Api\V1\Transformers;
 
 
+use App\Models\Post;
+
 class PostTransformer extends Transformer
 {
     public function show($post)
     {
         return $this->transformer($post, function ($post)
         {
-            return [
+            $data = [
                 'id' => (int)$post['id'],
                 'title' => $post['title'] ?: '标题什么的不重要~',
                 'desc' => $post['desc'],
@@ -27,6 +29,7 @@ class PostTransformer extends Transformer
                 'comment_count' => (int)$post['comment_count'],
                 'commented' => $post['commented'],
                 'liked' => $post['liked'],
+                'types' => $post['types'],
                 'rewarded' => $post['rewarded'],
                 'marked' => $post['marked'],
                 'tags' => isset($post['tags']) ? $post['tags'] : [],
@@ -38,6 +41,12 @@ class PostTransformer extends Transformer
                 'created_at' => $post['created_at'],
                 'updated_at' => $post['updated_at']
             ];
+
+            if (intval($data['types']) & Post::VOTE) {
+                $data['vote'] = $post['vote'];
+            }
+
+            return $data;
         });
     }
 

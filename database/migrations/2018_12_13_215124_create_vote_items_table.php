@@ -16,7 +16,7 @@ class CreateVoteItemsTable extends Migration
         Schema::create('vote_items', function (Blueprint $table) {
             $table->increments('id');
             $table->string('title')->comment('投票选项标题');
-            $table->integer('amount')->comment('投票数');
+            $table->integer('amount')->comment('投票数')->default(0);
             $table->unsignedInteger('vote_id')->comment('投票 id');
             $table->timestamps();
         });

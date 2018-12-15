@@ -21,7 +21,7 @@ class VoteController extends Controller
             ], Response::HTTP_CONFLICT);
         }
 
-        $voteItemId = $request->get('voteItemId');
+        $voteItemId = $request->get('vote_item_id');
 
         $voteItem = $repository->getItemByIdAndItemId($voteItemId, $voteId);
 
@@ -40,12 +40,14 @@ class VoteController extends Controller
         } catch (\Exception $e) {
             \DB::rollBack();
 
+            \Log::warning($e);
+
             return response([
                 'code' => 500,
                 'message' => '投票失败',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
-        return $this->resOK('投票成功');
+        return $this->resCreated('投票成功');
     }
 }
