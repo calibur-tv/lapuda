@@ -730,5 +730,9 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->get('/all', 'App\Api\V1\Controllers\UserRoleController@all');
         });
+
+        $api->group(['prefix' => '/vote'], function ($api) {
+            $api->post('/{voteId}/user', 'App\Api\V1\Controllers\VoteController@up');
+        });
     });
 });
