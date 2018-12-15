@@ -72,6 +72,8 @@ class PostController extends Controller
      *      @Parameter("desc", description="content可能是富文本，desc是`120字以内的纯文本`", type="string", required=true),
      *      @Parameter("content", description="内容，`1000字以内`", type="string", required=true),
      *      @Parameter("images", description="图片对象数组", type="array", required=true)
+     *      @Parameter("types", description="类型 (可兼容多个)", type="int", required=true)
+     *      @Parameter("vote", description="投票", type="array", required=false)
      * })
      *
      * @Transaction({
