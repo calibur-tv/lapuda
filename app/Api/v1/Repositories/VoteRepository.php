@@ -13,16 +13,27 @@ namespace App\Api\v1\Repositories;
 use App\Models\Vote;
 use App\Models\VoteItem;
 use App\Models\VoteItemUser;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Redis;
 
 class VoteRepository extends Repository
 {
-    public function createVote($title, $description, $postId)
+    public function createVote($title, $description, $postId, $expiredAt, $multiple)
     {
+        if (!empty($expiredAt)) {
+            $expiredAt = Carbon::createFromTimestamp($expiredAt);
+            if (!is_null($expiredAt)) {
+                $expiredAt = $expiredAt->format('Y-m-d H:i:s');
+            }
+        }
+
         $vote = new Vote([
             'post_id' => $postId,
             'title' => $title,
             'description' => $description,
+            'expired_at' => $expiredAt,
+            'multiple' => $multiple,
         ]);
 
         $vote->saveOrFail();
@@ -58,33 +69,118 @@ class VoteRepository extends Repository
         return $voteItem;
     }
 
-    public function createVoteUser($voteId, $voteItemId, $userId)
+    public function createVoteUser($voteId, $voteItemIds, $userId)
     {
-        $vote = new VoteItemUser([
-            'user_id' => $userId,
-            'vote_id' => $voteId,
-            'vote_item_id' => $voteItemId,
-        ]);
+        $votes = new Collection();
+        foreach ($voteItemIds as $voteItemId) {
+            $vote = new VoteItemUser([
+                'user_id' => $userId,
+                'vote_id' => $voteId,
+                'vote_item_id' => $voteItemId,
+            ]);
 
-        $vote->saveOrFail();
+            $vote->saveOrFail();
 
-        return $vote;
+            $votes->add($vote);
+        }
+
+        return $votes;
     }
 
-    public function riseAmountOfVoteItem($voteId, $voteItemId)
+    public function riseAmountOfVoteItem($voteId, $voteItemIds)
     {
-        $voteItem = VoteItem::where('vote_id', $voteId)->lockForUpdate()->findOrFail($voteItemId);
+        $items = new Collection();
 
-        $voteItem->amount += 1;
-        $voteItem->saveOrFail();
+        foreach ($voteItemIds as $voteItemId) {
+            $voteItem = VoteItem::where('vote_id', $voteId)->lockForUpdate()->findOrFail($voteItemId);
 
-        return $voteItem;
+            $voteItem->amount += 1;
+            $voteItem->saveOrFail();
+
+            if (Redis::EXISTS('vote:item:' . $voteItemId)) {
+                Redis::HINCRBY('vote:item:' . $voteItemId, 'amount', 1);
+            }
+
+            $items->add($voteItem);
+        }
+
+        return $items;
     }
 
     public function getVoteByPostId($postId)
     {
-        $vote = Vote::where('post_id', $postId)->with('items')->first();
+        $voteId = $this->RedisItem('vote:post:' . $postId, function () use ($postId) {
+            $vote = Vote::where('post_id', $postId)->with('items')->first();
 
-        return $vote->toArray();
+            return $vote->id ?? null;
+        });
+
+        if (is_null($voteId)) {
+            return null;
+        }
+
+        $vote = $this->getVoteByVoteId($voteId);
+
+        return $vote;
+    }
+
+    public function getVoteByVoteId($voteId)
+    {
+        $vote = $this->RedisHash('vote:' . $voteId, function () use ($voteId) {
+            try {
+                $vote = Vote::findOrFail($voteId);
+            } catch (\Exception $e) {
+                return null;
+            }
+
+            return $vote->toArray();
+        });
+
+        if (!empty($vote)) {
+            $vote['items'] = $this->getVoteItemsByVoteId($voteId);
+        }
+
+        return $vote;
+    }
+
+    public function getVoteItemsByVoteId($voteId)
+    {
+        $items = [];
+
+        $itemIds = $this->redisSet('vote:items:' . $voteId, function () use ($voteId) {
+            $itemIds = [];
+
+            $items = VoteItem::where('vote_id', $voteId)->get()->toArray();
+
+            foreach ($items as $item) {
+                $itemIds[] = $item['id'];
+            }
+
+            return $itemIds;
+        });
+
+        foreach ($itemIds as $itemId) {
+            $item = $this->getVoteItemByItemId($itemId);
+            if (!empty($item)) {
+                $items[] = $item;
+            }
+        }
+
+        return $items;
+    }
+
+    public function getVoteItemByItemId($itemId)
+    {
+        $item = $this->RedisHash('vote:item:' . $itemId, function () use ($itemId) {
+            try {
+                $item = VoteItem::findOrFail($itemId);
+            } catch (\Exception $e) {
+                return null;
+            }
+
+            return $item->toArray();
+        });
+
+        return $item;
     }
 }

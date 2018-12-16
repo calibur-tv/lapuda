@@ -3,7 +3,10 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\v1\Repositories\VoteRepository;
+use App\Api\v1\Services\VoteService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use mysql_xdevapi\Exception;
 use Symfony\Component\HttpFoundation\Response;
 
 class VoteController extends Controller
@@ -37,29 +40,43 @@ class VoteController extends Controller
             ], Response::HTTP_CONFLICT);
         }
 
-        $voteItemId = $request->get('vote_item_id');
-
-        $voteItem = $repository->getItemByIdAndItemId($voteItemId, $voteId);
-
-        if (is_null($voteItem)) {
-            return $this->resErrNotFound('选项不存在');
+        $vote = $repository->getVoteByVoteId($voteId);
+        if (!empty($vote['expired_at'])) {
+            $expiredAt = Carbon::createFromFormat('Y-m-d H:i:s', $vote['expired_at']);
+            if ($expiredAt->lessThan(Carbon::now())) {
+                return response([
+                    'code' => 41001,
+                    'message' => config('error.40001')
+                ], Response::HTTP_GONE);
+            }
         }
 
-        \DB::beginTransaction();
+        $voteItemIds = $request->get('vote_item_id');
+
+        if (0 == $vote['multiple'] && count($voteItemIds) > 1) {
+            return response([
+                'code' => 40004,
+                'message' => config('error.40004'),
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        foreach ($voteItemIds as $voteItemId) {
+            $voteItem = $repository->getItemByIdAndItemId($voteItemId, $voteId);
+
+            if (is_null($voteItem)) {
+                return $this->resErrNotFound('选项不存在');
+            }
+        }
+
+        $service = new VoteService;
 
         try {
-            $repository->createVoteUser($voteId, $voteItemId, $this->getAuthUserId());
-
-            $repository->riseAmountOfVoteItem($voteId, $voteItemId);
-
-            \DB::commit();
+            $service->up($voteId, $voteItemIds, $this->getAuthUserId());
         } catch (\Exception $e) {
-            \DB::rollBack();
-
             \Log::warning($e);
 
             return response([
-                'code' => 500,
+                'code' => Response::HTTP_INTERNAL_SERVER_ERROR,
                 'message' => '投票失败',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

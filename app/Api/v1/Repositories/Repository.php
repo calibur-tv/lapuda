@@ -107,6 +107,36 @@ class Repository
         return $cache;
     }
 
+    public function redisSet($key, $callable, $expired = 'd')
+    {
+        $cache = Redis::SMEMBERS($key);
+
+        if (!empty($cache)) {
+            return $cache;
+        }
+
+        if ($callable instanceof \Closure) {
+            $cache = call_user_func($callable);
+        } else {
+            return null;
+        }
+
+        if (empty($cache)) {
+            return null;
+        }
+
+        if (Redis::SETNX('lock_' . $key, 1)) {
+            Redis::pipeline(function ($pipe) use ($key, $cache, $expired) {
+                $pipe->EXPIRE('locl_' . $key, 10);
+                $pipe->SADD($key, $cache);
+                $pipe->EXPIREAT($key, $this->expire($expired));
+                $pipe->DEL('lock_' . $key);
+            });
+        }
+
+        return $cache;
+    }
+
     public function RedisHash($key, $func, $exp = 'd')
     {
         $cache = Redis::HGETALL($key);

@@ -18,6 +18,8 @@ class CreateVotesTable extends Migration
             $table->string('title')->comment('投票标题');
             $table->string('description')->comment('投票详情');
             $table->unsignedInteger('post_id')->comment('帖子 id');
+            $table->tinyInteger('multiple')->default(0)->comment('是否可以多选');
+            $table->timestamp('expired_at')->nullable()->comment('过期时间');
             $table->timestamps();
         });
     }

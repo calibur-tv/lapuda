@@ -39,7 +39,9 @@ class VoteTest extends TestCase
      */
     public function testVoteVoted()
     {
-        $response = $this->json('POST', '/vote/1/user?vote_item_id=1', [], [
+        $response = $this->json('POST', '/vote/1/user', [
+            'vote_item_id' => [1,],
+        ], [
             'Authorization' => sprintf('Bearer %s', $this->token),
         ]);
 
@@ -51,20 +53,20 @@ class VoteTest extends TestCase
         $faker = Factory::create();
         $vote = $this->json('POST', '/post/create', [
             'bangumiId' => 1,
-            'title' => $faker->text(20),
-            'desc' => $faker->text(20),
-            'content' => $faker->text(20),
+            'title' => $faker->text(30),
+            'desc' => $faker->text(30),
+            'content' => $faker->text(30),
             'is_creator' => 1,
             'images' => [],
             'types' => Post::VOTE,
             'vote' => [
-                'title' => $faker->text(20),
+                'title' => $faker->text(33),
                 'items' => [
                     [
-                        'title' => $faker->text(20),
+                        'title' => $faker->text(33),
                     ],
                     [
-                        'title' => $faker->text(20),
+                        'title' => $faker->text(30),
                     ],
                 ],
             ]
@@ -77,7 +79,14 @@ class VoteTest extends TestCase
         $repository = new VoteRepository;
         $vote = $repository->getVoteByPostId($postId);
 
-        $response = $this->json('POST', '/vote/' . $vote['id'] . '/user?vote_item_id=' . $vote['items'][0]['id'], [], [
+        $voteItemIds = [];
+        foreach ($vote['items'] as $item) {
+            $voteItemIds[] = $item['id'];
+        }
+
+        $response = $this->json('POST', '/vote/' . $vote['id'] . '/user', [
+            'vote_item_id' => array_slice($voteItemIds, 0, 1),
+        ], [
             'Authorization' => sprintf('Bearer %s', $this->token),
         ]);
 
@@ -86,10 +95,197 @@ class VoteTest extends TestCase
 
     public function testVoteNotComfortToItem()
     {
-        $response = $this->json('POST', '/vote/2/user?vote_item_id=1', [], [
+        $response = $this->json('POST', '/vote/2/user', [
+            'vote_item_id' => [1],
+        ], [
             'Authorization' => sprintf('Bearer %s', $this->token),
         ]);
 
         $response->assertStatus(Response::HTTP_NOT_FOUND);
+    }
+
+    public function testVoteExpired()
+    {
+        $faker = Factory::create();
+        $vote = $this->json('POST', '/post/create', [
+            'bangumiId' => 1,
+            'title' => $faker->text(30),
+            'desc' => $faker->text(30),
+            'content' => $faker->text(30),
+            'is_creator' => 1,
+            'images' => [],
+            'types' => Post::VOTE,
+            'vote' => [
+                'title' => $faker->text(30),
+                'items' => [
+                    [
+                        'title' => $faker->text(30),
+                    ],
+                    [
+                        'title' => $faker->text(30),
+                    ],
+                ],
+                'expired_at' => time() - 10,
+            ]
+        ], [
+            'Authorization' => sprintf('Bearer %s', $this->token),
+            'Content-Type' => 'application/json',
+        ]);
+
+        $postId = $vote->getOriginalContent()['data']['data'];
+        $repository = new VoteRepository;
+        $vote = $repository->getVoteByPostId($postId);
+
+        $voteItemIds = [];
+        foreach ($vote['items'] as $item) {
+            $voteItemIds[] = $item['id'];
+        }
+
+        $response = $this->json('POST', '/vote/' . $vote['id'] . '/user', [
+            'vote_item_id' => array_slice($voteItemIds, 0, 1),
+        ], [
+            'Authorization' => sprintf('Bearer %s', $this->token),
+        ]);
+
+        $response->assertStatus(Response::HTTP_GONE);
+    }
+
+    public function testVoteNotExpired()
+    {
+        $faker = Factory::create();
+        $vote = $this->json('POST', '/post/create', [
+            'bangumiId' => 1,
+            'title' => $faker->text(30),
+            'desc' => $faker->text(33),
+            'content' => $faker->text(30),
+            'is_creator' => 1,
+            'images' => [],
+            'types' => Post::VOTE,
+            'vote' => [
+                'title' => $faker->text(30),
+                'items' => [
+                    [
+                        'title' => $faker->text(33),
+                    ],
+                    [
+                        'title' => $faker->text(30),
+                    ],
+                ],
+                'expired_at' => time() + 1000,
+            ]
+        ], [
+            'Authorization' => sprintf('Bearer %s', $this->token),
+            'Content-Type' => 'application/json',
+        ]);
+
+        $postId = $vote->getOriginalContent()['data']['data'];
+        $repository = new VoteRepository;
+        $vote = $repository->getVoteByPostId($postId);
+
+        $voteItemIds = [];
+        foreach ($vote['items'] as $item) {
+            $voteItemIds[] = $item['id'];
+        }
+
+        $response = $this->json('POST', '/vote/' . $vote['id'] . '/user', [
+            'vote_item_id' => array_slice($voteItemIds, 0, 1),
+        ], [
+            'Authorization' => sprintf('Bearer %s', $this->token),
+        ]);
+
+        $response->assertStatus(Response::HTTP_CREATED);
+    }
+
+    public function testVoteMultiNotAllowed()
+    {
+        $faker = Factory::create();
+        $vote = $this->json('POST', '/post/create', [
+            'bangumiId' => 1,
+            'title' => $faker->text(30),
+            'desc' => $faker->text(33),
+            'content' => $faker->text(30),
+            'is_creator' => 1,
+            'images' => [],
+            'types' => Post::VOTE,
+            'vote' => [
+                'title' => $faker->text(30),
+                'items' => [
+                    [
+                        'title' => $faker->text(33),
+                    ],
+                    [
+                        'title' => $faker->text(30),
+                    ],
+                ],
+                'expired_at' => time() + 1000,
+            ]
+        ], [
+            'Authorization' => sprintf('Bearer %s', $this->token),
+            'Content-Type' => 'application/json',
+        ]);
+
+        $postId = $vote->getOriginalContent()['data']['data'];
+        $repository = new VoteRepository;
+        $vote = $repository->getVoteByPostId($postId);
+
+        $voteItemIds = [];
+        foreach ($vote['items'] as $item) {
+            $voteItemIds[] = $item['id'];
+        }
+
+        $response = $this->json('POST', '/vote/' . $vote['id'] . '/user', [
+            'vote_item_id' => array_slice($voteItemIds, 0, 2),
+        ], [
+            'Authorization' => sprintf('Bearer %s', $this->token),
+        ]);
+
+        $response->assertStatus(Response::HTTP_BAD_REQUEST);
+    }
+
+    public function testVoteMultiAllowed()
+    {
+        $faker = Factory::create();
+        $vote = $this->json('POST', '/post/create', [
+            'bangumiId' => 1,
+            'title' => $faker->text(30),
+            'desc' => $faker->text(33),
+            'content' => $faker->text(30),
+            'is_creator' => 1,
+            'images' => [],
+            'types' => Post::VOTE,
+            'vote' => [
+                'title' => $faker->text(30),
+                'items' => [
+                    [
+                        'title' => $faker->text(33),
+                    ],
+                    [
+                        'title' => $faker->text(30),
+                    ],
+                ],
+                'expired_at' => time() + 1000,
+                'multiple' => 1,
+            ]
+        ], [
+            'Authorization' => sprintf('Bearer %s', $this->token),
+            'Content-Type' => 'application/json',
+        ]);
+
+        $postId = $vote->getOriginalContent()['data']['data'];
+        $repository = new VoteRepository;
+        $vote = $repository->getVoteByPostId($postId);
+
+        $voteItemIds = [];
+        foreach ($vote['items'] as $item) {
+            $voteItemIds[] = $item['id'];
+        }
+
+        $response = $this->json('POST', '/vote/' . $vote['id'] . '/user', [
+            'vote_item_id' => array_slice($voteItemIds, 0, 2),
+        ], [
+            'Authorization' => sprintf('Bearer %s', $this->token),
+        ]);
+
+        $response->assertStatus(Response::HTTP_CREATED);
     }
 }

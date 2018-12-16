@@ -11,6 +11,7 @@ namespace App\Api\V1\Transformers;
 
 
 use App\Models\Post;
+use Carbon\Carbon;
 
 class PostTransformer extends Transformer
 {
@@ -44,6 +45,12 @@ class PostTransformer extends Transformer
 
             if (intval($data['types']) & Post::VOTE) {
                 $data['vote'] = $post['vote'];
+                if (!empty($data['vote']['expired_at'])) {
+                    $expiredAt = Carbon::createFromFormat('Y-m-d H:i:s', $data['vote']['expired_at']);
+                    $data['vote']['expired'] = $expiredAt->lessThan(Carbon::now());
+                } else {
+                    $data['vote']['expired'] = false;
+                }
             }
 
             return $data;

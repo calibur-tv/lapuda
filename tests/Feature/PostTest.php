@@ -94,7 +94,21 @@ class PostTest extends TestCase
 
     public function testShowPostWithVote()
     {
-        $response = $this->get('/post/242/show');
+        $response = $this->get('/post/272/show');
+
+        $response->assertJsonStructure([
+            'data' => [
+                'post' => [
+                    'vote' => [
+                        'title',
+                        'description',
+                        'multiple',
+                        'expired',
+                        'items',
+                    ],
+                ],
+            ],
+        ]);
 
         $response->assertStatus(Response::HTTP_OK);
     }

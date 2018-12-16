@@ -29,6 +29,6 @@ class CreateVoteItemUserTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('vote_item_user');
+        Schema::dropIfExists('vote_item_users');
     }
 }

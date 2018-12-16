@@ -200,10 +200,16 @@ class PostController extends Controller
     {
         $types = intval($request->get('types'));
         if ($types & Post::VOTE) {
-            $this->validateVote($request);
             $vote = $request->get('vote');
             $service = new VoteService();
-            $service->create($postId, $vote['title'], $vote['description'] ?? '', $vote['items']);
+            $service->create(
+                $postId,
+                $vote['title'],
+                $vote['description'] ?? '',
+                $vote['items'],
+                $vote['expired_at'] ?? null,
+                $vote['multiple'] ?? 0
+            );
         }
     }
 
