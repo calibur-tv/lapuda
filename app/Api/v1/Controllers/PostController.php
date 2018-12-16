@@ -96,7 +96,7 @@ class PostController extends Controller
         $title = $request->get('title');
         $content = $request->get('content');
 
-        if (empty($images) && strlen($title . $content) < 30)
+        if (empty($images) && mb_strlen($title . $content) < 30)
         {
             return response([
                 'code' => 42901,
