@@ -37,14 +37,15 @@ class Activity
     // 第二天夜里写表里
     public function migrate($id)
     {
-        $key = date('Y-m-d', strtotime('-1 day'));
-        $value = Redis::GET($this->todayActivityKey($id, $key));
+        $timeSeed = date('Y-m-d', strtotime('-1 day'));
+        $cacheKey = $this->todayActivityKey($id, $timeSeed);
+        $value = Redis::GET($cacheKey);
         if ($value === null)
         {
             return;
         }
 
-        Redis::DEL($key);
+        Redis::DEL($cacheKey);
 
         $value = intval($value);
         if ($value < 0)
