@@ -307,6 +307,7 @@ class UserRepository extends Repository
                         'id' => 4929,
                         'title' => '系统消息'
                     ];
+                    $template = str_replace('${title}', '<a class="title" href="'. $link .'">点击查看详情</a>', $template);
                 }
 
                 $notification['message'] = $template;
