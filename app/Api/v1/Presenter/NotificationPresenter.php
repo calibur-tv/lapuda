@@ -428,10 +428,10 @@ class NotificationPresenter
                 return '${user}收藏了你的视频${title}';
                 break;
             case 42:
-                return '你昨天的战斗力超过了100，赠送一个团子~{title}';
+                return '你昨天的战斗力超过了100，赠送一个团子~${title}';
                 break;
             case 43:
-                return '活跃版主每天赠送一个团子，请查收~{title}';
+                return '活跃版主每天赠送一个团子，请查收~${title}';
                 break;
             default:
                 return '';
