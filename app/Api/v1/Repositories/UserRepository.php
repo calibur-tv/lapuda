@@ -246,10 +246,11 @@ class UserRepository extends Repository
             {
                 $type = (int)$item['type'];
                 $link = $notificationPresenter->computeNotificationLink($type, $item['model_id'], $item['comment_id'], $item['reply_id']);
-                if (!$link)
+                $isSystemNotice = $type === 42 || $type === 43;
+                if ($isSystemNotice)
                 {
-                    // APP 消息通知崩溃了
-                    return null;
+                    // APP 消息通知崩溃了，暂时用站娘账号
+                    $item['from_user_id'] = 2;
                 }
                 $template = $notificationPresenter->computeNotificationMessage($type);
 
@@ -297,6 +298,13 @@ class UserRepository extends Repository
                     $notification['model'] = [
                         'id' => $model['id'],
                         'title' => $title
+                    ];
+                }
+                if ($isSystemNotice)
+                {
+                    $notification['model'] = [
+                        'id' => 4929,
+                        'title' => '系统消息'
                     ];
                 }
 
