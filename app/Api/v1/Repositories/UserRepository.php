@@ -300,6 +300,7 @@ class UserRepository extends Repository
                         'title' => $title
                     ];
                 }
+
                 if ($isSystemNotice)
                 {
                     $notification['model'] = [
