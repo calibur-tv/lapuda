@@ -86,7 +86,7 @@ $api->version(['v1', 'latest'], function ($api)
     {
         $api->group(['prefix' => '/{id}'], function ($api)
         {
-            $api->get('/show', 'App\Api\V1\Controllers\ScoreController@show');
+            $api->get('/show', 'App\Api\V1\Controllers\ScoreController@show')->middleware(['showDelete']);
 
             $api->get('/edit', 'App\Api\V1\Controllers\ScoreController@edit')->middleware(['jwt.auth']);
         });
@@ -112,7 +112,7 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->group(['prefix' => '/{id}'], function ($api)
             {
-                $api->get('/show', 'App\Api\V1\Controllers\QuestionController@show');
+                $api->get('/show', 'App\Api\V1\Controllers\QuestionController@show')->middleware(['showDelete']);
             });
         });
 
@@ -124,7 +124,7 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->group(['prefix' => '/{id}'], function ($api)
             {
-                $api->get('/show', 'App\Api\V1\Controllers\AnswerController@show');
+                $api->get('/show', 'App\Api\V1\Controllers\AnswerController@show')->middleware(['showDelete']);
 
                 $api->get('/resource', 'App\Api\V1\Controllers\AnswerController@editData')->middleware(['jwt.auth']);
 
@@ -171,7 +171,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/{zone}'], function ($api)
         {
-            $api->get('/show', 'App\Api\V1\Controllers\UserController@show');
+            $api->get('/show', 'App\Api\V1\Controllers\UserController@show')->middleware(['showDelete']);
 
             $api->group(['prefix' => '/followed'], function ($api)
             {
@@ -193,7 +193,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->group(['prefix' => '/{id}'], function ($api)
         {
-            $api->get('/show', 'App\Api\V1\Controllers\PostController@show');
+            $api->get('/show', 'App\Api\V1\Controllers\PostController@show')->middleware(['showDelete']);
 
             $api->post('/deletePost', 'App\Api\V1\Controllers\PostController@deletePost')->middleware(['jwt.auth']);
         });
@@ -247,7 +247,7 @@ $api->version(['v1', 'latest'], function ($api)
     {
         $api->group(['prefix' => '/{id}'], function ($api)
         {
-            $api->get('/show', 'App\Api\V1\Controllers\ImageController@show');
+            $api->get('/show', 'App\Api\V1\Controllers\ImageController@show')->middleware(['showDelete']);
         });
 
         $api->get('/banner', 'App\Api\V1\Controllers\ImageController@banner');

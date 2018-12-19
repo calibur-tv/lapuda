@@ -103,7 +103,7 @@ class UserController extends Controller
      *      @Response(404, body={"code": 40401, "message": "该用户不存在"})
      * })
      */
-    public function show($zone)
+    public function show(Request $request, $zone)
     {
         $userRepository = new UserRepository();
         $userId = $userRepository->getUserIdByZone($zone);
@@ -119,7 +119,7 @@ class UserController extends Controller
             return $this->resErrNotFound('该用户不存在');
         }
 
-        if ($user['deleted_at'])
+        if ($user['deleted_at'] && !$request->get('showDelete'))
         {
             if ($user['state'])
             {

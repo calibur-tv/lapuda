@@ -44,7 +44,7 @@ class ScoreController extends Controller
      *      @Response(200, body="详情")
      * })
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $scoreRepository = new ScoreRepository();
         $score = $scoreRepository->item($id, true);
@@ -53,7 +53,7 @@ class ScoreController extends Controller
             return $this->resErrNotFound();
         }
 
-        if ($score['deleted_at'])
+        if ($score['deleted_at'] && !$request->get('showDelete'))
         {
             if ($score['state'])
             {
