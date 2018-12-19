@@ -192,7 +192,7 @@ class PostController extends Controller
             return $this->resErrNotFound('不存在的帖子');
         }
 
-        if ($post['deleted_at'])
+        if ($post['deleted_at'] && !$request->get('showDelete'))
         {
             if ($post['state'])
             {

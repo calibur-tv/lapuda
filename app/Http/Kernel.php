@@ -46,6 +46,7 @@ class Kernel extends HttpKernel
         'jwt.auth' => \App\Http\Middleware\Auth::class,
         'jwt.admin' => \App\Http\Middleware\Admin::class,
         'jwt.refresh' => \App\Http\Middleware\Refresh::class,
-        'geetest' => \App\Http\Middleware\Geetest::class
+        'geetest' => \App\Http\Middleware\Geetest::class,
+        'showDelete' => \App\Http\Middleware\ShowDelete::class,
     ];
 }
