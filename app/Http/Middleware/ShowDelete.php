@@ -18,7 +18,7 @@ class ShowDelete
         $hash = $request->get('hash');
         $time = $request->get('time');
 
-        if ($hash == md5('force-eye-' . $time)) {
+        if ($hash == md5('force-eye-' . $time) && is_numeric($time) && 60 > abs(intval($time) - time())) {
             $request->offsetSet('showDelete', 1);
         }
         return $next($request);

@@ -59,4 +59,49 @@ class ShowDeleteMiddlewareTest extends TestCase
             $this->assertEquals($request->get('showDelete'), 0);
         });
     }
+
+    public function testTimeIsNotAValidNumber()
+    {
+        $time = 'e';
+        $request = new Request();
+        $request->merge([
+            'time' => $time,
+            'hash' => md5('force-eye-' . $time),
+        ]);
+
+        $middleware = new ShowDelete();
+        $middleware->handle($request, function ($request) {
+            $this->assertEquals($request->get('showDelete'), 0);
+        });
+    }
+
+    public function testTimeIsExpired()
+    {
+        $time = time() - 60;
+        $request = new Request();
+        $request->merge([
+            'time' => $time,
+            'hash' => md5('force-eye-' . $time),
+        ]);
+
+        $middleware = new ShowDelete();
+        $middleware->handle($request, function ($request) {
+            $this->assertEquals($request->get('showDelete'), 0);
+        });
+    }
+
+    public function testTimeIsAdvanced()
+    {
+        $time = time() + 60;
+        $request = new Request();
+        $request->merge([
+            'time' => $time,
+            'hash' => md5('force-eye-' . $time),
+        ]);
+
+        $middleware = new ShowDelete();
+        $middleware->handle($request, function ($request) {
+            $this->assertEquals($request->get('showDelete'), 0);
+        });
+    }
 }
