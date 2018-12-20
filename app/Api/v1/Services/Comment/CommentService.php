@@ -200,6 +200,7 @@ class CommentService extends Repository
         $this->changeSubCommentCount($parentId, $id, false);
 
         $exp = 0;
+        // 不是给自己发的评论，就会加经验，那删的时候就扣经验
         if ($comment['to_user_id'] != 0)
         {
             $userLevel = new UserLevel();
@@ -232,6 +233,7 @@ class CommentService extends Repository
         $this->changeMainCommentCount($modalId, $id, $userId, $isMaster, false);
 
         $exp = 0;
+        // 如果不是楼主发的评论，就扣经验（因为楼主发的评论自己不加经验）
         if (!$isMaster)
         {
             $userLevel = new UserLevel();
