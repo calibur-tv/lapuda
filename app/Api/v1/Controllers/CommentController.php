@@ -651,10 +651,12 @@ class CommentController extends Controller
             $comment['from_user_id'],
             $isMaster
         );
+        // 版主删除内容，不展示扣除经验
+        $showExpChange = $comment['from_user_id'] === $userId;
 
         return $this->resOK([
-            'exp' => $exp,
-            'message' => $exp ? "删除成功，经验{$exp}" : "删除成功"
+            'exp' => $showExpChange ? $exp : 0,
+            'message' => ($exp && $showExpChange) ? "删除成功，经验{$exp}" : "删除成功"
         ]);
     }
 
@@ -869,10 +871,12 @@ class CommentController extends Controller
         }
 
         $exp = $commentService->deleteSubComment($id, $comment['parent_id']);
+        // 发表主评论的用户删除内容，不展示扣除经验
+        $showExpChange = $comment['from_user_id'] === $userId;
 
         return $this->resOK([
-            'exp' => $exp,
-            'message' => $exp ? "删除成功，经验{$exp}" : '删除成功'
+            'exp' => $showExpChange ? $exp : 0,
+            'message' => ($exp && $showExpChange) ? "删除成功，经验{$exp}" : '删除成功'
         ]);
     }
 
