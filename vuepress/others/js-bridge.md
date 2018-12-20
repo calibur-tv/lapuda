@@ -67,20 +67,3 @@
     ```
     **此处的 callbackId 就是 `handleCallbackFromJS` 时传的 callbackId**
     
-### 基本实现：
-1. Android 和 iOS 要统一路由规则，然后提供一个方法，让 JS 可以打开任意的 native 页面，支持传递参数，如：
-    ```json
-    {
-     "page": "note",
-     "params": {
-       "id": 1
-     }
-    }
-    ```
-    1. 支持`note-1`-->`note-2`，`note-1` --> `image-2`
-    2. 避免`note-1`-->`note-1` 的无限循环
-    3. 避免`note-1`-->`note-2`-->`note-1`... 的 route stack 出现循环 
-
-2. Android 和 iOS 都要实现让 JS 可以打开任意其它的 H5 模板页面，如果参数传递可以做到，需要支持参数传递，如：
-
-    `/post-v1.mustache?foo=bar`
