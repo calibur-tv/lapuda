@@ -703,7 +703,7 @@ class ImageController extends Controller
      *      @Response(423, body={"code": 42301, "message": "内容正在审核中"})
      * })
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $imageRepository = new ImageRepository();
         $image = $imageRepository->item($id, true);
@@ -712,7 +712,7 @@ class ImageController extends Controller
             return $this->resErrNotFound();
         }
 
-        if ($image['deleted_at'])
+        if ($image['deleted_at'] && !$request->get('showDelete'))
         {
             if ($image['state'])
             {

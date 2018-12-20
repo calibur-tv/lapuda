@@ -37,7 +37,7 @@ class AnswerController extends Controller
      *      @Response(200, body="详情")
      * })
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $answerRepository = new AnswerRepository();
         $answer = $answerRepository->item($id, true);
@@ -47,7 +47,7 @@ class AnswerController extends Controller
         }
 
         $isDeleted = false;
-        if ($answer['deleted_at'])
+        if ($answer['deleted_at'] && !$request->get('showDelete'))
         {
             if ($answer['state'])
             {

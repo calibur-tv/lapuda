@@ -34,7 +34,7 @@ class QuestionController extends Controller
      *      @Response(200, body="详情")
      * })
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $questionRepository = new QuestionRepository();
         $question = $questionRepository->item($id, true);
@@ -43,7 +43,7 @@ class QuestionController extends Controller
             return $this->resErrNotFound();
         }
 
-        if ($question['deleted_at'])
+        if ($question['deleted_at'] && !$request->get('showDelete'))
         {
             if ($question['state'])
             {
