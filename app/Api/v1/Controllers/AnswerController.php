@@ -47,7 +47,7 @@ class AnswerController extends Controller
         }
 
         $isDeleted = false;
-        if ($answer['deleted_at'] && $request->get('showDelete'))
+        if ($answer['deleted_at'] && !$request->get('showDelete'))
         {
             if ($answer['state'])
             {
