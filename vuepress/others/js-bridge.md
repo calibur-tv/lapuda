@@ -67,20 +67,120 @@
     ```
     **此处的 callbackId 就是 `handleCallbackFromJS` 时传的 callbackId**
     
-### 基本实现：
-1. Android 和 iOS 要统一路由规则，然后提供一个方法，让 JS 可以打开任意的 native 页面，支持传递参数，如：
-    ```json
-    {
-     "page": "note",
-     "params": {
-       "id": 1
-     }
-    }
-    ```
-    1. 支持`note-1`-->`note-2`，`note-1` --> `image-2`
-    2. 避免`note-1`-->`note-1` 的无限循环
-    3. 避免`note-1`-->`note-2`-->`note-1`... 的 route stack 出现循环 
+    
+### 接口：
+#### 1. `getDeviceInfo`
+> 介绍，略
 
-2. Android 和 iOS 都要实现让 JS 可以打开任意其它的 H5 模板页面，如果参数传递可以做到，需要支持参数传递，如：
+#### 2. `getUserInfo`
+> 返回当前登录用户的所有信息，信息来自 `door/current_user` 这个接口
 
-    `/post-v1.mustache?foo=bar`
+#### 3. `setUserInfo`
+> 更新当前登录用户的信息，key与`getUserInfo`获取到的完全相同，只是部分字段被更新了
+
+#### 4. `toNativePage`
+> 跳转到一个 native 的页面，如果页面不存在，则不相应。参数：
+```json
+{
+  "uri": "<String> | native 的路由"
+}
+```
+
+#### 5. `previewImages`
+> 图片预览，参数：
+```json
+{
+  "images": "<Array> | 图片对象列表",
+  "index": "<Number> | 当前点击图片的索引"
+}
+```
+image 对象的格式如下
+```json
+{
+  "url": "<String> | 图片链接",
+  "width": "<Number> | 图片宽度",
+  "height": "<Number> | 图片高度",
+  "size": "<Number> | 图片文件大小",
+  "type": "<String> | 图片mime类型"
+}
+```
+
+#### 6. `createMainComment`
+> 打开评论框，发表一个主评论，参数：
+```json
+{
+  "model_type": "<String> | 发表的类型，如：post、image...",
+  "model_id": "<Number> | 帖子的id 或相册的 id..."
+}
+```
+> 目前支持的 model_type 有：
+1. post
+2. image
+3. score
+4. video
+5. question
+6. answer
+7. role
+> APP 的评论框被唤醒后，等待用户输入文字（上传图片）之后去调用 API 发评论，评论发表
+> 完成后，调用 JS 的 func 来通知页面更新评论列表：
+```json
+{
+  "func": "createMainComment",
+  "data": "API返回的数据直接传过来"
+}
+```
+
+#### 7. `createSubComment`
+> 打开评论框，发表一个子评论，参数：
+```json
+{
+    "model_type": "<String> | 发表的类型",
+    "parent_comment_id": "<Number> | 主评论的id",
+    "target_user_id": "<Number> | 回复的用户id",
+    "target_user_name": "<String> | 回复的用户昵称"
+}
+```
+> APP 的评论框被唤醒后，等待用户输入文字之后去调用 API 发评论，评论发表
+> 完成后，调用 JS 的 func 来通知页面更新评论列表：
+```json
+{
+  "func": "createSubComment",
+  "params": "API返回的数据直接传过来"
+}
+```
+> 注意点：如果`target_user_name`为空字符串，则不显示"回复：xxx"，显示"回复："
+> `target_user_name`为空字符串时，`target_user_id`不一定为**0**
+
+#### 8. `toggleClick`
+> 当用户在H5进行投食、点赞、收藏等操作时，通知客户端，参数：
+```json
+{
+  "model": "<String> | 操作的模型",
+  "type": "<String> | 操作的类型",
+  "id": "<Number> | 操作的id",
+  "result": "<Object> | 操作的结果"
+}
+```
+> `model`可能是：post、image、video、role...
+> `type`可能是：reward、like、mark、follow...
+> `result` 是一个对象，不同参数返回的值是不一样的
+
+> 当用户在APP进行相同操作的时候，APP也要通知H5：
+```json
+{
+  "func": "app-invoker-toggleClick",
+  "params": "<Object> | 与我传给你的类似的数据结构"
+}
+```
+
+#### 9. `showConfirm`
+> 弹出一个确认框，参数：
+```json
+{
+    "title": "<String> | 弹窗的标题",
+    "message": "<String> | 弹窗的段落文本",
+    "cancelButtonText": "<String> | 取消键的文字",
+    "submitButtonText": "<String> | 确认键的文字"
+}
+```
+> 返回一个 boolean 值

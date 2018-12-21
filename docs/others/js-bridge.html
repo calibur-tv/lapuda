@@ -7,7 +7,7 @@
     <meta name="description" content="Just playing around">
     <link rel="icon" href="https://static.calibur.tv/favicon.ico">
     
-    <link rel="preload" href="/Laputa/assets/css/0.styles.c4c0b6bf.css" as="style"><link rel="preload" href="/Laputa/assets/js/app.d74f5a99.js" as="script"><link rel="preload" href="/Laputa/assets/js/17.ca5bd3a0.js" as="script"><link rel="prefetch" href="/Laputa/assets/js/8.197dd545.js"><link rel="prefetch" href="/Laputa/assets/js/2.cda51ec0.js"><link rel="prefetch" href="/Laputa/assets/js/3.42d679cf.js"><link rel="prefetch" href="/Laputa/assets/js/4.2d92fdbc.js"><link rel="prefetch" href="/Laputa/assets/js/5.e4e2e013.js"><link rel="prefetch" href="/Laputa/assets/js/6.c625498a.js"><link rel="prefetch" href="/Laputa/assets/js/7.a2f49ab6.js"><link rel="prefetch" href="/Laputa/assets/js/9.1804e077.js"><link rel="prefetch" href="/Laputa/assets/js/10.2dc0c87f.js"><link rel="prefetch" href="/Laputa/assets/js/11.5a871a6d.js"><link rel="prefetch" href="/Laputa/assets/js/12.8d5f4191.js"><link rel="prefetch" href="/Laputa/assets/js/13.95dae447.js"><link rel="prefetch" href="/Laputa/assets/js/14.49e87ad7.js"><link rel="prefetch" href="/Laputa/assets/js/15.04151b74.js"><link rel="prefetch" href="/Laputa/assets/js/16.26966f95.js"><link rel="prefetch" href="/Laputa/assets/js/18.0c2b3955.js">
+    <link rel="preload" href="/Laputa/assets/css/0.styles.c4c0b6bf.css" as="style"><link rel="preload" href="/Laputa/assets/js/app.06792b3b.js" as="script"><link rel="preload" href="/Laputa/assets/js/17.2e6d6bc5.js" as="script"><link rel="prefetch" href="/Laputa/assets/js/8.197dd545.js"><link rel="prefetch" href="/Laputa/assets/js/2.cda51ec0.js"><link rel="prefetch" href="/Laputa/assets/js/3.42d679cf.js"><link rel="prefetch" href="/Laputa/assets/js/4.2d92fdbc.js"><link rel="prefetch" href="/Laputa/assets/js/5.e4e2e013.js"><link rel="prefetch" href="/Laputa/assets/js/6.c625498a.js"><link rel="prefetch" href="/Laputa/assets/js/7.a2f49ab6.js"><link rel="prefetch" href="/Laputa/assets/js/9.1804e077.js"><link rel="prefetch" href="/Laputa/assets/js/10.2dc0c87f.js"><link rel="prefetch" href="/Laputa/assets/js/11.5a871a6d.js"><link rel="prefetch" href="/Laputa/assets/js/12.8d5f4191.js"><link rel="prefetch" href="/Laputa/assets/js/13.95dae447.js"><link rel="prefetch" href="/Laputa/assets/js/14.49e87ad7.js"><link rel="prefetch" href="/Laputa/assets/js/15.04151b74.js"><link rel="prefetch" href="/Laputa/assets/js/16.26966f95.js"><link rel="prefetch" href="/Laputa/assets/js/18.0c2b3955.js">
     <link rel="stylesheet" href="/Laputa/assets/css/0.styles.c4c0b6bf.css">
   </head>
   <body>
@@ -32,13 +32,60 @@
    <span class="token property">&quot;params&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;Object&gt; | JS执行的返回值&quot;</span><span class="token punctuation">,</span>
    <span class="token property">&quot;callbackId&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;String&gt; | 回调函数id&quot;</span>
 <span class="token punctuation">}</span>
-</code></pre></div><p><strong>此处的 callbackId 就是 <code>handleCallbackFromJS</code> 时传的 callbackId</strong></p></li></ol> <h3 id="基本实现："><a href="#基本实现：" aria-hidden="true" class="header-anchor">#</a> 基本实现：</h3> <ol><li><p>Android 和 iOS 要统一路由规则，然后提供一个方法，让 JS 可以打开任意的 native 页面，支持传递参数，如：</p> <div class="language-json extra-class"><pre class="language-json"><code><span class="token punctuation">{</span>
- <span class="token property">&quot;page&quot;</span><span class="token operator">:</span> <span class="token string">&quot;note&quot;</span><span class="token punctuation">,</span>
- <span class="token property">&quot;params&quot;</span><span class="token operator">:</span> <span class="token punctuation">{</span>
-   <span class="token property">&quot;id&quot;</span><span class="token operator">:</span> <span class="token number">1</span>
- <span class="token punctuation">}</span>
+</code></pre></div><p><strong>此处的 callbackId 就是 <code>handleCallbackFromJS</code> 时传的 callbackId</strong></p></li></ol> <h3 id="接口："><a href="#接口：" aria-hidden="true" class="header-anchor">#</a> 接口：</h3> <h4 id="_1-getdeviceinfo"><a href="#_1-getdeviceinfo" aria-hidden="true" class="header-anchor">#</a> 1. <code>getDeviceInfo</code></h4> <blockquote><p>介绍，略</p></blockquote> <h4 id="_2-getuserinfo"><a href="#_2-getuserinfo" aria-hidden="true" class="header-anchor">#</a> 2. <code>getUserInfo</code></h4> <blockquote><p>返回当前登录用户的所有信息，信息来自 <code>door/current_user</code> 这个接口</p></blockquote> <h4 id="_3-setuserinfo"><a href="#_3-setuserinfo" aria-hidden="true" class="header-anchor">#</a> 3. <code>setUserInfo</code></h4> <blockquote><p>更新当前登录用户的信息，key与<code>getUserInfo</code>获取到的完全相同，只是部分字段被更新了</p></blockquote> <h4 id="_4-tonativepage"><a href="#_4-tonativepage" aria-hidden="true" class="header-anchor">#</a> 4. <code>toNativePage</code></h4> <blockquote><p>跳转到一个 native 的页面，如果页面不存在，则不相应。参数：</p></blockquote> <div class="language-json extra-class"><pre class="language-json"><code><span class="token punctuation">{</span>
+  <span class="token property">&quot;uri&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;String&gt; | native 的路由&quot;</span>
 <span class="token punctuation">}</span>
-</code></pre></div><ol><li>支持<code>note-1</code>--&gt;<code>note-2</code>，<code>note-1</code> --&gt; <code>image-2</code></li> <li>避免<code>note-1</code>--&gt;<code>note-1</code> 的无限循环</li> <li>避免<code>note-1</code>--&gt;<code>note-2</code>--&gt;<code>note-1</code>... 的 route stack 出现循环</li></ol></li> <li><p>Android 和 iOS 都要实现让 JS 可以打开任意其它的 H5 模板页面，如果参数传递可以做到，需要支持参数传递，如：</p> <p><code>/post-v1.mustache?foo=bar</code></p></li></ol></div> <div class="page-edit"><!----> <!----></div> <!----> </div> <!----></div></div>
-    <script src="/Laputa/assets/js/17.ca5bd3a0.js" defer></script><script src="/Laputa/assets/js/app.d74f5a99.js" defer></script>
+</code></pre></div><h4 id="_5-previewimages"><a href="#_5-previewimages" aria-hidden="true" class="header-anchor">#</a> 5. <code>previewImages</code></h4> <blockquote><p>图片预览，参数：</p></blockquote> <div class="language-json extra-class"><pre class="language-json"><code><span class="token punctuation">{</span>
+  <span class="token property">&quot;images&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;Array&gt; | 图片对象列表&quot;</span><span class="token punctuation">,</span>
+  <span class="token property">&quot;index&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;Number&gt; | 当前点击图片的索引&quot;</span>
+<span class="token punctuation">}</span>
+</code></pre></div><p>image 对象的格式如下</p> <div class="language-json extra-class"><pre class="language-json"><code><span class="token punctuation">{</span>
+  <span class="token property">&quot;url&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;String&gt; | 图片链接&quot;</span><span class="token punctuation">,</span>
+  <span class="token property">&quot;width&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;Number&gt; | 图片宽度&quot;</span><span class="token punctuation">,</span>
+  <span class="token property">&quot;height&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;Number&gt; | 图片高度&quot;</span><span class="token punctuation">,</span>
+  <span class="token property">&quot;size&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;Number&gt; | 图片文件大小&quot;</span><span class="token punctuation">,</span>
+  <span class="token property">&quot;type&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;String&gt; | 图片mime类型&quot;</span>
+<span class="token punctuation">}</span>
+</code></pre></div><h4 id="_6-createmaincomment"><a href="#_6-createmaincomment" aria-hidden="true" class="header-anchor">#</a> 6. <code>createMainComment</code></h4> <blockquote><p>打开评论框，发表一个主评论，参数：</p></blockquote> <div class="language-json extra-class"><pre class="language-json"><code><span class="token punctuation">{</span>
+  <span class="token property">&quot;model_type&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;String&gt; | 发表的类型，如：post、image...&quot;</span><span class="token punctuation">,</span>
+  <span class="token property">&quot;model_id&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;Number&gt; | 帖子的id 或相册的 id...&quot;</span>
+<span class="token punctuation">}</span>
+</code></pre></div><blockquote><p>目前支持的 model_type 有：</p></blockquote> <ol><li>post</li> <li>image</li> <li>score</li> <li>video</li> <li>question</li> <li>answer</li> <li>role</li></ol> <blockquote><p>APP 的评论框被唤醒后，等待用户输入文字（上传图片）之后去调用 API 发评论，评论发表
+完成后，调用 JS 的 func 来通知页面更新评论列表：</p></blockquote> <div class="language-json extra-class"><pre class="language-json"><code><span class="token punctuation">{</span>
+  <span class="token property">&quot;func&quot;</span><span class="token operator">:</span> <span class="token string">&quot;createMainComment&quot;</span><span class="token punctuation">,</span>
+  <span class="token property">&quot;data&quot;</span><span class="token operator">:</span> <span class="token string">&quot;API返回的数据直接传过来&quot;</span>
+<span class="token punctuation">}</span>
+</code></pre></div><h4 id="_7-createsubcomment"><a href="#_7-createsubcomment" aria-hidden="true" class="header-anchor">#</a> 7. <code>createSubComment</code></h4> <blockquote><p>打开评论框，发表一个子评论，参数：</p></blockquote> <div class="language-json extra-class"><pre class="language-json"><code><span class="token punctuation">{</span>
+    <span class="token property">&quot;model_type&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;String&gt; | 发表的类型&quot;</span><span class="token punctuation">,</span>
+    <span class="token property">&quot;parent_comment_id&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;Number&gt; | 主评论的id&quot;</span><span class="token punctuation">,</span>
+    <span class="token property">&quot;target_user_id&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;Number&gt; | 回复的用户id&quot;</span><span class="token punctuation">,</span>
+    <span class="token property">&quot;target_user_name&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;String&gt; | 回复的用户昵称&quot;</span>
+<span class="token punctuation">}</span>
+</code></pre></div><blockquote><p>APP 的评论框被唤醒后，等待用户输入文字之后去调用 API 发评论，评论发表
+完成后，调用 JS 的 func 来通知页面更新评论列表：</p></blockquote> <div class="language-json extra-class"><pre class="language-json"><code><span class="token punctuation">{</span>
+  <span class="token property">&quot;func&quot;</span><span class="token operator">:</span> <span class="token string">&quot;createSubComment&quot;</span><span class="token punctuation">,</span>
+  <span class="token property">&quot;params&quot;</span><span class="token operator">:</span> <span class="token string">&quot;API返回的数据直接传过来&quot;</span>
+<span class="token punctuation">}</span>
+</code></pre></div><blockquote><p>注意点：如果<code>target_user_name</code>为空字符串，则不显示&quot;回复：xxx&quot;，显示&quot;回复：&quot;
+<code>target_user_name</code>为空字符串时，<code>target_user_id</code>不一定为<strong>0</strong></p></blockquote> <h4 id="_8-toggleclick"><a href="#_8-toggleclick" aria-hidden="true" class="header-anchor">#</a> 8. <code>toggleClick</code></h4> <blockquote><p>当用户在H5进行投食、点赞、收藏等操作时，通知客户端，参数：</p></blockquote> <div class="language-json extra-class"><pre class="language-json"><code><span class="token punctuation">{</span>
+  <span class="token property">&quot;model&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;String&gt; | 操作的模型&quot;</span><span class="token punctuation">,</span>
+  <span class="token property">&quot;type&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;String&gt; | 操作的类型&quot;</span><span class="token punctuation">,</span>
+  <span class="token property">&quot;id&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;Number&gt; | 操作的id&quot;</span><span class="token punctuation">,</span>
+  <span class="token property">&quot;result&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;Object&gt; | 操作的结果&quot;</span>
+<span class="token punctuation">}</span>
+</code></pre></div><blockquote><p><code>model</code>可能是：post、image、video、role...
+<code>type</code>可能是：reward、like、mark、follow...
+<code>result</code> 是一个对象，不同参数返回的值是不一样的</p></blockquote> <blockquote><p>当用户在APP进行相同操作的时候，APP也要通知H5：</p></blockquote> <div class="language-json extra-class"><pre class="language-json"><code><span class="token punctuation">{</span>
+  <span class="token property">&quot;func&quot;</span><span class="token operator">:</span> <span class="token string">&quot;app-invoker-toggleClick&quot;</span><span class="token punctuation">,</span>
+  <span class="token property">&quot;params&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;Object&gt; | 与我传给你的类似的数据结构&quot;</span>
+<span class="token punctuation">}</span>
+</code></pre></div><h4 id="_9-showconfirm"><a href="#_9-showconfirm" aria-hidden="true" class="header-anchor">#</a> 9. <code>showConfirm</code></h4> <blockquote><p>弹出一个确认框，参数：</p></blockquote> <div class="language-json extra-class"><pre class="language-json"><code><span class="token punctuation">{</span>
+    <span class="token property">&quot;title&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;String&gt; | 弹窗的标题&quot;</span><span class="token punctuation">,</span>
+    <span class="token property">&quot;message&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;String&gt; | 弹窗的段落文本&quot;</span><span class="token punctuation">,</span>
+    <span class="token property">&quot;cancelButtonText&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;String&gt; | 取消键的文字&quot;</span><span class="token punctuation">,</span>
+    <span class="token property">&quot;submitButtonText&quot;</span><span class="token operator">:</span> <span class="token string">&quot;&lt;String&gt; | 确认键的文字&quot;</span>
+<span class="token punctuation">}</span>
+</code></pre></div><blockquote><p>返回一个 boolean 值</p></blockquote></div> <div class="page-edit"><!----> <!----></div> <!----> </div> <!----></div></div>
+    <script src="/Laputa/assets/js/17.2e6d6bc5.js" defer></script><script src="/Laputa/assets/js/app.06792b3b.js" defer></script>
   </body>
 </html>
