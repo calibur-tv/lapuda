@@ -96,6 +96,10 @@ class VideoRepository extends Repository
             $result['src'] = $result['src_720'] ?: $result['src_1080'];
         }
         $result['src'] = $result['src'] ?: $otherSiteResource;
+        if (!preg_match('/calibur.tv/', $result['src']))
+        {
+            $result['other_site'] = true;
+        }
 
         return $result;
     }
