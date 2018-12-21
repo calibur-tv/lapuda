@@ -57,7 +57,7 @@ class VideoController extends Controller
         $season = json_decode($bangumi['season']);
         $list = $bangumiRepository->videos($bangumi['id'], $season);
 
-        $others_site_video = $bangumi['others_site_video'];
+        $others_site_video = $info['other_site'];
         $released_video_id = $bangumi['released_video_id'];
         $isEnded = $bangumi['end'];
         $bangumi = $bangumiRepository->panel($info['bangumi_id'], $userId);
