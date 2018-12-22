@@ -24,7 +24,7 @@
 11. 所有页面都要去替换 {{ version }} 为当前 APP 的版本号
 12. 所有页面都要去替换 {{ name }} 为当前系统的名称`ios`或`Android`（大小写不敏感）
 
-各个页面介绍:
+各个页面介绍（[接口文档](/api/v1/)）:
 1. 帖子详情页
     1. **page**：post
     2. **preload**：`/post/${id}/show`
@@ -51,3 +51,12 @@
 8. 交易记录页
     1. **page**：transactions
     2. **preload**：`/user/transactions`
+9. 偶像详情页
+    1. **page**: role
+    2. **preload**: `/cartoon_role/${id}/show`
+10.我的个人页
+    1. **page**: home
+    2. **preload**: 无
+11. 评论详情页
+    1. **comment**: comment
+    2. **preload**: `/comment/item`
