@@ -272,8 +272,8 @@ class CommentController extends Controller
             return $this->resErrBad('错误的类型');
         }
 
-
-        $comment = $commentService->getMainCommentItem($id, $request->get('reply_id'));
+        $replyId = $request->get('reply_id');
+        $comment = $commentService->getMainCommentItem($id, $replyId);
         if (is_null($comment))
         {
             return $this->resErrNotFound();
@@ -299,6 +299,7 @@ class CommentController extends Controller
         $comment['is_owner'] = $fromUserId == $ownerId;
         $comment['is_master'] = $bangumiManagerService->isOwner($bangumiId, $fromUserId);
         $comment['is_leader'] = $bangumiManagerService->isLeader($bangumiId, $fromUserId);
+        $comment['reply_id'] = $replyId;
 
         return $this->resOK($comment);
     }
