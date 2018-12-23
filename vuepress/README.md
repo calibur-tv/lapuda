@@ -7,3 +7,5 @@
 ## [h5模板文档 - V1](/others/h5-template-doc.html)
 
 ## [js-bridge - V1](/others/js-bridge.html)
+
+## [旧的视频存储方案](/upload/rebuild.html)
