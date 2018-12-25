@@ -68,6 +68,10 @@ class UserIpAddress
             $result = [];
             foreach ($data as $key => $val)
             {
+                if (intval($val) < 2)
+                {
+                    continue;
+                }
                 $result[preg_replace('/\./', '-', $key)] = $val;
             }
 
