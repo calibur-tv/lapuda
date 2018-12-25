@@ -216,6 +216,11 @@ class CartoonRoleController extends Controller
         $cartoonRoleFansCounter = new CartoonRoleFansCounter();
 
         $role['lover'] = $role['loverId'] ? $userTransformer->item($userRepository->item($role['loverId'])) : null;
+        if ($role['loverId'])
+        {
+            $loverScore = Redis::ZSCORE('cartoon_role_' . $id . '_hot_fans_ids', $role['loverId']);
+            $role['lover']['score'] = $loverScore ? intval($loverScore) : 0;
+        }
         $role['hasStar'] = $cartoonRoleRepository->checkHasStar($role['id'], $userId);
 
         $cartoonTransformer = new CartoonRoleTransformer();
@@ -226,8 +231,10 @@ class CartoonRoleController extends Controller
             $job = (new \App\Jobs\Search\UpdateWeight('role', $id));
             dispatch($job);
         }
+        $trending = Redis::ZREVRANK('trending_cartoon_role_bangumi_0_hot_ids', $id);
         $role['star_count'] = $cartoonRoleStarCounter->get($id);
         $role['fans_count'] = $cartoonRoleFansCounter->get($id);
+        $role['trending'] = is_null($trending) ? 0 : $trending + 1;
 
         return $this->resOK($cartoonTransformer->show([
             'bangumi' => $bangumi,

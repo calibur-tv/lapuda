@@ -28,7 +28,8 @@ class CartoonRoleTransformer extends Transformer
                         'intro' => $info['intro'],
                         'lover' => $info['lover'],
                         'name' => $info['name'],
-                        'star_count' => (int)$info['star_count']
+                        'star_count' => (int)$info['star_count'],
+                        'trending' => $info['trending']
                     ];
                 }),
             ];
