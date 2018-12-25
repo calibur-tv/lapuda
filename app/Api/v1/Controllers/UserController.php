@@ -949,11 +949,20 @@ class UserController extends Controller
         }
 
         $userIpAddress = new UserIpAddress();
+        $userRepository = new UserRepository();
+        $userLevel = new UserLevel();
+        $userActivityService = new UserActivity();
+
         if ($type === 'ip_address')
         {
             $userIds = $userIpAddress->addressUsers($value);
-
-            return $this->resOK($userIds);
+            $users = $userRepository->list($userIds);
+            foreach ($users as $i => $user)
+            {
+                $users[$i]['level'] = $userLevel->convertExpToLevel($user['exp']);
+                $users[$i]['power'] = $userActivityService->get($user['id']);
+            }
+            return $this->resOK($users);
         }
 
         if ($type !== 'id')
@@ -973,14 +982,11 @@ class UserController extends Controller
             return $this->resErrNotFound();
         }
 
-        $userRepository = new UserRepository();
         $user = $userRepository->item($userId, true);
         if (is_null($user))
         {
             return $this->resOK(null);
         }
-        $userLevel = new UserLevel();
-        $userActivityService = new UserActivity();
 
         $user['coin_count'] = User::where('id', $userId)->pluck('coin_count')->first();
         $user['coin_from_sign'] = $userRepository->userSignCoin($userId);
@@ -1012,11 +1018,13 @@ class UserController extends Controller
         $userIpAddress = new UserIpAddress();
         $ipObj = $userIpAddress->matrixUserIp($curPage, ($toPage - $curPage) * $take);
         $list = [];
-        foreach ($ipObj['ids'] as $ip => $count)
+        $ids = $ipObj['ids'];
+        foreach ($ids as $ip => $count)
         {
             $list[] = [
                 'ip' => $ip,
-                'count' => $count
+                'count' => $count,
+                'blocked' => $userIpAddress->checkIpIsBlocked($ip)
             ];
         }
 

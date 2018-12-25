@@ -184,4 +184,17 @@ class UserIpAddress
 
         return in_array($userId, $ids);
     }
+
+    public function checkIpIsBlocked($ipAddress)
+    {
+        if (!$ipAddress)
+        {
+            return false;
+        }
+
+        return (boolean)DB::table('user_ip')
+            ->where('ip_address', $ipAddress)
+            ->pluck('blocked')
+            ->first();
+    }
 }
