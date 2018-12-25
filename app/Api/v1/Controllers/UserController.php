@@ -1002,6 +1002,31 @@ class UserController extends Controller
         return $this->resOK($users);
     }
 
+    // 获取一个ip登录N个号的用户列表
+    public function matrixUsers(Request $request)
+    {
+        $curPage = $request->get('cur_page') ?: 0;
+        $toPage = $request->get('to_page') ?: 1;
+        $take = $request->get('take') ?: 10;
+
+        $userIpAddress = new UserIpAddress();
+        $ipObj = $userIpAddress->matrixUserIp($curPage, ($toPage - $curPage) * $take);
+        $list = [];
+        foreach ($ipObj['ids'] as $ip => $count)
+        {
+            $list[] = [
+                'ip' => $ip,
+                'count' => $count
+            ];
+        }
+
+        return $this->resOK([
+            'list' => $list,
+            'total' => $ipObj['total'],
+            'noMore' => $ipObj['noMore']
+        ]);
+    }
+
     // 后台获取被封禁的用户ip列表
     public function getBlockedUserIpAddress()
     {

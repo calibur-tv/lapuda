@@ -50,6 +50,42 @@ class UserIpAddress
             ->pluck('user_id');
     }
 
+    public function matrixUserIp($page = 0, $count = 15)
+    {
+        $repository = new Repository();
+
+        $ip = $repository->RedisSort('matrix-user-ids', function ()
+        {
+            $data = DB
+                ::table('user_ip')
+                ->where('ip_address', '<>', '')
+                ->select(DB::raw('count(distinct user_id) as count, ip_address'))
+                ->orderBy('count', 'DESC')
+                ->groupBy('ip_address')
+                ->pluck('count', 'ip_address')
+                ->toArray();
+
+            $result = [];
+            foreach ($data as $key => $val)
+            {
+                $result[preg_replace('/\./', '-', $key)] = $val;
+            }
+
+            return $result;
+
+        }, $isTime = false, $withScore = true, $exp = 'h');
+
+        $result = $repository->filterIdsByPage($ip, $page, $count);
+        $ids = [];
+        foreach ($result['ids'] as $key => $val)
+        {
+            $ids[preg_replace('/-/', '.', $key)] = $val;
+        }
+        $result['ids'] = $ids;
+
+        return $result;
+    }
+
     public function blockedList()
     {
         $repository = new Repository();

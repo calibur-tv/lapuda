@@ -509,6 +509,8 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/withdrawal', 'App\Api\V1\Controllers\UserController@withdrawal');
 
             $api->get('/dalao', 'App\Api\V1\Controllers\UserController@coinDescList');
+
+            $api->get('/matrix', 'App\Api\V1\Controllers\UserController@matrixUsers');
         });
 
         $api->group(['prefix' => '/console'], function ($api)
