@@ -79,6 +79,10 @@ class SearchController extends Controller
         $deleteCount = 0;
         foreach ($data as $userId => $id)
         {
+            if ($deleteCount >= 100)
+            {
+                break;
+            }
             if (!DB::table('users')->where('id', $userId)->count())
             {
                 DB::table('user_ip')->where('id', $id)->delete();
