@@ -1035,6 +1035,35 @@ class UserController extends Controller
         ]);
     }
 
+    // 删除不存在用户的 IP 地址
+    public function clearNoOneIpAddress(Request $request)
+    {
+        $ip = $request->get('ip');
+        if (!$ip)
+        {
+            return $this->resOK('不存在的IP');
+        }
+
+        $data = DB
+            ::table('user_ip')
+            ->where('ip_address', $ip)
+            ->distinct()
+            ->pluck('id', 'user_id')
+            ->toArray();
+
+        $deleteCount = 0;
+        foreach ($data as $userId => $id)
+        {
+            if (!DB::table('users')->where('id', $userId)->count())
+            {
+                DB::table('user_ip')->where('id', $id)->delete();
+                $deleteCount++;
+            }
+        }
+
+        return $this->resOK('删除用户个数：' . $deleteCount);
+    }
+
     // 后台获取被封禁的用户ip列表
     public function getBlockedUserIpAddress()
     {
