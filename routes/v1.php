@@ -24,6 +24,8 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/register', 'App\Api\V1\Controllers\DoorController@register');
 
+        $api->post('/bind_phone', 'App\Api\V1\Controllers\DoorController@bindPhone');
+
         $api->post('/login', 'App\Api\V1\Controllers\DoorController@login')->middleware(['geetest']);
 
         $api->post('/refresh', 'App\Api\V1\Controllers\DoorController@refreshUser')->middleware(['jwt.refresh']);

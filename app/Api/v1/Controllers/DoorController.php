@@ -53,6 +53,7 @@ class DoorController extends Controller
      * 目前支持 `type` 为：
      * 1. `sign_up`，注册时调用
      * 2. `forgot_password`，找回密码时使用
+     * 3. `bind_phone`，绑定手机号时使用
      *
      * > 目前返回的数字验证码是`6位`
      *
@@ -77,7 +78,7 @@ class DoorController extends Controller
         $validator = Validator::make($request->all(), [
             'type' => [
                 'required',
-                Rule::in(['sign_up', 'forgot_password']),
+                Rule::in(['sign_up', 'forgot_password', 'bind_phone']),
             ],
             'phone_number' => 'required|digits:11'
         ]);
@@ -99,6 +100,11 @@ class DoorController extends Controller
         {
             $museNew = false;
             $mustOld = true;
+        }
+        else if ($type === 'bind_phone')
+        {
+            $museNew = true;
+            $mustOld = false;
         }
         else
         {
@@ -126,6 +132,10 @@ class DoorController extends Controller
         else if ($type === 'forgot_password')
         {
             $result = $sms->forgotPassword($phone, $authCode);
+        }
+        else if ($type === 'bind_phone')
+        {
+            $result = $sms->bindPhone($phone, $authCode);
         }
         else
         {
@@ -309,13 +319,74 @@ class DoorController extends Controller
 
     }
 
-    // Todo：绑定手机号，同时设置密码
-    public function bindPhone()
+    /**
+     * 绑定用户手机号
+     *
+     * @Post("/door/bind_phone")
+     *
+     * @Parameters({
+     *      @Parameter("id", description="用户id", type="number", required=true),
+     *      @Parameter("phone", description="手机号", type="number", required=true),
+     *      @Parameter("password", description="6至16位的密码", type="string", required=true),
+     *      @Parameter("authCode", description="6位数字的短信验证码", type="number", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "绑定成功"}),
+     *      @Response(400, body={"code": 40003, "message": "参数错误或验证码过期或手机号已占用"})
+     * })
+     */
+    public function bindPhone(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer',
+            'phone' => 'required|digits:11',
+            'password' => 'required|min:6|max:16',
+            'authCode' => 'required|digits:6'
+        ]);
 
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $phone = $request->get('phone');
+
+        if (!$this->checkMessageAuthCode($phone, 'bind_phone', $request->get('authCode')))
+        {
+            return $this->resErrBad('短信验证码已过期，请重新获取');
+        }
+
+        if (!$this->accessIsNew('phone', $phone))
+        {
+            return $this->resErrBad('该手机号已绑定另外一个账号');
+        }
+
+        $userId = $request->get('id');
+        $phone = User
+            ::where('id', $userId)
+            ->pluck('phone')
+            ->first();
+
+        if ($phone)
+        {
+            $pattern = '/(\d{3})(\d{4})(\d{4})/i';
+            $replacement = '$1****$3';
+            $maskPhone = preg_replace($pattern, $replacement, $phone);
+
+            return $this->resErrBad('您的账号已绑定了手机号：' . $maskPhone);
+        }
+
+        User::where('id', $userId)
+            ->update([
+                'phone' => $phone,
+                'password' => bcrypt($request->get('password'))
+            ]);
+
+        return $this->resOK('手机号绑定成功');
     }
 
-    // Todo：解绑第三方账号
+    // Todo：解绑第三方账号，但是账号会被删除
     public function unbindProvider()
     {
 
@@ -328,9 +399,9 @@ class DoorController extends Controller
     }
 
     /**
-     * 获取用户信息
+     * 网站获取用户信息
      *
-     * 每次`启动应用`、`登录`、`注册`成功后调用
+     * 每次页面刷新时调用
      *
      * @Post("/door/refresh")
      *
@@ -364,7 +435,8 @@ class DoorController extends Controller
         $user['power'] = $userActivityService->get($userId);
         $user['providers'] = [
             'bind_qq' => !!$user['qq_open_id'],
-            'bind_wechat' => !!$user['wechat_open_id']
+            'bind_wechat' => !!$user['wechat_open_id'],
+            'bind_phone' => !!$user['phone']
         ];
         if ($user['is_admin'])
         {
@@ -409,7 +481,7 @@ class DoorController extends Controller
     }
 
     /**
-     * 获取当前登录用户的信息
+     * APP 获取当前登录用户的信息
      *
      * 每次`启动应用`成功后调用
      *
@@ -445,7 +517,8 @@ class DoorController extends Controller
         $user['power'] = $userActivityService->get($userId);
         $user['providers'] = [
             'bind_qq' => !!$user['qq_open_id'],
-            'bind_wechat' => !!$user['wechat_open_id']
+            'bind_wechat' => !!$user['wechat_open_id'],
+            'bind_phone' => !!$user['phone']
         ];
         if ($user['is_admin'])
         {
