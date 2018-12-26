@@ -956,7 +956,7 @@ class UserController extends Controller
         if ($type === 'ip_address')
         {
             $userIds = $userIpAddress->addressUsers($value);
-            $users = $userRepository->list($userIds);
+            $users = $userRepository->list($userIds, true);
             foreach ($users as $i => $user)
             {
                 $users[$i]['level'] = $userLevel->convertExpToLevel($user['exp']);
