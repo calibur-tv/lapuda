@@ -26,6 +26,13 @@ class Message
         ]);
     }
 
+    public function bindPhone($phone, $code)
+    {
+        return $this->send($phone, 'SMS_153885193', [
+            'code' => $code
+        ]);
+    }
+
     public function forgotPassword($phone, $code)
     {
         return $this->send($phone, 'SMS_125020981', [
