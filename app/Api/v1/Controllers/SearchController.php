@@ -5,7 +5,6 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\BangumiRepository;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
-use Illuminate\Support\Facades\DB;
 use Mews\Purifier\Facades\Purifier;
 
 /**
@@ -66,33 +65,5 @@ class SearchController extends Controller
         $bangumiRepository = new BangumiRepository();
 
         return $this->resOK($bangumiRepository->searchAll());
-    }
-
-    public function migrate(Request $request)
-    {
-        $ip = $request->get('ip');
-        if (!$ip)
-        {
-            return 'no ip params';
-        }
-
-        $data = DB
-            ::table('user_ip')
-            ->where('ip_address', $ip)
-            ->distinct()
-            ->pluck('id', 'user_id')
-            ->toArray();
-
-        $deleteCount = 0;
-        foreach ($data as $userId => $id)
-        {
-            if (!DB::table('users')->where('id', $userId)->count())
-            {
-                DB::table('user_ip')->where('id', $id)->delete();
-                $deleteCount++;
-            }
-        }
-
-        return 'success deleted count：' . $deleteCount;
     }
 }

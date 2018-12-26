@@ -14,8 +14,6 @@ $api->version(['v1', 'latest'], function ($api)
         $api->get('/new', 'App\Api\V1\Controllers\SearchController@search');
 
         $api->get('/bangumis', 'App\Api\V1\Controllers\SearchController@bangumis');
-
-        $api->get('/migrate', 'App\Api\V1\Controllers\SearchController@migrate');
     });
 
     $api->group(['prefix' => '/door'], function ($api)
@@ -513,6 +511,8 @@ $api->version(['v1', 'latest'], function ($api)
             $api->get('/dalao', 'App\Api\V1\Controllers\UserController@coinDescList');
 
             $api->get('/matrix', 'App\Api\V1\Controllers\UserController@matrixUsers');
+
+            $api->get('/delete_ip_report', 'App\Api\V1\Controllers\UserController@clearNoOneIpAddress');
         });
 
         $api->group(['prefix' => '/console'], function ($api)
