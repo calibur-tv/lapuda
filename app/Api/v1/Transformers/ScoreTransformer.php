@@ -173,7 +173,7 @@ class ScoreTransformer extends Transformer
                 'title' => $item['title'],
                 'intro' => $item['intro'],
                 'total' => (int)$item['total'],
-                'banner' => isset($score['banner']) ? $score['banner'] : '',
+                'banner' => isset($item['banner']) ? $item['banner'] : '',
                 //
                 'is_creator' => (boolean)$item['is_creator'],
                 'like_count' => $item['like_count'],
