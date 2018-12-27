@@ -326,6 +326,30 @@ class ScoreController extends Controller
             return $this->resErrParams($validator);
         }
 
+        $scoreRepository = new ScoreRepository();
+        $banner = $request->get('banner');
+        $content = $request->get('content');
+        if ($banner)
+        {
+            $validator = Validator::make($banner, [
+                'url' => 'required|string',
+                'width' => 'required|integer',
+                'height' => 'required|integer',
+                'size' => 'required|integer',
+                'type' => 'required|string',
+            ]);
+
+            if ($validator->fails())
+            {
+                return $this->resErrParams($validator);
+            }
+            $banner['url'] = $scoreRepository->convertImagePath($banner['url']);
+        }
+        else
+        {
+            $banner = $scoreRepository->execBannerFromArrayContent($content);
+        }
+
         $bangumiId = $request->get('bangumi_id');
         $bangumiRepository = new BangumiRepository();
         $bangumi = $bangumiRepository->item($bangumiId);
@@ -363,7 +387,6 @@ class ScoreController extends Controller
             }
         }
 
-        $scoreRepository = new ScoreRepository();
         $lol = $request->get('lol');
         $cry = $request->get('cry');
         $fight = $request->get('fight');
@@ -375,7 +398,7 @@ class ScoreController extends Controller
         $express = $request->get('express');
         $style = $request->get('style');
         $total = $lol + $cry + $fight + $moe + $sound + $vision + $role + $story + $express + $style;
-        $content = $scoreRepository->filterJsonContent($request->get('content'));
+        $content = $scoreRepository->filterJsonContent($content);
         $title = $request->get('title');
         $intro = Purifier::clean($request->get('intro'));
         $now = Carbon::now();
@@ -398,6 +421,7 @@ class ScoreController extends Controller
                 'style' => $style,
                 'total' => $total,
                 'title' => $title,
+                'banner' => $banner,
                 'content' => $content,
                 'intro' => $intro,
                 'created_at' => $now,
@@ -480,6 +504,30 @@ class ScoreController extends Controller
             return $this->resErrParams($validator);
         }
 
+        $scoreRepository = new ScoreRepository();
+        $banner = $request->get('banner');
+        $content = $request->get('content');
+        if ($banner)
+        {
+            $validator = Validator::make($banner, [
+                'url' => 'required|string',
+                'width' => 'required|integer',
+                'height' => 'required|integer',
+                'size' => 'required|integer',
+                'type' => 'required|string',
+            ]);
+
+            if ($validator->fails())
+            {
+                return $this->resErrParams($validator);
+            }
+            $banner['url'] = $scoreRepository->convertImagePath($banner['url']);
+        }
+        else
+        {
+            $banner = $scoreRepository->execBannerFromArrayContent($content);
+        }
+
         $bangumiId = $request->get('bangumi_id');
         $bangumiRepository = new BangumiRepository();
         $bangumi = $bangumiRepository->item($bangumiId);
@@ -491,7 +539,6 @@ class ScoreController extends Controller
         $user = $this->getAuthUser();
         $userId = $user->id;
         $newId = $request->get('id');
-        $scoreRepository = new ScoreRepository();
         $score = $scoreRepository->item($newId);
         if ($score['user_id'] != $userId)
         {
@@ -526,7 +573,7 @@ class ScoreController extends Controller
         $express = $request->get('express');
         $style = $request->get('style');
         $total = $lol + $cry + $fight + $moe + $sound + $vision + $role + $story + $express + $style;
-        $content = $scoreRepository->filterJsonContent($request->get('content'));
+        $content = $scoreRepository->filterJsonContent($content);
         $intro = $request->get('intro');
         $title = $request->get('title');
 
@@ -546,6 +593,7 @@ class ScoreController extends Controller
                 'style' => $style,
                 'total' => $total,
                 'title' => $title,
+                'banner' => $banner,
                 'content' => $content,
                 'intro' => $intro,
                 'published_at' => $score['published_at'] ? $score['published_at'] : ($doPublished ? Carbon::now() : null)

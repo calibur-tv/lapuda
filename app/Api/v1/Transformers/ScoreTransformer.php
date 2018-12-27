@@ -35,6 +35,7 @@ class ScoreTransformer extends Transformer
             'express' => $score['express'],
             'style' => $score['style'],
             'intro' => $score['intro'],
+            'banner' => isset($score['banner']) ? $score['banner'] : '',
             'content' => $score['content'],
             'is_creator' => (boolean)$score['is_creator'],
             'liked' => $score['liked'],
@@ -172,6 +173,7 @@ class ScoreTransformer extends Transformer
                 'title' => $item['title'],
                 'intro' => $item['intro'],
                 'total' => (int)$item['total'],
+                'banner' => isset($score['banner']) ? $score['banner'] : '',
                 //
                 'is_creator' => (boolean)$item['is_creator'],
                 'like_count' => $item['like_count'],
