@@ -174,6 +174,7 @@ class ScoreTransformer extends Transformer
                 'intro' => $item['intro'],
                 'total' => (int)$item['total'],
                 'banner' => isset($item['banner']) ? $item['banner'] : '',
+                'images' => isset($item['images']) ? $item['images'] : [],
                 //
                 'is_creator' => (boolean)$item['is_creator'],
                 'like_count' => $item['like_count'],
