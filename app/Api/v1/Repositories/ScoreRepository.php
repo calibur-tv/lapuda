@@ -357,7 +357,11 @@ class ScoreRepository extends Repository
         {
             if ($item['type'] === 'img')
             {
-                if (preg_match('/gif/i', $item['mime']))
+                if (
+                    preg_match('/gif/i', $item['mime']) ||
+                    $item['width'] < 600 ||
+                    $item['height'] < 150
+                )
                 {
                     continue;
                 }
