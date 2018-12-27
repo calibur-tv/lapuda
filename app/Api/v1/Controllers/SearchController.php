@@ -5,8 +5,6 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\BangumiRepository;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
 /**
@@ -67,16 +65,5 @@ class SearchController extends Controller
         $bangumiRepository = new BangumiRepository();
 
         return $this->resOK($bangumiRepository->searchAll());
-    }
-
-    public function migrate()
-    {
-        $ids = DB::table('scores')->pluck('id')->toArray();
-        foreach ($ids as $id)
-        {
-            Redis::DEL('score_' . $id);
-        }
-
-        return 'success';
     }
 }
