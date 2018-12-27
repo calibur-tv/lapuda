@@ -41,6 +41,13 @@ class ScoreRepository extends Repository
             }
 
             $score = $score->toArray();
+            $banner = $score['banner'];
+            if ($banner)
+            {
+                $banner = json_decode($banner, true);
+                $banner['url'] = config('website.image') . $banner['url'];
+            }
+            $score['banner'] = $banner;
             $score['content'] = $this->formatJsonContent($score['content']);
             $score['total'] = number_format($score['total'] / 10, 1);
             $score['lol'] = number_format($score['lol'] / 2, 1);
@@ -341,5 +348,30 @@ class ScoreRepository extends Repository
 
         $job = (new \App\Jobs\Search\Index($type, 'score', $id, $content));
         dispatch($job);
+    }
+
+    public function execBannerFromArrayContent(array $content)
+    {
+        $result = '';
+        foreach ($content as $item)
+        {
+            if ($item['type'] === 'img')
+            {
+                if (preg_match('/gif/i', $item['mime']))
+                {
+                    continue;
+                }
+
+                $result = json_encode([
+                    'width' => $item['width'],
+                    'height' => $item['height'],
+                    'size' => $item['size'],
+                    'type' => $item['mime'],
+                    'url' => $this->convertImagePath($item['url'])
+                ]);
+                break;
+            }
+        }
+        return $result;
     }
 }

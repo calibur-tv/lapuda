@@ -3,8 +3,11 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
+use App\Api\V1\Repositories\ScoreRepository;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
 /**
@@ -65,5 +68,34 @@ class SearchController extends Controller
         $bangumiRepository = new BangumiRepository();
 
         return $this->resOK($bangumiRepository->searchAll());
+    }
+
+    public function migrate()
+    {
+        $ids = DB
+            ::table('scores')
+            ->where('banner', '<>', '')
+            ->whereNotNull('deleted_at')
+            ->pluck('id')
+            ->toArray();
+
+        $scoreRepository = new ScoreRepository();
+        foreach ($ids as $id)
+        {
+            $item = $scoreRepository->item($id);
+            $banner = $scoreRepository->execBannerFromArrayContent($item['content']);
+            if ($banner)
+            {
+                DB::table('scores')
+                    ->where('id', $id)
+                    ->update([
+                        'banner' => $banner
+                    ]);
+
+                Redis::DEL('score_' . $id);
+            }
+        }
+
+        return 'success';
     }
 }
