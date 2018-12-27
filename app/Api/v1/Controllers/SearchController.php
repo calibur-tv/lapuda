@@ -74,8 +74,8 @@ class SearchController extends Controller
     {
         $ids = DB
             ::table('scores')
-            ->where('banner', '<>', '')
-            ->whereNotNull('deleted_at')
+            ->where('banner', '')
+            ->whereNull('deleted_at')
             ->pluck('id')
             ->toArray();
 
