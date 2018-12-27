@@ -60,6 +60,21 @@ class ScoreRepository extends Repository
             $score['story'] = number_format($score['story'] / 2, 1);
             $score['express'] = number_format($score['express'] / 2, 1);
             $score['style'] = number_format($score['style'] / 2, 1);
+            $images = array_filter($score['content'], function ($item)
+            {
+                return $item['type'] === 'img';
+            });
+            $images = array_map(function ($item)
+            {
+                return [
+                    'width' => $item['width'],
+                    'height' => $item['height'],
+                    'type' => $item['mime'],
+                    'size' => $item['size'],
+                    'url' => $item['url'],
+                ];
+            }, $images);
+            $score['images'] = array_slice($images, 0 ,3);
 
             return $score;
         });
@@ -357,7 +372,11 @@ class ScoreRepository extends Repository
         {
             if ($item['type'] === 'img')
             {
-                if (preg_match('/gif/i', $item['mime']))
+                if (
+                    preg_match('/gif/i', $item['mime']) ||
+                    $item['width'] < 600 ||
+                    $item['height'] < 150
+                )
                 {
                     continue;
                 }
