@@ -363,12 +363,12 @@ class DoorController extends Controller
         }
 
         $userId = $request->get('id');
-        $phone = User
+        $hasPhone = User
             ::where('id', $userId)
             ->pluck('phone')
             ->first();
 
-        if ($phone)
+        if ($hasPhone)
         {
             $pattern = '/(\d{3})(\d{4})(\d{4})/i';
             $replacement = '$1****$3';
