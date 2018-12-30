@@ -157,6 +157,15 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/clear', 'App\Api\V1\Controllers\UserController@clearNotification')->middleware('jwt.auth');
         });
 
+        $api->group(['prefix' => '/notice'], function ($api)
+        {
+            $api->get('/show/{id}', 'App\Api\V1\Controllers\NoticeController@show');
+
+            $api->get('/list', 'App\Api\V1\Controllers\NoticeController@list');
+
+            $api->post('/mark', 'App\Api\V1\Controllers\NoticeController@mark')->middleware('jwt.auth');
+        });
+
         $api->post('/daySign', 'App\Api\V1\Controllers\UserController@daySign')->middleware('jwt.auth');
 
         $api->post('/feedback', 'App\Api\V1\Controllers\UserController@feedback');
@@ -390,6 +399,15 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/delete', 'App\Api\V1\Controllers\LooperController@delete');
 
                 $api->post('/add', 'App\Api\V1\Controllers\LooperController@add');
+            });
+
+            $api->group(['prefix' => '/notice'], function ($api)
+            {
+                $api->post('/create', 'App\Api\V1\Controllers\NoticeController@create');
+
+                $api->post('/update', 'App\Api\V1\Controllers\NoticeController@update');
+
+                $api->post('/delete', 'App\Api\V1\Controllers\NoticeController@delete');
             });
         });
 

@@ -27,6 +27,7 @@ use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
 use App\Models\Notifications;
+use App\Models\SystemNotice;
 use App\Models\User;
 use App\Api\V1\Repositories\UserRepository;
 use App\Models\UserCoin;
@@ -468,9 +469,32 @@ class UserController extends Controller
         $minId = $request->get('minId') ?: 0;
         $take = 10;
 
-        $repository = new UserRepository();
+        $userRepository = new UserRepository();
+        $result = $userRepository->getNotifications($userId, $minId, $take);
+        if (!$minId)
+        {
+            $user = $this->getAuthUser();
+            $systemNoticeCount = $userRepository->computedSystemNoticeCount($user->last_notice_read_id);
+            $result['system_count'] = $systemNoticeCount;
+            if ($systemNoticeCount)
+            {
+                $result['lastest_notice'] = $userRepository->Cache('system_notice_lastest_item', function ()
+                {
+                    $notice = SystemNotice
+                        ::orderBy('id', 'DESC')
+                        ->first()
+                        ->toArray();
 
-        return $this->resOK($repository->getNotifications($userId, $minId, $take));
+                    return [
+                        'id' => $notice['id'],
+                        'title' => $notice['title'],
+                        'created_at' => $notice['created_at']
+                    ];
+                });
+            }
+        }
+
+        return $this->resOK($result);
     }
 
     /**
@@ -485,10 +509,14 @@ class UserController extends Controller
      */
     public function waitingReadNotifications()
     {
-        $repository = new UserRepository();
-        $count = $repository->getNotificationCount($this->getAuthUserId());
+        $user = $this->getAuthUser();
+        $userRepository = new UserRepository();
+        $count = $userRepository->getNotificationCount($this->getAuthUserId());
+        $count = $count < 0 ? 0 : $count;
+        // 计算系统消息个数
+        $systemNoticeCount = $userRepository->computedSystemNoticeCount($user->last_notice_read_id);
 
-        return $this->resOK($count < 0 ? 0 : $count);
+        return $this->resOK($count + $systemNoticeCount);
     }
 
     /**
