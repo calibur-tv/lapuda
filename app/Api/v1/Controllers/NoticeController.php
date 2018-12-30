@@ -23,7 +23,7 @@ class NoticeController extends Controller
     public function show($id)
     {
         $repository = new Repository();
-        $result = $repository->Cache('system_notice_item_' . $id, function () use ($id)
+        $result = $repository->Cache('system_notice_item_' . $id, function () use ($id, $repository)
         {
             $notice = SystemNotice
                 ::where('id', $id)
@@ -34,7 +34,7 @@ class NoticeController extends Controller
                 return null;
             }
 
-            $notice['content'] = $this->formatJsonContent($notice['content']);
+            $notice['content'] = $repository->formatJsonContent($notice['content']);
 
             $banner = $notice['banner'];
             $banner = json_decode($banner, true);
