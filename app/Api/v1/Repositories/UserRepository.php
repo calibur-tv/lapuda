@@ -19,13 +19,13 @@ use App\Models\CartoonRole;
 use App\Models\Image;
 use App\Models\Notifications;
 use App\Models\Post;
+use App\Models\SystemNotice;
 use App\Models\User;
 use App\Models\UserCoin;
 use App\Models\UserSign;
 use App\Models\Video;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 
 class UserRepository extends Repository
 {
@@ -197,7 +197,7 @@ class UserRepository extends Repository
 
     public function getNotificationCount($userId)
     {
-        return $this->RedisItem('user_' . $userId . '_notification_count', function () use ($userId)
+        return (int)$this->RedisItem('user_' . $userId . '_notification_count', function () use ($userId)
         {
             return Notifications::whereRaw('to_user_id = ? and checked = ?', [$userId, false])->count();
         });
@@ -476,5 +476,39 @@ class UserRepository extends Repository
                 'count' => $count
             ]);
         }
+    }
+
+    public function computedSystemNoticeCount($lastReadId)
+    {
+        $noticeTimeList = $this->Cache('system_notice_id_list', function ()
+        {
+            return SystemNotice
+                ::orderBy('id', 'DESC')
+                ->pluck('id')
+                ->toArray();
+        });
+
+        if (!$lastReadId)
+        {
+            return count($noticeTimeList);
+        }
+
+        $result = 0;
+        if ($noticeTimeList)
+        {
+            foreach ($noticeTimeList as $id)
+            {
+                if ($id > $lastReadId)
+                {
+                    $result++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        return $result;
     }
 }

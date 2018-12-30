@@ -31,6 +31,7 @@ class User extends Authenticatable
         'is_admin',
         'faker',
         'qq_open_id',
+        'last_notice_read_id',
         'wechat_unique_id',
         'wechat_open_id'
     ];
@@ -39,7 +40,8 @@ class User extends Authenticatable
 
     protected $casts = [
         'sex' => 'integer',
-        'state' => 'integer'
+        'state' => 'integer',
+        'last_notice_read_id' => 'integer'
     ];
 
     public function getAvatarAttribute($avatar)
