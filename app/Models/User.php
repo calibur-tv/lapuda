@@ -33,7 +33,9 @@ class User extends Authenticatable
         'qq_open_id',
         'last_notice_read_id',
         'wechat_unique_id',
-        'wechat_open_id'
+        'wechat_open_id',
+        'light_count',
+        'coin_count_v2'
     ];
 
     protected $hidden = ['password'];

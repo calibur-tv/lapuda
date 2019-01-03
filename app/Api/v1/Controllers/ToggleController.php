@@ -494,6 +494,10 @@ class ToggleController extends Controller
                 return $this->resErrRole('团子不足');
             }
         }
+        else
+        {
+            return $this->resErrRole('已打赏过的内容');
+        }
 
         $result = $userRepository->toggleCoin($rewarded, $userId, $item['user_id'], $coinType, $item['id']);
         if (!$result)
