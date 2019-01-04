@@ -14,9 +14,7 @@ use App\Models\LightCoin;
 use App\Models\LightCoinRecord;
 use App\Models\User;
 use App\Models\UserCoin;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 
 class LightCoinService
 {
@@ -28,25 +26,25 @@ class LightCoinService
     {
         // TODO：参数校验
         $from = $params['from'];
-        $amount = $params['count'] ?: 1;
-        $toUserId = $params['to_user_id'];
         $fromUserId = $params['from_user_id'];
-        $toProductType = $params['to_product_type'];
+        $toUserId = $params['to_user_id'];
         $toProductId = $params['to_product_id'];
+        $toProductType = $params['to_product_type'];
+        $amount = $params['count'] ?: 1;
         $orderId = $params['order_id'] ?: '';
         // step：1 创建团子
         // step：2 写入流通记录
         // step：3 修改用户数据
         $data = [
             'origin_from' => $from,
-            'holder_type' => 1,
+            'holder_type' => 1, // 1是用户
             'holder_id' => $toUserId,
-            'state' => 0,
+            'state' => 0, // 0是团子
         ];
 
         if (!$orderId)
         {
-            $orderId = "{$toUserId}-{$from}-$amount-" . time();
+            $orderId = "recharge-{$toUserId}-{$from}-$amount-" . time();
         }
 
         $records = [];
@@ -70,9 +68,7 @@ class LightCoinService
 
             $lastInsertRecordId = LightCoinRecord::insertGetId($records);
 
-            DB
-                ::table('users')
-                ->where('id', $toUserId)
+            User::where('id', $toUserId)
                 ->increment('coin_count_v2', $amount);
 
             $this->updateUserRecordCache($toUserId, $lastInsertRecordId);
@@ -125,7 +121,6 @@ class LightCoinService
             // step：2 修改团子持有者
             // step：3 写入流通记录
             // step：4 产品提供者获得光玉（可选项，在函数调用外操作）
-            // 优先消费团子
             // TODO：这个时候是不是要锁住 user ？怎么做
             if ($user['coin_count_v2'] >= $exchange_count)
             {
@@ -133,7 +128,7 @@ class LightCoinService
                     ->update([
                         'coin_count_v2' => $user['coin_count_v2'] - $exchange_count
                     ]);
-
+                // 优先消费团子
                 $exchangeIds = LightCoin
                     ::where('state', 0)
                     ->where('holder_type', 1)
@@ -146,7 +141,7 @@ class LightCoinService
             else
             {
                 $useLightCount = $exchange_count - $user['coin_count_v2'];
-
+                // 团子不够时，团子扣光，光玉减少
                 User::where('id', $from_user_id)
                     ->update([
                         'coin_count_v2' => 0,
@@ -200,7 +195,7 @@ class LightCoinService
 
             DB::commit();
             $this->updateUserRecordCache($from_user_id, $lastInsertRecordId);
-            if ($to_user_type === 1 && $to_user_id)
+            if ($to_user_type === 1) // 是用户类型
             {
                 $this->updateUserRecordCache($to_user_id, $lastInsertRecordId);
             }
@@ -231,7 +226,7 @@ class LightCoinService
         return $currentUser->coin_count_v2;
     }
 
-    // 用户的交易记录
+    // TODO：用户的交易记录
     public function getUserRecord($userId, $minId = 0, $count = 15)
     {
         $repository = new Repository();
@@ -371,7 +366,7 @@ class LightCoinService
             ->toArray();
     }
 
-    // 每笔交易涉及的团子
+    // 订单涉及的团子
     public function getCoinIdsByOrderId($orderId)
     {
         if (!$orderId)
@@ -390,6 +385,8 @@ class LightCoinService
     {
         return $this->recharge([
             'from' => 0,
+            'from_user_id' => 0,
+            'to_product_id' => 0,
             'to_product_type' => 0,
             'to_user_id' => $userId
         ]);
@@ -400,10 +397,10 @@ class LightCoinService
     {
         return $this->recharge([
             'from' => 1,
-            'to_product_type' => 1,
-            'to_user_id' => $oldUserId,
+            'from_user_id' => $newUserId,
             'to_product_id' => $newUserId,
-            'from_user_id' => $newUserId
+            'to_product_type' => 1,
+            'to_user_id' => $oldUserId
         ]);
     }
 
@@ -412,6 +409,8 @@ class LightCoinService
     {
         return $this->recharge([
             'from' => 2,
+            'from_user_id' => 0,
+            'to_product_id' => 0,
             'to_product_type' => 2,
             'to_user_id' => $userId
         ]);
@@ -422,6 +421,8 @@ class LightCoinService
     {
         return $this->recharge([
             'from' => 3,
+            'from_user_id' => 0,
+            'to_product_id' => 0,
             'to_product_type' => 3,
             'to_user_id' => $userId
         ]);
@@ -462,8 +463,10 @@ class LightCoinService
         {
             DB::beginTransaction();
             $result = $this->exchange([
+                'count' => 1,
                 'from_user_id' => $fromUserId,
                 'to_user_id' => $toUserId,
+                'to_user_type' => 1,
                 'to_product_id' => $contentId,
                 'to_product_type' => $contentType,
                 'is_reward_to_really_user' => true
@@ -473,8 +476,7 @@ class LightCoinService
                 DB::rollBack();
                 return false;
             }
-            User
-                ::where('id', $toUserId)
+            User::where('id', $toUserId)
                 ->increment('light_count', 1);
 
             if ($func)
@@ -659,6 +661,7 @@ class LightCoinService
             $result = $this->exchange([
                 'from_user_id' => $fromUserId,
                 'to_user_id' => 0,
+                'to_user_type' => 0,
                 'to_product_id' => $roleId,
                 'to_product_type' => 9,
                 'count' => $count,
@@ -687,7 +690,6 @@ class LightCoinService
     // 提现，人工转账
     public function withdraw($userId, $count, $func = '')
     {
-        /* migration 阶段用户没有 light_count
         $banlance = User
             ::where('id', $userId)
             ->pluck('light_count')
@@ -697,7 +699,6 @@ class LightCoinService
         {
             return false;
         }
-        */
         // step：1 修改用户数据
         // step：2 修改团子状态
         // step：3 写入流通记录
@@ -759,216 +760,167 @@ class LightCoinService
         }
     }
 
-    // migration 的第一步：把所有人的金币写进来
-    // 完成这一步之后，可能用户也没有团子，因为他的团子都是别人打赏给他的
-    // 所以当这个时候去计算他消费的团子，就会报错了
-    public function migration_step_1($userId)
+    // 删除/禁言 用户
+    public function freezeUser($userId)
     {
-        Redis::SET('migration_user_id', $userId);
+        // 被删除是因为发布[有害内容]或者是机器人刷金币或者是花钱买了金币
+        // 如果用户被删除了，那么他的钱就无法再流通了，所以不需要去处理
+        // 如果用户被删除前，他的钱给了其它用户，那么其它用户可能是无辜的，也可能是参与者，只能人工判断
+        // 所以当前用户被删除时，他已经流通走的钱就不追究了，我们可以通过交易记录去查询与他相关的用户，去人工处理
+        // 如果用户是被禁言的，那么他应该可以继续让自己的金币流通
+        // 禁言的时候要删除他发表的[无意义内容]，并且禁言期间无法发表内容，仅此而已
+    }
+
+    // 撤销用户的所有应援
+    public function undoUserCheer($userId)
+    {
+
+    }
+
+    // 根据金币的 id ASC 来 migration
+    public function migration($coinId)
+    {
         /**
          * type
-         * [OK] 0： 每日签到（old）
-         * [OK] 1： 帖子
-         * [OK] 2： 邀请用户注册
-         * [OK] 3： 为偶像应援
-         * [OK] 4： 图片
-         * [OK] 5： 提现
-         * [OK] 6： 漫评
-         * [OK] 7： 回答
-         * [OK] 8： 每日签到（new）
+         * 0： 每日签到（old）
+         * 1： 帖子
+         * 2： 邀请用户注册
+         * 3： 为偶像应援
+         * 4： 图片
+         * 5： 提现
+         * 6： 漫评
+         * 7： 回答
+         * 8： 每日签到（new）
          * 9： 删除帖子
          * 10：删除图片
          * 11：删除漫评
          * 12：删除回答
-         * [OK] 13：视频
+         * 13：视频
          * 14：删除视频
-         * [OK] 15：普通用户100战斗力送团子
-         * [OK] 16：番剧管理者100战斗力送团子
+         * 15：普通用户100战斗力送团子
+         * 16：番剧管理者100战斗力送团子
          */
-        // 签到
-        $type_0_and_8_coin = UserCoin
-            ::where('user_id', $userId)
-            ->whereIn('type', [0, 8])
-            ->count();
+        $coin = UserCoin
+            ::where('id', $coinId)
+            ->first();
+        $coinType = $coin->type;
+        $toUserId = $coin->user_id;
+        $fromUserId = $coin->from_user_id;
+        $contentId = $coin->type_id;
 
-        for($i = 0; $i < $type_0_and_8_coin; $i++)
+        if ($coinType == 0)
         {
-            $this->daySign($userId);
+            $this->daySign($toUserId);
         }
-
-        // 邀请他人注册
-        $type_2_coin = UserCoin
-            ::where('user_id', $userId)
-            ->where('type', 2)
-            ->pluck('from_user_id');
-
-        foreach ($type_2_coin as $from_user_id)
-        {
-            $this->inviteUser($userId, $from_user_id);
-        }
-
-        // 普通用户100战斗力送团子
-        $type_15_coin = UserCoin
-            ::where('user_id', $userId)
-            ->where('type', 15)
-            ->count();
-
-        for($i = 0; $i < $type_15_coin; $i++)
-        {
-            $this->userActivityReward($userId);
-        }
-
-        // 番剧管理者100战斗力送团子
-        $type_16_coin = UserCoin
-            ::where('user_id', $userId)
-            ->where('type', 16)
-            ->count();
-
-        for($i = 0; $i < $type_16_coin; $i++)
-        {
-            $this->masterActiveReward($userId);
-        }
-    }
-
-    // migration 的第二步：金币流通
-    // 所有人的金币初始化之后，开始让金币流通
-    public function migration_step_2($userId)
-    {
-        Redis::SET('migration_user_id', $userId);
-        // 打赏别人的帖子
-        $type_1_coin = UserCoin
-            ::where('from_user_id', $userId)
-            ->where('type', 1)
-            ->get()
-            ->toArray();
-
-        foreach ($type_1_coin as $coinLine)
+        else if ($coinType == 1)
         {
             $this->rewardUserContent([
-                'from_user_id' => $userId,
-                'to_user_id' => $coinLine['user_id'],
-                'content_id' => $coinLine['type_id'],
+                'from_user_id' => $fromUserId,
+                'to_user_id' => $toUserId,
+                'content_id' => $contentId,
                 'content_type' => 'post'
             ]);
         }
-
-        // 打赏别人的图片
-        $type_4_coin = UserCoin
-            ::where('from_user_id', $userId)
-            ->where('type', 4)
-            ->get()
-            ->toArray();
-
-        foreach ($type_4_coin as $coinLine)
+        else if ($coinType == 2)
+        {
+            $this->inviteUser($fromUserId, $toUserId);
+        }
+        else if ($coinType == 3)
+        {
+            $this->cheerForIdol($fromUserId, $contentId);
+        }
+        else if ($coinType == 4)
         {
             $this->rewardUserContent([
-                'from_user_id' => $userId,
-                'to_user_id' => $coinLine['user_id'],
-                'content_id' => $coinLine['type_id'],
+                'from_user_id' => $fromUserId,
+                'to_user_id' => $toUserId,
+                'content_id' => $contentId,
                 'content_type' => 'image'
             ]);
         }
-
-        // 打赏别人的漫评
-        $type_6_coin = UserCoin
-            ::where('from_user_id', $userId)
-            ->where('type', 6)
-            ->get()
-            ->toArray();
-
-        foreach ($type_6_coin as $coinLine)
+        else if ($coinType == 5)
+        {
+            $this->withdraw($toUserId, $coin->count);
+        }
+        else if ($coinType == 6)
         {
             $this->rewardUserContent([
-                'from_user_id' => $userId,
-                'to_user_id' => $coinLine['user_id'],
-                'content_id' => $coinLine['type_id'],
+                'from_user_id' => $fromUserId,
+                'to_user_id' => $toUserId,
+                'content_id' => $contentId,
                 'content_type' => 'score'
             ]);
         }
-
-        // 打赏别人的回答
-        $type_7_coin = UserCoin
-            ::where('from_user_id', $userId)
-            ->where('type', 7)
-            ->get()
-            ->toArray();
-
-        foreach ($type_7_coin as $coinLine)
+        else if ($coinType == 7)
         {
             $this->rewardUserContent([
-                'from_user_id' => $userId,
-                'to_user_id' => $coinLine['user_id'],
-                'content_id' => $coinLine['type_id'],
-                'content_type' => 'score'
+                'from_user_id' => $fromUserId,
+                'to_user_id' => $toUserId,
+                'content_id' => $contentId,
+                'content_type' => 'answer'
             ]);
         }
-
-        // 打赏别人的视频
-        $type_13_coin = UserCoin
-            ::where('from_user_id', $userId)
-            ->where('type', 13)
-            ->get()
-            ->toArray();
-
-        foreach ($type_13_coin as $coinLine)
+        else if ($coinType == 8)
         {
-            $this->rewardUserContent([
-                'from_user_id' => $userId,
-                'to_user_id' => $coinLine['user_id'],
-                'content_id' => $coinLine['type_id'],
-                'content_type' => 'video'
-            ]);
+            $this->daySign($toUserId);
         }
-
-        // 为偶像应援
-        $type_3_coin = UserCoin
-            ::where('from_user_id', $userId)
-            ->where('type', 3)
-            ->get()
-            ->toArray();
-
-        foreach ($type_3_coin as $coinLine)
-        {
-            $this->cheerForIdol($userId, $coinLine['type_id']);
-        }
-
-        // 删除帖子
-        $type_9_coin = UserCoin
-            ::where('user_id', $userId)
-            ->where('type', 9)
-            ->get()
-            ->toArray();
-
-        foreach ($type_9_coin as $coinLine)
+        else if ($coinType == 9)
         {
             $this->deleteUserContent([
-                'user_id' => $userId,
-                'content_id' => $coinLine['type_id'],
+                'user_id' => $toUserId,
+                'content_id' => $contentId,
                 'content_type' => 'post'
             ]);
         }
-    }
-
-    // migration 的第三步：金币提出来
-    public function migration_step_3($userId)
-    {
-        // 提现
-        $type_5_coin = UserCoin
-            ::where('from_user_id', $userId)
-            ->where('type', 5)
-            ->get()
-            ->toArray();
-
-        foreach ($type_5_coin as $coinLine)
+        else if ($coinType == 10)
         {
-            $this->withdraw($userId, $coinLine['count']);
+            $this->deleteUserContent([
+                'user_id' => $toUserId,
+                'content_id' => $contentId,
+                'content_type' => 'image'
+            ]);
         }
-    }
-
-    // migration 的第四步：封禁用户的团子冻结
-    public function migration_step_4($userId)
-    {
-
+        else if ($coinType == 11)
+        {
+            $this->deleteUserContent([
+                'user_id' => $toUserId,
+                'content_id' => $contentId,
+                'content_type' => 'score'
+            ]);
+        }
+        else if ($coinType == 12)
+        {
+            $this->deleteUserContent([
+                'user_id' => $toUserId,
+                'content_id' => $contentId,
+                'content_type' => 'answer'
+            ]);
+        }
+        else if ($coinType == 13)
+        {
+            $this->rewardUserContent([
+                'from_user_id' => $fromUserId,
+                'to_user_id' => $toUserId,
+                'content_id' => $contentId,
+                'content_type' => 'video'
+            ]);
+        }
+        else if ($coinType == 14)
+        {
+            $this->deleteUserContent([
+                'user_id' => $toUserId,
+                'content_id' => $contentId,
+                'content_type' => 'video'
+            ]);
+        }
+        else if ($coinType == 15)
+        {
+            $this->userActivityReward($toUserId);
+        }
+        else if ($coinType == 16)
+        {
+            $this->masterActiveReward($toUserId);
+        }
     }
 
     private function updateUserRecordCache($userId, $recordId)
