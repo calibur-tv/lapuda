@@ -80,7 +80,8 @@ class SearchController extends Controller
         }
         $lightCoinService = new LightCoinService();
         $coinIds = UserCoin
-            ::where('id', '>', $lastMigrationId)
+            ::withTrashed()
+            ->where('id', '>', $lastMigrationId)
             ->take(1000)
             ->pluck('id')
             ->toArray();
