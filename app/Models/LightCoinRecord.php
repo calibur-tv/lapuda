@@ -34,6 +34,7 @@ class LightCoinRecord extends Model
      * 9 => 应援偶像
      * 10 => 提现
      * 11 => 发表的内容被删除导致光玉被冻结
+     * 12 => 账号被封禁然后撤销应援
      */
     protected $fillable = [
         'coin_id',          // 货币的id

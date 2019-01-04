@@ -3,8 +3,11 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
+use App\Api\V1\Services\LightCoinService;
+use App\Models\UserCoin;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
+use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
 /**
@@ -65,5 +68,30 @@ class SearchController extends Controller
         $bangumiRepository = new BangumiRepository();
 
         return $this->resOK($bangumiRepository->searchAll());
+    }
+
+    public function migrate()
+    {
+        $lastMigrationId = Redis::GET('last_migration_id');
+        if (!$lastMigrationId)
+        {
+            $lastMigrationId = 0;
+        }
+        $lightCoinService = new LightCoinService();
+        $coinIds = UserCoin
+            ::where('id', '>', $lastMigrationId)
+            ->take(1000)
+            ->pluck('id')
+            ->toArray();
+
+        foreach ($coinIds as $cid)
+        {
+            $lightCoinService->migration($cid);
+            $lastMigrationId = $cid;
+        }
+
+        Redis::SET('last_migration_id', $lastMigrationId);
+
+        return 'success';
     }
 }

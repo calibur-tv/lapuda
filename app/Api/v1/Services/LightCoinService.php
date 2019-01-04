@@ -14,13 +14,14 @@ use App\Models\LightCoin;
 use App\Models\LightCoinRecord;
 use App\Models\User;
 use App\Models\UserCoin;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class LightCoinService
 {
     private $record_table = 'light_coin_records';
     private $withdraw_baseline = 100;
-
     // 增发团子
     private function recharge(array $params)
     {
@@ -30,23 +31,20 @@ class LightCoinService
         $toUserId = $params['to_user_id'];
         $toProductId = $params['to_product_id'];
         $toProductType = $params['to_product_type'];
-        $amount = $params['count'] ?: 1;
-        $orderId = $params['order_id'] ?: '';
+        $amount = $params['count'];
         // step：1 创建团子
         // step：2 写入流通记录
         // step：3 修改用户数据
+        $now = Carbon::now();
         $data = [
             'origin_from' => $from,
             'holder_type' => 1, // 1是用户
             'holder_id' => $toUserId,
             'state' => 0, // 0是团子
+            'created_at' => $now,
+            'updated_at' => $now
         ];
-
-        if (!$orderId)
-        {
-            $orderId = "recharge-{$toUserId}-{$from}-$amount-" . time();
-        }
-
+        $orderId = isset($params['order_id']) ? $params['order_id'] : "recharge-{$toUserId}-{$from}-$amount-" . time();
         $records = [];
         DB::beginTransaction();
         try
@@ -62,16 +60,16 @@ class LightCoinService
                     'to_user_id' => $toUserId,
                     'to_product_id' => $toProductId,
                     'to_product_type' => $toProductType,
-                    'order_amount' => $amount
+                    'order_amount' => $amount,
+                    'created_at' => $now,
+                    'updated_at' => $now
                 ];
             }
 
-            $lastInsertRecordId = LightCoinRecord::insertGetId($records);
+            LightCoinRecord::insert($records);
 
             User::where('id', $toUserId)
                 ->increment('coin_count_v2', $amount);
-
-            $this->updateUserRecordCache($toUserId, $lastInsertRecordId);
 
             DB::commit();
             return true;
@@ -79,6 +77,7 @@ class LightCoinService
         catch (\Exception $e)
         {
             DB::rollBack();
+            Log::info("[coin-recharge-failed] from:{$from} from_user_id: {$fromUserId} to_user_id: {$toUserId} to_product_id: {$toProductId} to_product_type: {$toProductType}");
             return false;
         }
     }
@@ -94,14 +93,9 @@ class LightCoinService
         $to_product_id = $data['to_product_id'];
         $to_product_type = $data['to_product_type'];
         $is_reward = $data['is_reward_to_really_user'];
-        if ($data['order_id'])
-        {
-            $order_id = $data['order_id'];
-        }
-        else
-        {
-            $order_id = "{$from_user_id}-to-{$to_user_type}-{$to_user_id}-for-{$to_product_type}-{$to_product_id}-" . time();
-        }
+        $order_id = isset($data['order_id'])
+            ? $data['order_id']
+            : "{$from_user_id}-to-{$to_user_type}-{$to_user_id}-for-{$to_product_type}-{$to_product_id}-" . time();
 
         $user = User
             ::where('id', $from_user_id)
@@ -111,6 +105,7 @@ class LightCoinService
         if ($user['light_count'] + $user['coin_count_v2'] < $exchange_count)
         {
             // 钱不够
+            Log::info("[coin-exchange-warning] amount:{$exchange_count} from_user_id: {$from_user_id} to_user_id: {$to_user_id} to_user_type: {$to_user_type} to_product_id: {$to_product_id} to_product_type: {$to_product_type}");
             return false;
         }
 
@@ -122,6 +117,7 @@ class LightCoinService
             // step：3 写入流通记录
             // step：4 产品提供者获得光玉（可选项，在函数调用外操作）
             // TODO：这个时候是不是要锁住 user ？怎么做
+            $now = Carbon::now();
             if ($user['coin_count_v2'] >= $exchange_count)
             {
                 User::where('id', $from_user_id)
@@ -187,23 +183,21 @@ class LightCoinService
                     'to_user_id' => $to_user_id,
                     'to_product_id' => $to_product_id,
                     'to_product_type' => $to_product_type,
-                    'order_amount' => $exchange_count
+                    'order_amount' => $exchange_count,
+                    'created_at' => $now,
+                    'updated_at' => $now
                 ];
             }
 
-            $lastInsertRecordId = LightCoinRecord::insertGetId($records);
+            LightCoinRecord::insert($records);
 
             DB::commit();
-            $this->updateUserRecordCache($from_user_id, $lastInsertRecordId);
-            if ($to_user_type === 1) // 是用户类型
-            {
-                $this->updateUserRecordCache($to_user_id, $lastInsertRecordId);
-            }
             return true;
         }
         catch (\Exception $e)
         {
             DB::rollBack();
+            Log::info("[coin-exchange-failed] amount:{$exchange_count} from_user_id: {$from_user_id} to_user_id: {$to_user_id} to_user_type: {$to_user_type} to_product_id: {$to_product_id} to_product_type: {$to_product_type}");
             return false;
         }
     }
@@ -385,6 +379,7 @@ class LightCoinService
     {
         return $this->recharge([
             'from' => 0,
+            'count' => 1,
             'from_user_id' => 0,
             'to_product_id' => 0,
             'to_product_type' => 0,
@@ -397,6 +392,7 @@ class LightCoinService
     {
         return $this->recharge([
             'from' => 1,
+            'count' => 1,
             'from_user_id' => $newUserId,
             'to_product_id' => $newUserId,
             'to_product_type' => 1,
@@ -409,6 +405,7 @@ class LightCoinService
     {
         return $this->recharge([
             'from' => 2,
+            'count' => 1,
             'from_user_id' => 0,
             'to_product_id' => 0,
             'to_product_type' => 2,
@@ -421,6 +418,7 @@ class LightCoinService
     {
         return $this->recharge([
             'from' => 3,
+            'count' => 1,
             'from_user_id' => 0,
             'to_product_id' => 0,
             'to_product_type' => 3,
@@ -490,6 +488,7 @@ class LightCoinService
         catch(\Exception $e)
         {
             DB::rollBack();
+            Log::info("[reward-user-content-failed] from_user_id:{$fromUserId} to_user_id: {$toUserId} content_type: {$contentType} content_id: {$contentId}");
             return false;
         }
     }
@@ -504,6 +503,7 @@ class LightCoinService
          */
         $userId = $data['user_id'];
         $contentId = $data['content_id'];
+        $amount = $data['amount'];
         switch ($data['content_type'])
         {
             case 'post':
@@ -548,8 +548,15 @@ class LightCoinService
                 ::whereIn('id', $coinIds)
                 ->get();
 
+            if ($amount != count($coinIds))
+            {
+                Log::info("[delete-user-content-warning] user_id: {$userId} content_type: {$contentType} content_id: {$contentId} amount：{$amount} record_count：" . count($coinIds));
+                DB::rollBack();
+                return false;
+            }
+
+            $now = Carbon::now();
             $orderId = "delete-content-{$userId}-{$contentType}-{$contentId}";
-            $amount = count($coinIds);
             $records = [];
             $deletedLightCount = 0;
             $deletedCoinCount = 0;
@@ -566,7 +573,9 @@ class LightCoinService
                         'to_user_id' => 0,
                         'to_product_id' => 0,
                         'to_product_type' => 11,
-                        'order_amount' => $amount
+                        'order_amount' => $amount,
+                        'created_at' => $now,
+                        'updated_at' => $now
                     ];
                     $deletedLightCount++;
                 }
@@ -593,7 +602,9 @@ class LightCoinService
                         'to_user_id' => 0,
                         'to_product_id' => 0,
                         'to_product_type' => 11,
-                        'order_amount' => $amount
+                        'order_amount' => $amount,
+                        'created_at' => $now,
+                        'updated_at' => $now
                     ];
                     $deletedLightCount++;
                 }
@@ -618,7 +629,9 @@ class LightCoinService
                             'to_user_id' => 0,
                             'to_product_id' => 0,
                             'to_product_type' => 11,
-                            'order_amount' => $amount
+                            'order_amount' => $amount,
+                            'created_at' => $now,
+                            'updated_at' => $now
                         ];
                         $deletedCoinCount++;
                     }
@@ -629,7 +642,7 @@ class LightCoinService
                     ->delete();
             }
 
-            $lastInsertRecordId = LightCoinRecord::insertGetId($records);
+            LightCoinRecord::insert($records);
 
             User::where('id', $userId)
                 ->increment('light_count', -$deletedLightCount);
@@ -641,13 +654,13 @@ class LightCoinService
                 $func();
             }
 
-            $this->updateUserRecordCache($userId, $lastInsertRecordId);
             DB::commit();
             return true;
         }
         catch (\Exception $e)
         {
             DB::rollBack();
+            Log::info("[delete-user-content-failed] user_id: {$userId} content_type: {$contentType} content_id: {$contentId}");
             return false;
         }
     }
@@ -683,6 +696,7 @@ class LightCoinService
         catch(\Exception $e)
         {
             DB::rollBack();
+            Log::info("[cheer-for-idol-failed] from_user_id: {$fromUserId} role_id: {$roleId} amount: {$count}");
             return false;
         }
     }
@@ -706,6 +720,7 @@ class LightCoinService
         DB::beginTransaction();
         try
         {
+            $now = Carbon::now();
             $order_id = "{$userId}-withdraw-{$count}-" . time();
 
             User::where('id', $userId)
@@ -738,11 +753,13 @@ class LightCoinService
                     'to_user_id' => 0,
                     'to_product_id' => 0,
                     'to_product_type' => 10,
-                    'order_amount' => $count
+                    'order_amount' => $count,
+                    'created_at' => $now,
+                    'updated_at' => $now
                 ];
             }
 
-            $lastInsertRecordId = LightCoinRecord::insertGetId($records);
+            LightCoinRecord::insert($records);
 
             if ($func)
             {
@@ -750,12 +767,12 @@ class LightCoinService
             }
 
             DB::commit();
-            $this->updateUserRecordCache($userId, $lastInsertRecordId);
             return true;
         }
         catch (\Exception $e)
         {
             DB::rollBack();
+            Log::info("[user-withdraw-failed] user_id: {$userId} amount: {$count}");
             return false;
         }
     }
@@ -772,9 +789,58 @@ class LightCoinService
     }
 
     // 撤销用户的所有应援
-    public function undoUserCheer($userId)
+    public function undoUserCheer($userId, $func = '')
     {
+        try
+        {
+            DB::beginTransaction();
 
+            $coinIds = LightCoinRecord
+                ::where('to_product_type', 9)
+                ->where('from_user_id', $userId)
+                ->pluck('coin_id')
+                ->toArray();
+
+            $orderId = "undo-{$userId}-cheer-idol-" . time();
+            $amount = count($coinIds);
+            $now = Carbon::now();
+
+            LightCoin
+                ::whereIn('id', $coinIds)
+                ->delete();
+
+            $records = [];
+            foreach ($coinIds as $coinId)
+            {
+                $records[] = [
+                    'coin_id' => $coinId,
+                    'order_id' => $orderId,
+                    'from_user_id' => 0,
+                    'to_user_id' => $userId,
+                    'to_product_id' => 0,
+                    'to_product_type' => 12,
+                    'order_amount' => $amount,
+                    'created_at' => $now,
+                    'updated_at' => $now
+                ];
+            }
+
+            LightCoinRecord::insert($records);
+
+            if ($func)
+            {
+                $func();
+            }
+
+            DB::commit();
+            return true;
+        }
+        catch (\Exception $e)
+        {
+            DB::rollBack();
+            Log::info("[undo-user-cheer-failed] user_id: {$userId}");
+            return false;
+        }
     }
 
     // 根据金币的 id ASC 来 migration
@@ -803,10 +869,15 @@ class LightCoinService
         $coin = UserCoin
             ::where('id', $coinId)
             ->first();
+        if (!$coin)
+        {
+            return;
+        }
         $coinType = $coin->type;
         $toUserId = $coin->user_id;
         $fromUserId = $coin->from_user_id;
         $contentId = $coin->type_id;
+        $amount = $coin->count;
 
         if ($coinType == 0)
         {
@@ -869,7 +940,8 @@ class LightCoinService
             $this->deleteUserContent([
                 'user_id' => $toUserId,
                 'content_id' => $contentId,
-                'content_type' => 'post'
+                'content_type' => 'post',
+                'amount' => $amount
             ]);
         }
         else if ($coinType == 10)
@@ -877,7 +949,8 @@ class LightCoinService
             $this->deleteUserContent([
                 'user_id' => $toUserId,
                 'content_id' => $contentId,
-                'content_type' => 'image'
+                'content_type' => 'image',
+                'amount' => $amount
             ]);
         }
         else if ($coinType == 11)
@@ -885,7 +958,8 @@ class LightCoinService
             $this->deleteUserContent([
                 'user_id' => $toUserId,
                 'content_id' => $contentId,
-                'content_type' => 'score'
+                'content_type' => 'score',
+                'amount' => $amount
             ]);
         }
         else if ($coinType == 12)
@@ -893,7 +967,8 @@ class LightCoinService
             $this->deleteUserContent([
                 'user_id' => $toUserId,
                 'content_id' => $contentId,
-                'content_type' => 'answer'
+                'content_type' => 'answer',
+                'amount' => $amount
             ]);
         }
         else if ($coinType == 13)
@@ -910,7 +985,8 @@ class LightCoinService
             $this->deleteUserContent([
                 'user_id' => $toUserId,
                 'content_id' => $contentId,
-                'content_type' => 'video'
+                'content_type' => 'video',
+                'amount' => $amount
             ]);
         }
         else if ($coinType == 15)

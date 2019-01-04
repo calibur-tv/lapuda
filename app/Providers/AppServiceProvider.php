@@ -2,8 +2,6 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -15,6 +13,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        /*
         if ($this->app->environment() !== 'production') {
             DB::listen(function ($query) {
                 Log::info($query->sql);
@@ -22,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
                 Log::info($query->time);
             });
         }
+        */
     }
 
     /**
