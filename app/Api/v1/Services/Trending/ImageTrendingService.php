@@ -139,6 +139,7 @@ class ImageTrendingService extends TrendingService
     public function getListByIds($ids, $flowType)
     {
         $store = new ImageRepository();
+        /*
         if ($flowType === 'bangumi')
         {
             $list = $store->bangumiFlow($ids);
@@ -151,6 +152,8 @@ class ImageTrendingService extends TrendingService
         {
             $list = $store->trendingFlow($ids);
         }
+        */
+        $list = $store->trendingFlow($ids);
         if (empty($list))
         {
             return [];

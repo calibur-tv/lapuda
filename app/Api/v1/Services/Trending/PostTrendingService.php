@@ -133,6 +133,7 @@ class PostTrendingService extends TrendingService
     public function getListByIds($ids, $flowType)
     {
         $store = new PostRepository();
+        /*
         if ($flowType === 'bangumi')
         {
             $list = $store->bangumiFlow($ids);
@@ -145,6 +146,8 @@ class PostTrendingService extends TrendingService
         {
             $list = $store->trendingFlow($ids);
         }
+        */
+        $list = $store->trendingFlow($ids);
         if (empty($list))
         {
             return [];

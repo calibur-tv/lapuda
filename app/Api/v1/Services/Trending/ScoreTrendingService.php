@@ -118,6 +118,7 @@ class ScoreTrendingService extends TrendingService
     public function getListByIds($ids, $flowType)
     {
         $store = new ScoreRepository();
+        /*
         if ($flowType === 'bangumi')
         {
             $list = $store->bangumiFlow($ids);
@@ -130,6 +131,8 @@ class ScoreTrendingService extends TrendingService
         {
             $list = $store->trendingFlow($ids);
         }
+        */
+        $list = $store->trendingFlow($ids);
         if (empty($list))
         {
             return [];
