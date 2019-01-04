@@ -176,6 +176,7 @@ class PostTrendingService extends TrendingService
         }
 
         $transformer = new PostTransformer();
+        /*
         if ($flowType === 'bangumi')
         {
             return $transformer->bangumiFlow($list);
@@ -184,6 +185,7 @@ class PostTrendingService extends TrendingService
         {
             return $transformer->userFlow($list);
         }
+        */
 
         return $transformer->trendingFlow($list);
     }

@@ -161,6 +161,7 @@ class ScoreTrendingService extends TrendingService
         }
 
         $transformer = new ScoreTransformer();
+        /*
         if ($flowType === 'bangumi')
         {
             return $transformer->bangumiFlow($list);
@@ -169,6 +170,7 @@ class ScoreTrendingService extends TrendingService
         {
             return $transformer->userFlow($list);
         }
+        */
 
         return $transformer->trendingFlow($list);
     }

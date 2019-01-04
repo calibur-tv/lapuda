@@ -182,6 +182,7 @@ class ImageTrendingService extends TrendingService
         }
 
         $transformer = new ImageTransformer();
+        /*
         if ($flowType === 'bangumi')
         {
             return $transformer->bangumiFlow($list);
@@ -190,6 +191,7 @@ class ImageTrendingService extends TrendingService
         {
             return $transformer->userFlow($list);
         }
+        */
 
         return $transformer->trendingFlow($list);
     }
