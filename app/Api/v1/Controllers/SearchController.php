@@ -83,6 +83,7 @@ class SearchController extends Controller
             ::withTrashed()
             ->where('id', '>', $lastMigrationId)
             ->take(10000)
+            ->orderBy('id', 'ASC')
             ->pluck('id')
             ->toArray();
 
