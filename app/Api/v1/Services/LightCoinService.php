@@ -77,7 +77,7 @@ class LightCoinService
         catch (\Exception $e)
         {
             DB::rollBack();
-            Log::info("[coin-recharge-failed] from:{$from} from_user_id: {$fromUserId} to_user_id: {$toUserId} to_product_id: {$toProductId} to_product_type: {$toProductType}");
+            Log::info('coin-recharge-failed', $params);
             return false;
         }
     }
@@ -105,7 +105,7 @@ class LightCoinService
         if ($user['light_count'] + $user['coin_count_v2'] < $exchange_count)
         {
             // 钱不够
-            Log::info("[coin-exchange-warning] amount:{$exchange_count} from_user_id: {$from_user_id} to_user_id: {$to_user_id} to_user_type: {$to_user_type} to_product_id: {$to_product_id} to_product_type: {$to_product_type}");
+            Log::info('coin-exchange-warning', $data);
             return false;
         }
 
@@ -197,7 +197,7 @@ class LightCoinService
         catch (\Exception $e)
         {
             DB::rollBack();
-            Log::info("[coin-exchange-failed] amount:{$exchange_count} from_user_id: {$from_user_id} to_user_id: {$to_user_id} to_user_type: {$to_user_type} to_product_id: {$to_product_id} to_product_type: {$to_product_type}");
+            Log::info('coin-exchange-failed', $data);
             return false;
         }
     }
@@ -488,7 +488,7 @@ class LightCoinService
         catch(\Exception $e)
         {
             DB::rollBack();
-            Log::info("[reward-user-content-failed] from_user_id:{$fromUserId} to_user_id: {$toUserId} content_type: {$contentType} content_id: {$contentId}");
+            Log::info('reward-user-content-failed', $data);
             return false;
         }
     }
@@ -550,7 +550,7 @@ class LightCoinService
 
             if ($amount != count($coinIds))
             {
-                Log::info("[delete-user-content-warning] user_id: {$userId} content_type: {$contentType} content_id: {$contentId} amount：{$amount} record_count：" . count($coinIds));
+                Log::info('delete-user-content-warning', $data);
                 DB::rollBack();
                 return false;
             }
@@ -660,7 +660,7 @@ class LightCoinService
         catch (\Exception $e)
         {
             DB::rollBack();
-            Log::info("[delete-user-content-failed] user_id: {$userId} content_type: {$contentType} content_id: {$contentId}");
+            Log::info('delete-user-content-failed', $data);
             return false;
         }
     }
@@ -696,7 +696,11 @@ class LightCoinService
         catch(\Exception $e)
         {
             DB::rollBack();
-            Log::info("[cheer-for-idol-failed] from_user_id: {$fromUserId} role_id: {$roleId} amount: {$count}");
+            Log::info('cheer-for-idol-failed', [
+                'from_user_id' => $fromUserId,
+                'role_id' => $roleId,
+                'amount' => $count
+            ]);
             return false;
         }
     }
@@ -772,7 +776,10 @@ class LightCoinService
         catch (\Exception $e)
         {
             DB::rollBack();
-            Log::info("[user-withdraw-failed] user_id: {$userId} amount: {$count}");
+            Log::info('user-withdraw-failed', [
+                'user_id' => $userId,
+                'amount' => $count
+            ]);
             return false;
         }
     }
@@ -838,7 +845,9 @@ class LightCoinService
         catch (\Exception $e)
         {
             DB::rollBack();
-            Log::info("[undo-user-cheer-failed] user_id: {$userId}");
+            Log::info('undo-user-cheer-failed', [
+                'user_id' => $userId
+            ]);
             return false;
         }
     }
