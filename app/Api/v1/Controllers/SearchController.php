@@ -82,7 +82,7 @@ class SearchController extends Controller
         $coinIds = UserCoin
             ::withTrashed()
             ->where('id', '>', $lastMigrationId)
-            ->take(1000)
+            ->take(10000)
             ->pluck('id')
             ->toArray();
 
