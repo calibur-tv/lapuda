@@ -887,7 +887,7 @@ class LightCoinService
             ->first();
         if (!$coin)
         {
-            return;
+            return false;
         }
         $coinType = $coin->type;
         $toUserId = $coin->user_id;
@@ -897,11 +897,11 @@ class LightCoinService
 
         if ($coinType == 0)
         {
-            $this->daySign($toUserId);
+            return $this->daySign($toUserId);
         }
         else if ($coinType == 1)
         {
-            $this->rewardUserContent([
+            return $this->rewardUserContent([
                 'from_user_id' => $fromUserId,
                 'to_user_id' => $toUserId,
                 'content_id' => $contentId,
@@ -910,15 +910,15 @@ class LightCoinService
         }
         else if ($coinType == 2)
         {
-            $this->inviteUser($fromUserId, $toUserId);
+            return $this->inviteUser($fromUserId, $toUserId);
         }
         else if ($coinType == 3)
         {
-            $this->cheerForIdol($fromUserId, $contentId);
+            return $this->cheerForIdol($fromUserId, $contentId);
         }
         else if ($coinType == 4)
         {
-            $this->rewardUserContent([
+            return $this->rewardUserContent([
                 'from_user_id' => $fromUserId,
                 'to_user_id' => $toUserId,
                 'content_id' => $contentId,
@@ -931,7 +931,7 @@ class LightCoinService
         }
         else if ($coinType == 6)
         {
-            $this->rewardUserContent([
+            return $this->rewardUserContent([
                 'from_user_id' => $fromUserId,
                 'to_user_id' => $toUserId,
                 'content_id' => $contentId,
@@ -940,7 +940,7 @@ class LightCoinService
         }
         else if ($coinType == 7)
         {
-            $this->rewardUserContent([
+            return $this->rewardUserContent([
                 'from_user_id' => $fromUserId,
                 'to_user_id' => $toUserId,
                 'content_id' => $contentId,
@@ -949,11 +949,11 @@ class LightCoinService
         }
         else if ($coinType == 8)
         {
-            $this->daySign($toUserId);
+            return $this->daySign($toUserId);
         }
         else if ($coinType == 9)
         {
-            $this->deleteUserContent([
+            return $this->deleteUserContent([
                 'user_id' => $toUserId,
                 'content_id' => $contentId,
                 'content_type' => 'post',
@@ -962,7 +962,7 @@ class LightCoinService
         }
         else if ($coinType == 10)
         {
-            $this->deleteUserContent([
+            return $this->deleteUserContent([
                 'user_id' => $toUserId,
                 'content_id' => $contentId,
                 'content_type' => 'image',
@@ -971,7 +971,7 @@ class LightCoinService
         }
         else if ($coinType == 11)
         {
-            $this->deleteUserContent([
+            return $this->deleteUserContent([
                 'user_id' => $toUserId,
                 'content_id' => $contentId,
                 'content_type' => 'score',
@@ -980,7 +980,7 @@ class LightCoinService
         }
         else if ($coinType == 12)
         {
-            $this->deleteUserContent([
+            return $this->deleteUserContent([
                 'user_id' => $toUserId,
                 'content_id' => $contentId,
                 'content_type' => 'answer',
@@ -989,7 +989,7 @@ class LightCoinService
         }
         else if ($coinType == 13)
         {
-            $this->rewardUserContent([
+            return $this->rewardUserContent([
                 'from_user_id' => $fromUserId,
                 'to_user_id' => $toUserId,
                 'content_id' => $contentId,
@@ -998,7 +998,7 @@ class LightCoinService
         }
         else if ($coinType == 14)
         {
-            $this->deleteUserContent([
+            return $this->deleteUserContent([
                 'user_id' => $toUserId,
                 'content_id' => $contentId,
                 'content_type' => 'video',
@@ -1007,11 +1007,11 @@ class LightCoinService
         }
         else if ($coinType == 15)
         {
-            $this->userActivityReward($toUserId);
+            return $this->userActivityReward($toUserId);
         }
         else if ($coinType == 16)
         {
-            $this->masterActiveReward($toUserId);
+            return $this->masterActiveReward($toUserId);
         }
     }
 
