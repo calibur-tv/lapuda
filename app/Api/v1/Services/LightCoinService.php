@@ -69,6 +69,7 @@ class LightCoinService
             LightCoinRecord::insert($records);
 
             User::where('id', $toUserId)
+                ->withTrashed()
                 ->increment('coin_count_v2', $amount);
 
             DB::commit();
@@ -121,6 +122,7 @@ class LightCoinService
             if ($user['coin_count_v2'] >= $exchange_count)
             {
                 User::where('id', $from_user_id)
+                    ->withTrashed()
                     ->update([
                         'coin_count_v2' => $user['coin_count_v2'] - $exchange_count
                     ]);
@@ -139,6 +141,7 @@ class LightCoinService
                 $useLightCount = $exchange_count - $user['coin_count_v2'];
                 // 团子不够时，团子扣光，光玉减少
                 User::where('id', $from_user_id)
+                    ->withTrashed()
                     ->update([
                         'coin_count_v2' => 0,
                         'light_count' => $user['light_count'] - $useLightCount
@@ -475,6 +478,7 @@ class LightCoinService
                 return false;
             }
             User::where('id', $toUserId)
+                ->withTrashed()
                 ->increment('light_count', 1);
 
             if ($func)
@@ -645,8 +649,10 @@ class LightCoinService
             LightCoinRecord::insert($records);
 
             User::where('id', $userId)
+                ->withTrashed()
                 ->increment('light_count', -$deletedLightCount);
             User::where('id', $userId)
+                ->withTrashed()
                 ->increment('coin_count_v2', -$deletedCoinCount);
 
             if ($func)
@@ -728,6 +734,7 @@ class LightCoinService
             $order_id = "{$userId}-withdraw-{$count}-" . time();
 
             User::where('id', $userId)
+                ->withTrashed()
                 ->increment('light_count', -$count);
 
             $exchangeIds = LightCoin
