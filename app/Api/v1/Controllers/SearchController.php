@@ -7,6 +7,7 @@ use App\Api\V1\Services\LightCoinService;
 use App\Models\UserCoin;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
@@ -86,6 +87,7 @@ class SearchController extends Controller
 
         foreach ($coinIds as $cid)
         {
+            Log::info('migration coin id：' . $cid);
             $lightCoinService->migration($cid);
             $lastMigrationId = $cid;
         }

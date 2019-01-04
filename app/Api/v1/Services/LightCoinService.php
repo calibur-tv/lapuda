@@ -46,7 +46,7 @@ class LightCoinService
         ];
         $orderId = isset($params['order_id']) ? $params['order_id'] : "recharge-{$toUserId}-{$from}-$amount-" . time();
         $records = [];
-        DB::beginTransaction();
+//        DB::beginTransaction();
 //        try
 //        {
             for ($i = 0; $i < $amount; $i++)
@@ -71,7 +71,7 @@ class LightCoinService
             User::where('id', $toUserId)
                 ->increment('coin_count_v2', $amount);
 
-            DB::commit();
+//            DB::commit();
             return true;
 //        }
 //        catch (\Exception $e)
@@ -191,7 +191,7 @@ class LightCoinService
 
             LightCoinRecord::insert($records);
 
-            DB::commit();
+//            DB::commit();
             return true;
 //        }
 //        catch (\Exception $e)
