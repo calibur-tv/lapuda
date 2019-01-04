@@ -79,27 +79,19 @@ class SearchController extends Controller
             $lastMigrationId = 0;
         }
         $lightCoinService = new LightCoinService();
+        $coinIds = UserCoin
+            ::withTrashed()
+            ->where('id', '>', $lastMigrationId)
+            ->take(10000)
+            ->orderBy('id', 'ASC')
+            ->pluck('id')
+            ->toArray();
 
-        for ($i = 0; $i < 7000; $i++)
+        foreach ($coinIds as $cid)
         {
-            $coinIds = UserCoin
-                ::withTrashed()
-                ->where('id', '>', $lastMigrationId)
-                ->take(100)
-                ->orderBy('id', 'ASC')
-                ->pluck('id')
-                ->toArray();
-            if (!count($coinIds))
-            {
-                break;
-            }
-
-            foreach ($coinIds as $cid)
-            {
-                Log::info('migration coin id：' . $cid);
-                $lightCoinService->migration($cid);
-                $lastMigrationId = $cid;
-            }
+            Log::info('migration coin id：' . $cid);
+            $lightCoinService->migration($cid);
+            $lastMigrationId = $cid;
         }
 
         Redis::SET('last_migration_id', $lastMigrationId);
