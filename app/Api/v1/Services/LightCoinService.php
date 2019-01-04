@@ -47,8 +47,8 @@ class LightCoinService
         $orderId = isset($params['order_id']) ? $params['order_id'] : "recharge-{$toUserId}-{$from}-$amount-" . time();
         $records = [];
         DB::beginTransaction();
-        try
-        {
+//        try
+//        {
             for ($i = 0; $i < $amount; $i++)
             {
                 $id = LightCoin::insertGetId($data);
@@ -73,13 +73,13 @@ class LightCoinService
 
             DB::commit();
             return true;
-        }
-        catch (\Exception $e)
-        {
-            DB::rollBack();
-            Log::info('coin-recharge-failed', $params);
-            return false;
-        }
+//        }
+//        catch (\Exception $e)
+//        {
+//            DB::rollBack();
+//            Log::info('coin-recharge-failed', $params);
+//            return false;
+//        }
     }
 
     // 交易光玉/团子
@@ -109,9 +109,9 @@ class LightCoinService
             return false;
         }
 
-        DB::beginTransaction();
-        try
-        {
+//        DB::beginTransaction();
+//        try
+//        {
             // step：1 当前消费者扣除光玉
             // step：2 修改团子持有者
             // step：3 写入流通记录
@@ -146,7 +146,7 @@ class LightCoinService
 
                 $coinIds = LightCoin
                     ::where('state', 0)
-                    ->where('model_type', 1)
+                    ->where('holder_type', 1)
                     ->where('holder_id', $from_user_id)
                     ->orderBy('id', 'DESC')
                     ->take($user['coin_count_v2'])
@@ -155,7 +155,7 @@ class LightCoinService
 
                 $lightIds = LightCoin
                     ::where('state', 1)
-                    ->where('model_type', 1)
+                    ->where('holder_type', 1)
                     ->where('holder_id', $from_user_id)
                     ->orderBy('id', 'DESC')
                     ->take($useLightCount)
@@ -193,13 +193,13 @@ class LightCoinService
 
             DB::commit();
             return true;
-        }
-        catch (\Exception $e)
-        {
-            DB::rollBack();
-            Log::info('coin-exchange-failed', $data);
-            return false;
-        }
+//        }
+//        catch (\Exception $e)
+//        {
+//            DB::rollBack();
+//            Log::info('coin-exchange-failed', $data);
+//            return false;
+//        }
     }
 
     // 拥有光玉+团子个数
