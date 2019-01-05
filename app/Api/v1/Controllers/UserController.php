@@ -321,6 +321,10 @@ class UserController extends Controller
                 $result[] = $item;
             }
         }
+        if ($page == 0 && count($result) == 0)
+        {
+            $idsObject['total'] = 0;
+        }
 
         return $this->resOK([
             'list' => $result,
