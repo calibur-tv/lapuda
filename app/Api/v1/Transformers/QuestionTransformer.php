@@ -41,7 +41,8 @@ class QuestionTransformer extends Transformer
                 'followed' => $question['followed'],
                 'follow_users' => $question['follow_users'],
                 'created_at' => $question['created_at'],
-                'updated_at' => $question['updated_at']
+                'updated_at' => $question['updated_at'],
+                'deleted_at' => $question['deleted_at']
             ];
         });
     }

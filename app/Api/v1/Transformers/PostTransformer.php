@@ -36,7 +36,8 @@ class PostTransformer extends Transformer
                 'is_nice' => (boolean)$post['is_nice'],
                 'is_creator' => (boolean)$post['is_creator'],
                 'created_at' => $post['created_at'],
-                'updated_at' => $post['updated_at']
+                'updated_at' => $post['updated_at'],
+                'deleted_at' => $post['deleted_at']
             ];
         });
     }

@@ -52,7 +52,8 @@ class ImageTransformer extends Transformer
                 'reward_users' => $image['reward_users'],
                 'mark_users' => $image['mark_users'],
                 'created_at' => $image['created_at'],
-                'updated_at' => $image['updated_at']
+                'updated_at' => $image['updated_at'],
+                'deleted_at' => $image['deleted_at']
             ];
         });
     }
