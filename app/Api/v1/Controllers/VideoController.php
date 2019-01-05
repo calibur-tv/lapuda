@@ -4,11 +4,9 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Counter\VideoPlayCounter;
-use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
-use App\Api\V1\Services\Toggle\Post\VideoLikeService;
+use App\Api\V1\Services\Toggle\Video\VideoLikeService;
 use App\Api\V1\Services\Toggle\Video\VideoMarkService;
 use App\Api\V1\Services\Toggle\Video\VideoRewardService;
-use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\VideoTransformer;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Models\Video;

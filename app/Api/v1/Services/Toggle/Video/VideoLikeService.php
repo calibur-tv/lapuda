@@ -6,7 +6,7 @@
  * Time: 下午4:55
  */
 
-namespace App\Api\V1\Services\Toggle\Post;
+namespace App\Api\V1\Services\Toggle\Video;
 
 use App\Api\V1\Services\Toggle\ToggleService;
 
