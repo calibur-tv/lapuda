@@ -282,11 +282,6 @@ class ToggleController extends Controller
             return $this->resErrNotFound();
         }
 
-        if (isset($item['is_creator']) ? $item['is_creator'] : !$item['source_url'])
-        {
-            return $this->resErrRole('原创内容只能打赏，不能喜欢');
-        }
-
         if ($item['user_id'] == $userId)
         {
             return $this->resErrRole('不能喜欢自己的内容');
@@ -375,7 +370,7 @@ class ToggleController extends Controller
 
         if ($item['user_id'] == $userId)
         {
-            return $this->resErrRole('不能喜欢自己的内容');
+            return $this->resErrRole('不能收藏自己的内容');
         }
 
         $result = $markService->toggle($userId, $id);
@@ -493,6 +488,10 @@ class ToggleController extends Controller
             {
                 return $this->resErrRole('团子不足');
             }
+        }
+        else
+        {
+            return $this->resErrRole('已打赏过的内容');
         }
 
         $result = $userRepository->toggleCoin($rewarded, $userId, $item['user_id'], $coinType, $item['id']);

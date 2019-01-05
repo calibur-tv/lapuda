@@ -476,7 +476,7 @@ class Repository
         return json_encode($result);
     }
 
-    protected function formatJsonContent($content)
+    public function formatJsonContent($content)
     {
         $content = json_decode($content, true);
         $result = [];

@@ -5,6 +5,7 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Counter\VideoPlayCounter;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
+use App\Api\V1\Services\Toggle\Post\VideoLikeService;
 use App\Api\V1\Services\Toggle\Video\VideoMarkService;
 use App\Api\V1\Services\Toggle\Video\VideoRewardService;
 use App\Api\V1\Transformers\BangumiTransformer;
@@ -74,11 +75,14 @@ class VideoController extends Controller
 
         $videoMarkService = new VideoMarkService();
         $videoRewardService = new VideoRewardService();
+        $videoLikeService = new VideoLikeService();
 
         $info['rewarded'] = $videoRewardService->check($userId, $id);
         $info['reward_users'] = $videoRewardService->users($id);
         $info['marked'] = $videoMarkService->check($userId, $id);
         $info['mark_users'] = $videoMarkService->users($id);
+        $info['liked'] = $videoLikeService->check($userId, $id);
+        $info['like_users'] = $videoLikeService->users($id);
         $info['other_site'] = $others_site_video;
 
         $mustReward = $released_video_id == $id && $isEnded == 0;

@@ -133,6 +133,7 @@ class PostTrendingService extends TrendingService
     public function getListByIds($ids, $flowType)
     {
         $store = new PostRepository();
+        /*
         if ($flowType === 'bangumi')
         {
             $list = $store->bangumiFlow($ids);
@@ -145,6 +146,8 @@ class PostTrendingService extends TrendingService
         {
             $list = $store->trendingFlow($ids);
         }
+        */
+        $list = $store->trendingFlow($ids);
         if (empty($list))
         {
             return [];
@@ -162,17 +165,16 @@ class PostTrendingService extends TrendingService
         {
             if ($item['is_creator'])
             {
-                $list[$i]['like_count'] = 0;
                 $list[$i]['reward_count'] = $rewardService->total($item['id']);
             }
             else
             {
-                $list[$i]['like_count'] = $likeService->total($item['id']);
                 $list[$i]['reward_count'] = 0;
             }
         }
 
         $transformer = new PostTransformer();
+        /*
         if ($flowType === 'bangumi')
         {
             return $transformer->bangumiFlow($list);
@@ -181,6 +183,7 @@ class PostTrendingService extends TrendingService
         {
             return $transformer->userFlow($list);
         }
+        */
 
         return $transformer->trendingFlow($list);
     }

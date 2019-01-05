@@ -25,12 +25,8 @@ class VideoTransformer extends Transformer
                 'poster' => $video['poster'],
                 'other_site' => (boolean)$video['other_site'],
                 'is_creator' => true,
-                'liked' => false,
-                'like_users' => [
-                    'list' => [],
-                    'total' => 0,
-                    'noMore' => true
-                ],
+                'liked' => $video['liked'],
+                'like_users' => $video['like_users'],
                 'rewarded' => $video['rewarded'],
                 'reward_users' => $video['reward_users'],
                 'marked' => $video['marked'],

@@ -88,18 +88,9 @@ class ScoreController extends Controller
             $scoreRewardService = new ScoreRewardService();
             $score['reward_users'] = $scoreRewardService->users($id);
             $score['rewarded'] = $scoreRewardService->check($visitorId, $id, $userId);
-            $score['like_users'] = [
-                'list' => [],
-                'total' => 0,
-                'noMore' => true
-            ];;
-            $score['liked'] = false;
         }
         else
         {
-            $scoreLikeService = new ScoreLikeService();
-            $score['like_users'] = $scoreLikeService->users($id);
-            $score['liked'] = $scoreLikeService->check($visitorId, $id, $userId);
             $score['reward_users'] = [
                 'list' => [],
                 'total' => 0,
@@ -108,9 +99,12 @@ class ScoreController extends Controller
             $score['rewarded'] = false;
         }
 
+        $scoreLikeService = new ScoreLikeService();
         $scoreMarkService = new ScoreMarkService();
-        $score['marked'] = $scoreMarkService->check($visitorId, $id);
+        $score['like_users'] = $scoreLikeService->users($id);
+        $score['liked'] = $scoreLikeService->check($visitorId, $id, $userId);
         $score['mark_users'] = $scoreMarkService->users($id);
+        $score['marked'] = $scoreMarkService->check($visitorId, $id);
 
         $scoreViewCounter = new ScoreViewCounter();
         $score['view_count'] = $scoreViewCounter->add($id);
