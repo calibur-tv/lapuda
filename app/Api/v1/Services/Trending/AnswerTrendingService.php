@@ -149,7 +149,6 @@ class AnswerTrendingService extends TrendingService
             {
                 if ($item['source_url'])
                 {
-                    $list[$i]['like_users'] = $likeService->users($item['id']);
                     $list[$i]['reward_users'] = [
                         'list' => [],
                         'total' => 0,
@@ -159,13 +158,9 @@ class AnswerTrendingService extends TrendingService
                 else
                 {
                     $list[$i]['reward_users'] = $rewardService->users($item['id']);
-                    $list[$i]['like_users'] = [
-                        'list' => [],
-                        'total' => 0,
-                        'noMore' => true
-                    ];
                 }
 
+                $list[$i]['like_users'] = $likeService->users($item['id']);
                 $list[$i]['mark_users'] = $markService->users($item['id']);
             }
 

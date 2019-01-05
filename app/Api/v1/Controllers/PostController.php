@@ -226,18 +226,9 @@ class PostController extends Controller
             $postRewardService = new PostRewardService();
             $post['rewarded'] = $postRewardService->check($userId, $id);
             $post['reward_users'] = $postRewardService->users($id);
-            $post['liked'] = false;
-            $post['like_users'] = [
-                'list' => [],
-                'total' => 0,
-                'noMore' => true
-            ];
         }
         else
         {
-            $postLikeService = new PostLikeService();
-            $post['liked'] = $postLikeService->check($userId, $id);
-            $post['like_users'] = $postLikeService->users($id);
             $post['rewarded'] = false;
             $post['reward_users'] = [
                 'list' => [],
@@ -246,9 +237,12 @@ class PostController extends Controller
             ];
         }
 
+        $postLikeService = new PostLikeService();
         $postMarkService = new PostMarkService();
         $post['marked'] = $postMarkService->check($userId, $id);
         $post['mark_users'] = $postMarkService->users($id);
+        $post['liked'] = $postLikeService->check($userId, $id);
+        $post['like_users'] = $postLikeService->users($id);
 
         $post['preview_images'] = $postRepository->previewImages(
             $id,

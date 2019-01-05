@@ -150,12 +150,10 @@ class ScoreTrendingService extends TrendingService
         {
             if ($item['is_creator'])
             {
-                $list[$i]['like_count'] = 0;
                 $list[$i]['reward_count'] = $rewardService->total($item['id']);
             }
             else
             {
-                $list[$i]['like_count'] = $likeService->total($item['id']);
                 $list[$i]['reward_count'] = 0;
             }
         }

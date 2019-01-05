@@ -747,18 +747,9 @@ class ImageController extends Controller
             $imageRewardService = new ImageRewardService();
             $image['rewarded'] = $imageRewardService->check($userId, $id);
             $image['reward_users'] = $imageRewardService->users($id);
-            $image['liked'] = false;
-            $image['like_users'] = [
-                'list' => [],
-                'total' => 0,
-                'noMore' => true
-            ];
         }
         else
         {
-            $imageLikeService = new ImageLikeService();
-            $image['liked'] = $imageLikeService->check($userId, $id);
-            $image['like_users'] = $imageLikeService->users($id);
             $image['rewarded'] = false;
             $image['reward_users'] = [
                 'list' => [],
@@ -767,7 +758,10 @@ class ImageController extends Controller
             ];
         }
 
+        $imageLikeService = new ImageLikeService();
         $imageMarkService = new ImageMarkService();
+        $image['liked'] = $imageLikeService->check($userId, $id);
+        $image['like_users'] = $imageLikeService->users($id);
         $image['marked'] = $imageMarkService->check($userId, $id);
         $image['mark_users'] = $imageMarkService->users($id);
 
