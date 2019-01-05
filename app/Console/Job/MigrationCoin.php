@@ -9,9 +9,8 @@
 namespace App\Console\Job;
 
 use App\Api\V1\Services\LightCoinService;
+use App\Models\UserCoin;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redis;
 
 class MigrationCoin extends Command
 {
@@ -34,32 +33,24 @@ class MigrationCoin extends Command
      */
     public function handle()
     {
-        $lastMigrationId = Redis::GET('last_migration_id');
-        if (!$lastMigrationId)
-        {
-            $lastMigrationId = 0;
-        }
         $lightCoinService = new LightCoinService();
         $coinIds = UserCoin
             ::withTrashed()
-            ->where('id', '>', $lastMigrationId)
-            ->take(10000)
+            ->where('migration_state', 0)
+            ->take(50)
             ->orderBy('id', 'ASC')
             ->pluck('id')
             ->toArray();
 
         foreach ($coinIds as $cid)
         {
-            Log::info('migration coin id：' . $cid);
             $result = $lightCoinService->migration($cid);
-            $lastMigrationId = $cid;
-            if (!$result)
-            {
-                Redis::LPUSH('migration_coin_failed_id', $cid);
-            }
+            UserCoin
+                ::where('id', $cid)
+                ->update([
+                    'migration_state' => $result ? 1 : 2
+                ]);
         }
-
-        Redis::SET('last_migration_id', $lastMigrationId);
 
         return true;
     }

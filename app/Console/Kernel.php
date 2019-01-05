@@ -35,7 +35,9 @@ class Kernel extends ConsoleKernel
         //        $schedule->command('CronAvthumb')->hourly();
         $schedule->command('ClearSearch')->dailyAt('05:00');
         $schedule->command('CronFreeUser')->everyFiveMinutes();
-//        $schedule->command('MigrationCoin')->hourly();
+        $schedule->command('MigrationCoin')
+            ->everyMinute()
+            ->withoutOverlapping();
         $schedule->command('Trending')->hourly();
     }
 
