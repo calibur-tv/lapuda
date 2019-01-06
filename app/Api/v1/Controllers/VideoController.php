@@ -52,6 +52,7 @@ class VideoController extends Controller
         $bangumiRepository = new BangumiRepository();
         $bangumi = $bangumiRepository->item($info['bangumi_id']);
         $hasSeason = $bangumi['has_season'];
+        $videoList = $bangumiRepository->videos($info['bangumi_id']);
 
         if (is_null($bangumi))
         {
@@ -60,22 +61,6 @@ class VideoController extends Controller
 
         $bangumiSeasonRepository = new BangumiSeasonRepository();
         $seasons = $bangumiSeasonRepository->listByBangumiId($bangumi['id']);
-        array_walk($seasons, function (&$season) use ($videoRepository) {
-            $videoIds = json_decode($season['videos'], true);
-            $season = [
-                'name' => $season['name'],
-                'time' => date('Y.m', $season['published_at']),
-            ];
-            $videos = $videoRepository->list($videoIds);
-            foreach ($videos as $video) {
-                $season['videos'][] = [
-                    'id' => $video['id'],
-                    'name' => $video['name'],
-                    'poster' => $video['poster'],
-                    'episode' => $video['episode'],
-                ];
-            }
-        });
 
         $others_site_video = $info['other_site'];
         $released_video_id = $bangumi['released_video_id'];
@@ -111,8 +96,11 @@ class VideoController extends Controller
         return $this->resOK([
             'info' => $videoTransformer->show($info),
             'bangumi' => $bangumi,
-            'seasons' => $seasons,
-            'has_season' => boolval(intval($hasSeason)),
+            'season' => $seasons,
+            'list' => [
+                'list' => $videoList,
+                'has_season' => boolval(intval($hasSeason))
+            ],
             'ip_blocked' => $blocked,
             'must_reward' => $mustReward,
             'need_min_level' => $mustReward ? 0 : 3

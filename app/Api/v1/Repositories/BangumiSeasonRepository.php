@@ -16,8 +16,13 @@ class BangumiSeasonRepository extends Repository
 {
     public function listByBangumiId($bangumiId)
     {
-        return $this->Cache('bangumi_season:bangumi:' . $bangumiId, function () use ($bangumiId) {
-            return BangumiSeason::where('bangumi_id', $bangumiId)->orderBy('rank')->get()->toArray();
+        return $this->Cache('bangumi_season:bangumi:' . $bangumiId, function () use ($bangumiId)
+        {
+            return BangumiSeason
+                ::where('bangumi_id', $bangumiId)
+                ->orderBy('rank', 'ASC')
+                ->get()
+                ->toArray();
         });
     }
 }

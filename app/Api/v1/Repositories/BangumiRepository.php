@@ -87,60 +87,33 @@ class BangumiRepository extends Repository
         });
     }
 
-    public function videos($id, $season)
+    public function videos($id)
     {
-        return $this->Cache('bangumi_'.$id.'_videos', function () use ($id, $season)
+        return $this->Cache("bangumi_{$id}_videos", function () use ($id)
         {
-            $list = Video::where('bangumi_id', $id)
-                ->orderBy('part', 'ASC')
-                ->select('id', 'name', 'poster', 'part')
-                ->get()
-                ->toArray();
-
-            $hasSeason = $season !== '' && isset($season->part) && isset($season->name);
-            if ($hasSeason)
+            $videoRepository = new VideoRepository();
+            $bangumiSeasonRepository = new BangumiSeasonRepository();
+            $seasons = $bangumiSeasonRepository->listByBangumiId($id);
+            array_walk($seasons, function (&$season) use ($videoRepository)
             {
-                usort($list, function($prev, $next)
-                {
-                    return $prev['part'] - $next['part'];
-                });
-
-                $part = $season->part;
-                $time = $season->time;
-                $name = $season->name;
-
-                $videos = [];
-                $resetPart = isset($season->re);
-                for ($i=0, $j=1; $j < count($part); $i++, $j++)
-                {
-                    $begin = $part[$i];
-                    $length = $part[$j] - $begin;
-                    $reset = $resetPart ? (gettype($season->re) === 'array' ? $season->re[$i] : $season->re) : false;
-                    array_push($videos, [
-                        'name' => $name[$i],
-                        'time' => $time[$i],
-                        'base' => $reset && $i ? $part[$i] : 0,
-                        'data' => $length > 0 ? array_slice($list, $begin, $length) : array_slice($list, $begin)
-                    ]);
-                }
-            }
-            else
-            {
-                $videos = [
-                    [
-                        'data' => $list,
-                        'base' => 0,
-                        'time' => '',
-                        'name' => ''
-                    ]
+                $videoIds = $season['videos'] ? explode(',', $season['videos']) : [];
+                $season = [
+                    'name' => $season['name'],
+                    'time' => date('Y.m', $season['published_at']),
                 ];
-            }
+                $videos = $videoRepository->list($videoIds);
+                foreach ($videos as $video)
+                {
+                    $season['videos'][] = [
+                        'id' => $video['id'],
+                        'name' => $video['name'],
+                        'poster' => $video['poster'],
+                        'episode' => $video['episode'],
+                    ];
+                }
+            });
 
-            return [
-                'videos' => $videos,
-                'has_season' => $hasSeason,
-                'total' => count($list)
-            ];
+            return $seasons;
         });
     }
 
