@@ -256,12 +256,15 @@ class UserBadgeService
             return $badge;
         }
 
-        $badge['user_get_count'] = DB
+        $data = DB
             ::table($this->badge_relation_table)
             ->where('badge_id', $badgeId)
             ->where("user_id", $userId)
-            ->pluck('count')
+            ->select('count', 'intro')
             ->first();
+
+        $badge['user_get_count'] = $data->count;
+        $badge['user_spec_intro'] = $data->intro;
 
         return $badge;
     }
