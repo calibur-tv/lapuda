@@ -166,6 +166,13 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/mark', 'App\Api\V1\Controllers\NoticeController@mark')->middleware('jwt.auth');
         });
 
+        $api->group(['prefix' => '/badge'], function ($api)
+        {
+            $api->get('/list', 'App\Api\V1\Controllers\UserBadgeController@userBadgeList');
+
+            $api->get('/item', 'App\Api\V1\Controllers\UserBadgeController@show');
+        });
+
         $api->post('/daySign', 'App\Api\V1\Controllers\UserController@daySign')->middleware('jwt.auth');
 
         $api->post('/feedback', 'App\Api\V1\Controllers\UserController@feedback');
@@ -462,6 +469,23 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/edit', 'App\Api\V1\Controllers\TagController@edit');
 
             $api->post('/create', 'App\Api\V1\Controllers\TagController@create');
+        });
+
+        $api->group(['prefix' => '/badge'], function ($api)
+        {
+            $api->get('/all', 'App\Api\V1\Controllers\UserBadgeController@allBadge');
+
+            $api->get('/users', 'App\Api\V1\Controllers\UserBadgeController@badgeUsers');
+
+            $api->post('/create', 'App\Api\V1\Controllers\UserBadgeController@createBadge');
+
+            $api->post('/update', 'App\Api\V1\Controllers\UserBadgeController@updateBadge');
+
+            $api->post('/delete', 'App\Api\V1\Controllers\UserBadgeController@deleteBadge');
+
+            $api->post('/set', 'App\Api\V1\Controllers\UserBadgeController@setUserBadge');
+
+            $api->post('/remove', 'App\Api\V1\Controllers\UserBadgeController@removeUserBadge');
         });
 
         $api->group(['prefix' => '/cartoon'], function ($api)

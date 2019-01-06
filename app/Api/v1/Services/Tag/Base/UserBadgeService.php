@@ -21,6 +21,7 @@ class UserBadgeService
 
     public function createBage(array $form)
     {
+        $repository = new Repository();
         $name = $form['name'];
         $icon = $form['icon'];
         $intro = $form['intro'];
@@ -32,7 +33,7 @@ class UserBadgeService
                 'name' => $name,
                 'intro' => $intro,
                 'level' => $level,
-                'icon' => $icon
+                'icon' => $repository->convertImagePath($icon)
             ]);
 
         return $badgeId;
@@ -40,6 +41,7 @@ class UserBadgeService
 
     public function updateBadge(array $form)
     {
+        $repository = new Repository();
         $id = $form['id'];
         $name = $form['name'];
         $icon = $form['icon'];
@@ -53,10 +55,11 @@ class UserBadgeService
                 'name' => $name,
                 'intro' => $intro,
                 'level' => $level,
-                'icon' => $icon
+                'icon' => $repository->convertImagePath($icon)
             ]);
 
         Redis::DEL($this->badgeCacheKey($id));
+        return $id;
     }
 
     public function deleteBadge($badgeId)
@@ -90,7 +93,6 @@ class UserBadgeService
     {
         return DB
             ::table($this->badge_table)
-            ->select('id', 'name', 'icon')
             ->get()
             ->toArray();
     }
@@ -136,7 +138,7 @@ class UserBadgeService
         }
     }
 
-    public function deleteUserBadge($userId, $badgeId, $deleteCount = 1)
+    public function removeUserBadge($userId, $badgeId, $deleteCount = 1)
     {
 
         $badgeCount = DB
@@ -226,10 +228,22 @@ class UserBadgeService
         $repository = new Repository();
         $badge = $repository->RedisHash($this->badgeCacheKey($badgeId), function () use ($badgeId)
         {
-            return DB
+            $badge = DB
                 ::table($this->badge_table)
                 ->where('id', $badgeId)
                 ->first();
+            if (!$badge)
+            {
+                return null;
+            }
+            return [
+                'id' => $badge->id,
+                'icon' => config('website.image') . $badge->icon,
+                'name' => $badge->name,
+                'intro' => $badge->intro,
+                'level' => $badge->level,
+                'user_count' => $badge->user_count
+            ];
         });
         if (!$userId)
         {
