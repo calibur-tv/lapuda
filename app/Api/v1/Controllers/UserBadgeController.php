@@ -82,6 +82,23 @@ class UserBadgeController extends Controller
         return $this->resNoContent();
     }
 
+    public function batchSetUserBadge(Request $request)
+    {
+        $badgeId = $request->get('badge_id');
+        $userIds = $request->get('user_ids');
+
+        $badge = $this->badgeService->getBadgeItem($badgeId);
+        if ($badge['level'] > 2)
+        {
+            return $this->resErrBad();
+        }
+        foreach ($userIds as $userId)
+        {
+            $this->badgeService->setUserBadge($userId, $badgeId);
+        }
+        return $this->resNoContent();
+    }
+
     public function setUserBadge(Request $request)
     {
         $badgeId = $request->get('badge_id');

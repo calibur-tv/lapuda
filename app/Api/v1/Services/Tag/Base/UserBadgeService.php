@@ -106,6 +106,12 @@ class UserBadgeService
             ->pluck('user_id')
             ->first();
 
+        $badge = $this->getBadgeItem($badgeId);
+        if ($hasBadgeId && $badge['level'] > 1)
+        {
+            return;
+        }
+
         if ($hasBadgeId)
         {
             DB

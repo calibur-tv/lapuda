@@ -485,6 +485,8 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/set', 'App\Api\V1\Controllers\UserBadgeController@setUserBadge');
 
+            $api->post('/batch_set', 'App\Api\V1\Controllers\UserBadgeController@batchSetUserBadge');
+
             $api->post('/remove', 'App\Api\V1\Controllers\UserBadgeController@removeUserBadge');
         });
 
