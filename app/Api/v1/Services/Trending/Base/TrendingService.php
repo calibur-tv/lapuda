@@ -107,6 +107,11 @@ class TrendingService extends Repository
             $userActivityService->update($this->userId);
         }
 
+        if ($page == 0 && count($list) == 0)
+        {
+            $idsObject['total'] = 0;
+        }
+
         return [
             'list' => $list,
             'noMore' => $idsObject['noMore'],
