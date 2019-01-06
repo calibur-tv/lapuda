@@ -49,7 +49,8 @@ class UserTransformer extends Transformer
             'sexSecret' => (boolean)$user['sex_secret'],
             'signature' => $user['signature'],
             'level' => $user['level'],
-            'power' => $user['power']
+            'power' => $user['power'],
+            'badge' => $user['badge']
         ];
     }
 
@@ -112,7 +113,8 @@ class UserTransformer extends Transformer
                 'sex' => $user['sex'],
                 'sexSecret' => (boolean)$user['sex_secret'],
                 'faker' => (boolean)$user['faker'],
-                'banned_to' => $user['banned_to']
+                'banned_to' => $user['banned_to'],
+                'badge' => $user['badge']
             ];
         });
     }

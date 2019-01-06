@@ -17,7 +17,9 @@ use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Counter\Stats\TotalUserCount;
+use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Role;
+use App\Api\V1\Services\Tag\Base\UserBadgeService;
 use App\Api\V1\Services\Toggle\Image\ImageMarkService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Services\Toggle\Question\AnswerMarkService;
@@ -142,6 +144,8 @@ class UserController extends Controller
 
         $userActivityService = new UserActivity();
         $user['power'] = $userActivityService->get($userId);
+        $userBadgeService = new UserBadgeService();
+        $user['badge'] = $userBadgeService->getUserBadges($userId);
 
         return $this->resOK($userTransformer->show($user));
     }
@@ -319,6 +323,10 @@ class UserController extends Controller
             {
                 $result[] = $item;
             }
+        }
+        if ($page == 0 && count($result) == 0)
+        {
+            $idsObject['total'] = 0;
         }
 
         return $this->resOK([
@@ -961,6 +969,9 @@ class UserController extends Controller
 
         $userActivityService = new UserActivity();
         $user['power'] = $userActivityService->get($userId);
+
+        $userBadgeService = new UserBadgeService();
+        $user['badge'] = $userBadgeService->getUserBadges($userId);
 
         $userTransformer = new UserTransformer();
         return $this->resOK($userTransformer->card($user));
