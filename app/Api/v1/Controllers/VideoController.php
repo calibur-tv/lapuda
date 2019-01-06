@@ -2,6 +2,7 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\v1\Repositories\BangumiSeasonRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Counter\VideoPlayCounter;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
@@ -10,8 +11,10 @@ use App\Api\V1\Services\Toggle\Video\VideoRewardService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\VideoTransformer;
 use App\Api\V1\Repositories\BangumiRepository;
+use App\Models\BangumiSeason;
 use App\Models\Video;
 use App\Services\OpenSearch\Search;
+use function App\Services\Qiniu\waterImg;
 use App\Services\Trial\UserIpAddress;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -48,14 +51,31 @@ class VideoController extends Controller
         $userId = $user ? $user->id : 0;
         $bangumiRepository = new BangumiRepository();
         $bangumi = $bangumiRepository->item($info['bangumi_id']);
+        $hasSeason = $bangumi['has_season'];
 
         if (is_null($bangumi))
         {
             return $this->resErrNotFound();
         }
 
-        $season = json_decode($bangumi['season']);
-        $list = $bangumiRepository->videos($bangumi['id'], $season);
+        $bangumiSeasonRepository = new BangumiSeasonRepository();
+        $seasons = $bangumiSeasonRepository->listByBangumiId($bangumi['id']);
+        array_walk($seasons, function (&$season) use ($videoRepository) {
+            $videoIds = json_decode($season['videos'], true);
+            $season = [
+                'name' => $season['name'],
+                'time' => date('Y.m', $season['published_at']),
+            ];
+            $videos = $videoRepository->list($videoIds);
+            foreach ($videos as $video) {
+                $season['videos'][] = [
+                    'id' => $video['id'],
+                    'name' => $video['name'],
+                    'poster' => $video['poster'],
+                    'episode' => $video['episode'],
+                ];
+            }
+        });
 
         $others_site_video = $info['other_site'];
         $released_video_id = $bangumi['released_video_id'];
@@ -91,8 +111,8 @@ class VideoController extends Controller
         return $this->resOK([
             'info' => $videoTransformer->show($info),
             'bangumi' => $bangumi,
-            'season' => $season,
-            'list' => $list,
+            'seasons' => $seasons,
+            'has_season' => boolval(intval($hasSeason)),
             'ip_blocked' => $blocked,
             'must_reward' => $mustReward,
             'need_min_level' => $mustReward ? 0 : 3
@@ -192,8 +212,10 @@ class VideoController extends Controller
             {
                 $newId = Video::insertGetId([
                     'bangumi_id' => $video['bangumiId'],
+                    'bangumi_season_id' => $video['bangumi_season_id'],
                     'part' => $video['part'],
                     'name' => $video['name'],
+                    'episode' => $video['episode'],
                     'url' => $video['url'] ? $video['url'] : '',
                     'resource' => $video['resource'] ? json_encode($video['resource']) : '',
                     'poster' => $video['poster'],
@@ -209,8 +231,10 @@ class VideoController extends Controller
             {
                 Video::where('id', $id)->update([
                     'bangumi_id' => $video['bangumiId'],
+                    'bangumi_season_id' => $video['bangumi_season_id'],
                     'part' => $video['part'],
                     'name' => $video['name'],
+                    'episode' => $video['episode'],
                     'url' => $video['url'] ? $video['url'] : '',
                     'resource' => $video['resource'] ? json_encode($video['resource']) : '',
                     'poster' => $video['poster'],
