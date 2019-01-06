@@ -103,8 +103,9 @@ class UserBadgeController extends Controller
     {
         $badgeId = $request->get('badge_id');
         $userId = $request->get('user_id');
+        $intro = $request->get('intro');
 
-        $this->badgeService->setUserBadge($userId, $badgeId);
+        $this->badgeService->setUserBadge($userId, $badgeId, $intro);
 
         return $this->resNoContent();
     }
