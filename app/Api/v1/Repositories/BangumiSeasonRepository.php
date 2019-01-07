@@ -8,7 +8,7 @@
  * @since 2019-01-03 description
  */
 
-namespace App\Api\v1\Repositories;
+namespace App\Api\V1\Repositories;
 
 use App\Models\BangumiSeason;
 
