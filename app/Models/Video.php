@@ -15,6 +15,8 @@ class Video extends Model
         'poster',
         'bangumi_id',
         'part',
+        'episode',
+        'bangumi_season_id',
         'resource',
         'count_played'
     ];

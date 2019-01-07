@@ -29,6 +29,7 @@ class Bangumi extends Model
         'score',
         'has_cartoon',
         'has_video',
+        'has_season',
         'cartoon' // 漫画的 ids
     ];
 
