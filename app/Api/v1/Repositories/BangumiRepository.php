@@ -110,7 +110,7 @@ class BangumiRepository extends Repository
                         'name' => $video['name'],
                         'poster' => $video['poster'],
                         'part' => (int)$video['part'], // 旧字段
-                        'episode' => isset($video) ? $video['episode'] : $video['part'],
+                        'episode' => isset($video['episode']) ? $video['episode'] : $video['part'],
                     ];
                 }
             });
