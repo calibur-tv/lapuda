@@ -67,7 +67,7 @@ class VideoRepository extends Repository
                 'src_other' => $src_other,
                 'poster' => $video['poster'],
                 'other_site' => $other_site,
-                'part' => $video['part'],
+                'part' => $video['episode'],
                 'name' => $video['name'],
                 'is_creator' => $video['is_creator'],
                 'bangumi_id' => $video['bangumi_id'],

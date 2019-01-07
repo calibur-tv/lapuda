@@ -50,16 +50,12 @@ class VideoController extends Controller
         $userId = $user ? $user->id : 0;
         $bangumiRepository = new BangumiRepository();
         $bangumi = $bangumiRepository->item($info['bangumi_id']);
-        $hasSeason = $bangumi['has_season'];
-        $videoList = $bangumiRepository->videos($info['bangumi_id']);
+        $videoPackage = $bangumiRepository->videos($info['bangumi_id']);
 
         if (is_null($bangumi))
         {
             return $this->resErrNotFound();
         }
-
-        $bangumiSeasonRepository = new BangumiSeasonRepository();
-        $seasons = $bangumiSeasonRepository->listByBangumiId($bangumi['id']);
 
         $others_site_video = $info['other_site'];
         $released_video_id = $bangumi['released_video_id'];
@@ -98,11 +94,7 @@ class VideoController extends Controller
         return $this->resOK([
             'info' => $videoTransformer->show($info),
             'bangumi' => $bangumi,
-            'season' => $seasons,
-            'list' => [
-                'list' => $videoList,
-                'has_season' => boolval(intval($hasSeason))
-            ],
+            'list' => $videoPackage,
             'ip_blocked' => $blocked,
             'must_reward' => $mustReward,
             'need_min_level' => $mustReward ? 0 : 3

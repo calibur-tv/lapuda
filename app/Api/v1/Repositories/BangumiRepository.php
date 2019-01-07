@@ -99,21 +99,33 @@ class BangumiRepository extends Repository
                 $videoIds = $season['videos'] ? explode(',', $season['videos']) : [];
                 $season = [
                     'name' => $season['name'],
-                    'time' => date('Y.m', $season['published_at']),
+                    'time' => date_format(date_create($season['published_at']), 'Y.m'),
+                    'base' => 0, // 旧数据
+                    'data' => []
                 ];
                 $videos = $videoRepository->list($videoIds);
                 foreach ($videos as $video)
                 {
-                    $season['videos'][] = [
+                    $season['data'][] = [
                         'id' => $video['id'],
                         'name' => $video['name'],
                         'poster' => $video['poster'],
+                        'part' => (int)$video['part'], // 旧字段
                         'episode' => $video['episode'],
                     ];
                 }
             });
+            $total = 0;
+            foreach ($seasons as $videoPackage)
+            {
+                $total += count($videoPackage['data']);
+            }
 
-            return $seasons;
+            return [
+                'videos' => $seasons,
+                'total' => $total,
+                'has_season' => count($seasons) > 1
+            ];
         });
     }
 

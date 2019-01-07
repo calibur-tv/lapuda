@@ -44,6 +44,7 @@ class BangumiSeasonController extends Controller
             {
                 $bangumi = $bangumiRepository->item($item['bangumi_id']);
 
+                $item['id'] = $bangumi['id'];
                 $item['name'] = $bangumi['name'];
                 $item['update'] = time() - $item['released_time'] < 604800;
 
@@ -90,15 +91,15 @@ class BangumiSeasonController extends Controller
      */
     public function bangumiVideos($id)
     {
-        $repository = new BangumiRepository();
-        $bangumi = $repository->item($id);
+        $bangumiRepository = new BangumiRepository();
+        $bangumi = $bangumiRepository->item($id);
 
         if (is_null($bangumi))
         {
             return $this->resErrNotFound('没有找到番剧');
         }
 
-        $result = $repository->videos($id);
+        $result = $bangumiRepository->videos($id);
 
         return $this->resOK($result);
     }
