@@ -7,7 +7,6 @@ use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Models\Bangumi;
 use App\Models\Post;
-use App\Models\Video;
 use Illuminate\Support\Facades\DB;
 
 class BangumiRepository extends Repository
@@ -111,7 +110,7 @@ class BangumiRepository extends Repository
                         'name' => $video['name'],
                         'poster' => $video['poster'],
                         'part' => (int)$video['part'], // 旧字段
-                        'episode' => $video['episode'],
+                        'episode' => isset($video['episode']) ? $video['episode'] : $video['part'],
                     ];
                 }
             });
