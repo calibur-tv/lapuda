@@ -50,7 +50,9 @@ $api->version(['v1', 'latest'], function ($api)
     {
         $api->get('/timeline', 'App\Api\V1\Controllers\BangumiController@timeline');
 
-        $api->get('/released', 'App\Api\V1\Controllers\BangumiController@released');
+        $api->get('/seasons', 'App\Api\V1\Controllers\BangumiSeasonController@list');
+
+        $api->get('/released', 'App\Api\V1\Controllers\BangumiSeasonController@released');
 
         $api->get('/tags', 'App\Api\V1\Controllers\BangumiController@tags');
 
@@ -64,7 +66,7 @@ $api->version(['v1', 'latest'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\BangumiController@show');
 
-            $api->get('/videos', 'App\Api\V1\Controllers\BangumiController@videos');
+            $api->get('/videos', 'App\Api\V1\Controllers\BangumiSeasonController@bangumiVideos');
 
             $api->get('/posts/top', 'App\Api\V1\Controllers\PostController@bangumiTops');
 
@@ -448,6 +450,13 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/upgrade', 'App\Api\V1\Controllers\BangumiController@upgradeManager');
 
                 $api->post('/downgrade', 'App\Api\V1\Controllers\BangumiController@downgradeManager');
+            });
+
+            $api->group(['prefix' => '/season'], function ($api) {
+//                $api->get('/', 'App\Api\V1\Controllers\')
+                $api->post('/', 'App\Api\V1\Controllers\BangumiSeasonController@create');
+
+                $api->post('/edit', 'App\Api\V1\Controllers\BangumiSeasonController@edit');
             });
         });
 
