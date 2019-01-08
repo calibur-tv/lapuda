@@ -580,7 +580,8 @@ class UserController extends Controller
      */
     public function clearNotification()
     {
-        $userId = $this->getAuthUserId();
+        $user = $this->getAuthUser();
+        $userId = $user->id;
 
         $ids = Notifications
             ::where('to_user_id', $userId)
@@ -597,6 +598,21 @@ class UserController extends Controller
             ->update([
                 'checked' => true
             ]);
+
+        $userRepository = new UserRepository();
+        $systemNoticeCount = $userRepository->computedSystemNoticeCount($user->last_notice_read_id);
+        if ($systemNoticeCount)
+        {
+            $maxNoticeId = SystemNotice
+                ::orderBy('id', 'DESC')
+                ->pluck('id')
+                ->first();
+
+            User::where('id', $userId)
+                ->update([
+                    'last_notice_read_id' => $maxNoticeId
+                ]);
+        }
 
         Redis::pipeline(function ($pipe) use ($ids, $userId)
         {
