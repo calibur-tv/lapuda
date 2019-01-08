@@ -3,8 +3,6 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
-use App\Api\V1\Repositories\BangumiSeasonRepository;
-use App\Models\BangumiSeason;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
 use Mews\Purifier\Facades\Purifier;
@@ -67,20 +65,5 @@ class SearchController extends Controller
         $bangumiRepository = new BangumiRepository();
 
         return $this->resOK($bangumiRepository->searchAll());
-    }
-
-    public function migrate()
-    {
-        $bangumiSeasonId = BangumiSeason::pluck('id')->toArray();
-        $bangumiSeasonRepository = new BangumiSeasonRepository();
-        foreach ($bangumiSeasonId as $id)
-        {
-            $avatar = BangumiSeason::where('id', $id)->pluck('avatar')->first();
-            BangumiSeason::where('id', $id)->update([
-                'avatar' => $bangumiSeasonRepository->convertImagePath($avatar)
-            ]);
-        }
-
-        return 'success';
     }
 }

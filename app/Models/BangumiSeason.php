@@ -29,10 +29,8 @@ class BangumiSeason extends Model
         'end' => 'boolean'
     ];
 
-    /*
     public function getAvatarAttribute($avatar)
     {
         return config('website.image') . ($avatar ? $avatar : 'avatar');
     }
-    */
 }
