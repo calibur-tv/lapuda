@@ -642,7 +642,7 @@ class UserController extends Controller
      */
     public function transactions(Request $request)
     {
-        $minId = $request->get('min_id') ?: 0;
+        $minId = $request->get('min_id') ? intval($request->get('min_id')) : 0;
         $take = $request->get('take') ?: 15;
         $userId = $this->getAuthUserId();
 
