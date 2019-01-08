@@ -53,7 +53,7 @@ class BangumiSeasonController extends Controller
                 if (empty($videos))
                 {
                     $item['released_video_id'] = 0;
-                    $item['released_part'] = '';
+                    $item['released_part'] = '0';
                 }
                 else
                 {
@@ -135,21 +135,23 @@ class BangumiSeasonController extends Controller
     public function create(Request $request)
     {
         $time = Carbon::now();
-        $bangumiId = BangumiSeason::insertGetId([
+        $bangumiId = $request->get('bangumi_id');
+        BangumiSeason::insertGetId([
             'bangumi_id' => $request->get('bangumi_id'),
             'name' => $request->get('name'),
             'rank' => $request->get('rank'),
             'summary' => $request->get('summary'),
             'avatar' => $request->get('avatar'),
-            'published_at' => $request->get('published_at'),
+            'published_at' => Carbon::createFromTimestamp($request->get('published_at'))->toDateTimeString(),
             'other_site_video' => $request->get('other_site_video'),
             'released_at' => $request->get('released_at'),
+            'videos' => '',
             'end' => $request->get('end'),
             'created_at' => $time,
             'updated_at' => $time
         ]);
 
-        Redis::DEL('bangumi_season:bangumi:' . $bangumiId);
+        Redis::DEL('bangumi_season:bangumi:'.$bangumiId);
 
         return $this->resCreated($bangumiId);
     }
@@ -163,12 +165,11 @@ class BangumiSeasonController extends Controller
         $bangumiId = $request->get('bangumi_id');
 
         $arr = [
-            'bangumi_id' => $request->get('bangumi_id'),
             'name' => $request->get('name'),
             'rank' => $request->get('rank'),
             'summary' => $request->get('summary'),
             'avatar' => $request->get('avatar'),
-            'published_at' => $request->get('published_at'),
+            'published_at' => Carbon::createFromTimestamp($request->get('published_at'))->toDateTimeString(),
             'released_at' => $request->get('released_at'),
             'other_site_video' => $request->get('other_site_video'),
             'end' => $request->get('end'),
@@ -185,6 +186,7 @@ class BangumiSeasonController extends Controller
         }
 
         Redis::DEL('bangumi_season:bangumi:'.$bangumiId);
+        Redis::DEL("bangumi_{$bangumiId}_videos");
 
         return $this->resNoContent();
     }

@@ -491,7 +491,7 @@ class BangumiController extends Controller
     // 后台给番剧上新（视频）
     public function updateBangumiRelease(Request $request)
     {
-        $bangumi_id = $request->get('bangumi_id');
+        $season_id = $request->get('season_id');
         $video_id = $request->get('video_id');
 
         $video = Video::find($video_id);
@@ -499,14 +499,18 @@ class BangumiController extends Controller
         {
             return $this->resErrBad('不存在的视频');
         }
+        if ($video['bangumi_season_id'] != $season_id)
+        {
+            return $this->resErrBad('该视频不属于该番剧');
+        }
 
-        Bangumi::where('id', $bangumi_id)->update([
-            'released_time' => time(),
-            'released_video_id' => $video_id
-        ]);
+        BangumiSeason
+            ::where('id', $season_id)
+            ->update([
+                'released_time' => time()
+            ]);
 
         Redis::DEL('bangumi_release_list');
-        Redis::DEL('bangumi_' . $bangumi_id);
 
         $job = (new \App\Jobs\Push\Baidu('bangumi/news'));
         dispatch($job);

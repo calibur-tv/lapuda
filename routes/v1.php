@@ -435,6 +435,10 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/edit', 'App\Api\V1\Controllers\BangumiController@edit');
 
+            $api->post('/edit_season', 'App\Api\V1\Controllers\BangumiSeasonController@edit');
+
+            $api->post('/create_season', 'App\Api\V1\Controllers\BangumiSeasonController@create');
+
             $api->post('/release', 'App\Api\V1\Controllers\BangumiController@updateBangumiRelease');
 
             $api->post('/delete', 'App\Api\V1\Controllers\BangumiController@deleteBangumi');
@@ -450,13 +454,6 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/upgrade', 'App\Api\V1\Controllers\BangumiController@upgradeManager');
 
                 $api->post('/downgrade', 'App\Api\V1\Controllers\BangumiController@downgradeManager');
-            });
-
-            $api->group(['prefix' => '/season'], function ($api) {
-//                $api->get('/', 'App\Api\V1\Controllers\')
-                $api->post('/', 'App\Api\V1\Controllers\BangumiSeasonController@create');
-
-                $api->post('/edit', 'App\Api\V1\Controllers\BangumiSeasonController@edit');
             });
         });
 
