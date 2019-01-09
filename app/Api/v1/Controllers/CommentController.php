@@ -72,7 +72,7 @@ class CommentController extends Controller
     public function create(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'content' => 'required|max:1200',
+            'content' => 'required|max:5000',
             'images' => 'array',
             'id' => 'required|integer|min:1',
             'type' => [
@@ -496,7 +496,7 @@ class CommentController extends Controller
     public function reply(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'content' => 'required|max:100',
+            'content' => 'required|max:200',
             'targetUserId' => 'required|Integer',
             'id' => 'required|integer|min:1',
             'type' => [
