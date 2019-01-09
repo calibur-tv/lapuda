@@ -18,6 +18,7 @@ use function App\Services\Qiniu\waterImg;
 use App\Services\Trial\UserIpAddress;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 
@@ -183,50 +184,78 @@ class VideoController extends Controller
         $data = $request->all();
         $time = Carbon::now();
         $videoRepository = new VideoRepository();
-        $bangumiId = 0;
+        $rollback = false;
+        $videoIds = [];
+        $bangumiSeasonId = $data[0]['bangumiSeasonId'];
+        $bangumiId = $data[0]['bangumiId'];
+
+        DB::beginTransaction();
 
         foreach ($data as $video)
         {
-            $id = Video::whereRaw('bangumi_id = ? and part = ?', [$video['bangumiId'], $video['part']])->pluck('id')->first();
-            $bangumiId = $video['bangumiId'];
-            if (is_null($id))
+            $id = Video
+                ::whereRaw('bangumi_season_id = ? and episode = ?', [$bangumiSeasonId, $video['episode']])
+                ->pluck('id')
+                ->first();
+
+            if (!is_null($id))
             {
-                $newId = Video::insertGetId([
-                    'bangumi_id' => $video['bangumiId'],
-                    'bangumi_season_id' => $video['bangumi_season_id'],
-                    'part' => $video['part'],
-                    'name' => $video['name'],
-                    'episode' => $video['episode'],
-                    'url' => $video['url'] ? $video['url'] : '',
-                    'resource' => $video['resource'] ? json_encode($video['resource']) : '',
-                    'poster' => $video['poster'],
-                    'user_id' => 2,
-                    'is_creator' => 1,
-                    'created_at' => $time,
-                    'updated_at' => $time
-                ]);
-
-                $videoRepository->migrateSearchIndex('C', $newId);
+                $rollback = true;
+                break;
             }
-            else
-            {
-                Video::where('id', $id)->update([
-                    'bangumi_id' => $video['bangumiId'],
-                    'bangumi_season_id' => $video['bangumi_season_id'],
-                    'part' => $video['part'],
-                    'name' => $video['name'],
-                    'episode' => $video['episode'],
-                    'url' => $video['url'] ? $video['url'] : '',
-                    'resource' => $video['resource'] ? json_encode($video['resource']) : '',
-                    'poster' => $video['poster'],
-                    'updated_at' => $time
-                ]);
 
-                Redis::DEL('video_' . $id);
+            $newId = Video::insertGetId([
+                'bangumi_id' => $video['bangumiId'],
+                'bangumi_season_id' => $bangumiSeasonId,
+                'part' => $video['part'],
+                'name' => $video['name'],
+                'episode' => $video['episode'],
+                'url' => $video['url'] ? $video['url'] : '',
+                'resource' => $video['resource'] ? json_encode($video['resource']) : '',
+                'poster' => $video['poster'],
+                'user_id' => 2,
+                'is_creator' => 1,
+                'created_at' => $time,
+                'updated_at' => $time
+            ]);
+            $videoIds[] = $newId;
+            $videoRepository->migrateSearchIndex('C', $newId);
+        }
+        $oldVideos = BangumiSeason
+            ::where('id', $bangumiSeasonId)
+            ->pluck('videos')
+            ->first();
 
-                $videoRepository->migrateSearchIndex('U', $id);
-            }
-            Redis::DEL('bangumi_'.$video['bangumiId'].'_videos');
+        if ($oldVideos)
+        {
+            $resultVideos = $oldVideos . ',' . implode(',', $videoIds);
+        }
+        else
+        {
+            $resultVideos = implode(',', $videoIds);
+        }
+
+        $result = BangumiSeason
+            ::where('id', $bangumiSeasonId)
+            ->update([
+                'videos' => $resultVideos
+            ]);
+
+        if (!$result)
+        {
+            $rollback = true;
+        }
+
+        if ($rollback)
+        {
+            DB::rollBack();
+            return $this->resErrBad('视频上传失败');
+        }
+        else
+        {
+            Redis::DEL('bangumi_'. $bangumiId .'_videos');
+            Redis::DEL('bangumi_season:bangumi:' . $bangumiId);
+            DB::commit();
         }
 
         $job = (new \App\Jobs\Push\Baidu('bangumi/news', 'update'));
