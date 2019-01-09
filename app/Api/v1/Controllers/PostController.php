@@ -82,7 +82,7 @@ class PostController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'required|max:40',
             'bangumiId' => 'required|integer',
-            'content' => 'required|10000',
+            'content' => 'required|max:10000',
             'images' => 'array',
             'is_creator' => 'required|boolean'
         ]);
