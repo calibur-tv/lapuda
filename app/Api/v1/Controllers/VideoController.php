@@ -10,6 +10,7 @@ use App\Api\V1\Services\Toggle\Video\VideoMarkService;
 use App\Api\V1\Services\Toggle\Video\VideoRewardService;
 use App\Api\V1\Transformers\VideoTransformer;
 use App\Api\V1\Repositories\BangumiRepository;
+use App\Models\Bangumi;
 use App\Models\BangumiSeason;
 use App\Models\Video;
 use App\Services\OpenSearch\Search;
@@ -128,19 +129,16 @@ class VideoController extends Controller
     // 后台获取番剧的视频列表
     public function bangumis(Request $request)
     {
-        $bangumiId = $request->get('id');
-        $curPage = $request->get('cur_page') ?: 0;
-        $toPage = $request->get('to_page') ?: 1;
-        $take = $request->get('take') ?: 10;
+        $bangumiSeasonId = $request->get('id');
+        $videoStr = BangumiSeason
+            ::where('id', $bangumiSeasonId)
+            ->pluck('videos')
+            ->first();
 
-        $total = Video::withTrashed()
-            ->where('bangumi_id', $bangumiId)
-            ->count();
+        $videoIds = $videoStr ? explode(',', $videoStr) : [];
         $video = Video::withTrashed()
-            ->where('bangumi_id', $bangumiId)
+            ->whereIn('id', $videoIds)
             ->orderBy('id', 'DESC')
-            ->take(($toPage - $curPage) * $take)
-            ->skip($curPage * $take)
             ->get();
 
         foreach ($video as $row)
@@ -150,7 +148,7 @@ class VideoController extends Controller
 
         return $this->resOK([
             'list' => $video,
-            'total' => $total
+            'total' => count($videoIds)
         ]);
     }
 
@@ -164,6 +162,7 @@ class VideoController extends Controller
                 'name' => $name,
                 'bangumi_id' => $request->get('bangumi_id'),
                 'part' => $request->get('part'),
+                'episode' => $request->get('episode'),
                 'poster' => $request->get('poster'),
                 'url' => $request->get('url') ? $request->get('url') : '',
                 'resource' => json_encode($request->get('resource'))
