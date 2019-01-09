@@ -194,17 +194,21 @@ class BangumiSeasonController extends Controller
     public function all(Request $request)
     {
         $query_other_site = $request->get('other_site');
-        $query_realeased = $request->get('realeased');
+        $query_released_at = $request->get('released_at');
 
         $result = BangumiSeason
-            ::select('name', 'rank', 'bangumi_id', 'end', 'released_at', 'released_time')
-            ->when(!is_null($query_other_site), function ($query)
+            ::select('id', 'name', 'rank', 'bangumi_id', 'other_site_video')
+            ->when(!is_null($query_other_site), function ($query) use ($query_other_site)
             {
-                return $query->where('other_site_video', false);
+                return $query->where('other_site_video', $query_other_site == 1);
             })
-            ->when(!is_null($query_realeased), function ($query) use ($query_realeased)
+            ->when(!is_null($query_released_at), function ($query) use ($query_released_at)
             {
-                return $query->where('released_time', '<>', 0);
+                if ($query_released_at == 1)
+                {
+                    return $query->where('released_at', '<>', 0);
+                }
+                return $query->where('released_at', 0);
             })
             ->get()
             ->toArray();
@@ -234,6 +238,25 @@ class BangumiSeasonController extends Controller
 
         Redis::DEL('bangumi_season:bangumi:'.$bangumiId);
         Redis::DEL("bangumi_{$bangumiId}_videos");
+        if ($key === 'other_site_video')
+        {
+            $videos = BangumiSeason
+                ::where('id', $id)
+                ->pluck('videos')
+                ->first();
+
+            $videoIds = $videos['videos'] ? explode(',', $videos['videos']) : [];
+            if (!empty($videoIds))
+            {
+                Redis::pipeline(function ($pipe) use ($videoIds)
+                {
+                    foreach ($videoIds as $id)
+                    {
+                        $pipe->DEL("video_{$id}");
+                    }
+                });
+            }
+        }
 
         return $this->resNoContent();
     }
