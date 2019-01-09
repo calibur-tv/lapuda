@@ -457,6 +457,13 @@ $api->version(['v1', 'latest'], function ($api)
             });
         });
 
+        $api->group(['prefix' => '/season'], function ($api)
+        {
+            $api->get('/search_all', 'App\Api\V1\Controllers\BangumiSeasonController@all');
+
+            $api->post('/update_key', 'App\Api\V1\Controllers\BangumiSeasonController@update_season_key');
+        });
+
         $api->group(['prefix' => '/banner'], function ($api)
         {
             $api->get('/list', 'App\Api\V1\Controllers\ImageController@getIndexBanners');

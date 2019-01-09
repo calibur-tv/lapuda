@@ -190,4 +190,51 @@ class BangumiSeasonController extends Controller
 
         return $this->resNoContent();
     }
+
+    public function all(Request $request)
+    {
+        $query_other_site = $request->get('other_site');
+        $query_realeased = $request->get('realeased');
+
+        $result = BangumiSeason
+            ::select('name', 'rank', 'bangumi_id', 'end', 'released_at', 'released_time')
+            ->when(!is_null($query_other_site), function ($query)
+            {
+                return $query->where('other_site_video', false);
+            })
+            ->when(!is_null($query_realeased), function ($query) use ($query_realeased)
+            {
+                return $query->where('released_time', '<>', 0);
+            })
+            ->get()
+            ->toArray();
+
+        $bangumiRepository = new BangumiRepository();
+        foreach ($result as $i => $season)
+        {
+            $season['bangumi'] = $bangumiRepository->item($season['bangumi_id']);
+            $result[$i] = $season;
+        }
+
+        return $this->resOK($result);
+    }
+
+    public function update_season_key(Request $request)
+    {
+        $id = $request->get('season_id');
+        $bangumiId = $request->get('bangumi_id');
+        $key = $request->get('key');
+        $val = $request->get('val');
+
+        BangumiSeason
+            ::where('id', $id)
+            ->update([
+                $key => $val
+            ]);
+
+        Redis::DEL('bangumi_season:bangumi:'.$bangumiId);
+        Redis::DEL("bangumi_{$bangumiId}_videos");
+
+        return $this->resNoContent();
+    }
 }
