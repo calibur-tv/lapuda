@@ -9,6 +9,7 @@
 namespace App\Api\V1\Repositories;
 
 
+use App\Models\BangumiSeason;
 use App\Models\Video;
 
 class VideoRepository extends Repository
@@ -33,13 +34,14 @@ class VideoRepository extends Repository
             }
 
             $video = $video->toArray();
-            $bangumiRepository = new BangumiRepository();
-            $bangumi = $bangumiRepository->item($video['bangumi_id']);
             $src_1080 = "";
             $src_720 = "";
             $src_480 = "";
             $src_other = $video['url'];
-            $other_site = !!$bangumi['others_site_video'];
+            $other_site = BangumiSeason
+                ::where('id', $video['bangumi_season_id'])
+                ->pluck('other_site_video')
+                ->first();
 
             if (!$other_site)
             {

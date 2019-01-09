@@ -23,8 +23,14 @@ class BangumiSeason extends Model
     ];
 
     protected $casts = [
+        'rank' => 'integer',
         'released_at' => 'integer',
         'other_site_video' => 'boolean',
         'end' => 'boolean'
     ];
+
+    public function getAvatarAttribute($avatar)
+    {
+        return config('website.image') . ($avatar ? $avatar : 'avatar');
+    }
 }

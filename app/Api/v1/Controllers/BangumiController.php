@@ -2,6 +2,7 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\BangumiSeasonRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Activity\BangumiActivity;
 use App\Api\V1\Services\Activity\UserActivity;
@@ -13,6 +14,7 @@ use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Models\Bangumi;
 use App\Api\V1\Repositories\BangumiRepository;
+use App\Models\BangumiSeason;
 use App\Models\Video;
 use App\Services\OpenSearch\Search;
 use App\Services\Trial\ImageFilter;
@@ -489,7 +491,7 @@ class BangumiController extends Controller
     // 后台给番剧上新（视频）
     public function updateBangumiRelease(Request $request)
     {
-        $bangumi_id = $request->get('bangumi_id');
+        $season_id = $request->get('season_id');
         $video_id = $request->get('video_id');
 
         $video = Video::find($video_id);
@@ -497,14 +499,18 @@ class BangumiController extends Controller
         {
             return $this->resErrBad('不存在的视频');
         }
+        if ($video['bangumi_season_id'] != $season_id)
+        {
+            return $this->resErrBad('该视频不属于该番剧');
+        }
 
-        Bangumi::where('id', $bangumi_id)->update([
-            'released_time' => time(),
-            'released_video_id' => $video_id
-        ]);
+        BangumiSeason
+            ::where('id', $season_id)
+            ->update([
+                'released_time' => time()
+            ]);
 
         Redis::DEL('bangumi_release_list');
-        Redis::DEL('bangumi_' . $bangumi_id);
 
         $job = (new \App\Jobs\Push\Baidu('bangumi/news'));
         dispatch($job);
@@ -572,11 +578,11 @@ class BangumiController extends Controller
         }
 
         $bangumiTagService = new BangumiTagService();
+        $bangumiSeasonRepository = new BangumiSeasonRepository();
 
         $bangumi['alias'] = $bangumi['alias'] === 'null' ? '' : json_decode($bangumi['alias'])->search;
         $bangumi['tags'] = $bangumiTagService->tags($id);
-        $bangumi['season'] = $bangumi['season'] === 'null' ? '' : $bangumi['season'];
-        $bangumi['published_at'] = $bangumi['published_at'] * 1000;
+        $bangumi['season'] = $bangumiSeasonRepository->listByBangumiId($id);
 
         return $this->resOK($bangumi);
     }
@@ -584,33 +590,36 @@ class BangumiController extends Controller
     // 后台创建番剧
     public function create(Request $request)
     {
-        $releasedId = $request->get('released_video_id') ?: 0;
         $time = Carbon::now();
         $bangumiId = Bangumi::insertGetId([
             'name' => $request->get('name'),
             'avatar' => $request->get('avatar'),
             'banner' => $request->get('banner'),
             'summary' => $request->get('summary'),
-            'released_at' => $request->get('released_at'),
-            'released_video_id' => $releasedId,
-            'season' => $request->get('season') ? $request->get('season') : 'null',
+            'published_at' => $request->get('published_at'),
+            'season' => 'null',
             'alias' => $request->get('alias') ? json_encode([
                 'search' => $request->get('alias')
             ]) : 'null',
-            'published_at' => $request->get('published_at') ?: 0,
-            'others_site_video' => $request->get('others_site_video'),
-            'end' => $request->get('end'),
             'created_at' => $time,
             'updated_at' => $time
+        ]);
+
+        BangumiSeason::create([
+            'bangumi_id' => $bangumiId,
+            'name' => '',
+            'rank' => 1,
+            'summary' => $request->get('summary'),
+            'avatar' => $request->get('avatar'),
+            'published_at' => Carbon::createFromTimestamp($request->get('published_at'))->toDateTimeString(),
+            'other_site_video' => $request->get('others_site_video'),
+            'released_at' => $request->get('released_at'),
+            'end' => $request->get('end')
         ]);
 
         $bangumiTagService = new BangumiTagService();
         $bangumiTagService->update($bangumiId, $request->get('tags'));
 
-        if ($releasedId)
-        {
-            Redis::DEL('bangumi_release_list');
-        }
         Redis::DEL('bangumi_all_list');
 
         $bangumiRepository = new BangumiRepository();
@@ -640,15 +649,9 @@ class BangumiController extends Controller
             'avatar' => $request->get('avatar'),
             'banner' => $request->get('banner'),
             'summary' => $request->get('summary'),
-            'released_at' => $request->get('released_at'),
-            'released_video_id' => $request->get('released_video_id'),
-            'season' => $request->get('season') ? $request->get('season') : 'null',
             'alias' => $request->get('alias') ? json_encode([
                 'search' => $request->get('alias')
             ]) : 'null',
-            'end' => $request->get('end'),
-            'published_at' => $request->get('published_at'),
-            'others_site_video' => $request->get('others_site_video'),
             'has_cartoon' => $request->get('has_cartoon'),
             'has_video' => $request->get('has_video')
         ];
