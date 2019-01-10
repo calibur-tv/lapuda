@@ -51,7 +51,8 @@ class MigrationCoins extends Command
 
             $result = $lightCoinService->migration($cid);
             UserCoin
-                ::where('id', $cid)
+                ::withTrashed()
+                ->where('id', $cid)
                 ->update([
                     'migration_state' => $result ? 1 : 2
                 ]);
