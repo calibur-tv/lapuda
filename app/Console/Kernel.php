@@ -19,7 +19,7 @@ class Kernel extends ConsoleKernel
         Job\DayStats::class,
         Job\CronAvthumb::class,
         Job\Trending::class,
-        Job\MigrationCoin::class,
+        Job\MigrationCoins::class,
     ];
 
     /**
@@ -35,7 +35,7 @@ class Kernel extends ConsoleKernel
         //        $schedule->command('CronAvthumb')->hourly();
         $schedule->command('ClearSearch')->dailyAt('05:00');
         $schedule->command('CronFreeUser')->everyFiveMinutes();
-        $schedule->command('MigrationCoin')->everyMinute();
+        $schedule->command('MigrationCoins')->everyMinute();
         $schedule->command('Trending')->hourly();
     }
 

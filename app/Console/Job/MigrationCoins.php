@@ -12,20 +12,20 @@ use App\Api\V1\Services\LightCoinService;
 use App\Models\UserCoin;
 use Illuminate\Console\Command;
 
-class MigrationCoin extends Command
+class MigrationCoins extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'MigrationCoin';
+    protected $signature = 'MigrationCoins';
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'migration coin';
+    protected $description = 'migration coins';
     /**
      * Execute the console command.
      *
