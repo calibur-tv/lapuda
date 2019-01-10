@@ -37,7 +37,7 @@ class MigrationCoin extends Command
         $coinIds = UserCoin
             ::withTrashed()
             ->where('migration_state', 0)
-            ->take(50)
+            ->take(30)
             ->orderBy('id', 'ASC')
             ->pluck('id')
             ->toArray();
