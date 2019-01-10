@@ -883,7 +883,8 @@ class LightCoinService
          * 16：番剧管理者100战斗力送团子
          */
         $coin = UserCoin
-            ::where('id', $coinId)
+            ::withTrashed()
+            ->where('id', $coinId)
             ->first();
         if (!$coin)
         {
