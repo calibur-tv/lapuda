@@ -11,6 +11,7 @@ namespace App\Console\Job;
 use App\Api\V1\Services\LightCoinService;
 use App\Models\UserCoin;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class MigrationCoins extends Command
 {
@@ -33,6 +34,8 @@ class MigrationCoins extends Command
      */
     public function handle()
     {
+        Log::info('migration coin are really runing?');
+
         $lightCoinService = new LightCoinService();
         $coinIds = UserCoin
             ::withTrashed()
