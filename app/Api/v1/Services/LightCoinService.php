@@ -927,7 +927,7 @@ class LightCoinService
         }
         else if ($coinType == 5)
         {
-            $this->withdraw($toUserId, $coin->count);
+            return $this->withdraw($toUserId, $coin->count);
         }
         else if ($coinType == 6)
         {
@@ -1013,6 +1013,7 @@ class LightCoinService
         {
             return $this->masterActiveReward($toUserId);
         }
+        return false;
     }
 
     private function updateUserRecordCache($userId, $recordId)

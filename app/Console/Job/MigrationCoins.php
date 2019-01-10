@@ -47,6 +47,8 @@ class MigrationCoins extends Command
 
         foreach ($coinIds as $cid)
         {
+            Log::info('migration coin id：' . $cid);
+
             $result = $lightCoinService->migration($cid);
             UserCoin
                 ::where('id', $cid)
