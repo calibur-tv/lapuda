@@ -245,7 +245,7 @@ class BangumiSeasonController extends Controller
                 ->pluck('videos')
                 ->first();
 
-            $videoIds = $videos['videos'] ? explode(',', $videos['videos']) : [];
+            $videoIds = $videos ? explode(',', $videos) : [];
             if (!empty($videoIds))
             {
                 Redis::pipeline(function ($pipe) use ($videoIds)
