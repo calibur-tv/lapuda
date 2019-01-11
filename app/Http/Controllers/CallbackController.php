@@ -232,6 +232,8 @@ class CallbackController extends Controller
             try
             {
                 $user = User::create($data);
+                $userRepository = new UserRepository();
+                $userRepository->migrateSearchIndex('C', $user->id);
             }
             catch (\Exception $e)
             {
@@ -239,9 +241,6 @@ class CallbackController extends Controller
 
                 return redirect('https://www.calibur.tv/callback/auth-error?message=' . '请修改QQ昵称后重试');
             }
-
-            $userRepository = new UserRepository();
-            $userRepository->migrateSearchIndex('C', $user->id);
         }
         else
         {
@@ -336,6 +335,8 @@ class CallbackController extends Controller
             try
             {
                 $user = User::create($data);
+                $userRepository = new UserRepository();
+                $userRepository->migrateSearchIndex('C', $user->id);
             }
             catch (\Exception $e)
             {
@@ -343,9 +344,6 @@ class CallbackController extends Controller
 
                 return redirect('https://www.calibur.tv/callback/auth-error?message=' . '请修改微信昵称后重试');
             }
-
-            $userRepository = new UserRepository();
-            $userRepository->migrateSearchIndex('C', $user->id);
         }
         else
         {
@@ -440,6 +438,8 @@ class CallbackController extends Controller
             try
             {
                 $user = User::create($data);
+                $userRepository = new UserRepository();
+                $userRepository->migrateSearchIndex('C', $user->id);
             }
             catch (\Exception $e)
             {
@@ -447,9 +447,6 @@ class CallbackController extends Controller
 
                 return redirect('https://www.calibur.tv/callback/auth-error?message=' . '请修改微信昵称后重试');
             }
-
-            $userRepository = new UserRepository();
-            $userRepository->migrateSearchIndex('C', $user->id);
         }
         else
         {
