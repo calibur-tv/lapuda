@@ -19,12 +19,14 @@ class BangumiSeason extends Model
         'other_site_video',
         'released_at',
         'released_time',
+        'copyright_type',
         'end'
     ];
 
     protected $casts = [
         'rank' => 'integer',
         'released_at' => 'integer',
+        'copyright_type' => 'integer',
         'other_site_video' => 'boolean',
         'end' => 'boolean'
     ];

@@ -212,20 +212,21 @@ class BangumiSeasonController extends Controller
     {
         $query_other_site = $request->get('other_site');
         $query_released_at = $request->get('released_at');
+        $query_copyright_type = $request->get('copyright_type');
 
         $result = BangumiSeason
-            ::select('id', 'name', 'rank', 'bangumi_id', 'other_site_video')
-            ->when(!is_null($query_other_site), function ($query) use ($query_other_site)
+            ::select('id', 'name', 'rank', 'bangumi_id', 'other_site_video', 'copyright_type')
+            ->when($query_other_site !== '', function ($query) use ($query_other_site)
             {
                 return $query->where('other_site_video', $query_other_site == 1);
             })
-            ->when(!is_null($query_released_at), function ($query) use ($query_released_at)
+            ->when($query_copyright_type !== '', function ($query) use ($query_copyright_type)
             {
-                if ($query_released_at == 1)
-                {
-                    return $query->where('released_at', '<>', 0);
-                }
-                return $query->where('released_at', 0);
+                return $query->where('copyright_type', $query_copyright_type);
+            })
+            ->when($query_released_at !== '', function ($query) use ($query_released_at)
+            {
+                return $query->where('released_at', $query_released_at);
             })
             ->get()
             ->toArray();
