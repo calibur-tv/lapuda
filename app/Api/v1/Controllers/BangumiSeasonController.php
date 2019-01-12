@@ -180,6 +180,23 @@ class BangumiSeasonController extends Controller
             ::where('id', $bangumiSeasonId)
             ->update($arr);
 
+        $videos = BangumiSeason
+            ::where('id', $bangumiSeasonId)
+            ->pluck('videos')
+            ->first();
+
+        $videoIds = $videos ? explode(',', $videos) : [];
+        if (!empty($videoIds))
+        {
+            Redis::pipeline(function ($pipe) use ($videoIds)
+            {
+                foreach ($videoIds as $id)
+                {
+                    $pipe->DEL("video_{$id}");
+                }
+            });
+        }
+
         if ($result === false)
         {
             return $this->resErrBad('更新失败');
