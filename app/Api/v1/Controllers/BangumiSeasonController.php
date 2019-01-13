@@ -171,6 +171,7 @@ class BangumiSeasonController extends Controller
             'avatar' => $request->get('avatar'),
             'published_at' => Carbon::createFromTimestamp($request->get('published_at'))->toDateTimeString(),
             'released_at' => $request->get('released_at'),
+            'copyright_type' => $request->get('copyright_type'),
             'other_site_video' => $request->get('other_site_video'),
             'end' => $request->get('end'),
             'updated_at' => Carbon::now(),
