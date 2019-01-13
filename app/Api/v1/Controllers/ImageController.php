@@ -776,6 +776,13 @@ class ImageController extends Controller
             $job = (new \App\Jobs\Search\UpdateWeight('image', $id));
             dispatch($job);
         }
+        $shareData = [
+            'title' => $image['name'] ?: '来自calibur分享的相册~',
+            'desc' => "《{$bangumi['name']}》",
+            'link' => "https://m.calibur.tv/pin/{$image['id']}",
+            'image' => $image['url'] . '-share200jpg'
+        ];
+        $image['share_data'] = $shareData;
 
         return $this->resOK($imageTransformer->show($image));
     }

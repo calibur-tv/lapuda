@@ -112,6 +112,7 @@ class UserTransformer extends Transformer
                 'power' => $user['power'],
                 'sex' => $user['sex'],
                 'sexSecret' => (boolean)$user['sex_secret'],
+                'share_data' => $user['share_data'],
                 'faker' => (boolean)$user['faker'],
                 'banned_to' => $user['banned_to'],
                 'badge' => $user['badge']

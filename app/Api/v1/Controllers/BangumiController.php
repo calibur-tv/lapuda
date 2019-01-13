@@ -220,6 +220,13 @@ class BangumiController extends Controller
             $job = (new \App\Jobs\Search\UpdateWeight('bangumi', $id));
             dispatch($job);
         }
+        $shareData = [
+            'title' => $bangumi['name'],
+            'link' => "https://m.calibur.tv/bangumi/{$id}",
+            'desc' => $bangumi['summary'],
+            'image' => "{$bangumi['avatar']}-share200jpg"
+        ];
+        $bangumi['share_data'] = $shareData;
 
         return $this->resOK($bangumiTransformer->show($bangumi));
     }

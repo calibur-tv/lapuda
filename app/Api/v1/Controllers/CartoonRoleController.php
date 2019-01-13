@@ -238,7 +238,13 @@ class CartoonRoleController extends Controller
 
         return $this->resOK($cartoonTransformer->show([
             'bangumi' => $bangumi,
-            'data' => $role
+            'data' => $role,
+            'share_data' => [
+                'title' => $role['name'],
+                'desc' => $role['intro'],
+                'link' => "https://m.calibur.tv/role/{$id}",
+                'image' => "{$role['avatar']}-share200jpg"
+            ]
         ]));
     }
 

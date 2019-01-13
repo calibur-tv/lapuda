@@ -21,6 +21,7 @@ class ScoreTransformer extends Transformer
                 'nickname' => $score['user']['nickname'],
                 'avatar' => $score['user']['avatar']
             ],
+            'share_data' => $score['share_data'],
             'title' => $score['title'],
             'bangumi' => $score['bangumi'],
             'total' => $score['total'],

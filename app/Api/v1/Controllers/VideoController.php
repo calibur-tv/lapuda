@@ -99,7 +99,13 @@ class VideoController extends Controller
             'list' => $videoPackage,
             'ip_blocked' => $blocked,
             'must_reward' => $mustReward,
-            'need_min_level' => $mustReward ? 0 : 3
+            'need_min_level' => $mustReward ? 0 : 3,
+            'share_data' => [
+                'title' => "《{$bangumi['name']}》第{$info['part']}话",
+                'desc' => $info['name'],
+                'link' => "https://m.calibur.tv/video/{$id}",
+                'image' => "{$info['poster']}-share200jpg"
+            ]
         ]);
     }
 

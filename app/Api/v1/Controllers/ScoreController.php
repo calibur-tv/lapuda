@@ -117,6 +117,13 @@ class ScoreController extends Controller
             $job = (new \App\Jobs\Search\UpdateWeight('score', $id));
             dispatch($job);
         }
+        $shareData = [
+            'title' => $score['title'],
+            'desc' => $score['intro'],
+            'link' => "https://m.calibur.tv/review/{$id}",
+            'image' => ($score['banner'] ? $score['banner']['url'] : $bangumi['avatar']) . '-share200jpg'
+        ];
+        $score['share_data'] = $shareData;
 
         return $this->resOK($transformer->show($score));
     }

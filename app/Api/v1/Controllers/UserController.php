@@ -146,6 +146,12 @@ class UserController extends Controller
         $user['power'] = $userActivityService->get($userId);
         $userBadgeService = new UserBadgeService();
         $user['badge'] = $userBadgeService->getUserBadges($userId);
+        $user['share_data'] = [
+            'title' => $user['nickname'],
+            'desc' => $user['signature'],
+            'link' => "https://m.calibur.tv/user/{$zone}",
+            'image' => "{$user['avatar']}-share200jpg"
+        ];
 
         return $this->resOK($userTransformer->show($user));
     }
