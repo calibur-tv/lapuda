@@ -50,7 +50,7 @@ class VideoDown extends Command
 
         $ids = BangumiSeason
             ::where('copyright_provider', '<>', 1) // 不是 bilibili
-            ->whereIn('copyright_type', [2, 3]) // 独家播放和多家都收费
+            ->whereIn('copyright_type', [2, 3, 4]) // 独家播放和收费
             ->pluck('id')
             ->toArray();
 
