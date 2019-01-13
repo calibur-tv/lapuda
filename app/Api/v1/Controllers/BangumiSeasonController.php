@@ -216,7 +216,7 @@ class BangumiSeasonController extends Controller
         $query_copyright_type = $request->get('copyright_type');
 
         $result = BangumiSeason
-            ::select('id', 'name', 'rank', 'bangumi_id', 'other_site_video', 'copyright_type')
+            ::select('id', 'name', 'rank', 'bangumi_id', 'other_site_video', 'copyright_type','copyright_provider')
             ->when($query_other_site !== '', function ($query) use ($query_other_site)
             {
                 return $query->where('other_site_video', $query_other_site == 1);
