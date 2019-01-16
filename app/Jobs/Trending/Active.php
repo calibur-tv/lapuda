@@ -55,14 +55,17 @@ class Active implements ShouldQueue
             return;
         }
 
-        if ($this->type === 'image')
+        $repository = $this->getRepositoryByType();
+        $item = $repository->item($this->id);
+
+        if (strtotime($item['created_at']) < strtotime('3 month ago'))
         {
-            $repository = $this->getRepositoryByType();
-            $image = $repository->item($this->id);
-            if ($image['is_cartoon'])
-            {
-                return;
-            }
+            return;
+        }
+
+        if ($this->type === 'image' && $item['is_cartoon'])
+        {
+            return;
         }
 
         DB::table($table)
