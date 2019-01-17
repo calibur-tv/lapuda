@@ -39,12 +39,12 @@ class Kernel extends ConsoleKernel
         $schedule->command('CronFreeUser')->everyFiveMinutes();
         $schedule->command('MigrationCoins')->everyMinute();
         $schedule->command('Trending')->hourly();
-        $schedule->command('VideoUp')
-            ->dailyAt('19:00')
-            ->weekdays();
-        $schedule->command('VideoDown')
-            ->dailyAt('8:00')
-            ->weekdays();
+//        $schedule->command('VideoUp')
+//            ->dailyAt('19:00')
+//            ->weekdays();
+//        $schedule->command('VideoDown')
+//            ->dailyAt('8:00')
+//            ->weekdays();
     }
 
     /**
