@@ -1054,6 +1054,10 @@ class UserController extends Controller
         $user['ip_address'] = $userIpAddress->userIps($userId);
         $user['level'] = $userLevel->convertExpToLevel($user['exp']);
         $user['power'] = $userActivityService->get($userId);
+        $User['invite_count'] = UserCoin
+            ::where('type', 2)
+            ->where('user_id', $userId)
+            ->count();
 
         return $this->resOK($user);
     }
