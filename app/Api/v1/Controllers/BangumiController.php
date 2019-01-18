@@ -518,6 +518,7 @@ class BangumiController extends Controller
             ]);
 
         Redis::DEL('bangumi_release_list');
+        Redis::DEL('video_' . $video_id);
 
         $job = (new \App\Jobs\Push\Baidu('bangumi/news'));
         dispatch($job);

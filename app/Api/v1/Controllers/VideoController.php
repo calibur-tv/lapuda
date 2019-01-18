@@ -86,7 +86,7 @@ class VideoController extends Controller
         $info['like_users'] = $videoLikeService->users($id);
         $info['other_site'] = $others_site_video;
 
-        $mustReward = $released_video_id == $id && $isEnded == 0;
+        $mustReward = $info['is_released'] && $isEnded == 0;
         $blocked = $userIpAddress->check($userId);
         if ($user && $user->banned_to)
         {
