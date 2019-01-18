@@ -150,7 +150,7 @@ class UserController extends Controller
             'title' => $user['nickname'],
             'desc' => $user['signature'],
             'link' => "https://m.calibur.tv/user/{$zone}",
-            'image' => "{$user['avatar']}-share200jpg"
+            'image' => "{$user['avatar']}-share120jpg"
         ];
 
         return $this->resOK($userTransformer->show($user));

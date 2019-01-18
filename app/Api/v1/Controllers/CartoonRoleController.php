@@ -243,7 +243,7 @@ class CartoonRoleController extends Controller
                 'title' => $role['name'],
                 'desc' => $role['intro'],
                 'link' => "https://m.calibur.tv/role/{$id}",
-                'image' => "{$role['avatar']}-share200jpg"
+                'image' => "{$role['avatar']}-share120jpg"
             ]
         ]));
     }

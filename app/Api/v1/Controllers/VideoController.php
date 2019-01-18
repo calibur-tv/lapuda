@@ -104,7 +104,7 @@ class VideoController extends Controller
                 'title' => "《{$bangumi['name']}》第{$info['part']}话",
                 'desc' => $info['name'],
                 'link' => "https://m.calibur.tv/video/{$id}",
-                'image' => "{$info['poster']}-share200jpg"
+                'image' => "{$info['poster']}-share120jpg"
             ]
         ]);
     }

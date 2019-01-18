@@ -121,7 +121,7 @@ class ScoreController extends Controller
             'title' => $score['title'],
             'desc' => $score['intro'],
             'link' => "https://m.calibur.tv/review/{$id}",
-            'image' => ($score['banner'] ? $score['banner']['url'] : $bangumi['avatar']) . '-share200jpg'
+            'image' => ($score['banner'] ? $score['banner']['url'] : $bangumi['avatar']) . '-share120jpg'
         ];
         $score['share_data'] = $shareData;
 

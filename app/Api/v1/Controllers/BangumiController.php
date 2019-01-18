@@ -224,7 +224,7 @@ class BangumiController extends Controller
             'title' => $bangumi['name'],
             'link' => "https://m.calibur.tv/bangumi/{$id}",
             'desc' => $bangumi['summary'],
-            'image' => "{$bangumi['avatar']}-share200jpg"
+            'image' => "{$bangumi['avatar']}-share120jpg"
         ];
         $bangumi['share_data'] = $shareData;
 
