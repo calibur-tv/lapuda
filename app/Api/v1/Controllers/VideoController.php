@@ -53,6 +53,9 @@ class VideoController extends Controller
         $bangumiRepository = new BangumiRepository();
         $bangumi = $bangumiRepository->item($info['bangumi_id']);
         $videoPackage = $bangumiRepository->videos($info['bangumi_id']);
+        $bangumiSeasonReopsitory = new BangumiSeasonRepository();
+        $season = $bangumiSeasonReopsitory->listByBangumiId($bangumi['id']);
+        $videos = explode(',', $season['videos']);
 
         if (is_null($bangumi))
         {
@@ -60,7 +63,7 @@ class VideoController extends Controller
         }
 
         $others_site_video = $info['other_site'];
-        $released_video_id = $bangumi['released_video_id'];
+        $released_video_id = last($videos);
         $isEnded = $bangumi['end'];
         $bangumi = $bangumiRepository->panel($info['bangumi_id'], $userId);
 
