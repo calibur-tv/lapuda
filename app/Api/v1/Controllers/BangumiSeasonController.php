@@ -263,8 +263,7 @@ class BangumiSeasonController extends Controller
         $bangumiSeasonRepository = new BangumiSeasonRepository();
 
         $ids = BangumiSeason
-            ::where('published_at', '<', Carbon::createFromTimestamp(strtotime('6 month ago'))->toDateTimeString()) // 6个月前发布的
-            ->where('copyright_provider', 1) // bilibli
+            ::where('copyright_provider', 1) // bilibli
             ->where('copyright_type', 2) // 独家播放
             ->pluck('id')
             ->toArray();
