@@ -6,11 +6,8 @@ use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Services\LightCoinService;
-use App\Api\V1\Services\Toggle\Post\PostRewardService;
 use App\Api\V1\Services\Toggle\ToggleService;
 use App\Api\V1\Services\Toggle\Video\VideoRewardService;
-use App\Models\User;
-use App\Models\UserCoin;
 
 /**
  * Created by PhpStorm.

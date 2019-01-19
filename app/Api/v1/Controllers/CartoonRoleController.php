@@ -17,7 +17,6 @@ use App\Api\V1\Transformers\UserTransformer;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
 use App\Models\LightCoinRecord;
-use App\Models\UserCoin;
 use App\Services\OpenSearch\Search;
 use App\Services\Trial\UserIpAddress;
 use Carbon\Carbon;

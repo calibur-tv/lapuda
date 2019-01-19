@@ -9,7 +9,6 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\AnswerRepository;
-use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\Repository;
@@ -18,7 +17,6 @@ use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Counter\Stats\TotalUserCount;
 use App\Api\V1\Services\LightCoinService;
-use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Role;
 use App\Api\V1\Services\Tag\Base\UserBadgeService;
 use App\Api\V1\Services\Toggle\Image\ImageMarkService;
