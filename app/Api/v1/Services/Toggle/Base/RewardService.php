@@ -5,6 +5,7 @@ use App\Api\V1\Repositories\AnswerRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\ScoreRepository;
+use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\Toggle\Post\PostRewardService;
 use App\Api\V1\Services\Toggle\ToggleService;
 use App\Api\V1\Services\Toggle\Video\VideoRewardService;
@@ -47,15 +48,13 @@ class RewardService extends ToggleService
             return;
         }
 
-        UserCoin::create([
-            'type_id' => $id,
-            'from_user_id' => 0,
+        $lightCoinService = new LightCoinService();
+        $lightCoinService->deleteUserContent([
             'user_id' => $item['user_id'],
-            'type' => $this->type,
-            'count' => $count
+            'amount' => $count,
+            'content_id' => $id,
+            'content_type' => $this->convertNumberTypeToString()
         ]);
-
-        User::where('id', $item['user_id'])->increment('coin_count', -$count);
     }
 
     protected function getRepositoryByType()
@@ -78,6 +77,30 @@ class RewardService extends ToggleService
                 return new VideoRewardService();
             default:
                 return null;
+                break;
+        }
+    }
+
+    protected function convertNumberTypeToString()
+    {
+        switch ($this->type)
+        {
+            case 9:
+                return 'post';
+                break;
+            case 10:
+                return 'image';
+                break;
+            case 11:
+                return 'score';
+                break;
+            case 12:
+                return 'answer';
+                break;
+            case 14:
+                return 'video';
+            default:
+                return '';
                 break;
         }
     }

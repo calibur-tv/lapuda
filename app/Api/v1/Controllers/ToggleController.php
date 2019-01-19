@@ -17,6 +17,7 @@ use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Activity\BangumiActivity;
+use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Owner\QuestionLog;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
@@ -434,7 +435,8 @@ class ToggleController extends Controller
     {
         $id = $request->get('id');
         $type = $request->get('type');
-        $userId = $this->getAuthUserId();
+        $user = $this->getAuthUser();
+        $userId = $user->id;
         $userIpAddress = new UserIpAddress();
         $blocked = $userIpAddress->check($userId);
         if ($blocked)
@@ -452,6 +454,13 @@ class ToggleController extends Controller
         if (is_null($repository))
         {
             return $this->resErrBad();
+        }
+
+        $lightCoinService = new LightCoinService();
+        $banlance = $lightCoinService->hasMoneyCount($user);
+        if (!$banlance)
+        {
+            return $this->resErrRole('团子不足');
         }
 
         $item = $repository->item($id);
@@ -478,63 +487,42 @@ class ToggleController extends Controller
         }
 
         $rewarded = $rewardService->check($userId, $id);
-        if (!$rewarded)
-        {
-            $userCoin = User::where('id', $userId)
-                ->pluck('coin_count')
-                ->first();
-
-            if (!$userCoin)
-            {
-                return $this->resErrRole('团子不足');
-            }
-        }
-        else
+        if ($rewarded)
         {
             return $this->resErrRole('已打赏过的内容');
         }
 
-        $result = $userRepository->toggleCoin($rewarded, $userId, $item['user_id'], $coinType, $item['id']);
+        $result = $lightCoinService->rewardUserContent([
+            'from_user_id' => $userId,
+            'to_user_id' => $item['user_id'],
+            'content_id' => $item['id'],
+            'content_type' => $type
+        ]);
         if (!$result)
         {
-            return $this->resErrRole($rewarded ? '未打赏过' : '团子不足');
+            return $this->resErrServiceUnavailable('系统升级中');
         }
 
-        $rewardId = $rewardService->toggle($userId, $id);
+        $rewardService->toggle($userId, $id);
         $userLevel = new UserLevel();
-        if ($rewardId)
-        {
-            $job = (new \App\Jobs\Notification\Create(
-                $type . '-reward',
-                $item['user_id'],
-                $userId,
-                $item['id']
-            ));
-            dispatch($job);
+        $job = (new \App\Jobs\Notification\Create(
+            $type . '-reward',
+            $item['user_id'],
+            $userId,
+            $item['id']
+        ));
+        dispatch($job);
 
-            $job = (new \App\Jobs\Trending\Active(
-                $id,
-                $type,
-                $item['bangumi_id']
-            ));
-            dispatch($job);
+        $job = (new \App\Jobs\Trending\Active(
+            $id,
+            $type,
+            $item['bangumi_id']
+        ));
+        dispatch($job);
 
-            $userLevel->change($item['user_id'], 3, false);
-        }
-        else
-        {
-            $job = (new \App\Jobs\Notification\Delete(
-                $type . '-reward',
-                $item['user_id'],
-                $userId,
-                $item['id']
-            ));
-            dispatch($job);
+        $userLevel->change($item['user_id'], 3, false);
 
-            $userLevel->change($item['user_id'], -3, false);
-        }
-
-        return $this->resCreated((boolean)$rewardId);
+        return $this->resCreated(true);
     }
 
     /**

@@ -34,6 +34,7 @@ class PostTransformer extends Transformer
                 'mark_users' => $post['mark_users'],
                 'reward_users' => $post['reward_users'],
                 'is_nice' => (boolean)$post['is_nice'],
+                'top_at' => is_null($post['top_at']) ? '' : $post['top_at'],
                 'is_creator' => (boolean)$post['is_creator'],
                 'created_at' => $post['created_at'],
                 'updated_at' => $post['updated_at'],

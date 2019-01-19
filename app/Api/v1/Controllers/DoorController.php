@@ -430,7 +430,6 @@ class DoorController extends Controller
         $user['uptoken'] = $imageRepository->uptoken($userId);
         $user['daySign'] = $userRepository->daySigned($userId);
         $user['notification'] = $userRepository->getNotificationCount($userId);
-        $user['coin_from_sign'] = $userRepository->userSignCoin($userId);
         $user['exp'] = $userLevel->computeExpObject($user['exp']);
         $user['power'] = $userActivityService->get($userId);
         $user['providers'] = [
@@ -512,7 +511,6 @@ class DoorController extends Controller
         $user['uptoken'] = $imageRepository->uptoken($userId);
         $user['daySign'] = $userRepository->daySigned($userId);
         $user['notification'] = $userRepository->getNotificationCount($userId);
-        $user['coin_from_sign'] = $userRepository->userSignCoin($userId);
         $user['exp'] = $userLevel->computeExpObject($user['exp']);
         $user['power'] = $userActivityService->get($userId);
         $user['providers'] = [

@@ -99,14 +99,6 @@ class UserRepository extends Repository
         });
     }
 
-    public function userSignCoin($userId)
-    {
-        return $this->RedisItem('user_' . $userId . '_coin_sign', function () use ($userId)
-        {
-            return UserCoin::whereRaw('user_id = ? and type = ?', [$userId, 8])->count();
-        });
-    }
-
     public function replyPostIds($userId)
     {
         $postCommentService = new PostCommentService();
@@ -142,57 +134,6 @@ class UserRepository extends Repository
             return $postTransformer->userReply($reply);
 
         }, 'm');
-    }
-
-    public function toggleCoin($isDelete, $fromUserId, $toUserId, $type, $type_id)
-    {
-        if (intval($fromUserId) === intval($toUserId))
-        {
-            return false;
-        }
-
-        if ($isDelete)
-        {
-            $log = UserCoin::whereRaw('from_user_id = ? and user_id = ? and type = ? and type_id = ?', [$fromUserId, $toUserId, $type, $type_id])->first();
-            if (is_null($log))
-            {
-                return false;
-            }
-
-            $log->delete();
-        }
-        else
-        {
-            // 邀请他人注册
-            if ($type !== 2 && $fromUserId)
-            {
-                $count = User::where('id', $fromUserId)->pluck('coin_count')->first();
-
-                if ($count <= 0)
-                {
-                    return false;
-                }
-            }
-
-            UserCoin::create([
-                'user_id' => $toUserId,
-                'from_user_id' => $fromUserId,
-                'type' => $type,
-                'type_id' => $type_id
-            ]);
-
-            if ($toUserId)
-            {
-                User::where('id', $toUserId)->increment('coin_count', 1);
-            }
-
-            if ($type !== 2 && $fromUserId)
-            {
-                User::where('id', $fromUserId)->increment('coin_count', -1);
-            }
-        }
-
-        return true;
     }
 
     public function getNotificationCount($userId)

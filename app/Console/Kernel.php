@@ -34,11 +34,11 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('CronComputedActivity')->dailyAt('00:01');
         $schedule->command('DayStats')->dailyAt('01:01');
-        //        $schedule->command('CronAvthumb')->hourly();
+//        $schedule->command('CronAvthumb')->hourly();
         $schedule->command('ClearSearch')->dailyAt('05:00');
         $schedule->command('CronFreeUser')->everyFiveMinutes();
-        $schedule->command('MigrationCoins')->everyMinute();
         $schedule->command('Trending')->hourly();
+//        $schedule->command('MigrationCoins')->everyMinute();
 //        $schedule->command('VideoUp')
 //            ->dailyAt('19:00')
 //            ->weekdays();
