@@ -27,11 +27,11 @@ use App\Api\V1\Services\Toggle\Video\VideoMarkService;
 use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
+use App\Models\LightCoinRecord;
 use App\Models\Notifications;
 use App\Models\SystemNotice;
 use App\Models\User;
 use App\Api\V1\Repositories\UserRepository;
-use App\Models\UserCoin;
 use App\Models\UserSign;
 use App\Services\OpenSearch\Search;
 use App\Services\Trial\UserIpAddress;
@@ -665,9 +665,9 @@ class UserController extends Controller
             return $this->resErrNotFound();
         }
 
-        $ids = UserCoin
-            ::where('user_id', $id)
-            ->where('type', 2)
+        $ids = LightCoinRecord
+            ::where('to_user_id', $id)
+            ->where('to_product_type', 1)
             ->pluck('from_user_id');
 
         if (!$ids)
@@ -700,8 +700,8 @@ class UserController extends Controller
 
         $ids = $userRepository->Cache('recommended-activity-user-ids', function () use ($userRepository)
         {
-            $ids = UserCoin
-                ::whereIn('type', [1, 4, 6, 7])
+            $ids = LightCoinRecord
+                ::whereIn('to_product_type', [4, 5, 6, 7, 8, 9])
                 ->select(DB::raw('count(*) as count, from_user_id'))
                 ->groupBy('from_user_id')
                 ->orderBy('count', 'DESC')
@@ -855,9 +855,9 @@ class UserController extends Controller
         $user['ip_address'] = $userIpAddress->userIps($userId);
         $user['level'] = $userLevel->convertExpToLevel($user['exp']);
         $user['power'] = $userActivityService->get($userId);
-        $user['invite_count'] = UserCoin
-            ::where('type', 2)
-            ->where('user_id', $userId)
+        $user['invite_count'] = LightCoinRecord
+            ::where('to_product_type', 1)
+            ->where('to_user_id', $userId)
             ->count();
 
         return $this->resOK($user);
