@@ -75,10 +75,7 @@ class LightCoinService
 
             LightCoinRecord::insert($records);
 
-            User::where('id', $toUserId)
-                ->withTrashed()
-                ->increment('coin_count_v2', $amount);
-            Redis::HINCRBYFLOAT("user_{$toUserId}", 'coin_count_v2', $amount);
+            $this->increUserInfo($toUserId, 'coin_count_v2', $amount);
 
             DB::commit();
             return true;
@@ -129,12 +126,7 @@ class LightCoinService
             $now = Carbon::now();
             if ($user['coin_count_v2'] >= $exchange_count)
             {
-                User::where('id', $from_user_id)
-                    ->withTrashed()
-                    ->update([
-                        'coin_count_v2' => $user['coin_count_v2'] - $exchange_count
-                    ]);
-                Redis::HSET("user_{$from_user_id}", 'coin_count_v2', $user['coin_count_v2'] - $exchange_count);
+                $this->setUserInfo($from_user_id, 'coin_count_v2', $user['coin_count_v2'] - $exchange_count);
                 // 优先消费团子
                 $exchangeIds = LightCoin
                     ::where('state', 0)
@@ -155,8 +147,11 @@ class LightCoinService
                         'coin_count_v2' => 0,
                         'light_count' => $user['light_count'] - $useLightCount
                     ]);
-                Redis::HSET("user_{$from_user_id}", 'coin_count_v2', 0);
-                Redis::HSET("user_{$from_user_id}", 'light_count', $user['light_count'] - $useLightCount);
+                if (Redis::EXISTS("user_{$from_user_id}"))
+                {
+                    Redis::HSET("user_{$from_user_id}", 'coin_count_v2', 0);
+                    Redis::HSET("user_{$from_user_id}", 'light_count', $user['light_count'] - $useLightCount);
+                }
 
                 $coinIds = LightCoin
                     ::where('state', 0)
@@ -520,10 +515,8 @@ class LightCoinService
                 DB::rollBack();
                 return false;
             }
-            User::where('id', $toUserId)
-                ->withTrashed()
-                ->increment('light_count', 1);
-            Redis::HINCRBYFLOAT("user_{$toUserId}", 'light_count', 1);
+
+            $this->increUserInfo($toUserId, 'light_count', 1);
 
             if ($func)
             {
@@ -698,8 +691,11 @@ class LightCoinService
             User::where('id', $userId)
                 ->withTrashed()
                 ->increment('coin_count_v2', -$deletedCoinCount);
-            Redis::HINCRBYFLOAT("user_{$userId}", 'light_count', -$deletedLightCount);
-            Redis::HINCRBYFLOAT("user_{$userId}", 'coin_count_v2', -$deletedLightCount);
+            if (Redis::EXISTS("user_{$userId}"))
+            {
+                Redis::HINCRBYFLOAT("user_{$userId}", 'light_count', -$deletedLightCount);
+                Redis::HINCRBYFLOAT("user_{$userId}", 'coin_count_v2', -$deletedCoinCount);
+            }
 
             if ($func)
             {
@@ -779,10 +775,7 @@ class LightCoinService
             $now = Carbon::now();
             $order_id = "{$userId}-withdraw-{$count}-" . time();
 
-            User::where('id', $userId)
-                ->withTrashed()
-                ->increment('light_count', -$count);
-            Redis::HINCRBYFLOAT("user_{$userId}", 'light_count', -$count);
+            $this->increUserInfo($userId, 'light_count', -$count);
 
             $exchangeIds = LightCoin
                 ::where('state', 1)
@@ -956,6 +949,30 @@ class LightCoinService
                 break;
             default:
                 return null;
+        }
+    }
+
+    private function increUserInfo($userId, $key, $value)
+    {
+        User::where('id', $userId)
+            ->withTrashed()
+            ->increment($key, $value);
+        if (Redis::EXISTS("user_{$userId}"))
+        {
+            Redis::HINCRBYFLOAT("user_{$userId}", $key, $value);
+        }
+    }
+
+    private function setUserInfo($userId, $key, $value)
+    {
+        User::where('id', $userId)
+            ->withTrashed()
+            ->update([
+                $key => $value
+            ]);
+        if (Redis::EXISTS("user_{$userId}"))
+        {
+            Redis::HSET("user_{$userId}", $key, $value);
         }
     }
 }
