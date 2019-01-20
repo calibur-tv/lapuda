@@ -584,7 +584,7 @@ class PostController extends Controller
         $postTrendingService = new PostTrendingService($post['bangumi_id']);
         $postTrendingService->update($postId);
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     // 后台审核列表
