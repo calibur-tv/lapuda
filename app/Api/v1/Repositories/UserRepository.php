@@ -53,6 +53,11 @@ class UserRepository extends Repository
             return $user;
         });
 
+        if (!$result)
+        {
+            return null;
+        }
+
         if (!$result || ($result['deleted_at'] && !$isShow))
         {
             return null;
