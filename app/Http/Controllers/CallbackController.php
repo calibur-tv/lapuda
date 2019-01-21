@@ -21,6 +21,9 @@ use Illuminate\Support\Facades\Redis;
 use Overtrue\LaravelPinyin\Facades\Pinyin as Overtrue;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
+/**
+ * @Resource("第三方服务回调相关接口")
+ */
 class CallbackController extends Controller
 {
     public function qiniuAvthumb(Request $request)
@@ -132,7 +135,14 @@ class CallbackController extends Controller
             ]
         ], 200);
     }
-    // QQ第三方登录
+
+    /**
+     * QQ第三方登录调用授权
+     *
+     * @Get("/callback/oauth2/qq")
+     *
+     * @Response(302)
+     */
     public function qqAuthEntry(Request $request)
     {
         $socialite = new SocialiteManager(config('services', []));
@@ -141,6 +151,7 @@ class CallbackController extends Controller
             ->driver('qq')
             ->redirect('https://api.calibur.tv/callback/auth/qq?' . http_build_query($request->all()));
     }
+
     // 微信开放平台登录 - PC
     public function wechatAuthEntry(Request $request)
     {
@@ -150,7 +161,14 @@ class CallbackController extends Controller
             ->driver('wechat')
             ->redirect('https://api.calibur.tv/callback/auth/wechat?' . http_build_query($request->all()));
     }
-    // 微信公众平台登录 - H5
+
+    /**
+     * 微信公众平台登录 - H5
+     *
+     * @Get("/callback/oauth2/weixin")
+     *
+     * @Response(302)
+     */
     public function weixinAuthEntry(Request $request)
     {
         $socialite = new SocialiteManager(config('services', []));

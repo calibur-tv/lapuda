@@ -12,6 +12,7 @@ use App\Models\UserZone;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Services\Sms\Message;
 use App\Api\V1\Repositories\Repository;
+use App\Services\Socialite\SocialiteManager;
 use App\Services\Trial\UserIpAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -312,6 +313,244 @@ class DoorController extends Controller
         return $this->resOK();
     }
 
+    /**
+     * APP授权QQ登录、注册
+     *
+     * @Post("/door/oauth2/qq")
+     *
+     * @Parameters({
+     *      @Parameter("from", description="如果是登录，就是 sign，如果是绑定，就是 bind", type="string", required=true),
+     *      @Parameter("code", description="登录授权的 access_code", type="string", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "账号绑定成功"}),
+     *      @Response(201, body={"code": 0, "data": "JWT-TOKEN"}),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误"}),
+     *      @Response(403, body={"code": 40301, "message": "未登录或已绑定"}),
+     *      @Response(503, body={"code": 50301, "message": "服务暂时不可用"})
+     * })
+     */
+    public function qqAuthRedirect(Request $request)
+    {
+        $from = $request->get('from') === 'bind' ? 'bind' : 'sign';
+        $code = $request->get('code');
+        if (!$code)
+        {
+            return $this->resErrBad('请求参数错误');
+        }
+
+        try
+        {
+            $socialite = new SocialiteManager(config('services', []));
+
+            $user = $socialite
+                ->driver('qq')
+                ->user();
+        }
+        catch (\Exception $e)
+        {
+            app('sentry')->captureException($e);
+
+            return $this->resErrServiceUnavailable('登录失败了~');
+        }
+
+        $openId = $user['id'];
+        $isNewUser = $this->accessIsNew('qq_open_id', $openId);
+
+        if ($from === 'bind')
+        {
+            if (!$isNewUser)
+            {
+                return $this->resErrRole('该QQ号已绑定其它账号');
+            }
+
+            $userId = $request->get('id');
+            $userZone = $request->get('zone');
+            $hasUser = User
+                ::where('id', $userId)
+                ->where('zone', $userZone)
+                ->count();
+
+            if (!$hasUser)
+            {
+                return $this->resErrRole('继续操作前请先登录');
+            }
+
+            User
+                ::where('id', $userId)
+                ->update([
+                    'qq_open_id' => $openId
+                ]);
+
+            Redis::DEL('user_' . $userId);
+
+            return $this->resOK();
+        }
+
+        if ($isNewUser)
+        {
+            // signUp
+            $nickname = $this->getNickname($user['nickname']);
+            $zone = $this->createUserZone($nickname);
+            $data = [
+                'nickname' => $nickname,
+                'zone' => $zone,
+                'qq_open_id' => $openId,
+                'password' => bcrypt('calibur')
+            ];
+
+            try
+            {
+                $user = User::create($data);
+                $userRepository = new UserRepository();
+                $userRepository->migrateSearchIndex('C', $user->id);
+            }
+            catch (\Exception $e)
+            {
+                app('sentry')->captureException($e);
+
+                return $this->resErrServiceUnavailable('请修改QQ昵称后重试');
+            }
+        }
+        else
+        {
+            // signIn
+            $user = User
+                ::where('qq_open_id', $openId)
+                ->first();
+        }
+
+        $userId = $user->id;
+        $UserIpAddress = new UserIpAddress();
+        $UserIpAddress->add(
+            explode(', ', $request->headers->get('X-Forwarded-For'))[0],
+            $userId
+        );
+
+        return $this->resCreated($this->responseUser($user));
+    }
+
+    /**
+     * APP授权微信登录、注册
+     *
+     * @Post("/door/oauth2/wechat")
+     *
+     * @Parameters({
+     *      @Parameter("from", description="如果是登录，就是 sign，如果是绑定，就是 bind", type="string", required=true),
+     *      @Parameter("code", description="登录授权的 access_code", type="string", required=true)
+     * })
+     *
+     * @Transaction({
+     *      @Response(200, body={"code": 0, "data": "账号绑定成功"}),
+     *      @Response(201, body={"code": 0, "data": "JWT-TOKEN"}),
+     *      @Response(400, body={"code": 40003, "message": "请求参数错误"}),
+     *      @Response(403, body={"code": 40301, "message": "未登录或已绑定"}),
+     *      @Response(503, body={"code": 50301, "message": "服务暂时不可用"})
+     * })
+     */
+    public function wechatAuthRedirect(Request $request)
+    {
+        $from = $request->get('from') === 'bind' ? 'bind' : 'sign';
+        $code = $request->get('code');
+        if (!$code)
+        {
+            return $this->resErrBad();
+        }
+
+        try
+        {
+            $socialite = new SocialiteManager(config('services', []));
+
+            $user = $socialite
+                ->driver('weixin')
+                ->user();
+        }
+        catch (\Exception $e)
+        {
+            app('sentry')->captureException($e);
+
+            return $this->resErrServiceUnavailable('登录失败了~');
+        }
+
+        $openId = $user['original']['openid'];
+        $uniqueId = $user['original']['unionid'];
+        $isNewUser = $this->accessIsNew('wechat_unique_id', $uniqueId);
+
+        if ($from === 'bind')
+        {
+            if (!$isNewUser)
+            {
+                return $this->resErrRole('该微信号已绑定其它账号');
+            }
+
+            $userId = $request->get('id');
+            $userZone = $request->get('zone');
+            $hasUser = User
+                ::where('id', $userId)
+                ->where('zone', $userZone)
+                ->count();
+
+            if (!$hasUser)
+            {
+                return $this->resErrRole('继续操作前请先登录');
+            }
+
+            User
+                ::where('id', $userId)
+                ->update([
+                    'wechat_open_id' => $openId,
+                    'wechat_unique_id' => $uniqueId
+                ]);
+
+            Redis::DEL('user_' . $userId);
+
+            return $this->resOK();
+        }
+
+        if ($isNewUser)
+        {
+            // signUp
+            $nickname = $this->getNickname($user['nickname']);
+            $zone = $this->createUserZone($nickname);
+            $data = [
+                'nickname' => $nickname,
+                'zone' => $zone,
+                'wechat_open_id' => $openId,
+                'wechat_unique_id' => $uniqueId,
+                'password' => bcrypt('calibur')
+            ];
+
+            try
+            {
+                $user = User::create($data);
+                $userRepository = new UserRepository();
+                $userRepository->migrateSearchIndex('C', $user->id);
+            }
+            catch (\Exception $e)
+            {
+                app('sentry')->captureException($e);
+
+                return $this->resErrServiceUnavailable('请修改微信昵称后重试');
+            }
+        }
+        else
+        {
+            // signIn
+            $user = User
+                ::where('wechat_unique_id', $uniqueId)
+                ->first();
+        }
+
+        $userId = $user->id;
+        $UserIpAddress = new UserIpAddress();
+        $UserIpAddress->add(
+            explode(', ', $request->headers->get('X-Forwarded-For'))[0],
+            $userId
+        );
+
+        return $this->resCreated($this->responseUser($user));
+    }
 
     // Todo：绑定第三方账号
     public function bindProvider()
