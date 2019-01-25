@@ -42,7 +42,7 @@ class LightCoinService
         // step：1 创建团子
         // step：2 写入流通记录
         // step：3 修改用户数据
-        $now = Carbon::now();
+        $now = $params['time'];
         $data = [
             'origin_from' => $from,
             'holder_type' => 1, // 1是用户
@@ -123,7 +123,7 @@ class LightCoinService
             // step：3 写入流通记录
             // step：4 产品提供者获得光玉（可选项，在函数调用外操作）
             // TODO：这个时候是不是要锁住 user ？怎么做
-            $now = Carbon::now();
+            $now = $data['time'];
             if ($user['coin_count_v2'] >= $exchange_count)
             {
                 $this->setUserInfo($from_user_id, 'coin_count_v2', $user['coin_count_v2'] - $exchange_count);
@@ -416,7 +416,7 @@ class LightCoinService
     }
 
     // 每日签到
-    public function daySign($userId)
+    public function daySign($userId, $time)
     {
         return $this->recharge([
             'from' => 0,
@@ -424,12 +424,13 @@ class LightCoinService
             'from_user_id' => 0,
             'to_product_id' => 0,
             'to_product_type' => 0,
-            'to_user_id' => $userId
+            'to_user_id' => $userId,
+            'time' => $time
         ]);
     }
 
     // 邀请他人注册
-    public function inviteUser($oldUserId, $newUserId)
+    public function inviteUser($oldUserId, $newUserId, $time)
     {
         return $this->recharge([
             'from' => 1,
@@ -437,12 +438,13 @@ class LightCoinService
             'from_user_id' => $newUserId,
             'to_product_id' => $newUserId,
             'to_product_type' => 1,
-            'to_user_id' => $oldUserId
+            'to_user_id' => $oldUserId,
+            'time' => $time
         ]);
     }
 
     // 普通用户活跃送团子
-    public function userActivityReward($userId)
+    public function userActivityReward($userId, $time)
     {
         return $this->recharge([
             'from' => 2,
@@ -450,12 +452,13 @@ class LightCoinService
             'from_user_id' => 0,
             'to_product_id' => 0,
             'to_product_type' => 2,
-            'to_user_id' => $userId
+            'to_user_id' => $userId,
+            'time' => $time
         ]);
     }
 
     // 吧主活跃送团子
-    public function masterActiveReward($userId)
+    public function masterActiveReward($userId, $time)
     {
         return $this->recharge([
             'from' => 3,
@@ -463,12 +466,13 @@ class LightCoinService
             'from_user_id' => 0,
             'to_product_id' => 0,
             'to_product_type' => 3,
-            'to_user_id' => $userId
+            'to_user_id' => $userId,
+            'time' => $time
         ]);
     }
 
     // 给用户发表的内容投食
-    public function rewardUserContent(array $data, $func = '')
+    public function rewardUserContent(array $data, $func = '', $time)
     {
         $fromUserId = $data['from_user_id'];
         $toUserId = $data['to_user_id'];
@@ -508,7 +512,8 @@ class LightCoinService
                 'to_user_type' => 1,
                 'to_product_id' => $contentId,
                 'to_product_type' => $contentType,
-                'is_reward_to_really_user' => true
+                'is_reward_to_really_user' => true,
+                'time' => $time
             ]);
             if (!$result)
             {
@@ -535,7 +540,7 @@ class LightCoinService
     }
 
     // 删除用户的原创内容
-    public function deleteUserContent(array $data, $func = '')
+    public function deleteUserContent(array $data, $func = '', $time)
     {
         /**
          * [冻结投食的团子，但不还给投食者]
@@ -596,7 +601,7 @@ class LightCoinService
                 return false;
             }
 
-            $now = Carbon::now();
+            $now = $time;
             $orderId = "delete-content-{$userId}-{$contentType}-{$contentId}";
             $records = [];
             $deletedLightCount = 0;
@@ -714,7 +719,7 @@ class LightCoinService
     }
 
     // 为偶像应援
-    public function cheerForIdol($fromUserId, $roleId, $count = 1, $func = '')
+    public function cheerForIdol($fromUserId, $roleId, $count = 1, $func = '', $time)
     {
         try
         {
@@ -726,7 +731,8 @@ class LightCoinService
                 'to_product_id' => $roleId,
                 'to_product_type' => 9,
                 'count' => $count,
-                'is_reward_to_really_user' => false
+                'is_reward_to_really_user' => false,
+                'time' => $time
             ]);
             if (!$result)
             {
@@ -754,7 +760,7 @@ class LightCoinService
     }
 
     // 提现，人工转账
-    public function withdraw($userId, $count, $func = '')
+    public function withdraw($userId, $count, $func = '', $time)
     {
         $banlance = User
             ::where('id', $userId)
@@ -772,7 +778,7 @@ class LightCoinService
         DB::beginTransaction();
         try
         {
-            $now = Carbon::now();
+            $now = $time;
             $order_id = "{$userId}-withdraw-{$count}-" . time();
 
             $this->increUserInfo($userId, 'light_count', -$count);
@@ -843,7 +849,7 @@ class LightCoinService
     }
 
     // 撤销用户的所有应援
-    public function undoUserCheer($userId, $func = '')
+    public function undoUserCheer($userId, $func = '', $time)
     {
         try
         {
@@ -857,7 +863,7 @@ class LightCoinService
 
             $orderId = "undo-{$userId}-cheer-idol-" . time();
             $amount = count($coinIds);
-            $now = Carbon::now();
+            $now = $time;
 
             LightCoin
                 ::whereIn('id', $coinIds)
@@ -954,6 +960,7 @@ class LightCoinService
 
     private function increUserInfo($userId, $key, $value)
     {
+        /*
         User::where('id', $userId)
             ->withTrashed()
             ->increment($key, $value);
@@ -961,10 +968,12 @@ class LightCoinService
         {
             Redis::HINCRBYFLOAT("user_{$userId}", $key, $value);
         }
+        */
     }
 
     private function setUserInfo($userId, $key, $value)
     {
+        /*
         User::where('id', $userId)
             ->withTrashed()
             ->update([
@@ -974,6 +983,7 @@ class LightCoinService
         {
             Redis::HSET("user_{$userId}", $key, $value);
         }
+        */
     }
 
     // 根据金币的 id ASC 来 migration
@@ -1012,9 +1022,10 @@ class LightCoinService
         $fromUserId = $coin->from_user_id;
         $contentId = $coin->type_id;
         $amount = $coin->count;
+        $time = $coin->created_at;
         if ($coinType == 0)
         {
-            return $this->daySign($toUserId);
+            return $this->daySign($toUserId, $time);
         }
         else if ($coinType == 1)
         {
@@ -1023,15 +1034,15 @@ class LightCoinService
                 'to_user_id' => $toUserId,
                 'content_id' => $contentId,
                 'content_type' => 'post'
-            ]);
+            ], $time);
         }
         else if ($coinType == 2)
         {
-            return $this->inviteUser($toUserId, $fromUserId);
+            return $this->inviteUser($toUserId, $fromUserId, $time);
         }
         else if ($coinType == 3)
         {
-            return $this->cheerForIdol($fromUserId, $contentId);
+            return $this->cheerForIdol($fromUserId, $contentId, $time);
         }
         else if ($coinType == 4)
         {
@@ -1040,11 +1051,11 @@ class LightCoinService
                 'to_user_id' => $toUserId,
                 'content_id' => $contentId,
                 'content_type' => 'image'
-            ]);
+            ], $time);
         }
         else if ($coinType == 5)
         {
-            return $this->withdraw($toUserId, $coin->count);
+            return $this->withdraw($toUserId, $coin->count, $time);
         }
         else if ($coinType == 6)
         {
@@ -1053,7 +1064,7 @@ class LightCoinService
                 'to_user_id' => $toUserId,
                 'content_id' => $contentId,
                 'content_type' => 'score'
-            ]);
+            ], $time);
         }
         else if ($coinType == 7)
         {
@@ -1062,11 +1073,11 @@ class LightCoinService
                 'to_user_id' => $toUserId,
                 'content_id' => $contentId,
                 'content_type' => 'answer'
-            ]);
+            ], $time);
         }
         else if ($coinType == 8)
         {
-            return $this->daySign($toUserId);
+            return $this->daySign($toUserId, $time);
         }
         else if ($coinType == 9)
         {
@@ -1075,7 +1086,7 @@ class LightCoinService
                 'content_id' => $contentId,
                 'content_type' => 'post',
                 'amount' => $amount
-            ]);
+            ], $time);
         }
         else if ($coinType == 10)
         {
@@ -1084,7 +1095,7 @@ class LightCoinService
                 'content_id' => $contentId,
                 'content_type' => 'image',
                 'amount' => $amount
-            ]);
+            ], $time);
         }
         else if ($coinType == 11)
         {
@@ -1093,7 +1104,7 @@ class LightCoinService
                 'content_id' => $contentId,
                 'content_type' => 'score',
                 'amount' => $amount
-            ]);
+            ], $time);
         }
         else if ($coinType == 12)
         {
@@ -1102,7 +1113,7 @@ class LightCoinService
                 'content_id' => $contentId,
                 'content_type' => 'answer',
                 'amount' => $amount
-            ]);
+            ], $time);
         }
         else if ($coinType == 13)
         {
@@ -1111,7 +1122,7 @@ class LightCoinService
                 'to_user_id' => $toUserId,
                 'content_id' => $contentId,
                 'content_type' => 'video'
-            ]);
+            ], $time);
         }
         else if ($coinType == 14)
         {
@@ -1120,15 +1131,15 @@ class LightCoinService
                 'content_id' => $contentId,
                 'content_type' => 'video',
                 'amount' => $amount
-            ]);
+            ], $time);
         }
         else if ($coinType == 15)
         {
-            return $this->userActivityReward($toUserId);
+            return $this->userActivityReward($toUserId, $time);
         }
         else if ($coinType == 16)
         {
-            return $this->masterActiveReward($toUserId);
+            return $this->masterActiveReward($toUserId, $time);
         }
         return false;
     }
