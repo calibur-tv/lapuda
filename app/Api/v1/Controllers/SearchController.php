@@ -81,31 +81,13 @@ class SearchController extends Controller
             ->pluck('id')
             ->toArray();
 
-        foreach ($userIds as $userId)
+        Redis::pipeline(function ($pipe) use ($userIds)
         {
-            $light_count = LightCoin
-                ::where('holder_type', 1)
-                ->where('holder_id', $userId)
-                ->where('state', 1)
-                ->count();
-
-            $coin_count = LightCoin
-                ::where('holder_type', 1)
-                ->where('holder_id', $userId)
-                ->where('state', 0)
-                ->count();
-
-            User::where('id', $userId)
-                ->withTrashed()
-                ->update([
-                    'light_count' => $light_count,
-                    'coin_count_v2' => $coin_count,
-                    'migration_state' => 1
-                ]);
-
-            Redis::DEL('user', $userId);
-            Redis::DEL("user_{$userId}_coin_records");
-        }
+            foreach ($userIds as $userId)
+            {
+                $pipe->DEL('user_' . $userId);
+            }
+        });
 
         return $this->resOK('success');
     }
