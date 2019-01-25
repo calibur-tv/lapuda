@@ -85,19 +85,19 @@ class SearchController extends Controller
         $dontMigrationCoinIds = [];
         try
         {
-            foreach ($coinRecords as $coin)
+            foreach ($coinRecords as $record)
             {
-                if (in_array($coin->id, $needMigrationCoinIds) || in_array($coin->id, $dontMigrationCoinIds))
+                if (in_array($record->coin_id, $needMigrationCoinIds) || in_array($record->coin_id, $dontMigrationCoinIds))
                 {
                     continue;
                 }
-                if ($coin->to_product_type == 1)
+                if ($record->to_product_type == 1)
                 {
-                    $dontMigrationCoinIds[] = $coin;
+                    $dontMigrationCoinIds[] = $record;
                 }
                 else
                 {
-                    $needMigrationCoinIds[] = $coin->id;
+                    $needMigrationCoinIds[] = $record->coin_id;
                 }
             }
             foreach ($needMigrationCoinIds as $cid)
