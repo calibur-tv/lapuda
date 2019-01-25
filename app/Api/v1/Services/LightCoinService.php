@@ -1042,7 +1042,7 @@ class LightCoinService
         }
         else if ($coinType == 3)
         {
-            return $this->cheerForIdol($fromUserId, $contentId, '', $time);
+            return $this->cheerForIdol($fromUserId, $contentId, 1, '', $time);
         }
         else if ($coinType == 4)
         {
