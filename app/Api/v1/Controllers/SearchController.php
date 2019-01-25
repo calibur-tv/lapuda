@@ -75,25 +75,28 @@ class SearchController extends Controller
 
     public function test()
     {
-        $lightCoinService = new LightCoinService();
-        $coinIds = DB
-            ::table('user_coin')
-            ->where('migration_state', 0)
-            ->take(1000)
+        $coinIds = DB::table('light_coin_records_v2')
+            ->where('id', '>', 788952)
             ->orderBy('id', 'ASC')
-            ->pluck('id')
+            ->get()
             ->toArray();
+        $needMigrationCoinIds = [];
+        $dontMigrationCoinIds = [];
         foreach ($coinIds as $cid)
         {
-            $result = $lightCoinService->migration($cid);
-            DB
-                ::table('user_coin')
-                ->where('id', $cid)
-                ->update([
-                    'migration_state' => $result ? 1 : 2
-                ]);
+            if (in_array($cid, $needMigrationCoinIds) || in_array($cid, $dontMigrationCoinIds))
+            {
+                continue;
+            }
+            if ($cid['to_product_type'] == 1)
+            {
+                $dontMigrationCoinIds[] = $cid;
+            }
+            else
+            {
+                $needMigrationCoinIds = $cid;
+            }
         }
-
-        return $this->resOK('success');
+        return $this->resOK($needMigrationCoinIds);
     }
 }
