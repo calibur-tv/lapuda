@@ -79,7 +79,7 @@ class SearchController extends Controller
         $coinIds = DB
             ::table('user_coin')
             ->where('migration_state', 0)
-            ->take(1000)
+            ->take(5000)
             ->orderBy('id', 'ASC')
             ->pluck('id')
             ->toArray();
