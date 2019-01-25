@@ -975,4 +975,78 @@ class LightCoinService
             Redis::HSET("user_{$userId}", $key, $value);
         }
     }
+
+    // 根据金币的 id ASC 来 migration
+    public function migration($coinId)
+    {
+        /**
+         * type
+         * 0： 每日签到（old）
+         * 1： 帖子
+         * 2： 邀请用户注册
+         * 3： 为偶像应援
+         * 4： 图片
+         * 5： 提现
+         * 6： 漫评
+         * 7： 回答
+         * 8： 每日签到（new）
+         * 9： 删除帖子
+         * 10：删除图片
+         * 11：删除漫评
+         * 12：删除回答
+         * 13：视频
+         * 14：删除视频
+         * 15：普通用户100战斗力送团子
+         * 16：番剧管理者100战斗力送团子
+         */
+        $coin = UserCoin
+            ::withTrashed()
+            ->where('id', $coinId)
+            ->first();
+        if (!$coin)
+        {
+            return false;
+        }
+        $coinType = $coin->type;
+        $oldUserId = $coin->user_id;
+        $newUserId = $coin->from_user_id;
+        if ($coinType == 2)
+        {
+            // 错误的记录
+            $record = LightCoinRecord
+                ::where([
+                    'to_product_type' => 1,
+                    'from_user_id' => $oldUserId,
+                    'to_user_id' => $newUserId
+                ])
+                ->first();
+            if (!$record)
+            {
+                return false;
+            }
+
+            // 邀请注册送团子
+            $result = $this->inviteUser($oldUserId, $newUserId);
+            if (!$result)
+            {
+                return false;
+            }
+
+            $coinId = $record->coin_id;
+            $count = LightCoinRecord
+                ::where('coin_id', $coinId)
+                ->count();
+
+            // 如果错误的记录只有一条，没有交易过，就删掉
+            if ($count === 1)
+            {
+                LightCoinRecord::where('coin_id', $coinId)->delete();
+                LightCoin::where('id', $coinId)->delete();
+
+                return true;
+            }
+            return false;
+        }
+        return false;
+    }
 }

@@ -3,8 +3,10 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
+use App\Api\V1\Services\LightCoinService;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
+use Illuminate\Support\Facades\DB;
 use Mews\Purifier\Facades\Purifier;
 
 /**
@@ -65,5 +67,28 @@ class SearchController extends Controller
         $bangumiRepository = new BangumiRepository();
 
         return $this->resOK($bangumiRepository->searchAll());
+    }
+
+    public function test()
+    {
+        $ids = DB
+            ::table('user_coin')
+            ->where('migration_state', '<>', 3)
+            ->where('type', 2)
+            ->pluck('id');
+
+        $lightCoinService = new LightCoinService();
+        foreach ($ids as $id)
+        {
+            $result = $lightCoinService->migration($id);
+            DB
+                ::table('user_coin')
+                ->where('id', $id)
+                ->update([
+                    'migration_state' => $result ? 4 : 5
+                ]);
+        }
+
+        return $this->resOK('success');
     }
 }

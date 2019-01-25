@@ -49,7 +49,6 @@ class Invite implements ShouldQueue
             !intval($inviter->faker)
         )
         {
-            $userRepository = new UserRepository();
             $lightCoinService = new LightCoinService();
             $result = $lightCoinService->inviteUser($inviter->id, $this->inviteUserId);
             if (!$result)
@@ -57,6 +56,7 @@ class Invite implements ShouldQueue
                 return;
             }
 
+            $userRepository = new UserRepository();
             $newUser = $userRepository->item($this->inviteUserId);
 
             $sms = new Message();
