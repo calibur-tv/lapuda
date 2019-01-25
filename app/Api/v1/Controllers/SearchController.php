@@ -72,22 +72,4 @@ class SearchController extends Controller
 
         return $this->resOK($bangumiRepository->searchAll());
     }
-
-    public function test()
-    {
-        $userIds = User
-            ::withTrashed()
-            ->pluck('id')
-            ->toArray();
-
-        Redis::pipeline(function ($pipe) use ($userIds)
-        {
-            foreach ($userIds as $userId)
-            {
-                $pipe->DEL('user_' . $userId);
-            }
-        });
-
-        return $this->resOK('success');
-    }
 }
