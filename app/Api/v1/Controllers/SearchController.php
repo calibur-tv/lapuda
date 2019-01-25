@@ -85,17 +85,17 @@ class SearchController extends Controller
         $dontMigrationCoinIds = [];
         foreach ($coinIds as $cid)
         {
-            if (in_array($cid, $needMigrationCoinIds) || in_array($cid, $dontMigrationCoinIds))
+            if (in_array($cid->id, $needMigrationCoinIds) || in_array($cid->id, $dontMigrationCoinIds))
             {
                 continue;
             }
-            if ($cid['to_product_type'] == 1)
+            if ($cid->to_product_type == 1)
             {
                 $dontMigrationCoinIds[] = $cid;
             }
             else
             {
-                $needMigrationCoinIds[] = $cid['id'];
+                $needMigrationCoinIds[] = $cid->id;
             }
         }
         foreach ($needMigrationCoinIds as $cid)
@@ -110,12 +110,12 @@ class SearchController extends Controller
             }
             $newId = DB::table('light_coins')
                 ->insertGetId([
-                    'holder_id' => $coin['holder_id'],
-                    'holder_type' => $coin['holder_type'],
-                    'origin_from' => $coin['origin_from'],
-                    'state' => $coin['state'],
-                    'created_at' => $coin['created_at'],
-                    'updated_at' => $coin['updated_at']
+                    'holder_id' => $coin->holder_id,
+                    'holder_type' => $coin->holder_type,
+                    'origin_from' => $coin->origin_from,
+                    'state' => $coin->state,
+                    'created_at' => $coin->created_at,
+                    'updated_at' => $coin->updated_at
                 ]);
 
             $records = DB
@@ -129,14 +129,14 @@ class SearchController extends Controller
                 DB::table('light_coin_records')
                     ->insert([
                         'coin_id' => $newId,
-                        'order_id' => $record['order_id'],
-                        'from_user_id' => $record['from_user_id'],
-                        'to_user_id' => $record['to_user_id'],
-                        'to_product_id' => $record['to_product_id'],
-                        'to_product_type' => $record['to_product_type'],
-                        'order_amount' => $record['order_amount'],
-                        'created_at' => $record['created_at'],
-                        'updated_at' => $record['updated_at']
+                        'order_id' => $record->order_id,
+                        'from_user_id' => $record->from_user_id,
+                        'to_user_id' => $record->to_user_id,
+                        'to_product_id' => $record->to_product_id,
+                        'to_product_type' => $record->to_product_type,
+                        'order_amount' => $record->order_amount,
+                        'created_at' => $record->created_at,
+                        'updated_at' => $record->updated_at
                     ]);
             }
 
