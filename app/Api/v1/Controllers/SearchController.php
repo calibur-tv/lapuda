@@ -79,6 +79,7 @@ class SearchController extends Controller
             ::table('light_coins_v2')
             ->where('id', '>', 641036)
             ->where('migration_state', 0)
+            ->take(1000)
             ->get()
             ->toArray();
 
@@ -146,6 +147,10 @@ class SearchController extends Controller
                         'migration_state' => 2
                     ]);
                 continue;
+            }
+            if ($shouldNext)
+            {
+                return $this->resOK('fucked!');
             }
 
             $newId = DB
