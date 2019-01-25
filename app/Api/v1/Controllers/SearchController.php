@@ -76,26 +76,26 @@ class SearchController extends Controller
     public function test(Request $request)
     {
         $page = $request->get('page') ?: 0;
-        $coinIds = DB::table('light_coin_records_v2')
+        $coinRecords = DB::table('light_coin_records_v2')
             ->where('id', '>', 788952 + intval($page) * 1000)
             ->orderBy('id', 'ASC')
             ->get()
             ->toArray();
         $needMigrationCoinIds = [];
         $dontMigrationCoinIds = [];
-        foreach ($coinIds as $cid)
+        foreach ($coinRecords as $coin)
         {
-            if (in_array($cid->id, $needMigrationCoinIds) || in_array($cid->id, $dontMigrationCoinIds))
+            if (in_array($coin->id, $needMigrationCoinIds) || in_array($coin->id, $dontMigrationCoinIds))
             {
                 continue;
             }
-            if ($cid->to_product_type == 1)
+            if ($coin->to_product_type == 1)
             {
-                $dontMigrationCoinIds[] = $cid;
+                $dontMigrationCoinIds[] = $coin;
             }
             else
             {
-                $needMigrationCoinIds[] = $cid->id;
+                $needMigrationCoinIds[] = $coin->id;
             }
         }
         foreach ($needMigrationCoinIds as $cid)
