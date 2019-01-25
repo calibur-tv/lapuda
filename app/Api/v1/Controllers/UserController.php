@@ -594,6 +594,8 @@ class UserController extends Controller
 
         if (!$ids)
         {
+            Redis::DEL('user-' . $userId . '-notification-ids');
+            Redis::SET('user_' . $userId . '_notification_count', 0);
             return $this->resOK();
         }
 
