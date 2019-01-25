@@ -73,119 +73,106 @@ class SearchController extends Controller
         return $this->resOK($bangumiRepository->searchAll());
     }
 
-    public function test(Request $request)
+    public function test()
     {
-        $page = $request->get('page') ?: 0;
-        $coinRecords = DB::table('light_coin_records_v2')
-            ->where('id', '>', 788952 + intval($page) * 1000)
-            ->take(1000)
-            ->orderBy('id', 'ASC')
+        $coins = DB
+            ::table('light_coins_v2')
+            ->where('id', '>', 641036)
+            ->where('migration_state', 0)
             ->get()
             ->toArray();
-        if (!$coinRecords)
+
+        if (!$coins)
         {
-            return $this->resOK('next page');
+            return $this->resOK('new coin migration ok');
         }
-        $needMigrationCoinIds = [];
-        $dontMigrationCoinIds = [];
-        $orders = [];
-        try
+
+        foreach ($coins as $item)
         {
-            foreach ($coinRecords as $record)
+            $records = DB
+                ::table('light_coin_records_v2')
+                ->where('coin_id', $item->id)
+                ->get()
+                ->toArray();
+
+            $shouldNext = false;
+            foreach ($records as $record)
             {
-                if (
-                    in_array($record->coin_id, $needMigrationCoinIds) ||
-                    in_array($record->coin_id, $dontMigrationCoinIds) ||
-                    in_array($record->order_id, $orders)
-                )
+                if ($record->to_product_type == 1 && $record->id > 806224)
                 {
-                    continue;
-                }
-                if ($record->to_product_type == 1)
-                {
-                    $dontMigrationCoinIds[] = $record->coin_id;
-                }
-                else
-                {
-                    $needMigrationCoinIds[] = $record->coin_id;
-                    $orders[] = $record->order_id;
+                    $shouldNext = true;
+                    break;
                 }
             }
-            $needMigrationCoinIds = array_unique($needMigrationCoinIds);
-            foreach ($needMigrationCoinIds as $cid)
+            if ($shouldNext)
             {
-                $coin = DB
-                    ::table('light_coins_v2')
-                    ->where('id', $cid)
-                    ->first();
-                if ($coin->migration_state != 0)
-                {
-                    continue;
-                }
-
-                $records = DB
-                    ::table('light_coin_records_v2')
-                    ->where('coin_id', $cid)
-                    ->get()
-                    ->toArray();
-
-                $shouldContiune = false;
-                foreach ($records as $record)
-                {
-                    $count = DB
-                        ::table('light_coin_records')
-                        ->where('order_id', $record->order_id)
-                        ->count();
-                    if ($count)
-                    {
-                        $shouldContiune = true;
-                        break;
-                    }
-                }
-                if ($shouldContiune)
-                {
-                    continue;
-                }
-
-                $newId = DB::table('light_coins')
-                    ->insertGetId([
-                        'holder_id' => $coin->holder_id,
-                        'holder_type' => $coin->holder_type,
-                        'origin_from' => $coin->origin_from,
-                        'state' => $coin->state,
-                        'created_at' => $coin->created_at,
-                        'updated_at' => $coin->updated_at
-                    ]);
-
-                foreach ($records as $record)
-                {
-                    DB::table('light_coin_records')
-                        ->insert([
-                            'coin_id' => $newId,
-                            'order_id' => $record->order_id,
-                            'from_user_id' => $record->from_user_id,
-                            'to_user_id' => $record->to_user_id,
-                            'to_product_id' => $record->to_product_id,
-                            'to_product_type' => $record->to_product_type,
-                            'order_amount' => $record->order_amount,
-                            'created_at' => $record->created_at,
-                            'updated_at' => $record->updated_at
-                        ]);
-                }
-
                 DB
                     ::table('light_coins_v2')
-                    ->where('id', $cid)
+                    ->where('id', $item->id)
                     ->update([
                         'migration_state' => 1
                     ]);
+                continue;
             }
-        }
-        catch (\Exception $e)
-        {
-            dd($e);
+            foreach ($records as $record)
+            {
+                $count = DB
+                    ::table('light_coin_records')
+                    ->where('order_id', $record->order_id)
+                    ->count();
+                if ($count)
+                {
+                    $shouldNext = true;
+                    break;
+                }
+            }
+            if ($shouldNext)
+            {
+                DB
+                    ::table('light_coins_v2')
+                    ->where('id', $item->id)
+                    ->update([
+                        'migration_state' => 2
+                    ]);
+                continue;
+            }
+
+            $newId = DB
+                ::table('light_coin')
+                ->insertGetId([
+                    'holder_id' => $item->holder_id,
+                    'holder_type' => $item->holder_type,
+                    'origin_from' => $item->origin_from,
+                    'state' => $item->origin_from,
+                    'created_at' => $item->created_at,
+                    'updated_at' => $item->updated_at
+                ]);
+
+            foreach ($records as $record)
+            {
+                DB
+                    ::table('light_records')
+                    ->insert([
+                        'coin_id' => $newId,
+                        'order_id' => $record->order_id,
+                        'from_user_id' => $record->from_user_id,
+                        'to_user_id' => $record->to_user_id,
+                        'to_product_id' => $record->to_product_id,
+                        'to_product_type' => $record->to_product_type,
+                        'order_amount' => $record->order_amount,
+                        'created_at' => $record->created_at,
+                        'updated_at' => $record->updated_at
+                    ]);
+            }
+
+            DB
+                ::table('light_coins_v2')
+                ->where('id', $item->id)
+                ->update([
+                    'migration_state' => 3
+                ]);
         }
 
-        return $this->resOK($needMigrationCoinIds);
+        return $this->resOK('success');
     }
 }
