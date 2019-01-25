@@ -975,4 +975,161 @@ class LightCoinService
             Redis::HSET("user_{$userId}", $key, $value);
         }
     }
+
+    // 根据金币的 id ASC 来 migration
+    public function migration($coinId)
+    {
+        /**
+         * type
+         * 0： 每日签到（old）
+         * 1： 帖子
+         * 2： 邀请用户注册
+         * 3： 为偶像应援
+         * 4： 图片
+         * 5： 提现
+         * 6： 漫评
+         * 7： 回答
+         * 8： 每日签到（new）
+         * 9： 删除帖子
+         * 10：删除图片
+         * 11：删除漫评
+         * 12：删除回答
+         * 13：视频
+         * 14：删除视频
+         * 15：普通用户100战斗力送团子
+         * 16：番剧管理者100战斗力送团子
+         */
+        $coin = UserCoin
+            ::withTrashed()
+            ->where('id', $coinId)
+            ->first();
+        if (!$coin)
+        {
+            return false;
+        }
+        $coinType = $coin->type;
+        $toUserId = $coin->user_id;
+        $fromUserId = $coin->from_user_id;
+        $contentId = $coin->type_id;
+        $amount = $coin->count;
+        if ($coinType == 0)
+        {
+            return $this->daySign($toUserId);
+        }
+        else if ($coinType == 1)
+        {
+            return $this->rewardUserContent([
+                'from_user_id' => $fromUserId,
+                'to_user_id' => $toUserId,
+                'content_id' => $contentId,
+                'content_type' => 'post'
+            ]);
+        }
+        else if ($coinType == 2)
+        {
+            return $this->inviteUser($toUserId, $fromUserId);
+        }
+        else if ($coinType == 3)
+        {
+            return $this->cheerForIdol($fromUserId, $contentId);
+        }
+        else if ($coinType == 4)
+        {
+            return $this->rewardUserContent([
+                'from_user_id' => $fromUserId,
+                'to_user_id' => $toUserId,
+                'content_id' => $contentId,
+                'content_type' => 'image'
+            ]);
+        }
+        else if ($coinType == 5)
+        {
+            return $this->withdraw($toUserId, $coin->count);
+        }
+        else if ($coinType == 6)
+        {
+            return $this->rewardUserContent([
+                'from_user_id' => $fromUserId,
+                'to_user_id' => $toUserId,
+                'content_id' => $contentId,
+                'content_type' => 'score'
+            ]);
+        }
+        else if ($coinType == 7)
+        {
+            return $this->rewardUserContent([
+                'from_user_id' => $fromUserId,
+                'to_user_id' => $toUserId,
+                'content_id' => $contentId,
+                'content_type' => 'answer'
+            ]);
+        }
+        else if ($coinType == 8)
+        {
+            return $this->daySign($toUserId);
+        }
+        else if ($coinType == 9)
+        {
+            return $this->deleteUserContent([
+                'user_id' => $toUserId,
+                'content_id' => $contentId,
+                'content_type' => 'post',
+                'amount' => $amount
+            ]);
+        }
+        else if ($coinType == 10)
+        {
+            return $this->deleteUserContent([
+                'user_id' => $toUserId,
+                'content_id' => $contentId,
+                'content_type' => 'image',
+                'amount' => $amount
+            ]);
+        }
+        else if ($coinType == 11)
+        {
+            return $this->deleteUserContent([
+                'user_id' => $toUserId,
+                'content_id' => $contentId,
+                'content_type' => 'score',
+                'amount' => $amount
+            ]);
+        }
+        else if ($coinType == 12)
+        {
+            return $this->deleteUserContent([
+                'user_id' => $toUserId,
+                'content_id' => $contentId,
+                'content_type' => 'answer',
+                'amount' => $amount
+            ]);
+        }
+        else if ($coinType == 13)
+        {
+            return $this->rewardUserContent([
+                'from_user_id' => $fromUserId,
+                'to_user_id' => $toUserId,
+                'content_id' => $contentId,
+                'content_type' => 'video'
+            ]);
+        }
+        else if ($coinType == 14)
+        {
+            return $this->deleteUserContent([
+                'user_id' => $toUserId,
+                'content_id' => $contentId,
+                'content_type' => 'video',
+                'amount' => $amount
+            ]);
+        }
+        else if ($coinType == 15)
+        {
+            return $this->userActivityReward($toUserId);
+        }
+        else if ($coinType == 16)
+        {
+            return $this->masterActiveReward($toUserId);
+        }
+        return false;
+    }
 }

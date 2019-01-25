@@ -26,6 +26,7 @@ class UserActivity extends Activity
 
     protected function hook($userId, $score)
     {
+        return;
         if ($score < 100)
         {
             return;

@@ -42,6 +42,7 @@ class Invite implements ShouldQueue
             ->select('id', 'phone', 'nickname', 'faker')
             ->first();
 
+        /*
         if (
             $inviter &&
             $inviter->phone &&
@@ -62,5 +63,6 @@ class Invite implements ShouldQueue
             $sms = new Message();
             $sms->inviteUser($inviter->phone, $inviter->nickname, $newUser['nickname']);
         }
+        */
     }
 }
