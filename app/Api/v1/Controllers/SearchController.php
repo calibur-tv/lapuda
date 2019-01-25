@@ -75,7 +75,7 @@ class SearchController extends Controller
     {
         $coinIds = LightCoinRecord
             ::where('created_at', '>', '2019-01-25 08:57:11')
-            ->where('to_production_type', 1)
+            ->where('to_product_type', 1)
             ->pluck('coin_id')
             ->toArray();
 
@@ -83,7 +83,7 @@ class SearchController extends Controller
 
         LightCoinRecord
             ::where('created_at', '>', '2019-01-25 08:57:11')
-            ->where('to_production_type', 1)
+            ->where('to_product_type', 1)
             ->delete();
 
 //        $ids = DB
