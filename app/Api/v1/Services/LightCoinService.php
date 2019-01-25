@@ -1034,7 +1034,7 @@ class LightCoinService
                 'to_user_id' => $toUserId,
                 'content_id' => $contentId,
                 'content_type' => 'post'
-            ], $time);
+            ], '', $time);
         }
         else if ($coinType == 2)
         {
@@ -1042,7 +1042,7 @@ class LightCoinService
         }
         else if ($coinType == 3)
         {
-            return $this->cheerForIdol($fromUserId, $contentId, $time);
+            return $this->cheerForIdol($fromUserId, $contentId, '', $time);
         }
         else if ($coinType == 4)
         {
@@ -1051,11 +1051,11 @@ class LightCoinService
                 'to_user_id' => $toUserId,
                 'content_id' => $contentId,
                 'content_type' => 'image'
-            ], $time);
+            ], '', $time);
         }
         else if ($coinType == 5)
         {
-            return $this->withdraw($toUserId, $coin->count, $time);
+            return $this->withdraw($toUserId, $coin->count, '', $time);
         }
         else if ($coinType == 6)
         {
@@ -1064,7 +1064,7 @@ class LightCoinService
                 'to_user_id' => $toUserId,
                 'content_id' => $contentId,
                 'content_type' => 'score'
-            ], $time);
+            ], '', $time);
         }
         else if ($coinType == 7)
         {
@@ -1073,7 +1073,7 @@ class LightCoinService
                 'to_user_id' => $toUserId,
                 'content_id' => $contentId,
                 'content_type' => 'answer'
-            ], $time);
+            ], '', $time);
         }
         else if ($coinType == 8)
         {
@@ -1086,7 +1086,7 @@ class LightCoinService
                 'content_id' => $contentId,
                 'content_type' => 'post',
                 'amount' => $amount
-            ], $time);
+            ], '', $time);
         }
         else if ($coinType == 10)
         {
@@ -1095,7 +1095,7 @@ class LightCoinService
                 'content_id' => $contentId,
                 'content_type' => 'image',
                 'amount' => $amount
-            ], $time);
+            ], '', $time);
         }
         else if ($coinType == 11)
         {
@@ -1104,7 +1104,7 @@ class LightCoinService
                 'content_id' => $contentId,
                 'content_type' => 'score',
                 'amount' => $amount
-            ], $time);
+            ], '', $time);
         }
         else if ($coinType == 12)
         {
@@ -1113,7 +1113,7 @@ class LightCoinService
                 'content_id' => $contentId,
                 'content_type' => 'answer',
                 'amount' => $amount
-            ], $time);
+            ], '', $time);
         }
         else if ($coinType == 13)
         {
@@ -1122,7 +1122,7 @@ class LightCoinService
                 'to_user_id' => $toUserId,
                 'content_id' => $contentId,
                 'content_type' => 'video'
-            ], $time);
+            ], '', $time);
         }
         else if ($coinType == 14)
         {
@@ -1131,7 +1131,7 @@ class LightCoinService
                 'content_id' => $contentId,
                 'content_type' => 'video',
                 'amount' => $amount
-            ], $time);
+            ], '', $time);
         }
         else if ($coinType == 15)
         {
