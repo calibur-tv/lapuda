@@ -71,7 +71,16 @@ class Active implements ShouldQueue
                 'updated_at' => Carbon::now()
             ]);
 
-        $service->update($this->id);
+        $indexFlow = true;
+        if ('post' == $this->type) {
+            $postRepository = new PostRepository();
+            $post = $postRepository->item($this->id);
+            if (1 != $post['flow_status']) {
+                $indexFlow = false;
+            }
+        }
+
+        $service->update($this->id, $indexFlow);
     }
 
     protected function getTableByModel()
