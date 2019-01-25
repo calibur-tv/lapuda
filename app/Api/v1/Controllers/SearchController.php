@@ -75,12 +75,81 @@ class SearchController extends Controller
 
     public function test()
     {
-        $userIds = User::where('migration_state', 0)
+        $userIds = User::where('migration_state', 1)
             ->pluck('id')
             ->toArray();
 
         foreach ($userIds as $userId)
         {
+            $inviteRecordCount = LightCoinRecord
+                ::where('to_product_type', 1)
+                ->where('to_user_id', $userId)
+                ->count();
+            if (!$inviteRecordCount)
+            {
+                User::where('id', $userId)
+                    ->update([
+                        'migration_state' => 2
+                    ]);
+                continue;
+            }
+            $recordList = LightCoinRecord
+                ::where('to_product_type', 1)
+                ->where('to_user_id', $userId)
+                ->select(DB::raw('count(*) as count, from_user_id'))
+                ->groupBy('from_user_id')
+                ->get()
+                ->toArray();
+            $needDelete = false;
+
+            foreach ($recordList as $record)
+            {
+                if ($record['count'] > 1)
+                {
+                    $needDelete = true;
+                }
+            }
+            if (!$needDelete)
+            {
+                User::where('id', $userId)
+                    ->update([
+                        'migration_state' => 2
+                    ]);
+                continue;
+            }
+            foreach ($recordList as $record)
+            {
+                if ($record['count'] > 1)
+                {
+                    $fromUserId = $record['from_user_id'];
+                    $needDeleteRecord = LightCoinRecord
+                        ::where('to_product_type', 1)
+                        ->where('to_user_id', $userId)
+                        ->where('from_user_id', $fromUserId)
+                        ->get()
+                        ->toArray();
+
+                    $needDeleteCount = count($needDeleteRecord) - 1;
+                    $hasDeleteCount = 0;
+                    foreach ($needDeleteRecord as $delRecord)
+                    {
+                        if ($hasDeleteCount === $needDeleteCount)
+                        {
+                            break;
+                        }
+                        $exRecordCount = LightCoinRecord
+                            ::where('coin_id', $delRecord['coin_id'])
+                            ->count();
+                        if ($exRecordCount == 1)
+                        {
+                            LightCoin::where('id', $delRecord['coin_id'])->delete();
+                            LightCoinRecord::where('id', $delRecord['id'])->delete();
+                            $hasDeleteCount++;
+                        }
+                    }
+                }
+            }
+
             $light_count = LightCoin
                 ::where('holder_type', 1)
                 ->where('holder_id', $userId)
@@ -97,7 +166,7 @@ class SearchController extends Controller
                 ->update([
                     'light_count' => $light_count,
                     'coin_count' => $coin_count,
-                    'migration_state' => 1
+                    'migration_state' => 2
                 ]);
 
             Redis::DEL('user', $userId);
