@@ -29,7 +29,7 @@ use Illuminate\Support\Facades\Redis;
 
 class UserRepository extends Repository
 {
-    public function item($id, $isShow = false, $loop = true)
+    public function item($id, $isShow = false)
     {
         if (!$id)
         {
@@ -57,12 +57,6 @@ class UserRepository extends Repository
         if (!$result)
         {
             return null;
-        }
-
-        if (!isset($result['deleted_at']) && $loop)
-        {
-            Redis::DEL("user_{$id}");
-            return $this->item($id, $isShow, false);
         }
 
         if (!$result || ($result['deleted_at'] && !$isShow))
