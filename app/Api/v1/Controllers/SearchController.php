@@ -75,66 +75,33 @@ class SearchController extends Controller
 
     public function test()
     {
-        $records = DB
-            ::table('light_coin_records_v2')
-            ->where('id', '>', 788952)
-            ->where('coin_id', '<=', 641036)
-            ->orderBy('id', 'ASC')
-            ->get()
+        $userIds = User::where('migration_state', 0)
+            ->pluck('id')
             ->toArray();
 
-        $lightCoinService = new LightCoinService();
-        foreach ($records as $record)
+        foreach ($userIds as $userId)
         {
-            if ($record->to_product_type == 4)
-            {
-                $lightCoinService->rewardUserContent([
-                    'from_user_id' => $record->from_user_id,
-                    'to_user_id' => $record->to_user_id,
-                    'content_id' => $record->to_product_id,
-                    'content_type' => 'post'
-                ], '', $record->created_at);
-            }
-            else if ($record->to_product_type == 5)
-            {
-                $lightCoinService->rewardUserContent([
-                    'from_user_id' => $record->from_user_id,
-                    'to_user_id' => $record->to_user_id,
-                    'content_id' => $record->to_product_id,
-                    'content_type' => 'image'
-                ], '', $record->created_at);
-            }
-            else if ($record->to_product_type == 6)
-            {
-                $lightCoinService->rewardUserContent([
-                    'from_user_id' => $record->from_user_id,
-                    'to_user_id' => $record->to_user_id,
-                    'content_id' => $record->to_product_id,
-                    'content_type' => 'score'
-                ], '', $record->created_at);
-            }
-            else if ($record->to_product_type == 7)
-            {
-                $lightCoinService->rewardUserContent([
-                    'from_user_id' => $record->from_user_id,
-                    'to_user_id' => $record->to_user_id,
-                    'content_id' => $record->to_product_id,
-                    'content_type' => 'answer'
-                ], '', $record->created_at);
-            }
-            else if ($record->to_product_type == 8)
-            {
-                $lightCoinService->rewardUserContent([
-                    'from_user_id' => $record->from_user_id,
-                    'to_user_id' => $record->to_user_id,
-                    'content_id' => $record->to_product_id,
-                    'content_type' => 'video'
-                ], '', $record->created_at);
-            }
-            else if ($record->to_product_type == 9)
-            {
-                $lightCoinService->cheerForIdol($record->from_user_id, $record->to_product_id, 1, '', $record->created_at);
-            }
+            $light_count = LightCoin
+                ::where('holder_type', 1)
+                ->where('holder_id', $userId)
+                ->where('state', 1)
+                ->count();
+
+            $coin_count = LightCoin
+                ::where('holder_type', 1)
+                ->where('holder_id', $userId)
+                ->where('state', 0)
+                ->count();
+
+            User::where('id', $userId)
+                ->update([
+                    'light_count' => $light_count,
+                    'coin_count_v2' => $coin_count,
+                    'migration_state' => 1
+                ]);
+
+            Redis::DEL('user', $userId);
+            Redis::DEL("user_{$userId}_coin_records");
         }
 
         return $this->resOK('success');
