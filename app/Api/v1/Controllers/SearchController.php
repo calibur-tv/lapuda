@@ -70,27 +70,4 @@ class SearchController extends Controller
 
         return $this->resOK($bangumiRepository->searchAll());
     }
-
-    public function test()
-    {
-        $ids = DB
-            ::table('user_coin')
-            ->where('migration_state', '<>', 3)
-            ->where('type', 2)
-            ->pluck('id');
-
-        $lightCoinService = new LightCoinService();
-        foreach ($ids as $id)
-        {
-            $result = $lightCoinService->migration($id);
-            DB
-                ::table('user_coin')
-                ->where('id', $id)
-                ->update([
-                    'migration_state' => 3
-                ]);
-        }
-
-        return $this->resOK('success');
-    }
 }
