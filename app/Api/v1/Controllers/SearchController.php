@@ -106,18 +106,18 @@ class SearchController extends Controller
                     ::table('light_coins_v2')
                     ->where('id', $cid)
                     ->first();
-                if ($coin->migration_state != 0)
+                if ($coin['migration_state'] != 0)
                 {
                     continue;
                 }
                 $newId = DB::table('light_coins')
                     ->insertGetId([
-                        'holder_id' => $coin->holder_id,
-                        'holder_type' => $coin->holder_type,
-                        'origin_from' => $coin->origin_from,
-                        'state' => $coin->state,
-                        'created_at' => $coin->created_at,
-                        'updated_at' => $coin->updated_at
+                        'holder_id' => $coin['holder_id'],
+                        'holder_type' => $coin['holder_type'],
+                        'origin_from' => $coin['origin_from'],
+                        'state' => $coin['state'],
+                        'created_at' => $coin['created_at'],
+                        'updated_at' => $coin['updated_at']
                     ]);
 
                 $records = DB
@@ -131,14 +131,14 @@ class SearchController extends Controller
                     DB::table('light_coin_records')
                         ->insert([
                             'coin_id' => $newId,
-                            'order_id' => $record->order_id,
-                            'from_user_id' => $record->from_user_id,
-                            'to_user_id' => $record->to_user_id,
-                            'to_product_id' => $record->to_product_id,
-                            'to_product_type' => $record->to_product_type,
-                            'order_amount' => $record->order_amount,
-                            'created_at' => $record->created_at,
-                            'updated_at' => $record->updated_at
+                            'order_id' => $record['order_id'],
+                            'from_user_id' => $record['from_user_id'],
+                            'to_user_id' => $record['to_user_id'],
+                            'to_product_id' => $record['to_product_id'],
+                            'to_product_type' => $record['to_product_type'],
+                            'order_amount' => $record['order_amount'],
+                            'created_at' => $record['created_at'],
+                            'updated_at' => $record['updated_at']
                         ]);
                 }
 
