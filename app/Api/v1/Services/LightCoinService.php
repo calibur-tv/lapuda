@@ -274,7 +274,7 @@ class LightCoinService
                     continue;
                 }
                 $is_plus = true;
-                $aboutUser = $repository->item($item->to_user_id);
+                $aboutUser = $repository->item($item->from_user_id);
                 $user = [
                     'zone' => $aboutUser['zone'],
                     'nickname' => $aboutUser['nickname']
