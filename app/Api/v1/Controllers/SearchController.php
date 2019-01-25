@@ -93,7 +93,7 @@ class SearchController extends Controller
                 }
                 if ($record->to_product_type == 1)
                 {
-                    $dontMigrationCoinIds[] = $record;
+                    $dontMigrationCoinIds[] = $record->coin_id;
                 }
                 else
                 {
