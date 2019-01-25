@@ -75,7 +75,9 @@ class SearchController extends Controller
 
     public function test()
     {
-        $userIds = User::where('migration_state', 0)
+        $userIds = User
+            ::where('migration_state', 0)
+            ->withTrashed()
             ->pluck('id')
             ->toArray();
 
