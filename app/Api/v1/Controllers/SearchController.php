@@ -88,7 +88,7 @@ class SearchController extends Controller
             {
                 continue;
             }
-            if ($cid['to_product_type'] == 1)
+            if ($cid->to_product_type == 1)
             {
                 $dontMigrationCoinIds[] = $cid;
             }
