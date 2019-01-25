@@ -117,6 +117,31 @@ class SearchController extends Controller
                 {
                     continue;
                 }
+
+                $records = DB
+                    ::table('light_coin_records_v2')
+                    ->where('coin_id', $cid)
+                    ->get()
+                    ->toArray();
+
+                $shouldContiune = false;
+                foreach ($records as $record)
+                {
+                    $count = DB
+                        ::table('light_coin_records')
+                        ->where('order_id', $record->order_id)
+                        ->count();
+                    if ($count)
+                    {
+                        $shouldContiune = true;
+                        break;
+                    }
+                }
+                if ($shouldContiune)
+                {
+                    continue;
+                }
+
                 $newId = DB::table('light_coins')
                     ->insertGetId([
                         'holder_id' => $coin->holder_id,
@@ -126,12 +151,6 @@ class SearchController extends Controller
                         'created_at' => $coin->created_at,
                         'updated_at' => $coin->updated_at
                     ]);
-
-                $records = DB
-                    ::table('light_coin_records_v2')
-                    ->where('coin_id', $cid)
-                    ->get()
-                    ->toArray();
 
                 foreach ($records as $record)
                 {
