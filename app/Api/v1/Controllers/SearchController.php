@@ -151,7 +151,7 @@ class SearchController extends Controller
             foreach ($records as $record)
             {
                 DB
-                    ::table('light_records')
+                    ::table('light_coin_records')
                     ->insert([
                         'coin_id' => $newId,
                         'order_id' => $record->order_id,
