@@ -75,118 +75,66 @@ class SearchController extends Controller
 
     public function test()
     {
-        $coins = DB
-            ::table('light_coins_v2')
-            ->where('id', '>', 641036)
-            ->where('migration_state', 0)
-            ->take(1000)
+        $records = DB
+            ::table('light_coin_records_v2')
+            ->where('id', '>', 788952)
+            ->where('coin_id', '<=', 641036)
+            ->orderBy('id', 'ASC')
             ->get()
             ->toArray();
 
-        if (!$coins)
+        $lightCoinService = new LightCoinService();
+        foreach ($records as $record)
         {
-            return $this->resOK('new coin migration ok');
-        }
-
-        foreach ($coins as $item)
-        {
-            $state = DB
-                ::table('light_coins_v2')
-                ->where('id', $item->id)
-                ->pluck('migration_state')
-                ->first();
-
-            if ($state != 0)
+            if ($record->to_product_type == 4)
             {
-                continue;
+                $lightCoinService->rewardUserContent([
+                    'from_user_id' => $record->from_user_id,
+                    'to_user_id' => $record->to_user_id,
+                    'content_id' => $record->to_product_id,
+                    'content_type' => 'post'
+                ], '', $record->created_at);
             }
-
-            $records = DB
-                ::table('light_coin_records_v2')
-                ->where('coin_id', $item->id)
-                ->get()
-                ->toArray();
-
-            $shouldNext = false;
-            foreach ($records as $record)
+            else if ($record->to_product_type == 5)
             {
-                if ($record->to_product_type == 1 && $record->id > 806224)
-                {
-                    $shouldNext = true;
-                    break;
-                }
+                $lightCoinService->rewardUserContent([
+                    'from_user_id' => $record->from_user_id,
+                    'to_user_id' => $record->to_user_id,
+                    'content_id' => $record->to_product_id,
+                    'content_type' => 'image'
+                ], '', $record->created_at);
             }
-            if ($shouldNext)
+            else if ($record->to_product_type == 6)
             {
-                DB
-                    ::table('light_coins_v2')
-                    ->where('id', $item->id)
-                    ->update([
-                        'migration_state' => 1
-                    ]);
-                continue;
+                $lightCoinService->rewardUserContent([
+                    'from_user_id' => $record->from_user_id,
+                    'to_user_id' => $record->to_user_id,
+                    'content_id' => $record->to_product_id,
+                    'content_type' => 'score'
+                ], '', $record->created_at);
             }
-            foreach ($records as $record)
+            else if ($record->to_product_type == 7)
             {
-                $count = DB
-                    ::table('light_coin_records')
-                    ->where('order_id', $record->order_id)
-                    ->count();
-                if ($count)
-                {
-                    $shouldNext = true;
-                    break;
-                }
+                $lightCoinService->rewardUserContent([
+                    'from_user_id' => $record->from_user_id,
+                    'to_user_id' => $record->to_user_id,
+                    'content_id' => $record->to_product_id,
+                    'content_type' => 'answer'
+                ], '', $record->created_at);
             }
-            if ($shouldNext)
+            else if ($record->to_product_type == 8)
             {
-                DB
-                    ::table('light_coins_v2')
-                    ->where('id', $item->id)
-                    ->update([
-                        'migration_state' => 2
-                    ]);
-                continue;
+                $lightCoinService->rewardUserContent([
+                    'from_user_id' => $record->from_user_id,
+                    'to_user_id' => $record->to_user_id,
+                    'content_id' => $record->to_product_id,
+                    'content_type' => 'video'
+                ], '', $record->created_at);
             }
-            if ($shouldNext)
+            else if ($record->to_product_type == 9)
             {
-                return $this->resOK('fucked!');
+                $lightCoinService->cheerForIdol($record->from_user_id, $record->to_product_id, 1, '', $record->created_at);
             }
-
-            $newId = DB
-                ::table('light_coins')
-                ->insertGetId([
-                    'holder_id' => $item->holder_id,
-                    'holder_type' => $item->holder_type,
-                    'origin_from' => $item->origin_from,
-                    'state' => $item->origin_from,
-                    'created_at' => $item->created_at,
-                    'updated_at' => $item->updated_at
-                ]);
-
-            foreach ($records as $record)
-            {
-                DB
-                    ::table('light_coin_records')
-                    ->insert([
-                        'coin_id' => $newId,
-                        'order_id' => $record->order_id,
-                        'from_user_id' => $record->from_user_id,
-                        'to_user_id' => $record->to_user_id,
-                        'to_product_id' => $record->to_product_id,
-                        'to_product_type' => $record->to_product_type,
-                        'order_amount' => $record->order_amount,
-                        'created_at' => $record->created_at,
-                        'updated_at' => $record->updated_at
-                    ]);
-            }
-
-            DB
-                ::table('light_coins_v2')
-                ->where('id', $item->id)
-                ->update([
-                    'migration_state' => 3
-                ]);
         }
 
         return $this->resOK('success');
