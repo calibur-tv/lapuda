@@ -83,11 +83,16 @@ class SearchController extends Controller
             ->toArray();
         $needMigrationCoinIds = [];
         $dontMigrationCoinIds = [];
+        $orders = [];
         try
         {
             foreach ($coinRecords as $record)
             {
-                if (in_array($record->coin_id, $needMigrationCoinIds) || in_array($record->coin_id, $dontMigrationCoinIds))
+                if (
+                    in_array($record->coin_id, $needMigrationCoinIds) ||
+                    in_array($record->coin_id, $dontMigrationCoinIds) ||
+                    in_array($record->order_id, $orders)
+                )
                 {
                     continue;
                 }
@@ -98,8 +103,10 @@ class SearchController extends Controller
                 else
                 {
                     $needMigrationCoinIds[] = $record->coin_id;
+                    $orders[] = $record->order_id;
                 }
             }
+            $needMigrationCoinIds = array_unique($needMigrationCoinIds);
             foreach ($needMigrationCoinIds as $cid)
             {
                 $coin = DB
