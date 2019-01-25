@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\Redis;
 
 class LightCoinService
 {
+    private $record_table = 'light_coin_records';
     private $withdraw_baseline = 100;
     // 增发团子
     private function recharge(array $params)
@@ -234,8 +235,9 @@ class LightCoinService
         $repository = new Repository();
         $ids = $repository->RedisList($this->userRecordCacheKey($userId), function () use ($userId)
         {
-            return LightCoinRecord
-                ::where('to_user_id', $userId)
+            return DB
+                ::table($this->record_table)
+                ->where('to_user_id', $userId)
                 ->orWhere('from_user_id', $userId)
                 ->orderBy('id', 'DESC')
                 ->groupBy('id', 'order_id')
@@ -245,8 +247,9 @@ class LightCoinService
         }, 0, -1, 'm');
 
         $idsObj = $repository->filterIdsByPage($ids, $page, $count);
-        $records = LightCoinRecord
-            ::whereIn('order_id', $idsObj['ids'])
+        $records = DB
+            ::table($this->record_table)
+            ->whereIn('order_id', $idsObj['ids'])
             ->get()
             ->toArray();
 
