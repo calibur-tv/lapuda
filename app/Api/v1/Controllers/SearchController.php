@@ -4,6 +4,8 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Services\LightCoinService;
+use App\Models\LightCoin;
+use App\Models\LightCoinRecord;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
 use Illuminate\Support\Facades\DB;
@@ -71,23 +73,36 @@ class SearchController extends Controller
 
     public function test()
     {
-        $ids = DB
-            ::table('user_coin')
-            ->where('migration_state', '<>', 3)
-            ->where('type', 2)
-            ->pluck('id');
+        $coinIds = LightCoinRecord
+            ::where('created_at', '>', '2019-01-25 08:57:11')
+            ->where('to_production_type', 1)
+            ->pluck('coin_id')
+            ->toArray();
 
-        $lightCoinService = new LightCoinService();
-        foreach ($ids as $id)
-        {
-            $result = $lightCoinService->migration($id);
-            DB
-                ::table('user_coin')
-                ->where('id', $id)
-                ->update([
-                    'migration_state' => $result ? 4 : 5
-                ]);
-        }
+        LightCoin::whereIn('id', $coinIds)->delete();
+
+        LightCoinRecord
+            ::where('created_at', '>', '2019-01-25 08:57:11')
+            ->where('to_production_type', 1)
+            ->delete();
+
+//        $ids = DB
+//            ::table('user_coin')
+//            ->where('migration_state', '<>', 3)
+//            ->where('type', 2)
+//            ->pluck('id');
+//
+//        $lightCoinService = new LightCoinService();
+//        foreach ($ids as $id)
+//        {
+//            $result = $lightCoinService->migration($id);
+//            DB
+//                ::table('user_coin')
+//                ->where('id', $id)
+//                ->update([
+//                    'migration_state' => 3
+//                ]);
+//        }
 
         return $this->resOK('success');
     }
