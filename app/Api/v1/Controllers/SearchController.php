@@ -6,9 +6,11 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Services\LightCoinService;
 use App\Models\LightCoin;
 use App\Models\LightCoinRecord;
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
 /**
@@ -69,5 +71,39 @@ class SearchController extends Controller
         $bangumiRepository = new BangumiRepository();
 
         return $this->resOK($bangumiRepository->searchAll());
+    }
+
+    public function test()
+    {
+        $userIds = User::where('migration_state', 0)
+            ->pluck('id')
+            ->toArray();
+
+        foreach ($userIds as $userId)
+        {
+            $light_count = LightCoin
+                ::where('holder_type', 1)
+                ->where('holder_id', $userId)
+                ->where('state', 1)
+                ->count();
+
+            $coin_count = LightCoin
+                ::where('holder_type', 1)
+                ->where('holder_id', $userId)
+                ->where('state', 0)
+                ->count();
+
+            User::where('id', $userId)
+                ->update([
+                    'light_count' => $light_count,
+                    'coin_count' => $coin_count,
+                    'migration_state' => 1
+                ]);
+
+            Redis::DEL('user', $userId);
+            Redis::DEL("user_{$userId}_coin_records");
+        }
+
+        return $this->resOK('');
     }
 }
