@@ -138,7 +138,7 @@ class SearchController extends Controller
             }
 
             $newId = DB
-                ::table('light_coin')
+                ::table('light_coins')
                 ->insertGetId([
                     'holder_id' => $item->holder_id,
                     'holder_type' => $item->holder_type,
