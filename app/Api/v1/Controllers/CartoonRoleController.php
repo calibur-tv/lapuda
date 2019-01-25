@@ -46,8 +46,6 @@ class CartoonRoleController extends Controller
      */
     public function star($id)
     {
-        return $this->resErrServiceUnavailable('系统升级中');
-
         $cartoonRoleRepository = new CartoonRoleRepository();
         $cartoonRole = $cartoonRoleRepository->item($id);
         if (is_null($cartoonRole))

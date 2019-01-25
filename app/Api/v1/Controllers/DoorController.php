@@ -232,7 +232,7 @@ class DoorController extends Controller
         $inviteCode = $request->get('inviteCode');
         if ($inviteCode)
         {
-            $job = (new \App\Jobs\User\Invite($userId, $inviteCode));
+            $job = (new \App\Jobs\User\InviteUser($userId, $inviteCode));
             dispatch($job);
         }
 

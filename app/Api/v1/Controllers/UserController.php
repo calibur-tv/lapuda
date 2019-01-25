@@ -61,8 +61,6 @@ class UserController extends Controller
      */
     public function daySign()
     {
-        return $this->resErrServiceUnavailable('系统升级中');
-
         $userRepository = new UserRepository();
         $userId = $this->getAuthUserId();
 
