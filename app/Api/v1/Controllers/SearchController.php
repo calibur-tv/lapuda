@@ -75,6 +75,24 @@ class SearchController extends Controller
 
     public function test()
     {
+        $lightCoinService = new LightCoinService();
+        $coinIds = DB
+            ::table('user_coin')
+            ->where('migration_state', 0)
+            ->take(1000)
+            ->orderBy('id', 'ASC')
+            ->pluck('id')
+            ->toArray();
+        foreach ($coinIds as $cid)
+        {
+            $result = $lightCoinService->migration($cid);
+            DB
+                ::table('user_coin')
+                ->where('id', $cid)
+                ->update([
+                    'migration_state' => $result ? 1 : 2
+                ]);
+        }
 
         return $this->resOK('success');
     }

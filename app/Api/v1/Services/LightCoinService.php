@@ -999,8 +999,8 @@ class LightCoinService
          * 15：普通用户100战斗力送团子
          * 16：番剧管理者100战斗力送团子
          */
-        $coin = UserCoin
-            ::withTrashed()
+        $coin = DB
+            ::table('user_coin')
             ->where('id', $coinId)
             ->first();
         if (!$coin)
