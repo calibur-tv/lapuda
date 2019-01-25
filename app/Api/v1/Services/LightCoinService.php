@@ -1007,46 +1007,40 @@ class LightCoinService
         {
             return false;
         }
-        $coinType = $coin->type;
         $oldUserId = $coin->user_id;
         $newUserId = $coin->from_user_id;
-        if ($coinType == 2)
+
+        // 邀请注册送团子
+        $result = $this->inviteUser($oldUserId, $newUserId);
+        if (!$result)
         {
-            // 错误的记录
-            $record = LightCoinRecord
-                ::where([
-                    'to_product_type' => 1,
-                    'from_user_id' => $oldUserId,
-                    'to_user_id' => $newUserId
-                ])
-                ->first();
-            if (!$record)
-            {
-                return false;
-            }
-
-            // 邀请注册送团子
-            $result = $this->inviteUser($oldUserId, $newUserId);
-            if (!$result)
-            {
-                return false;
-            }
-
-            $coinId = $record->coin_id;
-            $count = LightCoinRecord
-                ::where('coin_id', $coinId)
-                ->count();
-
-            // 如果错误的记录只有一条，没有交易过，就删掉
-            if ($count === 1)
-            {
-                LightCoinRecord::where('coin_id', $coinId)->delete();
-                LightCoin::where('id', $coinId)->delete();
-
-                return true;
-            }
             return false;
         }
-        return false;
+
+        // 错误的记录
+        $record = LightCoinRecord
+            ::where([
+                'to_product_type' => 1,
+                'from_user_id' => $oldUserId,
+                'to_user_id' => $newUserId
+            ])
+            ->first();
+        if (!$record)
+        {
+            return false;
+        }
+
+        $coinId = $record->coin_id;
+        $count = LightCoinRecord
+            ::where('coin_id', $coinId)
+            ->count();
+
+        // 如果错误的记录只有一条，没有交易过，就删掉
+        if ($count === 1)
+        {
+            LightCoinRecord::where('coin_id', $coinId)->delete();
+            LightCoin::where('id', $coinId)->delete();
+        }
+        return true;
     }
 }
