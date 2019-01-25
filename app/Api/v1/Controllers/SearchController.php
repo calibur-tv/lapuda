@@ -78,9 +78,14 @@ class SearchController extends Controller
         $page = $request->get('page') ?: 0;
         $coinRecords = DB::table('light_coin_records_v2')
             ->where('id', '>', 788952 + intval($page) * 1000)
+            ->take(1000)
             ->orderBy('id', 'ASC')
             ->get()
             ->toArray();
+        if (!$coinRecords)
+        {
+            return $this->resOK('next page');
+        }
         $needMigrationCoinIds = [];
         $dontMigrationCoinIds = [];
         $orders = [];
