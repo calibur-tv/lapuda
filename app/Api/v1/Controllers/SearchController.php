@@ -89,6 +89,17 @@ class SearchController extends Controller
 
         foreach ($coins as $item)
         {
+            $state = DB
+                ::table('light_coins_v2')
+                ->where('id', $item->id)
+                ->pluck('migration_state')
+                ->first();
+
+            if ($state != 0)
+            {
+                continue;
+            }
+
             $records = DB
                 ::table('light_coin_records_v2')
                 ->where('coin_id', $item->id)
