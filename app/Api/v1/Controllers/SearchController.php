@@ -96,6 +96,7 @@ class SearchController extends Controller
                 ->count();
 
             User::where('id', $userId)
+                ->withTrashed()
                 ->update([
                     'light_count' => $light_count,
                     'coin_count_v2' => $coin_count,
