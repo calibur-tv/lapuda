@@ -94,7 +94,7 @@ class SearchController extends Controller
             }
             else
             {
-                $needMigrationCoinIds[] = $cid;
+                $needMigrationCoinIds[] = $cid->id;
             }
         }
         return $this->resOK($needMigrationCoinIds);
