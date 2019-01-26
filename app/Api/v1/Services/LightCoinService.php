@@ -9,14 +9,21 @@
 namespace App\Api\V1\Services;
 
 
+use App\Api\V1\Repositories\CartoonRoleRepository;
+use App\Api\V1\Repositories\ImageRepository;
+use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Repositories\QuestionRepository;
 use App\Api\V1\Repositories\Repository;
+use App\Api\V1\Repositories\ScoreRepository;
+use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Repositories\VideoRepository;
 use App\Models\LightCoin;
 use App\Models\LightCoinRecord;
 use App\Models\User;
-use App\Models\UserCoin;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 
 class LightCoinService
 {
@@ -68,9 +75,7 @@ class LightCoinService
 
             LightCoinRecord::insert($records);
 
-            User::where('id', $toUserId)
-                ->withTrashed()
-                ->increment('coin_count_v2', $amount);
+            $this->increUserInfo($toUserId, 'coin_count_v2', $amount);
 
             DB::commit();
             return true;
@@ -121,11 +126,7 @@ class LightCoinService
             $now = Carbon::now();
             if ($user['coin_count_v2'] >= $exchange_count)
             {
-                User::where('id', $from_user_id)
-                    ->withTrashed()
-                    ->update([
-                        'coin_count_v2' => $user['coin_count_v2'] - $exchange_count
-                    ]);
+                $this->setUserInfo($from_user_id, 'coin_count_v2', $user['coin_count_v2'] - $exchange_count);
                 // 优先消费团子
                 $exchangeIds = LightCoin
                     ::where('state', 0)
@@ -146,6 +147,11 @@ class LightCoinService
                         'coin_count_v2' => 0,
                         'light_count' => $user['light_count'] - $useLightCount
                     ]);
+                if (Redis::EXISTS("user_{$from_user_id}"))
+                {
+                    Redis::HSET("user_{$from_user_id}", 'coin_count_v2', 0);
+                    Redis::HSET("user_{$from_user_id}", 'light_count', $user['light_count'] - $useLightCount);
+                }
 
                 $coinIds = LightCoin
                     ::where('state', 0)
@@ -223,130 +229,163 @@ class LightCoinService
         return $currentUser->coin_count_v2;
     }
 
-    // TODO：用户的交易记录
-    public function getUserRecord($userId, $minId = 0, $count = 15)
+    // 获取用户的交易记录
+    public function getUserRecord($userId, $page = 0, $count = 15)
     {
         $repository = new Repository();
         $ids = $repository->RedisList($this->userRecordCacheKey($userId), function () use ($userId)
         {
             return DB
                 ::table($this->record_table)
-                ->whereRaw('to_model_type = ? and to_model_id = ?', [0, $userId])
+                ->where('to_user_id', $userId)
                 ->orWhere('from_user_id', $userId)
                 ->orderBy('id', 'DESC')
-                ->groupBy('order_id')
-                ->select(DB::raw('id, order_id'))
-                ->pluck('id')
+                ->groupBy('id', 'order_id')
+                ->pluck('order_id')
                 ->toArray();
-        });
 
-        $idsObj = $repository->filterIdsByMaxId($ids, $minId, $count);
+        }, 0, -1, 'm');
+
+        $idsObj = $repository->filterIdsByPage($ids, $page, $count);
         $records = DB
             ::table($this->record_table)
-            ->whereIn('id', $idsObj['ids'])
+            ->whereIn('order_id', $idsObj['ids'])
             ->get()
             ->toArray();
 
+        $result = [];
         foreach ($records as $item)
         {
-            $actionId = (int)$item->type_id;
-
-            $transaction = [
-                'id' => (int)$item->id,
-                'action_type' => (int)$item->type,
-                'type' => 0, // 0 是支出，1是收入
-                'action' => '',
-                'count' => (int)$item->count, // 金额
-                'about' => [
-                    'id' => $actionId
-                ],
-                'created_at' => $item->created_at, // 创建时间
+            $type = intval($item->to_product_type);
+            $product_id = intval($item->to_product_id);
+            $model = null;
+            $user = null;
+            $is_plus = false;
+            $repository = $this->getProductRepositoryByType($type);
+            if ($type == 0)
+            {
+                // 签到
+                $is_plus = true;
+            }
+            else if ($type == 1)
+            {
+                if ($userId == $item->from_user_id)
+                {
+                    // 当前用户是被邀请者
+                    continue;
+                }
+                $is_plus = true;
+                $aboutUser = $repository->item($item->from_user_id);
+                $user = [
+                    'zone' => $aboutUser['zone'],
+                    'nickname' => $aboutUser['nickname']
+                ];
+            }
+            else if ($type == 2)
+            {
+                $is_plus = true;
+            }
+            else if ($type == 3)
+            {
+                $is_plus = true;
+            }
+            else if ($type == 4)
+            {
+                $is_plus = $userId == $item->to_user_id;
+                $post = $repository->item($product_id);
+                $model = [
+                    'id' => $product_id,
+                    'title' => $post['title']
+                ];
+            }
+            else if ($type == 5)
+            {
+                $is_plus = $userId == $item->to_user_id;
+                $image = $repository->item($product_id);
+                $model = [
+                    'id' => $product_id,
+                    'title' => $image['name']
+                ];
+            }
+            else if ($type == 6)
+            {
+                $is_plus = $userId == $item->to_user_id;
+                $score = $repository->item($product_id);
+                $model = [
+                    'id' => $product_id,
+                    'title' => $score['title']
+                ];
+            }
+            else if ($type == 7)
+            {
+                $is_plus = $userId == $item->to_user_id;
+                $question = $repository->item($product_id);
+                $model = [
+                    'id' => $product_id,
+                    'title' => $question['title']
+                ];
+            }
+            else if ($type == 8)
+            {
+                $is_plus = $userId == $item->to_user_id;
+                $video = $repository->item($product_id);
+                $model = [
+                    'id' => $product_id,
+                    'title' => $video['name']
+                ];
+            }
+            else if ($type == 9)
+            {
+                $is_plus = false;
+                $role = $repository->item($product_id);
+                $model = [
+                    'id' => $product_id,
+                    'title' => $role['name']
+                ];
+            }
+            else if ($type == 10)
+            {
+                $is_plus = false;
+            }
+            else if ($type == 11)
+            {
+                $is_plus = false;
+            }
+            else if ($type == 12)
+            {
+                $is_plus = false;
+            }
+            if ($type >= 4 && $type <= 8)
+            {
+                $userRepository = new UserRepository();
+                if ($is_plus)
+                {
+                    $aboutUser = $userRepository->item($item->from_user_id);
+                }
+                else
+                {
+                    $aboutUser = $userRepository->item($item->to_user_id);
+                }
+                $user = [
+                    'zone' => $aboutUser['zone'],
+                    'nickname' => $aboutUser['nickname']
+                ];
+            }
+            $result[] = [
+                'add' => $is_plus,
+                'type' => $type,
+                'user' => $user,
+                'model' => $model,
+                'amount' => intval($item->order_amount),
+                'created_at' => $item->created_at
             ];
         }
 
-        $record = $repository->Cache($this->userRecordCacheKey($userId), function () use ($userId)
-        {
-            $plus = DB
-                ::table($this->record_table)
-                ->where('to_model_type', 0)
-                ->where('to_model_id', $userId)
-                ->get()
-                ->toArray();
-            $minus = DB
-                ::table($this->record_table)
-                ->where('from_user_id', $userId)
-                ->get()
-                ->toArray();
-
-            $result = [];
-            $orders = [];
-            // foreach 主要是为了把相同订单的记录聚合起来，能否在 MySQL 查询的时候 Group 一下？
-            foreach ($plus as $item)
-            {
-                $orderId = $item['order_id'];
-                if ($orderId && in_array($orderId, $orders))
-                {
-                    foreach ($result as $i => $record)
-                    {
-                        if ($record['order_id'] === $orderId)
-                        {
-                            $result[$i]['amount']++;
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    $result[] = [
-                        'amount' => 1,
-                        'order_id' => $item['order_id'],
-                        'from_user_id' => $item['from_user_id'],
-                        'to_model_id' => $item['to_model_id'],
-                        'to_model_type' => $item['to_model_type'],
-                        'is_add' => true,
-                        'created_at' => $item['created_at']
-                    ];
-                    if ($orderId)
-                    {
-                        array_push($orders, $orderId);
-                    }
-                }
-            }
-
-            foreach ($minus as $item)
-            {
-                $orderId = $item['order_id'];
-                if ($orderId && in_array($orderId, $orders))
-                {
-                    foreach ($result as $i => $record)
-                    {
-                        if ($record['order_id'] === $orderId)
-                        {
-                            $result[$i]['amount']++;
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    $result[] = [
-                        'amount' => 1,
-                        'order_id' => $item['order_id'],
-                        'from_user_id' => $item['from_user_id'],
-                        'to_model_id' => $item['to_model_id'],
-                        'to_model_type' => $item['to_model_type'],
-                        'is_add' => false,
-                        'created_at' => $item['created_at']
-                    ];
-                    if ($orderId)
-                    {
-                        array_push($orders, $orderId);
-                    }
-                }
-            }
-
-            return $result;
-        }, 'm');
+        return [
+            'list' => $result,
+            'total' => $idsObj['total'],
+            'noMore' => $idsObj['noMore']
+        ];
     }
 
     // 单个团子的交易记录
@@ -477,9 +516,8 @@ class LightCoinService
                 DB::rollBack();
                 return false;
             }
-            User::where('id', $toUserId)
-                ->withTrashed()
-                ->increment('light_count', 1);
+
+            $this->increUserInfo($toUserId, 'light_count', 1);
 
             if ($func)
             {
@@ -654,6 +692,11 @@ class LightCoinService
             User::where('id', $userId)
                 ->withTrashed()
                 ->increment('coin_count_v2', -$deletedCoinCount);
+            if (Redis::EXISTS("user_{$userId}"))
+            {
+                Redis::HINCRBYFLOAT("user_{$userId}", 'light_count', -$deletedLightCount);
+                Redis::HINCRBYFLOAT("user_{$userId}", 'coin_count_v2', -$deletedCoinCount);
+            }
 
             if ($func)
             {
@@ -733,9 +776,7 @@ class LightCoinService
             $now = Carbon::now();
             $order_id = "{$userId}-withdraw-{$count}-" . time();
 
-            User::where('id', $userId)
-                ->withTrashed()
-                ->increment('light_count', -$count);
+            $this->increUserInfo($userId, 'light_count', -$count);
 
             $exchangeIds = LightCoin
                 ::where('state', 1)
@@ -859,170 +900,80 @@ class LightCoinService
         }
     }
 
-    // 根据金币的 id ASC 来 migration
-    public function migration($coinId)
-    {
-        /**
-         * type
-         * 0： 每日签到（old）
-         * 1： 帖子
-         * 2： 邀请用户注册
-         * 3： 为偶像应援
-         * 4： 图片
-         * 5： 提现
-         * 6： 漫评
-         * 7： 回答
-         * 8： 每日签到（new）
-         * 9： 删除帖子
-         * 10：删除图片
-         * 11：删除漫评
-         * 12：删除回答
-         * 13：视频
-         * 14：删除视频
-         * 15：普通用户100战斗力送团子
-         * 16：番剧管理者100战斗力送团子
-         */
-        $coin = UserCoin
-            ::where('id', $coinId)
-            ->first();
-        if (!$coin)
-        {
-            return false;
-        }
-        $coinType = $coin->type;
-        $toUserId = $coin->user_id;
-        $fromUserId = $coin->from_user_id;
-        $contentId = $coin->type_id;
-        $amount = $coin->count;
-
-        if ($coinType == 0)
-        {
-            return $this->daySign($toUserId);
-        }
-        else if ($coinType == 1)
-        {
-            return $this->rewardUserContent([
-                'from_user_id' => $fromUserId,
-                'to_user_id' => $toUserId,
-                'content_id' => $contentId,
-                'content_type' => 'post'
-            ]);
-        }
-        else if ($coinType == 2)
-        {
-            return $this->inviteUser($fromUserId, $toUserId);
-        }
-        else if ($coinType == 3)
-        {
-            return $this->cheerForIdol($fromUserId, $contentId);
-        }
-        else if ($coinType == 4)
-        {
-            return $this->rewardUserContent([
-                'from_user_id' => $fromUserId,
-                'to_user_id' => $toUserId,
-                'content_id' => $contentId,
-                'content_type' => 'image'
-            ]);
-        }
-        else if ($coinType == 5)
-        {
-            $this->withdraw($toUserId, $coin->count);
-        }
-        else if ($coinType == 6)
-        {
-            return $this->rewardUserContent([
-                'from_user_id' => $fromUserId,
-                'to_user_id' => $toUserId,
-                'content_id' => $contentId,
-                'content_type' => 'score'
-            ]);
-        }
-        else if ($coinType == 7)
-        {
-            return $this->rewardUserContent([
-                'from_user_id' => $fromUserId,
-                'to_user_id' => $toUserId,
-                'content_id' => $contentId,
-                'content_type' => 'answer'
-            ]);
-        }
-        else if ($coinType == 8)
-        {
-            return $this->daySign($toUserId);
-        }
-        else if ($coinType == 9)
-        {
-            return $this->deleteUserContent([
-                'user_id' => $toUserId,
-                'content_id' => $contentId,
-                'content_type' => 'post',
-                'amount' => $amount
-            ]);
-        }
-        else if ($coinType == 10)
-        {
-            return $this->deleteUserContent([
-                'user_id' => $toUserId,
-                'content_id' => $contentId,
-                'content_type' => 'image',
-                'amount' => $amount
-            ]);
-        }
-        else if ($coinType == 11)
-        {
-            return $this->deleteUserContent([
-                'user_id' => $toUserId,
-                'content_id' => $contentId,
-                'content_type' => 'score',
-                'amount' => $amount
-            ]);
-        }
-        else if ($coinType == 12)
-        {
-            return $this->deleteUserContent([
-                'user_id' => $toUserId,
-                'content_id' => $contentId,
-                'content_type' => 'answer',
-                'amount' => $amount
-            ]);
-        }
-        else if ($coinType == 13)
-        {
-            return $this->rewardUserContent([
-                'from_user_id' => $fromUserId,
-                'to_user_id' => $toUserId,
-                'content_id' => $contentId,
-                'content_type' => 'video'
-            ]);
-        }
-        else if ($coinType == 14)
-        {
-            return $this->deleteUserContent([
-                'user_id' => $toUserId,
-                'content_id' => $contentId,
-                'content_type' => 'video',
-                'amount' => $amount
-            ]);
-        }
-        else if ($coinType == 15)
-        {
-            return $this->userActivityReward($toUserId);
-        }
-        else if ($coinType == 16)
-        {
-            return $this->masterActiveReward($toUserId);
-        }
-    }
-
-    private function updateUserRecordCache($userId, $recordId)
-    {
-        $repository = new Repository();
-        $repository->ListInsertBefore($this->userRecordCacheKey($userId), $recordId);
-    }
-
     private function userRecordCacheKey($userId)
     {
         return "user_{$userId}_coin_records";
+    }
+
+    private function getProductRepositoryByType($type)
+    {
+        switch ($type)
+        {
+            case 0:
+                return null;
+                break;
+            case 1:
+                return new UserRepository();
+                break;
+            case 2:
+                return null;
+                break;
+            case 3:
+                return null;
+                break;
+            case 4:
+                return new PostRepository();
+                break;
+            case 5:
+                return new ImageRepository();
+                break;
+            case 6:
+                return new ScoreRepository();
+                break;
+            case 7:
+                return new QuestionRepository();
+                break;
+            case 8:
+                return new VideoRepository();
+                break;
+            case 9:
+                return new CartoonRoleRepository();
+                break;
+            case 10:
+                return null;
+                break;
+            case 11:
+                return null;
+                break;
+            case 12:
+                return null;
+                break;
+            default:
+                return null;
+        }
+    }
+
+    private function increUserInfo($userId, $key, $value)
+    {
+        User::where('id', $userId)
+            ->withTrashed()
+            ->increment($key, $value);
+        if (Redis::EXISTS("user_{$userId}"))
+        {
+            Redis::HINCRBYFLOAT("user_{$userId}", $key, $value);
+        }
+    }
+
+    private function setUserInfo($userId, $key, $value)
+    {
+        User::where('id', $userId)
+            ->withTrashed()
+            ->update([
+                $key => $value
+            ]);
+        if (Redis::EXISTS("user_{$userId}"))
+        {
+            Redis::HSET("user_{$userId}", $key, $value);
+        }
     }
 }

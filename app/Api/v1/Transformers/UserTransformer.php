@@ -71,8 +71,12 @@ class UserTransformer extends Transformer
                 'signature' => $user['signature'],
                 'uptoken' => $user['uptoken'],
                 'daySign' => (boolean)$user['daySign'],
-                'coin' => (int)$user['coin_count'],
-                'coin_from_sign' => (int)$user['coin_from_sign'],
+                'coin' => (int)$user['coin_count_v2'] + (int)$user['light_count'],
+                'coin_from_sign' => 0,
+                'banlance' => [
+                    'coin_count' => (int)$user['coin_count_v2'],
+                    'light_count' => (int)$user['light_count'],
+                ],
                 'faker' => (boolean)$user['faker'],
                 'is_admin' => (boolean)$user['is_admin'],
                 'notification' => $user['notification'],
@@ -112,9 +116,14 @@ class UserTransformer extends Transformer
                 'power' => $user['power'],
                 'sex' => $user['sex'],
                 'sexSecret' => (boolean)$user['sex_secret'],
+                'share_data' => $user['share_data'],
                 'faker' => (boolean)$user['faker'],
                 'banned_to' => $user['banned_to'],
-                'badge' => $user['badge']
+                'badge' => $user['badge'],
+                'banlance' => [
+                    'coin_count' => $user['coin_count_v2'],
+                    'light_count' => $user['light_count']
+                ]
             ];
         });
     }

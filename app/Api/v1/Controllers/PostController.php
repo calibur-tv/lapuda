@@ -82,7 +82,7 @@ class PostController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'required|max:40',
             'bangumiId' => 'required|integer',
-            'content' => 'required|10000',
+            'content' => 'required|max:10000',
             'images' => 'array',
             'is_creator' => 'required|boolean'
         ]);
@@ -266,7 +266,13 @@ class PostController extends Controller
         return $this->resOK([
             'bangumi' => $bangumi,
             'post' => $postTransformer->show($post),
-            'user' => $userTransformer->item($author)
+            'user' => $userTransformer->item($author),
+            'share_data' => [
+                'title' => $post['title'] ?: '来自calibur分享的帖子~',
+                'desc' => $post['desc'] ?: '[图片]',
+                'link' => "https://m.calibur.tv/post/{$post['id']}",
+                'image' => (count($post['images']) ? $post['images'][0]['url'] : $bangumi['avatar']) . '-share120jpg'
+            ]
         ]);
     }
 
@@ -578,7 +584,7 @@ class PostController extends Controller
         $postTrendingService = new PostTrendingService($post['bangumi_id']);
         $postTrendingService->update($postId);
 
-        return $this->resNoContent();
+        return $this->resOK();
     }
 
     // 后台审核列表

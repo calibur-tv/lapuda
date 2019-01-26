@@ -86,7 +86,7 @@ class VideoController extends Controller
         $info['like_users'] = $videoLikeService->users($id);
         $info['other_site'] = $others_site_video;
 
-        $mustReward = $released_video_id == $id && $isEnded == 0;
+        $mustReward = $info['is_released'] && $isEnded == 0;
         $blocked = $userIpAddress->check($userId);
         if ($user && $user->banned_to)
         {
@@ -99,7 +99,13 @@ class VideoController extends Controller
             'list' => $videoPackage,
             'ip_blocked' => $blocked,
             'must_reward' => $mustReward,
-            'need_min_level' => $mustReward ? 0 : 3
+            'need_min_level' => $mustReward ? 0 : 3,
+            'share_data' => [
+                'title' => "《{$bangumi['name']}》第{$info['part']}话",
+                'desc' => $info['name'],
+                'link' => "https://m.calibur.tv/video/{$id}",
+                'image' => "{$info['poster']}-share120jpg"
+            ]
         ]);
     }
 

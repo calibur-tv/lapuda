@@ -9,6 +9,7 @@
 namespace App\Api\V1\Repositories;
 
 
+use App\Models\Bangumi;
 use App\Models\BangumiSeason;
 use App\Models\Video;
 
@@ -38,10 +39,13 @@ class VideoRepository extends Repository
             $src_720 = "";
             $src_480 = "";
             $src_other = $video['url'];
-            $other_site = BangumiSeason
+            $season = BangumiSeason
                 ::where('id', $video['bangumi_season_id'])
-                ->pluck('other_site_video')
+                ->select('other_site_video', 'videos')
                 ->first();
+            $other_site = $season['other_site_video'];
+            $videos = explode(',', $season['videos']);
+            $isReleased = last($videos) == $id;
 
             if (!$other_site)
             {
@@ -75,7 +79,8 @@ class VideoRepository extends Repository
                 'bangumi_id' => $video['bangumi_id'],
                 'episode' => $video['episode'],
                 'user_id' => $video['user_id'],
-                'deleted_at' => $video['deleted_at']
+                'deleted_at' => $video['deleted_at'],
+                'is_released' => $isReleased
             ];
         }, 'h');
 
@@ -102,6 +107,10 @@ class VideoRepository extends Repository
         if (!preg_match('/calibur.tv/', $result['src']))
         {
             $result['other_site'] = true;
+        }
+        if (!isset($result['is_released']))
+        {
+            $result['is_released'] = false;
         }
 
         return $result;

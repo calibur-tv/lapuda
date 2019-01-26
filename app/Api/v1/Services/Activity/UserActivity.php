@@ -11,6 +11,7 @@ namespace App\Api\V1\Services\Activity;
 
 use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Models\Notifications;
 use Illuminate\Support\Carbon;
@@ -36,8 +37,9 @@ class UserActivity extends Activity
         {
             return;
         }
+        $lightCoinService = new LightCoinService();
         // 送团子
-        $result = $userRepository->toggleCoin(false, 0, $userId, 15, 0);
+        $result = $lightCoinService->userActivityReward($userId);
         if ($result)
         {
             // 发消息通知
@@ -50,7 +52,7 @@ class UserActivity extends Activity
             return;
         }
         // 送团子
-        $result = $userRepository->toggleCoin(false, 0, $userId, 16, 0);
+        $result = $lightCoinService->masterActiveReward($userId);
         if ($result)
         {
             // 发消息通知

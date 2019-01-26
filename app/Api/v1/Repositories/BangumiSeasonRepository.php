@@ -11,6 +11,7 @@
 namespace App\Api\V1\Repositories;
 
 use App\Models\BangumiSeason;
+use Illuminate\Support\Facades\Redis;
 
 class BangumiSeasonRepository extends Repository
 {
@@ -24,5 +25,31 @@ class BangumiSeasonRepository extends Repository
                 ->get()
                 ->toArray();
         });
+    }
+
+    public function updateVideoBySeasonId($seasonId, $useOtherSiteVideo)
+    {
+        $videos = BangumiSeason
+            ::where('id', $seasonId)
+            ->pluck('videos')
+            ->first();
+
+        BangumiSeason
+            ::where('id', $seasonId)
+            ->update([
+                'other_site_video' => $useOtherSiteVideo
+            ]);
+
+        $videoIds = $videos ? explode(',', $videos) : [];
+        if (!empty($videoIds))
+        {
+            Redis::pipeline(function ($pipe) use ($videoIds)
+            {
+                foreach ($videoIds as $id)
+                {
+                    $pipe->DEL("video_{$id}");
+                }
+            });
+        }
     }
 }

@@ -181,7 +181,7 @@ class BangumiController extends Controller
      *      @Response(404, body={"code": 40401, "message": "不存在的番剧"})
      * })
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $repository = new BangumiRepository();
         $bangumi = $repository->item($id);
@@ -219,6 +219,19 @@ class BangumiController extends Controller
         {
             $job = (new \App\Jobs\Search\UpdateWeight('bangumi', $id));
             dispatch($job);
+        }
+        $shareData = [
+            'title' => $bangumi['name'],
+            'link' => "https://m.calibur.tv/bangumi/{$id}",
+            'desc' => $bangumi['summary'],
+            'image' => "{$bangumi['avatar']}-share120jpg"
+        ];
+        $bangumi['share_data'] = $shareData;
+        $iOS = $request->get('from') == 'ios';
+        if ($iOS)
+        {
+            $bangumi['has_video'] = false;
+            $bangumi['has_cartoon'] = false;
         }
 
         return $this->resOK($bangumiTransformer->show($bangumi));
@@ -511,6 +524,7 @@ class BangumiController extends Controller
             ]);
 
         Redis::DEL('bangumi_release_list');
+        Redis::DEL('video_' . $video_id);
 
         $job = (new \App\Jobs\Push\Baidu('bangumi/news'));
         dispatch($job);

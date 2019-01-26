@@ -50,6 +50,7 @@ class BangumiTransformer extends Transformer
                 'summary' => $bangumi['summary'],
                 'score' => (float)$bangumi['score'],
                 'count_score' => (int)$bangumi['count_score'],
+                'share_data' => $bangumi['share_data'],
                 'alias' => $bangumi['alias'],
                 'followed' => $bangumi['followed'],
                 'scored' => $bangumi['scored'],

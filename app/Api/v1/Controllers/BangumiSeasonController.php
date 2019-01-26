@@ -6,7 +6,6 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\v1\Repositories\BangumiSeasonRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Transformers\BangumiTransformer;
-use App\Models\Bangumi;
 use App\Models\BangumiSeason;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -163,6 +162,7 @@ class BangumiSeasonController extends Controller
     {
         $bangumiSeasonId = $request->get('id');
         $bangumiId = $request->get('bangumi_id');
+        $otherSiteVideo = $request->get('other_site_video');
 
         $arr = [
             'name' => $request->get('name'),
@@ -171,7 +171,8 @@ class BangumiSeasonController extends Controller
             'avatar' => $request->get('avatar'),
             'published_at' => Carbon::createFromTimestamp($request->get('published_at'))->toDateTimeString(),
             'released_at' => $request->get('released_at'),
-            'other_site_video' => $request->get('other_site_video'),
+            'copyright_type' => $request->get('copyright_type'),
+            'other_site_video' => $otherSiteVideo,
             'end' => $request->get('end'),
             'updated_at' => Carbon::now(),
         ];
@@ -179,6 +180,9 @@ class BangumiSeasonController extends Controller
         $result = BangumiSeason
             ::where('id', $bangumiSeasonId)
             ->update($arr);
+
+        $bangumiSeasonRepository = new BangumiSeasonRepository();
+        $bangumiSeasonRepository->updateVideoBySeasonId($bangumiSeasonId, $otherSiteVideo);
 
         if ($result === false)
         {
@@ -195,20 +199,21 @@ class BangumiSeasonController extends Controller
     {
         $query_other_site = $request->get('other_site');
         $query_released_at = $request->get('released_at');
+        $query_copyright_type = $request->get('copyright_type');
 
         $result = BangumiSeason
-            ::select('id', 'name', 'rank', 'bangumi_id', 'other_site_video')
-            ->when(!is_null($query_other_site), function ($query) use ($query_other_site)
+            ::select('id', 'name', 'rank', 'bangumi_id', 'other_site_video', 'copyright_type','copyright_provider')
+            ->when($query_other_site !== '', function ($query) use ($query_other_site)
             {
                 return $query->where('other_site_video', $query_other_site == 1);
             })
-            ->when(!is_null($query_released_at), function ($query) use ($query_released_at)
+            ->when($query_copyright_type !== '', function ($query) use ($query_copyright_type)
             {
-                if ($query_released_at == 1)
-                {
-                    return $query->where('released_at', '<>', 0);
-                }
-                return $query->where('released_at', 0);
+                return $query->where('copyright_type', $query_copyright_type);
+            })
+            ->when($query_released_at !== '', function ($query) use ($query_released_at)
+            {
+                return $query->where('released_at', $query_released_at);
             })
             ->get()
             ->toArray();
@@ -230,34 +235,54 @@ class BangumiSeasonController extends Controller
         $key = $request->get('key');
         $val = $request->get('val');
 
-        BangumiSeason
-            ::where('id', $id)
-            ->update([
-                $key => $val
-            ]);
+        $bangumiSeasonRepository = new BangumiSeasonRepository();
 
-        Redis::DEL('bangumi_season:bangumi:'.$bangumiId);
-        Redis::DEL("bangumi_{$bangumiId}_videos");
         if ($key === 'other_site_video')
         {
-            $videos = BangumiSeason
-                ::where('id', $id)
-                ->pluck('videos')
-                ->first();
-
-            $videoIds = $videos['videos'] ? explode(',', $videos['videos']) : [];
-            if (!empty($videoIds))
-            {
-                Redis::pipeline(function ($pipe) use ($videoIds)
-                {
-                    foreach ($videoIds as $id)
-                    {
-                        $pipe->DEL("video_{$id}");
-                    }
-                });
-            }
+            $bangumiSeasonRepository->updateVideoBySeasonId($id, $val);
         }
+        else
+        {
+            BangumiSeason
+                ::where('id', $id)
+                ->update([
+                    $key => $val
+                ]);
+        }
+        Redis::DEL('bangumi_season:bangumi:'.$bangumiId);
+        Redis::DEL("bangumi_{$bangumiId}_videos");
 
         return $this->resNoContent();
+    }
+
+    public function videoControl(Request $request)
+    {
+        $is_down = $request->get('is_down') === '1';
+
+        $bangumiSeasonRepository = new BangumiSeasonRepository();
+
+        $ids = BangumiSeason
+            ::where('copyright_provider', 1) // bilibli
+            ->where('copyright_type', 2) // 独家播放
+            ->pluck('id')
+            ->toArray();
+
+        foreach ($ids as $id)
+        {
+            $bangumiSeasonRepository->updateVideoBySeasonId($id, $is_down);
+        }
+
+        $ids = BangumiSeason
+            ::where('copyright_provider', '<>', 1) // 不是 bilibili
+            ->whereIn('copyright_type', [2, 3, 4]) // 独家播放和收费
+            ->pluck('id')
+            ->toArray();
+
+        foreach ($ids as $id)
+        {
+            $bangumiSeasonRepository->updateVideoBySeasonId($id, $is_down);
+        }
+
+        return $this->resOK();
     }
 }

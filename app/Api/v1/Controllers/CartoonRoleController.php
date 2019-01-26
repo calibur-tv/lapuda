@@ -9,13 +9,14 @@ use App\Api\V1\Services\Activity\BangumiActivity;
 use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Counter\CartoonRoleFansCounter;
 use App\Api\V1\Services\Counter\CartoonRoleStarCounter;
+use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Trending\CartoonRoleTrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
-use App\Models\UserCoin;
+use App\Models\LightCoinRecord;
 use App\Services\OpenSearch\Search;
 use App\Services\Trial\UserIpAddress;
 use Carbon\Carbon;
@@ -52,7 +53,8 @@ class CartoonRoleController extends Controller
             return $this->resErrNotFound();
         }
 
-        $userId = $this->getAuthUserId();
+        $user = $this->getAuthUser();
+        $userId = $user->id;
         $userIpAddress = new UserIpAddress();
         $blocked = $userIpAddress->check($userId);
         if ($blocked)
@@ -60,17 +62,23 @@ class CartoonRoleController extends Controller
             return $this->resErrRole('你已被封禁，无权应援');
         }
 
-        $userRepository = new UserRepository();
-
-        if (!$userRepository->toggleCoin(false, $userId, 0, 3, $id))
+        $lightCoinService = new LightCoinService();
+        $banlance = $lightCoinService->hasMoneyCount($user);
+        if (!$banlance)
         {
             return $this->resErrRole('没有足够的团子');
         }
 
-        $cartoonRoleTrendingService = new CartoonRoleTrendingService($cartoonRole['bangumi_id'], $userId);
-        $starded = $cartoonRoleRepository->checkHasStar($id, $userId);
+        $result = $lightCoinService->cheerForIdol($userId, $id, 1);
+        if (!$result)
+        {
+            return $this->resErrServiceUnavailable('系统升级中');
+        }
 
-        if ($starded)
+        $cartoonRoleTrendingService = new CartoonRoleTrendingService($cartoonRole['bangumi_id'], $userId);
+        $isOldFans = $cartoonRoleRepository->checkHasStar($id, $userId);
+
+        if ($isOldFans)
         {
             CartoonRoleFans
                 ::whereRaw('role_id = ? and user_id = ?', [$id, $userId])
@@ -98,7 +106,7 @@ class CartoonRoleController extends Controller
                 Redis::HINCRBYFLOAT('cartoon_role_'.$id, 'star_count', 1);
             }
         }
-        $cartoonRoleTrendingService->update($id, $starded);
+        $cartoonRoleTrendingService->update($id, $isOldFans);
         // 今日动态榜单
         $cartoonRoleRepository->SortAdd('cartoon_role_today_activity_ids', $id, 1);
 
@@ -238,7 +246,13 @@ class CartoonRoleController extends Controller
 
         return $this->resOK($cartoonTransformer->show([
             'bangumi' => $bangumi,
-            'data' => $role
+            'data' => $role,
+            'share_data' => [
+                'title' => $role['name'],
+                'desc' => $role['intro'],
+                'link' => "https://m.calibur.tv/role/{$id}",
+                'image' => "{$role['avatar']}-share120jpg"
+            ]
         ]));
     }
 
@@ -306,7 +320,8 @@ class CartoonRoleController extends Controller
         $userRepository = new UserRepository();
         $list = $userRepository->Cache('cartoon_role_star_dalao_user_ids', function ()
         {
-            return UserCoin::where('type', 3)
+            return LightCoinRecord
+                ::where('to_product_type', 9)
                 ->select(DB::raw('count(*) as count, from_user_id'))
                 ->groupBy('from_user_id')
                 ->orderBy('count', 'DESC')
@@ -350,7 +365,8 @@ class CartoonRoleController extends Controller
         $userRepository = new UserRepository();
         $list = $userRepository->Cache('cartoon_role_star_newbie_users', function ()
         {
-            return UserCoin::where('type', 3)
+            return LightCoinRecord
+                ::where('to_product_type', 9)
                 ->where('created_at', '>', Carbon::now()->addDays(-1))
                 ->select(DB::raw('count(*) as count, from_user_id'))
                 ->groupBy('from_user_id')

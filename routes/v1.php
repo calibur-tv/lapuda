@@ -9,6 +9,8 @@ $api = app('Dingo\Api\Routing\Router');
 
 $api->version(['v1', 'latest'], function ($api)
 {
+    $api->get('/migrate', 'App\Api\V1\Controllers\BangumiSeasonController@videoControl');
+
     $api->group(['prefix' => '/search'], function ($api)
     {
         $api->get('/new', 'App\Api\V1\Controllers\SearchController@search');
@@ -37,6 +39,13 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/reset', 'App\Api\V1\Controllers\DoorController@resetPassword');
 
         $api->post('/logout', 'App\Api\V1\Controllers\DoorController@logout')->middleware(['jwt.auth']);
+
+        $api->group(['prefix' => '/oauth2'], function ($api)
+        {
+            $api->post('/qq', 'App\Api\V1\Controllers\DoorController@qqAuthRedirect');
+
+            $api->post('/wechat', 'App\Api\V1\Controllers\DoorController@wechatAuthRedirect');
+        });
     });
 
     $api->group(['prefix' => '/app'], function ($api)

@@ -9,7 +9,6 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\AnswerRepository;
-use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\Repository;
@@ -17,7 +16,7 @@ use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Counter\Stats\TotalUserCount;
-use App\Api\V1\Services\Owner\BangumiManager;
+use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\Role;
 use App\Api\V1\Services\Tag\Base\UserBadgeService;
 use App\Api\V1\Services\Toggle\Image\ImageMarkService;
@@ -28,11 +27,11 @@ use App\Api\V1\Services\Toggle\Video\VideoMarkService;
 use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
+use App\Models\LightCoinRecord;
 use App\Models\Notifications;
 use App\Models\SystemNotice;
 use App\Models\User;
 use App\Api\V1\Repositories\UserRepository;
-use App\Models\UserCoin;
 use App\Models\UserSign;
 use App\Services\OpenSearch\Search;
 use App\Services\Trial\UserIpAddress;
@@ -62,19 +61,20 @@ class UserController extends Controller
      */
     public function daySign()
     {
-        $repository = new UserRepository();
+        $userRepository = new UserRepository();
         $userId = $this->getAuthUserId();
 
-        if ($repository->daySigned($userId))
+        if ($userRepository->daySigned($userId))
         {
             return $this->resErrRole('已签到');
         }
 
-        UserCoin::create([
-            'from_user_id' => $userId,
-            'user_id' => $userId,
-            'type' => 8
-        ]);
+        $lightCoinService = new LightCoinService();
+        $result = $lightCoinService->daySign($userId);
+        if (!$result)
+        {
+            return $this->resErrServiceUnavailable('系统维护中');
+        }
 
         UserSign::create([
             'user_id' => $userId
@@ -82,10 +82,6 @@ class UserController extends Controller
 
         User::where('id', $userId)->increment('coin_count', 1);
         Redis::DEL('user_' . $userId . '_day_signed_' . date('y-m-d', time()));
-        if (Redis::EXISTS('user_' . $userId . '_coin_sign'))
-        {
-            Redis::INCRBY('user_' . $userId . '_coin_sign', 1);
-        }
 
         $userLevel = new UserLevel();
         $exp = $userLevel->change($userId, 2, false);
@@ -146,6 +142,12 @@ class UserController extends Controller
         $user['power'] = $userActivityService->get($userId);
         $userBadgeService = new UserBadgeService();
         $user['badge'] = $userBadgeService->getUserBadges($userId);
+        $user['share_data'] = [
+            'title' => $user['nickname'],
+            'desc' => $user['signature'],
+            'link' => "https://m.calibur.tv/user/{$zone}",
+            'image' => "{$user['avatar']}-share120jpg"
+        ];
 
         return $this->resOK($userTransformer->show($user));
     }
@@ -590,6 +592,8 @@ class UserController extends Controller
 
         if (!$ids)
         {
+            Redis::DEL('user-' . $userId . '-notification-ids');
+            Redis::SET('user_' . $userId . '_notification_count', 0);
             return $this->resOK();
         }
 
@@ -642,213 +646,13 @@ class UserController extends Controller
      */
     public function transactions(Request $request)
     {
-        $minId = $request->get('min_id') ? intval($request->get('min_id')) : 0;
-        $take = $request->get('take') ?: 15;
+        $take = $request->get('take') ?: 20;
+        $page = $request->get('page') ?: 0;
         $userId = $this->getAuthUserId();
+        $lightCoinService = new LightCoinService();
+        $result = $lightCoinService->getUserRecord($userId, $page, $take);
 
-        $list = DB::table('user_coin')
-            ->where('user_id', $userId)
-            ->orWhere('from_user_id', $userId)
-            ->when($minId, function ($query) use ($minId)
-            {
-                return $query->where('id', '<', $minId);
-            })
-            ->select('id', 'created_at', 'from_user_id', 'user_id', 'type', 'type_id', 'id', 'count')
-            ->orderBy('id', 'DESC')
-            ->take($take)
-            ->get();
-
-        $result = [];
-        foreach ($list as $item)
-        {
-            $actionId = (int)$item->type_id;
-
-            $transaction = [
-                'id' => (int)$item->id,
-                'action_type' => (int)$item->type,
-                'type' => 0, // 0 是支出，1是收入
-                'action' => '',
-                'count' => (int)$item->count, // 金额
-                'about' => [
-                    'id' => $actionId
-                ],
-                'created_at' => $item->created_at, // 创建时间
-            ];
-
-            if ($item->type == 0)
-            {
-                $transaction['type'] = 1;
-                $transaction['action'] = '每日签到（旧）';
-            }
-            else if ($item->type == 1)
-            {
-                $transaction['action'] = '打赏帖子';
-                if ($item->from_user_id == $userId)
-                {
-                    $transaction['type'] = 0;
-                }
-                else
-                {
-                    $transaction['type'] = 1;
-                }
-
-                $postRepository = new PostRepository();
-                $post = $postRepository->item($actionId);
-                $transaction['about']['title'] = $post['title'];
-            }
-            else if ($item->type == 2)
-            {
-                $transaction['action'] = '邀请注册';
-                $transaction['type'] = 1;
-
-                $userRepository = new UserRepository();
-                $user = $userRepository->item($actionId);
-                $transaction['about']['nickname'] = $user['nickname'];
-                $transaction['about']['zone'] = $user['zone'];
-            }
-            else if ($item->type == 3)
-            {
-                $transaction['action'] = '偶像应援';
-                $transaction['type'] = 0;
-
-                $cartoonRoleRepository = new CartoonRoleRepository();
-                $role = $cartoonRoleRepository->item($actionId);
-                $transaction['about']['name'] = $role['name'];
-            }
-            else if ($item->type == 4)
-            {
-                $transaction['action'] = '打赏图片';
-                if ($item->from_user_id == $userId)
-                {
-                    $transaction['type'] = 0;
-                }
-                else
-                {
-                    $transaction['type'] = 1;
-                }
-
-                $imageRepository = new ImageRepository();
-                $image = $imageRepository->item($actionId);
-                $transaction['about']['title'] = $image['name'];
-            }
-            else if ($item->type == 5)
-            {
-                $transaction['action'] = '提现';
-                $transaction['type'] = 0;
-            }
-            else if ($item->type == 6)
-            {
-                $transaction['action'] = '打赏漫评';
-                if ($item->from_user_id == $userId)
-                {
-                    $transaction['type'] = 0;
-                }
-                else
-                {
-                    $transaction['type'] = 1;
-                }
-
-                $scoreRepository = new ScoreRepository();
-                $score = $scoreRepository->item($actionId);
-                $transaction['about']['title'] = $score['title'];
-            }
-            else if ($item->type == 7)
-            {
-                $transaction['action'] = '打赏回答';
-                if ($item->from_user_id == $userId)
-                {
-                    $transaction['type'] = 0;
-                }
-                else
-                {
-                    $transaction['type'] = 1;
-                }
-
-                $answerRepository = new AnswerRepository();
-                $answer = $answerRepository->item($actionId);
-                $transaction['about']['intro'] = $answer['intro'];
-            }
-            else if ($item->type == 8)
-            {
-                $transaction['type'] = 1;
-                $transaction['action'] = '每日签到';
-            }
-            else if ($item->type == 9)
-            {
-                $transaction['type'] = 0;
-                $transaction['action'] = '删除帖子';
-
-                $postRepository = new PostRepository();
-                $post = $postRepository->item($actionId, true);
-                $transaction['about']['title'] = $post['title'];
-            }
-            else if ($item->type == 10)
-            {
-                $transaction['type'] = 0;
-                $transaction['action'] = '删除图片';
-
-                $imageRepository = new ImageRepository();
-                $image = $imageRepository->item($actionId, true);
-                $transaction['about']['title'] = $image['name'];
-            }
-            else if ($item->type == 11)
-            {
-                $transaction['type'] = 0;
-                $transaction['action'] = '删除漫评';
-
-                $scoreRepository = new ScoreRepository();
-                $score = $scoreRepository->item($actionId, true);
-                $transaction['about']['title'] = $score['title'];
-            }
-            else if ($item->type == 12)
-            {
-                $transaction['type'] = 0;
-                $transaction['action'] = '删除回答';
-
-
-                $answerRepository = new AnswerRepository();
-                $answer = $answerRepository->item($actionId, true);
-                $transaction['about']['intro'] = $answer['intro'];
-            }
-            else if ($item->type == 13)
-            {
-                $transaction['type'] = 0;
-                $transaction['action'] = '打赏视频';
-
-                $videoRepository = new VideoRepository();
-                $video = $videoRepository->item($actionId);
-                $transaction['about']['title'] = $video['name'];
-            }
-            else if ($item->type == 14)
-            {
-                $transaction['type'] = 0;
-                $transaction['action'] = '删除视频';
-
-                $videoRepository = new VideoRepository();
-                $video = $videoRepository->item($actionId, true);
-                $transaction['about']['title'] = $video['name'];
-            }
-            else if ($item->type == 15)
-            {
-                $transaction['type'] = 1;
-                $transaction['action'] = '活跃奖励';
-
-                $transaction['about']['title'] = '你昨天的战斗力超过了100，赠送一个团子~';
-            }
-            else if ($item->type == 16)
-            {
-                $transaction['type'] = 1;
-                $transaction['action'] = '活跃奖励';
-
-                $transaction['about']['title'] = '活跃版主每天赠送一个团子，请查收~';
-            }
-
-            $result[] = $transaction;
-        }
-
-        return $this->resOK([
-            'list' => $result
-        ]);
+        return $this->resOK($result);
     }
 
     // 用户邀请注册的列表
@@ -863,9 +667,9 @@ class UserController extends Controller
             return $this->resErrNotFound();
         }
 
-        $ids = UserCoin
-            ::where('user_id', $id)
-            ->where('type', 2)
+        $ids = LightCoinRecord
+            ::where('to_user_id', $id)
+            ->where('to_product_type', 1)
             ->pluck('from_user_id');
 
         if (!$ids)
@@ -898,8 +702,8 @@ class UserController extends Controller
 
         $ids = $userRepository->Cache('recommended-activity-user-ids', function () use ($userRepository)
         {
-            $ids = UserCoin
-                ::whereIn('type', [1, 4, 6, 7])
+            $ids = LightCoinRecord
+                ::whereIn('to_product_type', [4, 5, 6, 7, 8, 9])
                 ->select(DB::raw('count(*) as count, from_user_id'))
                 ->groupBy('from_user_id')
                 ->orderBy('count', 'DESC')
@@ -1042,12 +846,21 @@ class UserController extends Controller
         {
             return $this->resOK(null);
         }
+        $banlance = User
+            ::where('id', $userId)
+            ->select('coin_count_v2', 'light_count')
+            ->first();
 
-        $user['coin_count'] = User::where('id', $userId)->pluck('coin_count')->first();
-        $user['coin_from_sign'] = $userRepository->userSignCoin($userId);
+        $user['coin_count'] = $banlance->coin_count_v2;
+        $user['light_count'] = $banlance->light_count;
+        $user['coin_from_sign'] = 0;
         $user['ip_address'] = $userIpAddress->userIps($userId);
         $user['level'] = $userLevel->convertExpToLevel($user['exp']);
         $user['power'] = $userActivityService->get($userId);
+        $user['invite_count'] = LightCoinRecord
+            ::where('to_product_type', 1)
+            ->where('to_user_id', $userId)
+            ->count();
 
         return $this->resOK($user);
     }
@@ -1288,167 +1101,10 @@ class UserController extends Controller
         $toPage = $request->get('to_page') ?: 1;
         $take = $request->get('take') ?: 10;
         $userId = $request->get('id');
+        $lightCoinService = new LightCoinService();
+        $result = $lightCoinService->getUserRecord($userId, $curPage, ($toPage - $curPage) * $take);
 
-        $list = DB::table('user_coin')
-            ->where('user_id', $userId)
-            ->orWhere('from_user_id', $userId)
-            ->select('id', 'created_at', 'from_user_id', 'user_id', 'type', 'type_id', 'id', 'count')
-            ->orderBy('created_at', 'DESC')
-            ->take(($toPage - $curPage) * $take)
-            ->skip($curPage * $take)
-            ->get();
-
-        $userRepository = new UserRepository();
-        $result = [];
-        foreach ($list as $item)
-        {
-            $transaction = [
-                'id' => $item->id,
-                'type' => '',
-                'action' => '',
-                'count' => $item->count,
-                'action_id' => $item->type_id,
-                'created_at' => $item->created_at,
-                'about_user_id' => '无',
-                'about_user_phone' => '无',
-                'about_user_sign_at' => '无'
-            ];
-            if ($item->type == 0)
-            {
-                $transaction['type'] = '收入';
-                $transaction['action'] = '每日签到（旧）';
-            }
-            else if ($item->type == 1)
-            {
-                $transaction['action'] = '打赏帖子';
-                if ($item->from_user_id == $userId)
-                {
-                    $transaction['type'] = '支出';
-                }
-                else
-                {
-                    $transaction['type'] = '收入';
-                }
-            }
-            else if ($item->type == 2)
-            {
-                $transaction['action'] = '邀请注册';
-                $transaction['type'] = '收入';
-            }
-            else if ($item->type == 3)
-            {
-                $transaction['action'] = '偶像应援';
-                $transaction['type'] = '支出';
-            }
-            else if ($item->type == 4)
-            {
-                $transaction['action'] = '打赏图片';
-                if ($item->from_user_id == $userId)
-                {
-                    $transaction['type'] = '支出';
-                }
-                else
-                {
-                    $transaction['type'] = '收入';
-                }
-            }
-            else if ($item->type == 5)
-            {
-                $transaction['action'] = '提现';
-                $transaction['type'] = '支出';
-            }
-            else if ($item->type == 6)
-            {
-                $transaction['action'] = '打赏漫评';
-                if ($item->from_user_id == $userId)
-                {
-                    $transaction['type'] = '支出';
-                }
-                else
-                {
-                    $transaction['type'] = '收入';
-                }
-            }
-            else if ($item->type == 7)
-            {
-                $transaction['action'] = '打赏回答';
-                if ($item->from_user_id == $userId)
-                {
-                    $transaction['type'] = '支出';
-                }
-                else
-                {
-                    $transaction['type'] = '收入';
-                }
-            }
-            else if ($item->type == 8)
-            {
-                $transaction['type'] = '收入';
-                $transaction['action'] = '每日签到';
-            }
-            else if ($item->type == 9)
-            {
-                $transaction['type'] = '支出';
-                $transaction['action'] = '删除帖子';
-            }
-            else if ($item->type == 10)
-            {
-                $transaction['type'] = '支出';
-                $transaction['action'] = '删除图片';
-            }
-            else if ($item->type == 11)
-            {
-                $transaction['type'] = '支出';
-                $transaction['action'] = '删除漫评';
-            }
-            else if ($item->type == 12)
-            {
-                $transaction['type'] = '支出';
-                $transaction['action'] = '删除回答';
-            }
-            else if ($item->type == 13)
-            {
-                $transaction['type'] = '支出';
-                $transaction['action'] = '打赏视频';
-            }
-            else if ($item->type == 14)
-            {
-                $transaction['type'] = '支出';
-                $transaction['action'] = '删除视频';
-            }
-            else if ($item->type == 15)
-            {
-                $transaction['type'] = '收入';
-                $transaction['action'] = '普通用户100战斗力送团子';
-            }
-            else if ($item->type == 16)
-            {
-                $transaction['type'] = '收入';
-                $transaction['action'] = '番剧管理者100战斗力送团子';
-            }
-
-            if ($transaction['type'] === '收入' && $item->from_user_id != 0 && $item->from_user_id != $userId)
-            {
-                $user = $userRepository->item($item->from_user_id);
-                $transaction['about_user_id'] = $user['id'];
-                $transaction['about_user_phone'] = $user['phone'];
-                $transaction['about_user_sign_at'] = $user['created_at'];
-            }
-            if ($transaction['type'] === '支出' && $item->user_id != 0)
-            {
-                $user = $userRepository->item($item->user_id);
-                $transaction['about_user_id'] = $user['id'];
-                $transaction['about_user_phone'] = $user['phone'];
-                $transaction['about_user_sign_at'] = $user['created_at'];
-            }
-
-            $result[] = $transaction;
-        }
-
-        return $this->resOK([
-            'list' => $result,
-            'total' => UserCoin::where('user_id', $userId)->orWhere('from_user_id', $userId)->count()
-        ]);
+        return $this->resOK($result);
     }
 
     // 用户提现
@@ -1461,30 +1117,13 @@ class UserController extends Controller
         }
 
         $userId = $request->get('id');
-        $coinCount = User::where('id', $userId)
-            ->pluck('coin_count')
-            ->first();
-
-        $coinCount = $coinCount - UserCoin::whereRaw('user_id = ? and type = ?', [$userId, 8])->count();
-
-        if ($coinCount < 100)
-        {
-            return $this->resErrBad('未满100团子');
-        }
-
         $money = $request->get('money');
-        if ($money > $coinCount)
+        $lightCoinService = new LightCoinService();
+        $result = $lightCoinService->withdraw($userId, $money);
+        if (!$result)
         {
-            return $this->resErrBad('超出拥有金额');
+            $lightCoinService->resErrServiceUnavailable('提现失败');
         }
-
-        User::where('id', $userId)->increment('coin_count', -$money);
-        UserCoin::create([
-            'from_user_id' => 0,
-            'user_id' => $userId,
-            'type' => 5,
-            'count' => $money
-        ]);
 
         Redis::DEL('user_' . $userId);
 
