@@ -181,7 +181,7 @@ class BangumiController extends Controller
      *      @Response(404, body={"code": 40401, "message": "不存在的番剧"})
      * })
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $repository = new BangumiRepository();
         $bangumi = $repository->item($id);
@@ -227,6 +227,12 @@ class BangumiController extends Controller
             'image' => "{$bangumi['avatar']}-share120jpg"
         ];
         $bangumi['share_data'] = $shareData;
+        $iOS = $request->get('from') == 'ios';
+        if ($iOS)
+        {
+            $bangumi['has_video'] = false;
+            $bangumi['has_cartoon'] = false;
+        }
 
         return $this->resOK($bangumiTransformer->show($bangumi));
     }
