@@ -346,7 +346,7 @@ class DoorController extends Controller
 
             $user = $socialite
                 ->driver('qq')
-                ->user($code);
+                ->user();
         }
         catch (\Exception $e)
         {
@@ -464,7 +464,7 @@ class DoorController extends Controller
 
             $user = $socialite
                 ->driver('weixin')
-                ->user($code);
+                ->user();
         }
         catch (\Exception $e)
         {
