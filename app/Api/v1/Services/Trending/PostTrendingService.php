@@ -72,6 +72,11 @@ class PostTrendingService extends TrendingService
                     ->where('bangumi_id', $this->bangumiId)
                     ->whereNull('top_at');
             })
+            ->when(!$this->bangumiId, function ($query)
+            {
+                return $query
+                    ->where('flow_status', 1);
+            })
             ->pluck('id');
 
         $postRepository = new PostRepository();
@@ -87,11 +92,6 @@ class PostTrendingService extends TrendingService
         // https://segmentfault.com/a/1190000004253816
         foreach ($list as $item)
         {
-            if (is_null($item))
-            {
-                continue;
-            }
-
             $postId = $item['id'];
             $likeCount = $postLikeService->total($postId);
             $markCount = $postMarkService->total($postId);
@@ -108,6 +108,57 @@ class PostTrendingService extends TrendingService
         }
 
         return $result;
+    }
+
+    public function create($id, $publish = true, $addToHomepage = true)
+    {
+        if ($publish)
+        {
+            if (gettype($this->bangumiId) === 'array')
+            {
+                foreach ($this->bangumiId as $bid)
+                {
+                    // $this->ListInsertBefore($this->trendingIdsCacheKey('news', $bid), $id);
+                    // $this->SortAdd($this->trendingIdsCacheKey('active', $bid), $id);
+                    $this->SortAdd($this->trendingIdsCacheKey('hot', $bid), $id);
+                }
+            }
+            else
+            {
+                // $this->ListInsertBefore($this->trendingIdsCacheKey('news', $this->bangumiId), $id);
+                // $this->SortAdd($this->trendingIdsCacheKey('active', $this->bangumiId), $id);
+                $this->SortAdd($this->trendingIdsCacheKey('hot', $this->bangumiId), $id);
+            }
+            // $this->ListInsertBefore($this->trendingIdsCacheKey('news', 0), $id);
+            // $this->SortAdd($this->trendingIdsCacheKey('active', 0), $id);
+            if ($addToHomepage)
+            {
+                $this->SortAdd($this->trendingIdsCacheKey('hot', 0), $id);
+            }
+        }
+        $this->ListInsertBefore($this->trendingFlowUsersKey(), $id);
+    }
+
+    public function update($id, $addToHomepage = true)
+    {
+        if (gettype($this->bangumiId) === 'array')
+        {
+            foreach ($this->bangumiId as $bid)
+            {
+                // $this->SortAdd($this->trendingIdsCacheKey('active', $bid), $id);
+                $this->SortAdd($this->trendingIdsCacheKey('hot', $bid), $id);
+            }
+        }
+        else if ($this->checkCanUpdateBangumiIds($id))
+        {
+            // $this->SortAdd($this->trendingIdsCacheKey('active', $this->bangumiId), $id);
+            $this->SortAdd($this->trendingIdsCacheKey('hot', $this->bangumiId), $id);
+        }
+        // $this->SortAdd($this->trendingIdsCacheKey('active', 0), $id);
+        if ($addToHomepage)
+        {
+            $this->SortAdd($this->trendingIdsCacheKey('hot', 0), $id);
+        }
     }
 
     public function computeUserIds()

@@ -235,6 +235,11 @@ class TrendingService extends Repository
         $this->ListRemove($this->trendingFlowUsersKey(), $id);
     }
 
+    public function deleteIndex($id)
+    {
+        $this->SortRemove($this->trendingIdsCacheKey('hot', 0), $id);
+    }
+
     public function getListByIds($ids, $flowType)
     {
         return [];

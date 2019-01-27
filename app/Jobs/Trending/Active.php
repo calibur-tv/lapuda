@@ -25,6 +25,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class Active implements ShouldQueue
 {
@@ -74,7 +75,16 @@ class Active implements ShouldQueue
                 'updated_at' => Carbon::now()
             ]);
 
-        $service->update($this->id);
+        $indexFlow = true;
+        if ('post' == $this->type)
+        {
+            if (isset($item['flow_status']) && 1 != $item['flow_status'])
+            {
+                $indexFlow = false;
+            }
+        }
+
+        $service->update($this->id, $indexFlow);
     }
 
     protected function getTableByModel()

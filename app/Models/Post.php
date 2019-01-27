@@ -28,7 +28,9 @@ class Post extends Model
         'view_count',
         'is_nice',
         'top_at',
-        'is_creator'
+        'is_creator',
+        'flow_status',
+        'reviewer_id'
     ];
 
     protected $casts = [
