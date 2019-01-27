@@ -680,6 +680,8 @@ $api->version(['v1', 'latest'], function ($api)
 
                 $api->post('/change_area', 'App\Api\V1\Controllers\PostController@changePostArea');
 
+                $api->get('/self_flow_status', 'App\Api\V1\Controllers\PostController@selfPostFlowStatus');
+
                 $api->get('/get_flow_status', 'App\Api\V1\Controllers\PostController@getPostFlowStatus');
 
                 $api->post('/batch_change_flow_status', 'App\Api\V1\Controllers\PostController@batchChangeFlowStatus');

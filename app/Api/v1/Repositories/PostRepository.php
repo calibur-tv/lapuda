@@ -276,11 +276,11 @@ class PostRepository extends Repository
         $this->savePostImage($postId, $commentId, $images);
     }
 
-    public function listByFlowStatus($flowStatus, $limit)
+    public function listByFlowStatus($flowStatus, $limit, $reviewer = 0)
     {
         return Post
             ::where('flow_status', $flowStatus)
-            ->where('reviewer_id', 0)
+            ->where('reviewer_id', $reviewer)
             ->orderBy('id', 'desc')
             ->take($limit)
             ->pluck('id')

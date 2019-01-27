@@ -800,6 +800,25 @@ class PostController extends Controller
         return $this->resOK();
     }
 
+    public function selfPostFlowStatus(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $limit = $request->get('limit') ?: 10;
+        $flowStatus = $request->get('status');
+
+        $postRepository = new PostRepository();
+        $ids = $postRepository->listByFlowStatus($flowStatus, $limit, $userId);
+        $list = $postRepository->list($ids);
+
+        return $this->resOK([
+            'list' => $list,
+            'total' => Post
+                ::where('flow_status', $flowStatus)
+                ->where('reviewer_id', $userId)
+                ->count()
+        ]);
+    }
+
     public function getPostFlowStatus(Request $request)
     {
         $limit = $request->get('limit') ?: 10;
