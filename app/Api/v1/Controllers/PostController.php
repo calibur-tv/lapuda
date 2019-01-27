@@ -744,7 +744,8 @@ class PostController extends Controller
 
         $postRepository = new PostRepository();
         $post = $postRepository->item($postId);
-        if (!$post) {
+        if (!$post)
+        {
             return $this->resErrNotFound();
         }
 
@@ -766,13 +767,18 @@ class PostController extends Controller
 
     public function getPostFlowStatus(Request $request)
     {
-        $offset = intval($request->get('offset')) ?: 0;
-        $limit = intval($request->get('limit')) ?: 10;
-        $flowStatus = intval($request->get('limit')) ?: 1;
+        $limit = $request->get('limit') ?: 10;
+        $flowStatus = $request->get('status');
 
         $postRepository = new PostRepository();
-        $posts = $postRepository->listByFlowStatus($flowStatus, $offset, $limit);
+        $ids = $postRepository->listByFlowStatus($flowStatus, $limit);
+        $list = $postRepository->list($ids);
 
-        return $this->resOK($posts);
+        return $this->resOK([
+            'list' => $list,
+            'total' => Post
+                ::where('flow_status', $flowStatus)
+                ->count()
+        ]);
     }
 }

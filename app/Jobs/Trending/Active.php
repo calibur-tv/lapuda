@@ -75,12 +75,9 @@ class Active implements ShouldQueue
             ]);
 
         $indexFlow = true;
-        if ('post' == $this->type) {
-            $postRepository = new PostRepository();
-            $post = $postRepository->item($this->id);
-            if (1 != $post['flow_status']) {
-                $indexFlow = false;
-            }
+        if ('post' == $this->type && 1 != $item['flow_status'])
+        {
+            $indexFlow = false;
         }
 
         $service->update($this->id, $indexFlow);

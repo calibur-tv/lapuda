@@ -72,6 +72,11 @@ class PostTrendingService extends TrendingService
                     ->where('bangumi_id', $this->bangumiId)
                     ->whereNull('top_at');
             })
+            ->when(!$this->bangumiId, function ($query)
+            {
+                return $query
+                    ->where('flow_status', 1);
+            })
             ->pluck('id');
 
         $postRepository = new PostRepository();
@@ -87,10 +92,6 @@ class PostTrendingService extends TrendingService
         // https://segmentfault.com/a/1190000004253816
         foreach ($list as $item)
         {
-            if (is_null($item) || (1 != $item['flow_status'] && 0 == $this->bangumiId)) {
-                continue;
-            }
-
             $postId = $item['id'];
             $likeCount = $postLikeService->total($postId);
             $markCount = $postMarkService->total($postId);

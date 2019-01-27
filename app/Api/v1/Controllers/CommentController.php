@@ -180,10 +180,6 @@ class CommentController extends Controller
 
         $dontUpdateTrending = $type === 'role' || ($type === 'image' && $parent['is_cartoon']);
 
-        if ('post' == $type && 1 != $parent['flow_status']) {
-            $dontUpdateTrending = false;
-        }
-
         if (!$dontUpdateTrending)
         {
             $job = (new \App\Jobs\Trending\Active(

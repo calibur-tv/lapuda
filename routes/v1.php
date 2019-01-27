@@ -680,9 +680,9 @@ $api->version(['v1', 'latest'], function ($api)
 
                 $api->post('/change_area', 'App\Api\V1\Controllers\PostController@changePostArea');
 
-                $api->get('/flow_status', 'App\Api\V1\Controllers\PostController@getPostFlowStatus');
+                $api->get('/get_flow_status', 'App\Api\V1\Controllers\PostController@getPostFlowStatus');
 
-                $api->post('/flow_status', 'App\Api\V1\Controllers\PostController@changeFlowStatus');
+                $api->post('/change_flow_status', 'App\Api\V1\Controllers\PostController@changeFlowStatus');
             });
 
             $api->group(['prefix' => '/score'], function ($api)

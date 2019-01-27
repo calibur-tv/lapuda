@@ -276,15 +276,13 @@ class PostRepository extends Repository
         $this->savePostImage($postId, $commentId, $images);
     }
 
-    public function listByFlowStatus($flowStatus, $offset, $limit)
+    public function listByFlowStatus($flowStatus, $limit)
     {
-        return DB::table('posts')
-            ->where('flow_status', $flowStatus)
-            ->orderBy('comment_count', 'desc')
-            ->orderBy('like_count', 'desc')
+        return Post
+            ::where('flow_status', $flowStatus)
             ->orderBy('id', 'desc')
-            ->offset($offset)
-            ->limit($limit)
-            ->get()->toArray();
+            ->take($limit)
+            ->pluck('id')
+            ->toArray();
     }
 }
