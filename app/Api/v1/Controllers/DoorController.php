@@ -12,6 +12,7 @@ use App\Models\UserZone;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Services\Sms\Message;
 use App\Api\V1\Repositories\Repository;
+use App\Services\Socialite\AccessToken;
 use App\Services\Socialite\SocialiteManager;
 use App\Services\Trial\UserIpAddress;
 use Illuminate\Http\Request;
@@ -343,10 +344,13 @@ class DoorController extends Controller
         try
         {
             $socialite = new SocialiteManager(config('services', []));
+            $accessToken = new AccessToken([
+                'access_token' => $code
+            ]);
 
             $user = $socialite
                 ->driver('qq')
-                ->user();
+                ->user($accessToken);
         }
         catch (\Exception $e)
         {
@@ -461,10 +465,13 @@ class DoorController extends Controller
         try
         {
             $socialite = new SocialiteManager(config('services', []));
+            $accessToken = new AccessToken([
+                'access_token' => $code
+            ]);
 
             $user = $socialite
                 ->driver('weixin')
-                ->user();
+                ->user($accessToken);
         }
         catch (\Exception $e)
         {
