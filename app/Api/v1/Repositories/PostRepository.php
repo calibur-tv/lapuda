@@ -280,6 +280,7 @@ class PostRepository extends Repository
     {
         return Post
             ::where('flow_status', $flowStatus)
+            ->where('reviewer_id', 0)
             ->orderBy('id', 'desc')
             ->take($limit)
             ->pluck('id')

@@ -737,8 +737,42 @@ class PostController extends Controller
         return $this->resNoContent();
     }
 
+    public function batchChangeFlowStatus(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $postId = $request->get('post_id');
+        $flowStatus = $request->get('flow_status');
+
+        DB::table('posts')
+            ->whereIn('id', $postId)
+            ->update([
+                'flow_status' => $flowStatus,
+                'reviewer_id' => $userId
+            ]);
+
+        $postTrendingService = new PostTrendingService();
+        $postRepository = new PostRepository();
+        foreach ($postId as $id)
+        {
+            $post = $postRepository->item($id);
+            if (is_null($post))
+            {
+                continue;
+            }
+
+            if (1 == $flowStatus) {
+                $postTrendingService->update($id);
+            } else {
+                $postTrendingService->deleteIndex($id);
+            }
+        }
+
+        return $this->resOK();
+    }
+
     public function changeFlowStatus(Request $request)
     {
+        $userId = $this->getAuthUserId();
         $postId = $request->get('post_id');
         $flowStatus = $request->get('flow_status');
 
@@ -753,6 +787,7 @@ class PostController extends Controller
             ->where('id', $postId)
             ->update([
                 'flow_status' => $flowStatus,
+                'reviewer_id' => $userId
             ]);
 
         $postTrendingService = new PostTrendingService();
@@ -778,6 +813,7 @@ class PostController extends Controller
             'list' => $list,
             'total' => Post
                 ::where('flow_status', $flowStatus)
+                ->where('reviewer_id', 0)
                 ->count()
         ]);
     }
