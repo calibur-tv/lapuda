@@ -87,8 +87,7 @@ class PostTrendingService extends TrendingService
         // https://segmentfault.com/a/1190000004253816
         foreach ($list as $item)
         {
-            if (is_null($item))
-            {
+            if (is_null($item) || (1 != $item['flow_status'] && 0 == $this->bangumiId)) {
                 continue;
             }
 
