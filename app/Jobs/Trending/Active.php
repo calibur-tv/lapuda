@@ -25,6 +25,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class Active implements ShouldQueue
 {
@@ -75,9 +76,18 @@ class Active implements ShouldQueue
             ]);
 
         $indexFlow = true;
-        if ('post' == $this->type && 1 != $item['flow_status'])
+        if ('post' == $this->type)
         {
-            $indexFlow = false;
+            if (!isset($item['flow_status']))
+            {
+                Redis::DEL("post_{$this->id}");
+                $item = $repository->item($this->id);
+            }
+
+            if (1 != $item['flow_status'])
+            {
+                $indexFlow = false;
+            }
         }
 
         $service->update($this->id, $indexFlow);
