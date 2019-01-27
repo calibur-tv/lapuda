@@ -320,7 +320,7 @@ class DoorController extends Controller
      *
      * @Parameters({
      *      @Parameter("from", description="如果是登录，就是 sign，如果是绑定，就是 bind", type="string", required=true),
-     *      @Parameter("code", description="登录授权的 access_code", type="string", required=true)
+     *      @Parameter("access_token", description="登录授权的 access_code", type="string", required=true)
      * })
      *
      * @Transaction({
@@ -334,7 +334,7 @@ class DoorController extends Controller
     public function qqAuthRedirect(Request $request)
     {
         $from = $request->get('from') === 'bind' ? 'bind' : 'sign';
-        $code = $request->get('code');
+        $code = $request->get('access_token');
         if (!$code)
         {
             return $this->resErrBad('请求参数错误');
@@ -438,7 +438,7 @@ class DoorController extends Controller
      *
      * @Parameters({
      *      @Parameter("from", description="如果是登录，就是 sign，如果是绑定，就是 bind", type="string", required=true),
-     *      @Parameter("code", description="登录授权的 access_code", type="string", required=true)
+     *      @Parameter("access_token", description="登录授权的 access_code", type="string", required=true)
      * })
      *
      * @Transaction({
@@ -452,7 +452,7 @@ class DoorController extends Controller
     public function wechatAuthRedirect(Request $request)
     {
         $from = $request->get('from') === 'bind' ? 'bind' : 'sign';
-        $code = $request->get('code');
+        $code = $request->get('access_token');
         if (!$code)
         {
             return $this->resErrBad();
