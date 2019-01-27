@@ -114,7 +114,7 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/update', 'App\Api\V1\Controllers\ScoreController@update')->middleware(['jwt.auth']);
 
-        $api->post('/create', 'App\Api\V1\Controllers\ScoreController@create')->middleware(['jwt.auth', 'geetest', 'throttle:1,10']);
+        $api->post('/create', 'App\Api\V1\Controllers\ScoreController@create')->middleware(['jwt.auth', 'geetest']);
     });
 
     $api->group(['prefix' => '/question'], function ($api)
@@ -680,7 +680,11 @@ $api->version(['v1', 'latest'], function ($api)
 
                 $api->post('/change_area', 'App\Api\V1\Controllers\PostController@changePostArea');
 
+                $api->get('/self_flow_status', 'App\Api\V1\Controllers\PostController@selfPostFlowStatus');
+
                 $api->get('/get_flow_status', 'App\Api\V1\Controllers\PostController@getPostFlowStatus');
+
+                $api->post('/batch_change_flow_status', 'App\Api\V1\Controllers\PostController@batchChangeFlowStatus');
 
                 $api->post('/change_flow_status', 'App\Api\V1\Controllers\PostController@changeFlowStatus');
             });

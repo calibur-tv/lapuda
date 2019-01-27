@@ -162,7 +162,7 @@ class TrendingService extends Repository
         return $this->filterIdsByPage($ids, $page, $take);
     }
 
-    public function create($id, $publish = true, $addToHomepage = true)
+    public function create($id, $publish = true)
     {
         if ($publish)
         {
@@ -183,15 +183,12 @@ class TrendingService extends Repository
             }
             // $this->ListInsertBefore($this->trendingIdsCacheKey('news', 0), $id);
             // $this->SortAdd($this->trendingIdsCacheKey('active', 0), $id);
-            if ($addToHomepage)
-            {
-                $this->SortAdd($this->trendingIdsCacheKey('hot', 0), $id);
-            }
+            $this->SortAdd($this->trendingIdsCacheKey('hot', 0), $id);
         }
         $this->ListInsertBefore($this->trendingFlowUsersKey(), $id);
     }
 
-    public function update($id, $addToHomepage = true)
+    public function update($id)
     {
         if (gettype($this->bangumiId) === 'array')
         {
@@ -207,10 +204,7 @@ class TrendingService extends Repository
             $this->SortAdd($this->trendingIdsCacheKey('hot', $this->bangumiId), $id);
         }
         // $this->SortAdd($this->trendingIdsCacheKey('active', 0), $id);
-        if ($addToHomepage)
-        {
-            $this->SortAdd($this->trendingIdsCacheKey('hot', 0), $id);
-        }
+        $this->SortAdd($this->trendingIdsCacheKey('hot', 0), $id);
     }
 
     public function checkCanUpdateBangumiIds($id)
