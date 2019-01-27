@@ -78,6 +78,11 @@ class AnswerController extends Controller
             {
                 return $this->resErrNotFound();
             }
+
+            if (!$answer['published_at'] && $answer['user_id'] !== $this->getAuthUserId())
+            {
+                return $this->resErrRole();
+            }
         }
 
         return $this->resOK([
