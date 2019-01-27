@@ -759,7 +759,7 @@ class PostController extends Controller
             {
                 continue;
             }
-
+            Redis::DEL("post_{$id}");
             if (1 == $flowStatus) {
                 $postTrendingService->update($id);
             } else {
@@ -789,6 +789,7 @@ class PostController extends Controller
                 'flow_status' => $flowStatus,
                 'reviewer_id' => $userId
             ]);
+        Redis::DEL("post_{$postId}");
 
         $postTrendingService = new PostTrendingService();
         if (1 == $flowStatus) {
