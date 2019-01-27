@@ -156,11 +156,11 @@ class PostRepository extends Repository
         $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
         if ($publish)
         {
-            $postTrendingService->create($id);
+            $postTrendingService->create($id, false);
         }
         else
         {
-            $postTrendingService->update($id);
+            $postTrendingService->update($id, false);
         }
 
         $baiduPush = new BaiduPush();
@@ -234,7 +234,7 @@ class PostRepository extends Repository
 
         if ($isDeleted)
         {
-            $postTrendingService->create($id);
+            $postTrendingService->create($id, 1 == $post['flow_status']);
 
             $this->migrateSearchIndex('C', $id, false);
         }
@@ -250,7 +250,7 @@ class PostRepository extends Repository
         {
             if (!$isDeleted)
             {
-                $postTrendingService->update($id);
+                $postTrendingService->update($id, 1 == $post['flow_status']);
             }
             Redis::DEL($this->itemCacheKey($id));
         }
@@ -274,5 +274,15 @@ class PostRepository extends Repository
     public function applyComment($postId, $commentId, $images)
     {
         $this->savePostImage($postId, $commentId, $images);
+    }
+
+    public function listByFlowStatus($flowStatus, $limit)
+    {
+        return Post
+            ::where('flow_status', $flowStatus)
+            ->orderBy('id', 'desc')
+            ->take($limit)
+            ->pluck('id')
+            ->toArray();
     }
 }

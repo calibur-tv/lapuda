@@ -679,6 +679,10 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/delete_title', 'App\Api\V1\Controllers\PostController@deletePostTitle');
 
                 $api->post('/change_area', 'App\Api\V1\Controllers\PostController@changePostArea');
+
+                $api->get('/get_flow_status', 'App\Api\V1\Controllers\PostController@getPostFlowStatus');
+
+                $api->post('/change_flow_status', 'App\Api\V1\Controllers\PostController@changeFlowStatus');
             });
 
             $api->group(['prefix' => '/score'], function ($api)
