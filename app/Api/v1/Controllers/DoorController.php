@@ -909,4 +909,11 @@ class DoorController extends Controller
         Redis::DEL($key);
         return intval($value) === intval($token);
     }
+
+    protected function getNickname($nickname)
+    {
+        preg_match_all('/([a-zA-Z]+|[0-9]+|[\x{4e00}-\x{9fa5}]+)*/u', $nickname, $matches);
+
+        return implode('', $matches[0]) ?: 'zero';
+    }
 }
