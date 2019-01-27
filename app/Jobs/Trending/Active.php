@@ -78,13 +78,7 @@ class Active implements ShouldQueue
         $indexFlow = true;
         if ('post' == $this->type)
         {
-            if (!isset($item['flow_status']))
-            {
-                Redis::DEL("post_{$this->id}");
-                $item = $repository->item($this->id);
-            }
-
-            if (1 != $item['flow_status'])
+            if (isset($item['flow_status']) && 1 != $item['flow_status'])
             {
                 $indexFlow = false;
             }
