@@ -457,7 +457,8 @@ class DoorController extends Controller
     {
         $from = $request->get('from') === 'bind' ? 'bind' : 'sign';
         $code = $request->get('access_token');
-        if (!$code)
+        $open_id = $request->get('openid');
+        if (!$code || !$open_id)
         {
             return $this->resErrBad();
         }
@@ -466,7 +467,8 @@ class DoorController extends Controller
         {
             $socialite = new SocialiteManager(config('services', []));
             $accessToken = new AccessToken([
-                'access_token' => $code
+                'access_token' => $code,
+                'openid' => $open_id
             ]);
 
             $user = $socialite
