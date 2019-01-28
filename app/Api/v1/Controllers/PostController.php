@@ -139,6 +139,8 @@ class PostController extends Controller
 
         $now = Carbon::now();
         $content = Purifier::clean($request->get('content'));
+        $bangumiManagerService = new BangumiManager();
+        $isManager = $bangumiManagerService->isAManager($userId);
 
         $id = $postRepository->create([
             'title' => $request->get('title'),
@@ -147,6 +149,7 @@ class PostController extends Controller
             'bangumi_id' => $bangumiId,
             'user_id' => $userId,
             'is_creator' => $request->get('is_creator'),
+            'flow_status' => $isManager ? 1 : 0,
             'created_at' => $now,
             'updated_at' => $now
         ], $images, $request->get("tags"));
