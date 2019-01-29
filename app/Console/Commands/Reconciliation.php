@@ -72,7 +72,7 @@ class Reconciliation extends Command
 
                         $update['holder_id'] = $record[$i]->from_user_id;
                         $update['holder_type'] = 1;
-                        $res = \DB::table('coins')->where('id', $record[$i]->coin_id)->update($update);
+                        $res = \DB::table('light_coins')->where('id', $record[$i]->coin_id)->update($update);
                         if (0 == $res) {
                             throw new Exception();
                         }
