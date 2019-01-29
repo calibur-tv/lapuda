@@ -239,7 +239,7 @@ class LightCoinService
                 ::table($this->record_table)
                 ->where('to_user_id', $userId)
                 ->orWhere('from_user_id', $userId)
-                ->orderBy('id', 'DESC')
+                ->orderBy('created_at', 'DESC')
                 ->groupBy('id', 'order_id')
                 ->pluck('order_id')
                 ->toArray();
