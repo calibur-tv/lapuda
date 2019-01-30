@@ -203,8 +203,6 @@ class CallbackController extends Controller
             return redirect('https://www.calibur.tv/callback/auth-error?message=' . '登录失败了~');
         }
 
-        Log::info('qq user', $user);
-
         $openId = $user['id'];
         $uniqueId = $user['unionid'];
         $isNewUser = $this->isNewUser('qq_open_id', $openId);
