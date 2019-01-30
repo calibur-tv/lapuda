@@ -418,7 +418,9 @@ class DoorController extends Controller
             {
                 app('sentry')->captureException($e);
 
-                Log::info('qq auth error', 'open_id', $openId);
+                Log::info('qq auth error，open_id', [
+                    'open_id' => $openId
+                ]);
 
                 return $this->resErrServiceUnavailable('请修改QQ昵称后重试');
             }
