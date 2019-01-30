@@ -206,6 +206,7 @@ class CallbackController extends Controller
         Log::info('qq user', $user);
 
         $openId = $user['id'];
+        $uniqueId = $user['unionid'];
         $isNewUser = $this->isNewUser('qq_open_id', $openId);
 
         if ($from === 'bind')
@@ -230,7 +231,8 @@ class CallbackController extends Controller
             User
                 ::where('id', $userId)
                 ->update([
-                   'qq_open_id' => $openId
+                    'qq_open_id' => $openId,
+                    'qq_uniqie_id' => $uniqueId
                 ]);
 
             Redis::DEL('user_' . $userId);
@@ -247,6 +249,7 @@ class CallbackController extends Controller
                 'nickname' => $nickname,
                 'zone' => $zone,
                 'qq_open_id' => $openId,
+                'qq_unique_id' => $uniqueId,
                 'password' => bcrypt('calibur')
             ];
 
