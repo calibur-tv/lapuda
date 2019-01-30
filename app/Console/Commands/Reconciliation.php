@@ -40,6 +40,7 @@ class Reconciliation extends Command
      */
     public function handle()
     {
+        // 拿到所有的 user_id，遍历一遍
         $users = $this->getUserIds();
 
         foreach ($users as $user) {
@@ -48,11 +49,13 @@ class Reconciliation extends Command
             /** @var Collection $record */
             foreach ($records as $record) {
                 $count = $record->count();
+                // 如果不是重复记录，continue
                 if (1 >= $count) {
                     continue;
                 }
 
                 for ($i = 1; $i < $count; $i++) {
+                    // 获取交易的表
                     $tableName = $this->getRewardTableName($record[$i]->to_product_type);
                     if (is_null($tableName)) {
                         continue;
@@ -89,6 +92,7 @@ class Reconciliation extends Command
     private function reconciliation($fromUserId, $toUserId, $toProductId, $coinId, $rewardTableName, $recordId)
     {
         if (!is_null($rewardTableName)) {
+            // 这里应该永远都不会走
             if ('cartoon_role_fans' == $rewardTableName) {
                 $role = \DB::table($rewardTableName)->where('role_id', $toProductId)->first();
                 if (!is_null($role)) {
@@ -103,6 +107,7 @@ class Reconciliation extends Command
             } else {
                 $reward = \DB::table($rewardTableName)->where('modal_id', $toProductId)->where('user_id', $fromUserId)->first();
                 if (!is_null($reward)) {
+                    // 这里会把所有的记录都给删掉，reward 里面是没有重复的，record 重复了，删除 record 就行了
                     $res = \DB::table($rewardTableName)->where('id', $reward->id)->delete();
                     if (0 == $res) {
                         throw new \Exception();
@@ -134,6 +139,7 @@ class Reconciliation extends Command
 
     private function getRecords($fromUserId)
     {
+        // records 是当前用户的所有重复交易记录，不包括给偶像应援
         $records = \DB::table('light_coin_records')->where('from_user_id', $fromUserId)->where('to_user_id', '<>', 0)->groupBy([
             'to_user_id', 'to_product_id', 'to_product_type',
         ])->havingRaw('count(*) > 1')->get(['to_user_id', 'to_product_id', 'to_product_type'])->toArray();
@@ -145,6 +151,7 @@ class Reconciliation extends Command
             $toProductId[] = $value->to_product_id;
             $toProductType[] = $value->to_product_type;
         });
+        // records 是有重复记录的交易中，包括不重复的记录的所有记录
         $records = \DB::table('light_coin_records')->where('from_user_id', $fromUserId)->whereIn('to_user_id', $toUserId)->whereIn('to_product_id', $toProductId)->whereIn('to_product_type', $toProductType)->get();
         $records = $records->groupBy(function ($item) {
             return sprintf("%s_%s_%s", $item->to_user_id, $item->to_product_id, $item->to_product_type);
