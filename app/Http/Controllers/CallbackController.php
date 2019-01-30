@@ -17,6 +17,7 @@ use App\Services\Qiniu\Processing\PersistentFop;
 use App\Services\Socialite\SocialiteManager;
 use App\Services\Trial\UserIpAddress;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Overtrue\LaravelPinyin\Facades\Pinyin as Overtrue;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -201,6 +202,8 @@ class CallbackController extends Controller
 
             return redirect('https://www.calibur.tv/callback/auth-error?message=' . '登录失败了~');
         }
+
+        Log::info('qq user', $user);
 
         $openId = $user['id'];
         $isNewUser = $this->isNewUser('qq_open_id', $openId);
