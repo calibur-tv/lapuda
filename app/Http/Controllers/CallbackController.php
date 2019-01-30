@@ -17,7 +17,6 @@ use App\Services\Qiniu\Processing\PersistentFop;
 use App\Services\Socialite\SocialiteManager;
 use App\Services\Trial\UserIpAddress;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Overtrue\LaravelPinyin\Facades\Pinyin as Overtrue;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -230,7 +229,7 @@ class CallbackController extends Controller
                 ::where('id', $userId)
                 ->update([
                     'qq_open_id' => $openId,
-                    'qq_uniqie_id' => $uniqueId
+                    'qq_unique_id' => $uniqueId
                 ]);
 
             Redis::DEL('user_' . $userId);
@@ -270,6 +269,15 @@ class CallbackController extends Controller
             $user = User
                 ::where('qq_open_id', $openId)
                 ->first();
+
+            if (!$user->qq_unique_id)
+            {
+                User
+                    ::where('id', $user->id)
+                    ->update([
+                        'qq_unique_id' => $uniqueId
+                    ]);
+            }
         }
 
         $userId = $user->id;
