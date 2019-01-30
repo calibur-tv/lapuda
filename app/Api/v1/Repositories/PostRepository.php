@@ -10,6 +10,7 @@ namespace App\Api\V1\Repositories;
 
 
 use App\Api\V1\Services\Comment\PostCommentService;
+use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Tag\PostTagService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
@@ -154,13 +155,15 @@ class PostRepository extends Repository
         }
 
         $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
+        $bangumiManager = new BangumiManager();
+        $addTohomepage = $bangumiManager->isALeader($post['user_Id']);
         if ($publish)
         {
-            $postTrendingService->create($id, false);
+            $postTrendingService->create($id, true, $addTohomepage);
         }
         else
         {
-            $postTrendingService->update($id, false);
+            $postTrendingService->update($id, $addTohomepage);
         }
 
         $baiduPush = new BaiduPush();
@@ -231,10 +234,12 @@ class PostRepository extends Repository
 
         $isDeleted = $post['deleted_at'];
         $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
+        $bangumiManager = new BangumiManager();
+        $addTohomepage = $bangumiManager->isALeader($post['user_Id']);
 
         if ($isDeleted)
         {
-            $postTrendingService->create($id, 1 == $post['flow_status']);
+            $postTrendingService->create($id, true, $addTohomepage);
 
             $this->migrateSearchIndex('C', $id, false);
         }
@@ -250,7 +255,7 @@ class PostRepository extends Repository
         {
             if (!$isDeleted)
             {
-                $postTrendingService->update($id, 1 == $post['flow_status']);
+                $postTrendingService->update($id, $addTohomepage);
             }
             Redis::DEL($this->itemCacheKey($id));
         }
