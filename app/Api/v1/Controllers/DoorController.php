@@ -360,7 +360,8 @@ class DoorController extends Controller
         }
 
         $openId = $user['id'];
-        $isNewUser = $this->accessIsNew('qq_open_id', $openId);
+        $uniqueId = $user['unionid'];
+        $isNewUser = $this->accessIsNew('qq_unique_id', $uniqueId);
 
         if ($from === 'bind')
         {
@@ -384,7 +385,8 @@ class DoorController extends Controller
             User
                 ::where('id', $userId)
                 ->update([
-                    'qq_open_id' => $openId
+                    'qq_open_id' => $openId,
+                    'qq_unique_id' => $uniqueId
                 ]);
 
             Redis::DEL('user_' . $userId);
@@ -401,6 +403,7 @@ class DoorController extends Controller
                 'nickname' => $nickname,
                 'zone' => $zone,
                 'qq_open_id' => $openId,
+                'qq_unique_id' => $uniqueId,
                 'password' => bcrypt('calibur')
             ];
 
@@ -421,7 +424,7 @@ class DoorController extends Controller
         {
             // signIn
             $user = User
-                ::where('qq_open_id', $openId)
+                ::where('qq_unique_id', $uniqueId)
                 ->first();
         }
 
@@ -681,8 +684,8 @@ class DoorController extends Controller
         $user['exp'] = $userLevel->computeExpObject($user['exp']);
         $user['power'] = $userActivityService->get($userId);
         $user['providers'] = [
-            'bind_qq' => !!$user['qq_open_id'],
-            'bind_wechat' => !!$user['wechat_open_id'],
+            'bind_qq' => !!$user['qq_unique_id'],
+            'bind_wechat' => !!$user['wechat_unique_id'],
             'bind_phone' => !!$user['phone']
         ];
         if ($user['is_admin'])
@@ -762,8 +765,8 @@ class DoorController extends Controller
         $user['exp'] = $userLevel->computeExpObject($user['exp']);
         $user['power'] = $userActivityService->get($userId);
         $user['providers'] = [
-            'bind_qq' => !!$user['qq_open_id'],
-            'bind_wechat' => !!$user['wechat_open_id'],
+            'bind_qq' => !!$user['qq_unique_id'],
+            'bind_wechat' => !!$user['wechat_unique_id'],
             'bind_phone' => !!$user['phone']
         ];
         if ($user['is_admin'])
