@@ -227,8 +227,8 @@ class BangumiController extends Controller
             'image' => "{$bangumi['avatar']}-share120jpg"
         ];
         $bangumi['share_data'] = $shareData;
-        $iOS = $request->get('from') == 'ios';
-        if ($iOS)
+        $trial = $request->get('from') == 'ios' || $request->get('from') == 'tencent';
+        if ($trial)
         {
             $bangumi['has_video'] = false;
             $bangumi['has_cartoon'] = false;
