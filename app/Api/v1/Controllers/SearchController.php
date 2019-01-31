@@ -245,6 +245,7 @@ class SearchController extends Controller
         $userIds = User
             ::where('migration_state', 4)
             ->where('coin_gift', '<>', 0)
+            ->where('id', '>', 2)
             ->withTrashed()
             ->pluck('id')
             ->toArray();
