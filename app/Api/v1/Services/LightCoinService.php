@@ -360,6 +360,32 @@ class LightCoinService
             {
                 $is_plus = true;
             }
+            else if ($type == 14)
+            {
+                $is_plus = true;
+            }
+            else if ($type == 15)
+            {
+                $is_plus = true;
+            }
+            else if ($type == 16)
+            {
+                $is_plus = true;
+            }
+            else if ($type == 17)
+            {
+                if ($userId == $item->from_user_id)
+                {
+                    // 当前用户是邀请者
+                    continue;
+                }
+                $is_plus = true;
+                $aboutUser = $repository->item($item->from_user_id);
+                $user = [
+                    'zone' => $aboutUser['zone'],
+                    'nickname' => $aboutUser['nickname']
+                ];
+            }
             if ($type >= 4 && $type <= 8)
             {
                 $userRepository = new UserRepository();
@@ -502,15 +528,15 @@ class LightCoinService
     }
 
     // 被邀请用户送团子
-    public function invitedNewbieCoinGift($fromUserId, $toUserId, $amount = 1)
+    public function invitedNewbieCoinGift($oldUser, $newUser, $amount = 1)
     {
         return $this->recharge([
             'from' => 5,
             'to_product_id' => 0,
             'to_product_type' => 17,
             'count' => $amount,
-            'from_user_id' => $fromUserId,
-            'to_user_id' => $toUserId
+            'from_user_id' => $oldUser,
+            'to_user_id' => $newUser
         ]);
     }
 

@@ -51,6 +51,7 @@ class InviteUser implements ShouldQueue
         {
             $lightCoinService = new LightCoinService();
             $result = $lightCoinService->inviteUser($inviter->id, $this->inviteUserId);
+            $lightCoinService->invitedNewbieCoinGift($inviter->id, $this->inviteUserId);
             if (!$result)
             {
                 return;
