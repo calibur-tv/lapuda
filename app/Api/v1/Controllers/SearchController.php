@@ -92,7 +92,7 @@ class SearchController extends Controller
                 ->first();
 
             $coinId = $record->coin_id;
-            LightCoinRecord::where('coin_id', $coinId)->delete();
+            LightCoinRecord::where('id', $recordId)->delete();
             LightCoin::where('id', $coinId)->delete();
             if ($record->to_user_id)
             {
