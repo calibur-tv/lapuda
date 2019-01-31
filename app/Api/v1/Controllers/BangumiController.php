@@ -222,7 +222,7 @@ class BangumiController extends Controller
         }
         $shareData = [
             'title' => $bangumi['name'],
-            'link' => "https://m.calibur.tv/bangumi/{$id}",
+            'link' => $this->createShareLink('bangumi', $id, $userId),
             'desc' => $bangumi['summary'],
             'image' => "{$bangumi['avatar']}-share120jpg"
         ];

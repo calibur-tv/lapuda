@@ -118,7 +118,7 @@ class NoticeController extends Controller
             return $this->resErrRole();
         }
 
-        $notice = SystemNotice::create([
+        SystemNotice::create([
             'title' => $score['title'],
             'banner' => $score['banner'],
             'content' => $score['content']
@@ -126,14 +126,7 @@ class NoticeController extends Controller
 
         Redis::DEL('system_notice_list');
         Redis::DEL('system_notice_id_list');
-        $repository->Cache('system_notice_lastest_item', function () use ($notice)
-        {
-            return [
-                'id' => $notice['id'],
-                'title' => $notice['title'],
-                'created_at' => $notice['created_at']
-            ];
-        });
+        Redis::DEL('system_notice_lastest_item');
 
         return $this->resOK();
     }
@@ -158,6 +151,7 @@ class NoticeController extends Controller
             ]);
 
         Redis::DEL('system_notice_list');
+        Redis::DEL('system_notice_lastest_item');
 
         return $this->resOK();
     }
@@ -176,6 +170,7 @@ class NoticeController extends Controller
 
         Redis::DEL('system_notice_list');
         Redis::DEL('system_notice_id_list');
+        Redis::DEL('system_notice_lastest_item');
         Redis::DEL('system_notice_item_' . $id);
 
         return $this->resOK();
