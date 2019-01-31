@@ -39,6 +39,7 @@ class LightCoinService
         $toProductId = $params['to_product_id'];
         $toProductType = $params['to_product_type'];
         $amount = $params['count'];
+        $orderId = isset($params['order_id']) ? $params['order_id'] : "recharge-{$toUserId}-{$from}-$amount-" . time();
         // step：1 创建团子
         // step：2 写入流通记录
         // step：3 修改用户数据
@@ -51,7 +52,6 @@ class LightCoinService
             'created_at' => $now,
             'updated_at' => $now
         ];
-        $orderId = isset($params['order_id']) ? $params['order_id'] : "recharge-{$toUserId}-{$from}-$amount-" . time();
         $records = [];
         DB::beginTransaction();
         try
@@ -355,6 +355,10 @@ class LightCoinService
             {
                 $is_plus = false;
             }
+            else if ($type == 13)
+            {
+                $is_plus = true;
+            }
             if ($type >= 4 && $type <= 8)
             {
                 $userRepository = new UserRepository();
@@ -465,6 +469,19 @@ class LightCoinService
             'to_product_id' => 0,
             'to_product_type' => 3,
             'to_user_id' => $userId
+        ]);
+    }
+
+    // 给用户赠送团子
+    public function coinGift($toUserId, $amount)
+    {
+        return $this->recharge([
+            'from' => 0,
+            'count' => $amount,
+            'from_user_id' => 0,
+            'to_product_id' => 0,
+            'to_product_type' => 13,
+            'to_user_id' => $toUserId
         ]);
     }
 

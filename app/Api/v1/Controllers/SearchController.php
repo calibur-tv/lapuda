@@ -3,6 +3,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
+use App\Api\V1\Services\LightCoinService;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
 use App\Models\LightCoin;
@@ -93,6 +94,20 @@ class SearchController extends Controller
             $coinId = $record->coin_id;
             LightCoinRecord::where('coin_id', $coinId)->delete();
             LightCoin::where('id', $coinId)->delete();
+            if ($record->to_user_id)
+            {
+                User
+                    ::where('id', $record->to_user_id)
+                    ->withTrashed()
+                    ->increment('coin_gift');
+            }
+            if ($record->from_user_id)
+            {
+                User
+                    ::where('id', $record->from_user_id)
+                    ->withTrashed()
+                    ->increment('coin_gift');
+            }
         }
 
         return $this->resOK('need redo');
@@ -103,6 +118,7 @@ class SearchController extends Controller
     {
         $userIds = User
             ::where('migration_state', 0)
+            ->withTrashed()
             ->take(1000)
             ->pluck('id')
             ->toArray();
@@ -116,6 +132,7 @@ class SearchController extends Controller
         {
             $state = User
                 ::where('id', $uid)
+                ->withTrashed()
                 ->pluck('migration_state')
                 ->first();
 
@@ -126,6 +143,7 @@ class SearchController extends Controller
 
             User
                 ::where('id', $uid)
+                ->withTrashed()
                 ->update([
                     'migration_state' => 1
                 ]);
@@ -151,6 +169,7 @@ class SearchController extends Controller
             // 12 —— 账号被封禁然后撤销其操作 TODO
             User
                 ::where('id', $uid)
+                ->withTrashed()
                 ->update([
                     'migration_state' => 2
                 ]);
@@ -164,6 +183,7 @@ class SearchController extends Controller
     {
         $userIds = User
             ::where('migration_state', 2)
+            ->withTrashed()
             ->take(1000)
             ->pluck('id')
             ->toArray();
@@ -177,6 +197,7 @@ class SearchController extends Controller
         {
             $state = User
                 ::where('id', $uid)
+                ->withTrashed()
                 ->pluck('migration_state')
                 ->first();
 
@@ -187,6 +208,7 @@ class SearchController extends Controller
 
             User
                 ::where('id', $uid)
+                ->withTrashed()
                 ->update([
                     'migration_state' => 3
                 ]);
@@ -204,6 +226,7 @@ class SearchController extends Controller
                 ->count();
 
             User::where('id', $uid)
+                ->withTrashed()
                 ->update([
                     'light_count' => $light_count,
                     'coin_count_v2' => $coin_count,
@@ -211,10 +234,66 @@ class SearchController extends Controller
                 ]);
 
             Redis::DEL('user', $uid);
-            Redis::DEL("user_{$uid}_coin_records");
         }
 
         return $this->resOK('need redo');
+    }
+
+    // 给用户补发团子
+    public function migration_4()
+    {
+        $userIds = User
+            ::where('migration_state', 4)
+            ->where('coin_gift', '<>', 0)
+            ->withTrashed()
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($userIds))
+        {
+            return $this->resOK('gift all');
+        }
+
+        $lightCoinService = new LightCoinService();
+        foreach ($userIds as $uid)
+        {
+            $state = User
+                ::where('id', $uid)
+                ->withTrashed()
+                ->pluck('migration_state')
+                ->first();
+
+            if ($state != 4)
+            {
+                continue;
+            }
+
+            User
+                ::where('id', $uid)
+                ->withTrashed()
+                ->update([
+                    'migration_state' => 5
+                ]);
+
+            $amount = User
+                ::where('id', $uid)
+                ->withTrashed()
+                ->pluck('coin_gift')
+                ->first();
+
+            $lightCoinService->coinGift($uid, $amount);
+            Redis::DEL("user_{$uid}_coin_records");
+
+            User
+                ::where('id', $uid)
+                ->withTrashed()
+                ->update([
+                    'migration_state' => 6,
+                    'coin_gift' => 0
+                ]);
+        }
+
+        return $this->resOK('ok');
     }
 
     protected function computedUserCheerForIdol($userId)
