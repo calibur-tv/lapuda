@@ -365,7 +365,7 @@ class SearchController extends Controller
         {
             $hasRecord = LightCoinRecord
                 ::where('to_product_type', $type)
-                ->where('to_product_id', $recordItem['modal_id'])
+                ->where('to_product_id', $recordItem->modal_id)
                 ->where('from_user_id', $userId)
                 ->count();
 
@@ -373,7 +373,7 @@ class SearchController extends Controller
             {
                 DB
                     ::table($rewardTable)
-                    ->where('id', $recordItem['id'])
+                    ->where('id', $recordItem->id)
                     ->delete();
             }
         }
