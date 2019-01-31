@@ -811,8 +811,12 @@ class PostController extends Controller
         $flowStatus = $request->get('status');
 
         $postRepository = new PostRepository();
+        $userRepository = new UserRepository();
+        $bangumiRepository = new BangumiRepository();
         $ids = $postRepository->listByFlowStatus($flowStatus, $limit, $userId);
         $list = $postRepository->list($ids);
+        $list = $bangumiRepository->appendBangumiToList($list);
+        $list = $userRepository->appendUserToList($list);
 
         return $this->resOK([
             'list' => $list,
