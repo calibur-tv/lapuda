@@ -98,12 +98,14 @@ class VideoController extends Controller
             'bangumi' => $bangumi,
             'list' => $videoPackage,
             'ip_blocked' => $blocked,
-            'must_reward' => $mustReward,
-            'need_min_level' => $mustReward ? 0 : 3,
+            // 'must_reward' => $mustReward,
+            // 'need_min_level' => $mustReward ? 0 : 3,
+            'must_reward' => true,
+            'need_min_level' => 0,
             'share_data' => [
                 'title' => "《{$bangumi['name']}》第{$info['part']}话",
                 'desc' => $info['name'],
-                'link' => "https://m.calibur.tv/video/{$id}",
+                'link' => $this->createShareLink('video', $id, $userId),
                 'image' => "{$info['poster']}-share120jpg"
             ]
         ]);

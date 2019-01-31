@@ -273,7 +273,7 @@ class PostController extends Controller
             'share_data' => [
                 'title' => $post['title'] ?: '来自calibur分享的帖子~',
                 'desc' => $post['desc'] ?: '[图片]',
-                'link' => "https://m.calibur.tv/post/{$post['id']}",
+                'link' => $this->createShareLink('post', $id, $userId),
                 'image' => (count($post['images']) ? $post['images'][0]['url'] : $bangumi['avatar']) . '-share120jpg'
             ]
         ]);

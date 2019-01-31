@@ -281,7 +281,7 @@ class SearchController extends Controller
                 ->pluck('coin_gift')
                 ->first();
 
-            $lightCoinService->coinGift($uid, $amount);
+            $lightCoinService->lightGift($uid, $amount);
             Redis::DEL("user_{$uid}_coin_records");
 
             User

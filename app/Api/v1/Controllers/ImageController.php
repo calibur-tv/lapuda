@@ -779,7 +779,7 @@ class ImageController extends Controller
         $shareData = [
             'title' => $image['name'] ?: '来自calibur分享的相册~',
             'desc' => "《{$bangumi['name']}》",
-            'link' => "https://m.calibur.tv/pin/{$image['id']}",
+            'link' => $this->createShareLink('pin', $id, $userId),
             'image' => $image['url'] . '-share120jpg'
         ];
         $image['share_data'] = $shareData;

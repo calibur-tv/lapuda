@@ -24,6 +24,7 @@ class LightCoin extends Model
      * 2 => 普通用户战斗力 > 100
      * 3 => 吧主战斗力 > 100
      * 4 => 氪金
+     * 5 => 奖励
      */
     /**
      * state

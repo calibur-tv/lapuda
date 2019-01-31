@@ -120,7 +120,7 @@ class ScoreController extends Controller
         $shareData = [
             'title' => $score['title'],
             'desc' => $score['intro'],
-            'link' => "https://m.calibur.tv/review/{$id}",
+            'link' => $this->createShareLink('review', $id, $userId),
             'image' => ($score['banner'] ? $score['banner']['url'] : $bangumi['avatar']) . '-share120jpg'
         ];
         $score['share_data'] = $shareData;

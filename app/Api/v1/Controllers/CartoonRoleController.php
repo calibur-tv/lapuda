@@ -46,6 +46,8 @@ class CartoonRoleController extends Controller
      */
     public function star($id)
     {
+        return $this->resErrServiceUnavailable('系统升级中');
+
         $cartoonRoleRepository = new CartoonRoleRepository();
         $cartoonRole = $cartoonRoleRepository->item($id);
         if (is_null($cartoonRole))
@@ -250,7 +252,7 @@ class CartoonRoleController extends Controller
             'share_data' => [
                 'title' => $role['name'],
                 'desc' => $role['intro'],
-                'link' => "https://m.calibur.tv/role/{$id}",
+                'link' => $this->createShareLink('role', $id, $userId),
                 'image' => "{$role['avatar']}-share120jpg"
             ]
         ]));

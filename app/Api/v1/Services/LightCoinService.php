@@ -40,6 +40,7 @@ class LightCoinService
         $toProductType = $params['to_product_type'];
         $amount = $params['count'];
         $orderId = isset($params['order_id']) ? $params['order_id'] : "recharge-{$toUserId}-{$from}-$amount-" . time();
+        $state = isset($params['coin_state']) ? $params['coin_state'] : 0;
         // step：1 创建团子
         // step：2 写入流通记录
         // step：3 修改用户数据
@@ -48,7 +49,7 @@ class LightCoinService
             'origin_from' => $from,
             'holder_type' => 1, // 1是用户
             'holder_id' => $toUserId,
-            'state' => 0, // 0是团子
+            'state' => $state, // 0是团子，1是关玉
             'created_at' => $now,
             'updated_at' => $now
         ];
@@ -420,7 +421,7 @@ class LightCoinService
             ->toArray();
     }
 
-    // 每日签到
+    // 每日签到送团子
     public function daySign($userId)
     {
         return $this->recharge([
@@ -433,12 +434,12 @@ class LightCoinService
         ]);
     }
 
-    // 邀请他人注册
+    // 邀请他人注册送团子
     public function inviteUser($oldUserId, $newUserId)
     {
         return $this->recharge([
             'from' => 1,
-            'count' => 1,
+            'count' => 2,
             'from_user_id' => $newUserId,
             'to_product_id' => $newUserId,
             'to_product_type' => 1,
@@ -459,7 +460,7 @@ class LightCoinService
         ]);
     }
 
-    // 吧主活跃送团子
+    // 吧主活跃送光玉
     public function masterActiveReward($userId)
     {
         return $this->recharge([
@@ -467,8 +468,9 @@ class LightCoinService
             'count' => 1,
             'from_user_id' => 0,
             'to_product_id' => 0,
-            'to_product_type' => 3,
-            'to_user_id' => $userId
+            'to_product_type' => 16,
+            'to_user_id' => $userId,
+            'coin_state' => 1
         ]);
     }
 
@@ -476,11 +478,38 @@ class LightCoinService
     public function coinGift($toUserId, $amount)
     {
         return $this->recharge([
-            'from' => 0,
+            'from' => 5,
             'count' => $amount,
             'from_user_id' => 0,
             'to_product_id' => 0,
             'to_product_type' => 13,
+            'to_user_id' => $toUserId
+        ]);
+    }
+
+    // 给用户赠送光玉
+    public function lightGift($toUserId, $amount)
+    {
+        return $this->recharge([
+            'from' => 5,
+            'count' => $amount,
+            'from_user_id' => 0,
+            'to_product_id' => 0,
+            'to_product_type' => 14,
+            'to_user_id' => $toUserId,
+            'coin_state' => 1
+        ]);
+    }
+
+    // 被邀请用户送团子
+    public function invitedNewbieCoinGift($fromUserId, $toUserId, $amount = 1)
+    {
+        return $this->recharge([
+            'from' => 5,
+            'to_product_id' => 0,
+            'to_product_type' => 17,
+            'count' => $amount,
+            'from_user_id' => $fromUserId,
             'to_user_id' => $toUserId
         ]);
     }

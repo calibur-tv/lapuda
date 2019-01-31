@@ -9,6 +9,7 @@
 namespace App\Http\Controllers;
 
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\LightCoinService;
 use App\Models\User;
 use App\Models\UserZone;
 use App\Models\Video;
@@ -253,8 +254,21 @@ class CallbackController extends Controller
             try
             {
                 $user = User::create($data);
+                $newUserId = $user->id;
                 $userRepository = new UserRepository();
-                $userRepository->migrateSearchIndex('C', $user->id);
+                $userRepository->migrateSearchIndex('C', $newUserId);
+
+                $invite = $request->get('invite');
+                if ($invite)
+                {
+                    $invoter = $userRepository->item($invite);
+                    if ($invoter)
+                    {
+                        $lightCoinService = new LightCoinService();
+                        $lightCoinService->inviteUser($invite, $newUserId);
+                        $lightCoinService->invitedNewbieCoinGift($invite, $newUserId);
+                    }
+                }
             }
             catch (\Exception $e)
             {
@@ -365,8 +379,21 @@ class CallbackController extends Controller
             try
             {
                 $user = User::create($data);
+                $newUserId = $user->id;
                 $userRepository = new UserRepository();
-                $userRepository->migrateSearchIndex('C', $user->id);
+                $userRepository->migrateSearchIndex('C', $newUserId);
+
+                $invite = $request->get('invite');
+                if ($invite)
+                {
+                    $invoter = $userRepository->item($invite);
+                    if ($invoter)
+                    {
+                        $lightCoinService = new LightCoinService();
+                        $lightCoinService->inviteUser($invite, $newUserId);
+                        $lightCoinService->invitedNewbieCoinGift($invite, $newUserId);
+                    }
+                }
             }
             catch (\Exception $e)
             {
@@ -468,8 +495,21 @@ class CallbackController extends Controller
             try
             {
                 $user = User::create($data);
+                $newUserId = $user->id;
                 $userRepository = new UserRepository();
-                $userRepository->migrateSearchIndex('C', $user->id);
+                $userRepository->migrateSearchIndex('C', $newUserId);
+
+                $invite = $request->get('invite');
+                if ($invite)
+                {
+                    $invoter = $userRepository->item($invite);
+                    if ($invoter)
+                    {
+                        $lightCoinService = new LightCoinService();
+                        $lightCoinService->inviteUser($invite, $newUserId);
+                        $lightCoinService->invitedNewbieCoinGift($invite, $newUserId);
+                    }
+                }
             }
             catch (\Exception $e)
             {

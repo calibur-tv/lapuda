@@ -61,6 +61,8 @@ class UserController extends Controller
      */
     public function daySign()
     {
+        return $this->resErrServiceUnavailable('系统升级中');
+
         $userRepository = new UserRepository();
         $userId = $this->getAuthUserId();
 
@@ -128,6 +130,7 @@ class UserController extends Controller
             return $this->resErrNotFound('该用户不存在');
         }
 
+        $visitUserId = $this->getAuthUserId();
         $searchService = new Search();
         if ($searchService->checkNeedMigrate('user', $userId))
         {
@@ -145,7 +148,7 @@ class UserController extends Controller
         $user['share_data'] = [
             'title' => $user['nickname'],
             'desc' => $user['signature'],
-            'link' => "https://m.calibur.tv/user/{$zone}",
+            'link' => $this->createShareLink('user', $zone, $visitUserId),
             'image' => "{$user['avatar']}-share120jpg"
         ];
 
