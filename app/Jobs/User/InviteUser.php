@@ -42,7 +42,6 @@ class InviteUser implements ShouldQueue
             ->select('id', 'phone', 'nickname', 'faker')
             ->first();
 
-        return;
         if (
             $inviter &&
             $inviter->phone &&
