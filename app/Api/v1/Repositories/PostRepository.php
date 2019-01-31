@@ -156,7 +156,7 @@ class PostRepository extends Repository
 
         $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
         $bangumiManager = new BangumiManager();
-        $addTohomepage = $bangumiManager->isALeader($post['user_id']);
+        $addTohomepage = $bangumiManager->isAManager($post['user_id']);
         if ($publish)
         {
             $postTrendingService->create($id, true, $addTohomepage);
@@ -235,7 +235,7 @@ class PostRepository extends Repository
         $isDeleted = $post['deleted_at'];
         $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
         $bangumiManager = new BangumiManager();
-        $addTohomepage = $bangumiManager->isALeader($post['user_id']);
+        $addTohomepage = $bangumiManager->isAManager($post['user_id']);
 
         if ($isDeleted)
         {
