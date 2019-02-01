@@ -29,6 +29,7 @@ class LightCoinService
 {
     private $record_table = 'light_coin_records';
     private $withdraw_baseline = 100;
+    private $master = [];
     // 增发团子
     private function recharge(array $params)
     {
@@ -469,7 +470,8 @@ class LightCoinService
             'from_user_id' => $newUserId,
             'to_product_id' => $newUserId,
             'to_product_type' => 1,
-            'to_user_id' => $oldUserId
+            'to_user_id' => $oldUserId,
+            'coin_state' => in_array($oldUserId, $this->master) ? 1 : 0
         ]);
     }
 
