@@ -291,6 +291,15 @@ class SearchController extends Controller
         return $this->resOK('success');
     }
 
+    public function migration_6()
+    {
+        $lightCoinService = new LightCoinService();
+        $lightCoinService->lightGift(61548, 5);
+        $lightCoinService->coinGift(61569, 2);
+
+        return $this->resOK('success');
+    }
+
     protected function computedUserCheerForIdol($userId)
     {
         $records = LightCoinRecord
