@@ -847,17 +847,17 @@ class LightCoinService
     }
 
     // 提现，人工转账
-    public function withdraw($userId, $count, $func = '', $time)
+    public function withdraw($userId, $count, $func = '')
     {
-//        $banlance = User
-//            ::where('id', $userId)
-//            ->pluck('coin_count_v2')
-//            ->first();
-//
-//        if ($banlance < $this->withdraw_baseline)
-//        {
-//            return false;
-//        }
+        $banlance = User
+            ::where('id', $userId)
+            ->pluck('light_count')
+            ->first();
+
+        if ($banlance < $this->withdraw_baseline)
+        {
+            return false;
+        }
         // step：1 修改用户数据
         // step：2 修改团子状态
         // step：3 写入流通记录
@@ -865,17 +865,16 @@ class LightCoinService
         DB::beginTransaction();
         try
         {
-            $now = $time;
+            $now = Carbon::now();
             $order_id = "{$userId}-withdraw-{$count}-" . time();
 
-//            $this->increUserInfo($userId, 'coin_count_v2', -$count);
+            $this->increUserInfo($userId, 'light_count', -$count);
 
             $exchangeIds = LightCoin
-//                ::where('state', 1)
-                ::where('holder_type', 1)
+                ::where('state', 1)
+                ->where('holder_type', 1)
                 ->where('holder_id', $userId)
                 ->orderBy('id', 'DESC')
-                ->orderBy('state', 'DESC')
                 ->take($count)
                 ->pluck('id')
                 ->toArray();
