@@ -302,6 +302,10 @@ class SearchController extends Controller
         $lightCoinService = new LightCoinService();
         foreach ($log as $item)
         {
+            if ($item->user_id != 49953)
+            {
+                continue;
+            }
             $result = $lightCoinService->withdraw($item->user_id, $item->count, '', $item->created_at);
             if ($result)
             {
