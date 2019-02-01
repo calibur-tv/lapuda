@@ -92,10 +92,6 @@ class VideoController extends Controller
         $buyed = $buyVideoService->check($userId, $season_id);
         $bangumiManager = new BangumiManager();
         $mustReward = !$bangumiManager->isALeader($userId);
-        if ($userId == 5203)
-        {
-            $mustReward = true;
-        }
         $blocked = $userIpAddress->check($userId);
         if ($user && $user->banned_to)
         {
@@ -155,7 +151,7 @@ class VideoController extends Controller
 
         $buyVideoService->do($userId, $seasonId);
 
-        return $this->resOK();
+        return $this->resOK($PRICE);
     }
 
     /**
