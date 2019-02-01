@@ -253,6 +253,7 @@ class LightCoinService
         $records = DB
             ::table($this->record_table)
             ->whereIn('id', $idsObj['ids'])
+            ->orderBy('created_at', 'DESC')
             ->get()
             ->toArray();
 
