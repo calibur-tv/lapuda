@@ -126,6 +126,8 @@ class VideoController extends Controller
      */
     public function buy(Request $request)
     {
+        return $this->resErrServiceUnavailable('系统升级中');
+
         $user = $this->getAuthUser();
         $userId = $user->id;
         $buyVideoService = new BuyVideoService();

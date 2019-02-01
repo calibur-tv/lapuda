@@ -433,6 +433,8 @@ class ToggleController extends Controller
      */
     public function reward(Request $request)
     {
+        return $this->resErrServiceUnavailable('系统升级中');
+
         $id = $request->get('id');
         $type = $request->get('type');
         $user = $this->getAuthUser();

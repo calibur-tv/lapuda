@@ -89,25 +89,35 @@ class SearchController extends Controller
         {
             $record = LightCoinRecord
                 ::where('id', $recordId)
-                ->first();
+                ->first()
+                ->toArray();
 
-            $coinId = $record->coin_id;
-            LightCoinRecord::where('id', $recordId)->delete();
+            $coinId = $record['coin_id'];
+            $records = LightCoinRecord
+                        ::where('coin_id', $coinId)
+                        ->get()
+                        ->toArray();
+            $currentIds = [];
+            foreach ($records as $recordItem)
+            {
+                $currentIds[] = $recordItem['id'];
+                if ($recordItem['to_user_id'])
+                {
+                    User
+                        ::where('id', $recordItem['to_user_id'])
+                        ->withTrashed()
+                        ->increment('coin_gift');
+                }
+                if ($recordItem['from_user_id'])
+                {
+                    User
+                        ::where('id', $recordItem['from_user_id'])
+                        ->withTrashed()
+                        ->increment('coin_gift');
+                }
+            }
+            LightCoinRecord::whereIn('id', $currentIds)->delete();
             LightCoin::where('id', $coinId)->delete();
-            if ($record->to_user_id)
-            {
-                User
-                    ::where('id', $record->to_user_id)
-                    ->withTrashed()
-                    ->increment('coin_gift');
-            }
-            if ($record->from_user_id)
-            {
-                User
-                    ::where('id', $record->from_user_id)
-                    ->withTrashed()
-                    ->increment('coin_gift');
-            }
         }
 
         return $this->resOK('need redo');
@@ -315,7 +325,8 @@ class SearchController extends Controller
             $cheer = CartoonRoleFans
                 ::where('user_id', $userId)
                 ->where('role_id', $recordItem['role_id'])
-                ->first();
+                ->first()
+                ->toArray();
 
             if (!$cheer)
             {
@@ -328,13 +339,13 @@ class SearchController extends Controller
                 continue;
             }
 
-            if ($cheer->star_count == $recordItem['star_count'])
+            if ($cheer['star_count'] == $recordItem['star_count'])
             {
                 continue;
             }
 
             CartoonRoleFans
-                ::where('id', $cheer->id)
+                ::where('id', $cheer['id'])
                 ->update([
                     'star_count' => $recordItem['star_count']
                 ]);
@@ -365,7 +376,7 @@ class SearchController extends Controller
         {
             $hasRecord = LightCoinRecord
                 ::where('to_product_type', $type)
-                ->where('to_product_id', $recordItem->modal_id)
+                ->where('to_product_id', $recordItem['modal_id'])
                 ->where('from_user_id', $userId)
                 ->count();
 
@@ -373,7 +384,7 @@ class SearchController extends Controller
             {
                 DB
                     ::table($rewardTable)
-                    ->where('id', $recordItem->id)
+                    ->where('id', $recordItem['id'])
                     ->delete();
             }
         }
@@ -409,15 +420,14 @@ class SearchController extends Controller
 
     protected function getDeleteRecordId()
     {
-        $ids = DB
+        return DB
             ::table('light_coin_records')
             ->select(DB::raw('MIN(id) AS id'))
             ->whereIn('to_product_type', [4, 5, 6, 7, 8])
             ->groupBy(['from_user_id', 'to_user_id', 'to_product_id', 'to_product_type'])
             ->havingRaw('COUNT(id) > 1')
             ->pluck('id')
+            ->orderBy('id', 'DESC')
             ->toArray();
-
-        return $ids;
     }
 }
