@@ -847,11 +847,11 @@ class LightCoinService
     }
 
     // 提现，人工转账
-    public function withdraw($userId, $count, $func = '')
+    public function withdraw($userId, $count, $func = '', $time)
     {
         $banlance = User
             ::where('id', $userId)
-            ->pluck('light_count')
+            ->pluck('coin_count_v2')
             ->first();
 
         if ($banlance < $this->withdraw_baseline)
@@ -865,14 +865,14 @@ class LightCoinService
         DB::beginTransaction();
         try
         {
-            $now = Carbon::now();
+            $now = $time;
             $order_id = "{$userId}-withdraw-{$count}-" . time();
 
             $this->increUserInfo($userId, 'light_count', -$count);
 
             $exchangeIds = LightCoin
-                ::where('state', 1)
-                ->where('holder_type', 1)
+//                ::where('state', 1)
+                ::where('holder_type', 1)
                 ->where('holder_id', $userId)
                 ->orderBy('id', 'DESC')
                 ->take($count)

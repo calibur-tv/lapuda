@@ -290,6 +290,28 @@ class SearchController extends Controller
         return $this->resOK('ok');
     }
 
+    // migration提现
+    public function migration_5()
+    {
+        $log = DB
+            ::table('user_coin')
+            ->where('type', 5)
+            ->get()
+            ->toArray();
+
+        $lightCoinService = new LightCoinService();
+        foreach ($log as $item)
+        {
+            $result = $lightCoinService->withdraw($item['user_id'], $item['count'], '', $item['created_at']);
+            if ($result)
+            {
+                DB::table('user_coin')->where('id', $item['id'])->delete();
+            }
+        }
+
+        return $this->resOK('success');
+    }
+
     protected function computedUserCheerForIdol($userId)
     {
         $records = LightCoinRecord
