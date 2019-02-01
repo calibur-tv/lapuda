@@ -308,8 +308,7 @@ class SearchController extends Controller
             $cheer = CartoonRoleFans
                 ::where('user_id', $userId)
                 ->where('role_id', $recordItem['role_id'])
-                ->first()
-                ->toArray();
+                ->first();
 
             if (!$cheer)
             {
@@ -322,13 +321,13 @@ class SearchController extends Controller
                 continue;
             }
 
-            if ($cheer['star_count'] == $recordItem['star_count'])
+            if ($cheer->star_count == $recordItem['star_count'])
             {
                 continue;
             }
 
             CartoonRoleFans
-                ::where('id', $cheer['id'])
+                ::where('id', $cheer->id)
                 ->update([
                     'star_count' => $recordItem['star_count']
                 ]);
