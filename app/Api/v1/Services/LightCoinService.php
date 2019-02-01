@@ -466,7 +466,7 @@ class LightCoinService
     {
         return $this->recharge([
             'from' => 1,
-            'count' => 2,
+            'count' => 5,
             'from_user_id' => $newUserId,
             'to_product_id' => $newUserId,
             'to_product_type' => 1,
@@ -530,7 +530,7 @@ class LightCoinService
     }
 
     // 被邀请用户送团子
-    public function invitedNewbieCoinGift($oldUser, $newUser, $amount = 1)
+    public function invitedNewbieCoinGift($oldUser, $newUser, $amount = 2)
     {
         return $this->recharge([
             'from' => 5,
