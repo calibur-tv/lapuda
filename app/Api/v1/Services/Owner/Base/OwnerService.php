@@ -76,6 +76,10 @@ class OwnerService extends Repository
 
     public function isAManager($userId)
     {
+        if (!$userId)
+        {
+            return false;
+        }
         return (boolean)DB
             ::table($this->owner_table)
             ->where('user_id', $userId)
@@ -84,6 +88,10 @@ class OwnerService extends Repository
 
     public function isALeader($userId)
     {
+        if (!$userId)
+        {
+            return false;
+        }
         return (boolean)DB
             ::table($this->owner_table)
             ->where('user_id', $userId)

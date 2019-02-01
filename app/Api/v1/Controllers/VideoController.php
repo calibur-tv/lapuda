@@ -5,6 +5,7 @@ namespace App\Api\V1\Controllers;
 use App\Api\v1\Repositories\BangumiSeasonRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Counter\VideoPlayCounter;
+use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Toggle\Video\VideoLikeService;
 use App\Api\V1\Services\Toggle\Video\VideoMarkService;
 use App\Api\V1\Services\Toggle\Video\VideoRewardService;
@@ -86,7 +87,8 @@ class VideoController extends Controller
         $info['like_users'] = $videoLikeService->users($id);
         $info['other_site'] = $others_site_video;
 
-        $mustReward = $info['is_released'] && $isEnded == 0;
+        $bangumiManager = new BangumiManager();
+        $mustReward = !$bangumiManager->isALeader($userId);
         $blocked = $userIpAddress->check($userId);
         if ($user && $user->banned_to)
         {
@@ -100,7 +102,7 @@ class VideoController extends Controller
             'ip_blocked' => $blocked,
             // 'must_reward' => $mustReward,
             // 'need_min_level' => $mustReward ? 0 : 3,
-            'must_reward' => true,
+            'must_reward' => $mustReward,
             'need_min_level' => 0,
             'share_data' => [
                 'title' => "《{$bangumi['name']}》第{$info['part']}话",
