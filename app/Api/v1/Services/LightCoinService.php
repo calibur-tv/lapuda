@@ -387,6 +387,10 @@ class LightCoinService
                     'nickname' => $aboutUser['nickname']
                 ];
             }
+            else if ($type === 18)
+            {
+                $is_plus = false;
+            }
             if ($type >= 4 && $type <= 8)
             {
                 $userRepository = new UserRepository();
