@@ -235,7 +235,6 @@ class LightCoinService
     public function getUserRecord($userId, $page = 0, $count = 15)
     {
         $repository = new Repository();
-        Redis::DEL($this->userRecordCacheKey($userId));
         $ids = $repository->RedisList($this->userRecordCacheKey($userId), function () use ($userId)
         {
             return DB
