@@ -4,6 +4,7 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Activity\UserActivity;
+use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\Role;
 use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Transformers\UserTransformer;
@@ -236,6 +237,11 @@ class DoorController extends Controller
         {
             $job = (new \App\Jobs\User\InviteUser($userId, $inviteCode));
             dispatch($job);
+        }
+        else
+        {
+            $lightCoinService = new LightCoinService();
+            $lightCoinService->coinGift($userId, 1);
         }
 
         $userRepository = new UserRepository();

@@ -112,7 +112,6 @@ class NoticeController extends Controller
     {
         $id = $request->get('id');
         $score = Score::where('id', $id)->first();
-        $repository = new Repository();
         if ($score['user_id'] != 1)
         {
             return $this->resErrRole();
