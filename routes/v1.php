@@ -196,6 +196,8 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/invite/list', 'App\Api\V1\Controllers\UserController@userInviteList');
 
+        $api->get('/invite/users', 'App\Api\V1\Controllers\UserController@userInviteUsers');
+
         $api->get('/card', 'App\Api\V1\Controllers\UserController@userCard');
 
         $api->group(['prefix' => '/{zone}'], function ($api)

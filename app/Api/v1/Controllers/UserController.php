@@ -508,6 +508,42 @@ class UserController extends Controller
         return $this->resOK($result);
     }
 
+    // 用户邀请的人
+    public function userInviteUsers(Request $request)
+    {
+        $userId = $request->get('id');
+        $page = $request->get('page') ?: 0;
+        $take = $request->get('take') ?: 15;
+
+        $userRepository = new UserRepository();
+        $userIds = $userRepository->RedisList("user_invite_users_{$userId}", function () use ($userId)
+        {
+            return LightCoinRecord
+                ::where('to_product_type', 1)
+                ->where('to_user_id', $userId)
+                ->orderBy('created_at', 'DESC')
+                ->pluck('from_user_id')
+                ->toArray();
+
+        }, 0, -1, 'm');
+
+        $idsObj = $userRepository->filterIdsByPage($userIds, $page, $take);
+
+        if (empty($idsObj['ids']))
+        {
+            return [];
+        }
+
+        $users = $userRepository->list($idsObj['ids']);
+        $userTransformer = new UserTransformer();
+
+        return $this->resOK([
+            'list' => $userTransformer->list($users),
+            'noMore' => $idsObj['noMore'],
+            'total' => $idsObj['total']
+        ]);
+    }
+
     /**
      * 用户未读消息个数
      *
@@ -656,7 +692,7 @@ class UserController extends Controller
         return $this->resOK($result);
     }
 
-    // 用户邀请注册的列表
+    // 给后台用的，分析用户邀请的人都是什么样
     public function userInviteList(Request $request)
     {
         $id = $request->get('id');
