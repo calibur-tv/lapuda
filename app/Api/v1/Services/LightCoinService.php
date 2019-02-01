@@ -235,6 +235,7 @@ class LightCoinService
     public function getUserRecord($userId, $page = 0, $count = 15)
     {
         $repository = new Repository();
+        Redis::DEL($this->userRecordCacheKey($userId));
         $ids = $repository->RedisList($this->userRecordCacheKey($userId), function () use ($userId)
         {
             return DB
@@ -243,7 +244,7 @@ class LightCoinService
                 ->orWhere('from_user_id', $userId)
                 ->orderBy('created_at', 'DESC')
                 ->groupBy('order_id')
-                ->pluck('order_id')
+                ->pluck('id')
                 ->toArray();
 
         }, 0, -1, 'm');
@@ -251,7 +252,7 @@ class LightCoinService
         $idsObj = $repository->filterIdsByPage($ids, $page, $count);
         $records = DB
             ::table($this->record_table)
-            ->whereIn('order_id', $idsObj['ids'])
+            ->whereIn('id', $idsObj['ids'])
             ->get()
             ->toArray();
 
