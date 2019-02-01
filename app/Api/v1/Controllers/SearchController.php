@@ -186,24 +186,6 @@ class SearchController extends Controller
 
         foreach ($userIds as $uid)
         {
-            $state = User
-                ::where('id', $uid)
-                ->withTrashed()
-                ->pluck('migration_state')
-                ->first();
-
-            if ($state != 2)
-            {
-                continue;
-            }
-
-            User
-                ::where('id', $uid)
-                ->withTrashed()
-                ->update([
-                    'migration_state' => 3
-                ]);
-
             $light_count = LightCoin
                 ::where('holder_type', 1)
                 ->where('holder_id', $uid)
@@ -220,8 +202,7 @@ class SearchController extends Controller
                 ->withTrashed()
                 ->update([
                     'light_count' => $light_count,
-                    'coin_count_v2' => $coin_count,
-                    'migration_state' => 4
+                    'coin_count_v2' => $coin_count
                 ]);
 
             Redis::DEL('user', $uid);
