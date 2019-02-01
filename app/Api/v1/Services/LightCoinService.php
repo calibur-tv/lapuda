@@ -849,15 +849,15 @@ class LightCoinService
     // 提现，人工转账
     public function withdraw($userId, $count, $func = '', $time)
     {
-        $banlance = User
-            ::where('id', $userId)
-            ->pluck('coin_count_v2')
-            ->first();
-
-        if ($banlance < $this->withdraw_baseline)
-        {
-            return false;
-        }
+//        $banlance = User
+//            ::where('id', $userId)
+//            ->pluck('coin_count_v2')
+//            ->first();
+//
+//        if ($banlance < $this->withdraw_baseline)
+//        {
+//            return false;
+//        }
         // step：1 修改用户数据
         // step：2 修改团子状态
         // step：3 写入流通记录
