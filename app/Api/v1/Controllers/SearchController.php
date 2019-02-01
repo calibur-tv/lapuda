@@ -127,7 +127,7 @@ class SearchController extends Controller
     public function migration_2()
     {
         $userIds = User
-            ::where('migration_state', 0)
+            ::where('migration_state', 1)
             ->withTrashed()
             ->take(10000)
             ->pluck('id')
@@ -140,23 +140,6 @@ class SearchController extends Controller
 
         foreach ($userIds as $uid)
         {
-            $state = User
-                ::where('id', $uid)
-                ->withTrashed()
-                ->pluck('migration_state')
-                ->first();
-
-            if ($state != 0)
-            {
-                continue;
-            }
-
-            User
-                ::where('id', $uid)
-                ->withTrashed()
-                ->update([
-                    'migration_state' => 1
-                ]);
             // 0 —— 签到
             $this->deleteSignIfNotExist($uid);
             // 1 —— 邀请注册，不需要
