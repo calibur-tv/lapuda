@@ -424,10 +424,10 @@ class SearchController extends Controller
             ::table('light_coin_records')
             ->select(DB::raw('MIN(id) AS id'))
             ->whereIn('to_product_type', [4, 5, 6, 7, 8])
+            ->orderBy('id', 'DESC')
             ->groupBy(['from_user_id', 'to_user_id', 'to_product_id', 'to_product_type'])
             ->havingRaw('COUNT(id) > 1')
             ->pluck('id')
-            ->orderBy('id', 'DESC')
             ->toArray();
     }
 }
