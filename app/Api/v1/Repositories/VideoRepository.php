@@ -12,10 +12,11 @@ namespace App\Api\V1\Repositories;
 use App\Models\Bangumi;
 use App\Models\BangumiSeason;
 use App\Models\Video;
+use Illuminate\Support\Facades\Redis;
 
 class VideoRepository extends Repository
 {
-    public function item($id, $isShow = false, $isPC = false)
+    public function item($id, $isShow = false, $isPC = false, $loop = false)
     {
         if (!$id)
         {
@@ -80,13 +81,20 @@ class VideoRepository extends Repository
                 'episode' => $video['episode'],
                 'user_id' => $video['user_id'],
                 'deleted_at' => $video['deleted_at'],
-                'is_released' => $isReleased
+                'is_released' => $isReleased,
+                'bangumi_season_id' => $video['bangumi_season_id']
             ];
         }, 'h');
 
         if (!$result || ($result['deleted_at'] && !$isShow))
         {
             return null;
+        }
+
+        if (!isset($result['bangumi_season_id']) && !$loop)
+        {
+            Redis::DEL('video_'.$id);
+            return $this->item($id, false, false, true);
         }
 
         $otherSiteResource = $result['src_other'] ?: '';

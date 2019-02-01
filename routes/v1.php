@@ -93,6 +93,8 @@ $api->version(['v1', 'latest'], function ($api)
         });
 
         $api->post('/playing', 'App\Api\V1\Controllers\VideoController@playing');
+
+        $api->post('/buy', 'App\Api\V1\Controllers\VideoController@buy')->middleware(['jwt.auth']);
     });
 
     $api->group(['prefix' => '/score'], function ($api)

@@ -542,6 +542,19 @@ class LightCoinService
         ]);
     }
 
+    public function buyVideoPackage($fromUserId, $toProductId, $amount)
+    {
+        return $this->exchange([
+            'from_user_id' => $fromUserId,
+            'to_user_id' => 0,
+            'to_user_type' => 0,
+            'to_product_id' => $toProductId,
+            'to_product_type' => 18,
+            'count' => $amount,
+            'is_reward_to_really_user' => false
+        ]);
+    }
+
     // 给用户发表的内容投食
     public function rewardUserContent(array $data, $func = '')
     {

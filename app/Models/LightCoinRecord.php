@@ -40,6 +40,7 @@ class LightCoinRecord extends Model
      * 15 => 活跃用户送光玉
      * 16 => 活跃吧主送光玉
      * 17 => 被别人邀请送团子
+     * 18 => 承包季度视频
      */
     protected $fillable = [
         'coin_id',          // 货币的id

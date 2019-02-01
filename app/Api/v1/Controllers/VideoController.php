@@ -5,7 +5,9 @@ namespace App\Api\V1\Controllers;
 use App\Api\v1\Repositories\BangumiSeasonRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Counter\VideoPlayCounter;
+use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\Owner\BangumiManager;
+use App\Api\V1\Services\Toggle\Video\BuyVideoService;
 use App\Api\V1\Services\Toggle\Video\VideoLikeService;
 use App\Api\V1\Services\Toggle\Video\VideoMarkService;
 use App\Api\V1\Services\Toggle\Video\VideoRewardService;
@@ -61,9 +63,8 @@ class VideoController extends Controller
         }
 
         $others_site_video = $info['other_site'];
-        $released_video_id = $bangumi['released_video_id'];
-        $isEnded = $bangumi['end'];
         $bangumi = $bangumiRepository->panel($info['bangumi_id'], $userId);
+        $season_id = $info['bangumi_season_id'];
 
         $videoTransformer = new VideoTransformer();
         $userIpAddress = new UserIpAddress();
@@ -78,6 +79,7 @@ class VideoController extends Controller
         $videoMarkService = new VideoMarkService();
         $videoRewardService = new VideoRewardService();
         $videoLikeService = new VideoLikeService();
+        $buyVideoService = new BuyVideoService();
 
         $info['rewarded'] = $videoRewardService->check($userId, $id);
         $info['reward_users'] = $videoRewardService->users($id);
@@ -87,6 +89,7 @@ class VideoController extends Controller
         $info['like_users'] = $videoLikeService->users($id);
         $info['other_site'] = $others_site_video;
 
+        $buyed = $buyVideoService->check($userId, $season_id);
         $bangumiManager = new BangumiManager();
         $mustReward = !$bangumiManager->isALeader($userId);
         $blocked = $userIpAddress->check($userId);
@@ -98,11 +101,11 @@ class VideoController extends Controller
         return $this->resOK([
             'info' => $videoTransformer->show($info),
             'bangumi' => $bangumi,
+            'season_id' => $season_id,
             'list' => $videoPackage,
             'ip_blocked' => $blocked,
-            // 'must_reward' => $mustReward,
-            // 'need_min_level' => $mustReward ? 0 : 3,
-            'must_reward' => $mustReward,
+            'must_reward' => $buyed ? false : $mustReward,
+            'buyed' => $buyed,
             'need_min_level' => 0,
             'share_data' => [
                 'title' => "《{$bangumi['name']}》第{$info['part']}话",
@@ -111,6 +114,44 @@ class VideoController extends Controller
                 'image' => "{$info['poster']}-share120jpg"
             ]
         ]);
+    }
+
+
+    /**
+     * 承包季度视频
+     *
+     * @Post("/video/buy")
+     *
+     */
+    public function buy(Request $request)
+    {
+        $user = $this->getAuthUser();
+        $userId = $user->id;
+        $buyVideoService = new BuyVideoService();
+        $seasonId = $request->get('season_id');
+        $buyed = $buyVideoService->check($userId, $seasonId);
+        if ($buyed)
+        {
+            return $this->resErrRole('无需重复购买');
+        }
+
+        $lightCoinService = new LightCoinService();
+        $banlance = $lightCoinService->hasMoneyCount($user);
+        $PRICE = 10;
+        if ($banlance < $PRICE)
+        {
+            return $this->resErrRole('没有足够的虚拟币');
+        }
+
+        $result = $lightCoinService->buyVideoPackage($userId, $seasonId, $PRICE);
+        if (!$result)
+        {
+            return $this->resErrServiceUnavailable('系统维护中');
+        }
+
+        $buyVideoService->do($userId, $seasonId);
+
+        return $this->resOK();
     }
 
     /**
