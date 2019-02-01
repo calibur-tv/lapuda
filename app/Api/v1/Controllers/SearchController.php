@@ -129,7 +129,7 @@ class SearchController extends Controller
         $userIds = User
             ::where('migration_state', 0)
             ->withTrashed()
-            ->take(1000)
+            ->take(10000)
             ->pluck('id')
             ->toArray();
 
@@ -194,7 +194,7 @@ class SearchController extends Controller
         $userIds = User
             ::where('migration_state', 2)
             ->withTrashed()
-            ->take(1000)
+            ->take(10000)
             ->pluck('id')
             ->toArray();
 
