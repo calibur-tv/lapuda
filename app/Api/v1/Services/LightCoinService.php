@@ -875,6 +875,7 @@ class LightCoinService
                 ::where('holder_type', 1)
                 ->where('holder_id', $userId)
                 ->orderBy('id', 'DESC')
+                ->orderBy('state', 'DESC')
                 ->take($count)
                 ->pluck('id')
                 ->toArray();
