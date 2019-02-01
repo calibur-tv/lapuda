@@ -151,6 +151,7 @@ class NoticeController extends Controller
 
         Redis::DEL('system_notice_list');
         Redis::DEL('system_notice_lastest_item');
+        Redis::DEL('system_notice_item_' . $noticeId);
 
         return $this->resOK();
     }
