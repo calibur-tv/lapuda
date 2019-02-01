@@ -302,10 +302,10 @@ class SearchController extends Controller
         $lightCoinService = new LightCoinService();
         foreach ($log as $item)
         {
-            $result = $lightCoinService->withdraw($item['user_id'], $item['count'], '', $item['created_at']);
+            $result = $lightCoinService->withdraw($item->user_id, $item->count, '', $item->created_at);
             if ($result)
             {
-                DB::table('user_coin')->where('id', $item['id'])->delete();
+                DB::table('user_coin')->where('id', $item->id)->delete();
             }
         }
 
