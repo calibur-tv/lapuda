@@ -106,6 +106,7 @@ class VideoController extends Controller
             'ip_blocked' => $blocked,
             'must_reward' => $buyed ? false : $mustReward,
             'buyed' => $buyed,
+            'buy_price' => 10,
             'need_min_level' => 0,
             'share_data' => [
                 'title' => "《{$bangumi['name']}》第{$info['part']}话",
