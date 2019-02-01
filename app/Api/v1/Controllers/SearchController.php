@@ -175,9 +175,7 @@ class SearchController extends Controller
     public function migration_3()
     {
         $userIds = User
-            ::where('migration_state', 2)
-            ->withTrashed()
-            ->take(10000)
+            ::whereIn('id', [17, 138])
             ->pluck('id')
             ->toArray();
 

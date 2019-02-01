@@ -868,7 +868,7 @@ class LightCoinService
             $now = $time;
             $order_id = "{$userId}-withdraw-{$count}-" . time();
 
-            $this->increUserInfo($userId, 'coin_count_v2', -$count);
+//            $this->increUserInfo($userId, 'coin_count_v2', -$count);
 
             $exchangeIds = LightCoin
 //                ::where('state', 1)
