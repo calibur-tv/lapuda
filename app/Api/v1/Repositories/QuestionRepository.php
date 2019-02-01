@@ -176,10 +176,9 @@ class QuestionRepository extends Repository
         {
             $userActivityService = new UserActivity();
             $userActivityService->update($userId, 4);
-
-            $job = (new \App\Jobs\Trial\Answer\Create($answerId));
-            dispatch($job);
         }
+        $job = (new \App\Jobs\Trial\Answer\Create($answerId));
+        dispatch($job);
     }
 
     public function createProcess($id, $state = 0)
