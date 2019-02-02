@@ -296,6 +296,8 @@ class SearchController extends Controller
         $lightCoinService = new LightCoinService();
         $lightCoinService->lightGift(61548, 5);
         $lightCoinService->coinGift(61569, 2);
+        $lightCoinService->lightGift(61729, 5);
+        $lightCoinService->coinGift(61733, 2);
 
         return $this->resOK('success');
     }
