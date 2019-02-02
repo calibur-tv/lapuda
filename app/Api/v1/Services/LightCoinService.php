@@ -707,7 +707,14 @@ class LightCoinService
             {
                 if ($coin->holder_id == $userId && $coin->holder_type == 0)
                 {
-                    $coin->delete();
+                    LightCoin
+                        ::where('id', $coin->id)
+                        ->update([
+                            'state' => 2,
+                            'holder_id' => 0,
+                            'holder_type' => 0
+                        ]);
+
                     $records[] = [
                         'coin_id' => $coin->id,
                         'order_id' => $orderId,
@@ -781,7 +788,11 @@ class LightCoinService
 
                 LightCoin
                     ::whereIn('id', $deleteIds)
-                    ->delete();
+                    ->update([
+                        'state' => 2,
+                        'holder_id' => 0,
+                        'holder_type' => 0
+                    ]);
             }
 
             LightCoinRecord::insert($records);
@@ -962,7 +973,11 @@ class LightCoinService
 
             LightCoin
                 ::whereIn('id', $coinIds)
-                ->delete();
+                ->update([
+                    'state' => 2,
+                    'holder_type' => 0,
+                    'holder_id' => 0
+                ]);
 
             $records = [];
             foreach ($coinIds as $coinId)
@@ -973,7 +988,7 @@ class LightCoinService
                     'from_user_id' => 0,
                     'to_user_id' => $userId,
                     'to_product_id' => 0,
-                    'to_product_type' => 12,
+                    'to_product_type' => 19,
                     'order_amount' => $amount,
                     'created_at' => $now,
                     'updated_at' => $now

@@ -618,12 +618,15 @@ class CartoonRoleController extends Controller
         $cartoonRoleIds = CartoonRoleFans
             ::whereIn('role_id', $userIds)
             ->pluck('role_id');
+        $lightCoinService = new LightCoinService();
 
         foreach ($userIds as $userId)
         {
             CartoonRoleFans
                 ::where('user_id', $userId)
                 ->delete();
+
+            $lightCoinService->undoUserCheer($userId);
         }
 
         $cartoonRoleFansCounter = new CartoonRoleFansCounter();
