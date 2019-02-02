@@ -81,7 +81,6 @@ class SearchController extends Controller
     {
         $userIds = User
             ::where('coin_count_v2', '>', 0)
-            ->orWhere('light_count', '>', 0)
             ->where('migration_state', 0)
             ->pluck('id')
             ->toArray();
