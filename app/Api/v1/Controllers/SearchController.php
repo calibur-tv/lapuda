@@ -75,46 +75,4 @@ class SearchController extends Controller
 
         return $this->resOK($bangumiRepository->searchAll());
     }
-
-
-    public function migration_3()
-    {
-        $userIds = User
-            ::where('coin_count_v2', '>', 0)
-            ->where('migration_state', 0)
-            ->pluck('id')
-            ->toArray();
-
-        if (empty($userIds))
-        {
-            return $this->resOK('migration all');
-        }
-
-        foreach ($userIds as $uid)
-        {
-            $light_count = LightCoin
-                ::where('holder_type', 1)
-                ->where('holder_id', $uid)
-                ->where('state', 1)
-                ->count();
-
-            $coin_count = LightCoin
-                ::where('holder_type', 1)
-                ->where('holder_id', $uid)
-                ->where('state', 0)
-                ->count();
-
-            User::where('id', $uid)
-                ->withTrashed()
-                ->update([
-                    'light_count' => $light_count,
-                    'coin_count_v2' => $coin_count,
-                    'migration_state' => 1
-                ]);
-
-            Redis::DEL('user', $uid);
-        }
-
-        return $this->resOK('need redo');
-    }
 }
