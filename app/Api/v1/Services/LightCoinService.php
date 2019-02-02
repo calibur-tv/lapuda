@@ -77,7 +77,14 @@ class LightCoinService
 
             LightCoinRecord::insert($records);
 
-            $this->increUserInfo($toUserId, 'coin_count_v2', $amount);
+            if ($state == 0)
+            {
+                $this->increUserInfo($toUserId, 'coin_count_v2', $amount);
+            }
+            else if ($state == 1)
+            {
+                $this->increUserInfo($toUserId, 'light_count', $amount);
+            }
 
             DB::commit();
             return true;
@@ -128,7 +135,7 @@ class LightCoinService
             $now = Carbon::now();
             if ($user['coin_count_v2'] >= $exchange_count)
             {
-                $this->setUserInfo($from_user_id, 'coin_count_v2', $user['coin_count_v2'] - $exchange_count);
+                $this->increUserInfo($from_user_id, 'coin_count_v2', -$exchange_count);
                 // 优先消费团子
                 $exchangeIds = LightCoin
                     ::where('state', 0)
@@ -547,6 +554,7 @@ class LightCoinService
         ]);
     }
 
+    // 承包视频
     public function buyVideoPackage($fromUserId, $toProductId, $amount)
     {
         return $this->exchange([
@@ -1053,19 +1061,6 @@ class LightCoinService
         if (Redis::EXISTS("user_{$userId}"))
         {
             Redis::HINCRBYFLOAT("user_{$userId}", $key, $value);
-        }
-    }
-
-    private function setUserInfo($userId, $key, $value)
-    {
-        User::where('id', $userId)
-            ->withTrashed()
-            ->update([
-                $key => $value
-            ]);
-        if (Redis::EXISTS("user_{$userId}"))
-        {
-            Redis::HSET("user_{$userId}", $key, $value);
         }
     }
 }

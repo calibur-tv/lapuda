@@ -746,11 +746,11 @@ class UserController extends Controller
 
         $lightCoinService = new LightCoinService();
         $result = false;
-        if ($state == 1)
+        if ($state == 0)
         {
             $result = $lightCoinService->coinGift($userId, $amount);
         }
-        else if ($state == 2)
+        else if ($state == 1)
         {
             $result = $lightCoinService->lightGift($userId, $amount);
         }
@@ -921,7 +921,6 @@ class UserController extends Controller
 
         $user['coin_count'] = $banlance->coin_count_v2;
         $user['light_count'] = $banlance->light_count;
-        $user['coin_from_sign'] = 0;
         $user['ip_address'] = $userIpAddress->userIps($userId);
         $user['level'] = $userLevel->convertExpToLevel($user['exp']);
         $user['power'] = $userActivityService->get($userId);
