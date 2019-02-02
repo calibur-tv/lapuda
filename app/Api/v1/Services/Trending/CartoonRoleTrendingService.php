@@ -123,9 +123,9 @@ class CartoonRoleTrendingService extends TrendingService
 
     public function getListByIds($ids, $flowType)
     {
-        $store = new CartoonRoleRepository();
+        $cartoonRoleRepository = new CartoonRoleRepository();
         $userRepository = new UserRepository();
-        $list = $store->userFlow($ids);
+        $list = $cartoonRoleRepository->userFlow($ids);
         if (empty($list))
         {
             return [];
@@ -142,6 +142,8 @@ class CartoonRoleTrendingService extends TrendingService
                 $list[$i]['lover_nickname'] = $user['nickname'];
                 $list[$i]['lover_zone'] = $user['zone'];
             }
+            Redis::DEL('cartoon_role_fans_' . $role['id'] . '_star_count_total');
+            Redis::DEL('cartoon_role_fans_' . $role['id'] . '_fans_count_total');
         }
         $cartoonRoleStarCounter = new CartoonRoleStarCounter();
         $cartoonRoleFansCounter = new CartoonRoleFansCounter();
