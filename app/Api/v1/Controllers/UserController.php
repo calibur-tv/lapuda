@@ -943,7 +943,7 @@ class UserController extends Controller
         return $this->resOK($users);
     }
 
-    // 获取一个ip登录N个号的用户列表
+    // 1个 IP 有多个用户的列表
     public function matrixUsers(Request $request)
     {
         $curPage = $request->get('cur_page') ?: 0;
@@ -968,6 +968,61 @@ class UserController extends Controller
             'total' => $ipObj['total'],
             'noMore' => $ipObj['noMore']
         ]);
+    }
+
+    // 查找多重用户
+    public function matrixUserGroup()
+    {
+        $ipAddressService = new UserIpAddress();
+        $ipList = $ipAddressService->someQuestionIP();
+        $groups = [];
+        foreach ($ipList as $ip)
+        {
+            $groups[] = $ipAddressService->addressUsers($ip);
+        }
+
+        $loop = true;
+        while ($loop)
+        {
+            $needLoop = false;
+            // 遍历所有的分组
+            foreach ($groups as $i => $group)
+            {
+                // 遍历所有的 ip
+                foreach ($group as $ip)
+                {
+                    foreach ($groups as $j => $list)
+                    {
+                        if ($i == $j || empty($list))
+                        {
+                            continue;
+                        }
+                        if (in_array($ip, $list))
+                        {
+                            $groups[$i] = array_merge($groups[$i], $groups[$j]);
+                            $groups[$j] = [];
+                            $needLoop = true;
+                        }
+                    }
+                }
+            }
+            if (!$needLoop)
+            {
+                $loop = false;
+            }
+        }
+
+        $userRepository = new UserRepository();
+        $userTransformer = new UserTransformer();
+        $groups = array_filter($groups);
+        foreach ($groups as $i => $userIds)
+        {
+            $userIds = array_unique($userIds);
+            $users = $userTransformer->list($userRepository->list($userIds));
+            $groups[$i] = $users;
+        }
+
+        return $this->resOK($groups);
     }
 
     // 删除不存在用户的 IP 地址

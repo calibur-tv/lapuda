@@ -47,7 +47,8 @@ class UserIpAddress
             ::table('user_ip')
             ->where('ip_address', $ipAddress)
             ->distinct()
-            ->pluck('user_id');
+            ->pluck('user_id')
+            ->toArray();
     }
 
     public function matrixUserIp($page = 0, $count = 15)
@@ -62,16 +63,13 @@ class UserIpAddress
                 ->select(DB::raw('count(distinct user_id) as count, ip_address'))
                 ->orderBy('count', 'DESC')
                 ->groupBy('ip_address')
+                ->havingRaw('COUNT(count) > 1')
                 ->pluck('count', 'ip_address')
                 ->toArray();
 
             $result = [];
             foreach ($data as $key => $val)
             {
-                if (intval($val) < 2)
-                {
-                    continue;
-                }
                 $result[preg_replace('/\./', '-', $key)] = $val;
             }
 
@@ -88,6 +86,37 @@ class UserIpAddress
         $result['ids'] = $ids;
 
         return $result;
+    }
+
+    public function someQuestionIP()
+    {
+        $repository = new Repository();
+
+        return $repository->RedisList('have-some-question-ip', function ()
+        {
+            $haveManyUserIp = DB
+                ::table('user_ip')
+                ->where('ip_address', '<>', '')
+                ->select(DB::raw('count(distinct user_id) as count, ip_address'))
+                ->orderBy('count', 'DESC')
+                ->groupBy('ip_address')
+                ->havingRaw('COUNT(count) > 1')
+                ->pluck('ip_address')
+                ->toArray();
+
+            $haveManyIpUserIp = DB
+                ::table('user_ip')
+                ->where('ip_address', '<>', '')
+                ->select(DB::raw('count(distinct ip_address) as count, ip_address'))
+                ->orderBy('count', 'DESC')
+                ->groupBy('user_id')
+                ->havingRaw('COUNT(count) > 1')
+                ->pluck('ip_address')
+                ->toArray();
+
+
+            return array_unique(array_merge($haveManyUserIp, $haveManyIpUserIp));
+        }, 0, -1, 'm');
     }
 
     public function blockedList()
