@@ -732,6 +732,37 @@ class UserController extends Controller
         return $this->resOK($users);
     }
 
+    // 后台给用户送团子
+    public function giveUserMoney(Request $request)
+    {
+        $currentUserId = $this->getAuthUserId();
+        if ($currentUserId != 1)
+        {
+            return $this->resErrRole();
+        }
+        $userId = $request->get('id');
+        $amount = $request->get('amount');
+        $state = $request->get('state');
+
+        $lightCoinService = new LightCoinService();
+        $result = false;
+        if ($state == 1)
+        {
+            $result = $lightCoinService->coinGift($userId, $amount);
+        }
+        else if ($state == 2)
+        {
+            $result = $lightCoinService->lightGift($userId, $amount);
+        }
+
+        if (!$result)
+        {
+            return $this->resErrServiceUnavailable();
+        }
+
+        return $this->resOK();
+    }
+
     // 获取推荐用户
     public function recommendedUsers()
     {
