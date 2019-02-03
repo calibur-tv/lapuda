@@ -242,19 +242,7 @@ class LightCoinService
     public function getUserRecord($userId, $page = 0, $count = 15)
     {
         $repository = new Repository();
-        $ids = $repository->RedisList($this->userRecordCacheKey($userId), function () use ($userId)
-        {
-            return DB
-                ::table($this->record_table)
-                ->where('to_user_id', $userId)
-                ->orWhere('from_user_id', $userId)
-                ->orderBy('created_at', 'DESC')
-                ->groupBy('order_id')
-                ->pluck('id')
-                ->toArray();
-
-        }, 0, -1, 'm');
-
+        $ids = $this->computeUserRecordIds($userId);
         $idsObj = $repository->filterIdsByPage($ids, $page, $count);
         $records = DB
             ::table($this->record_table)
@@ -395,9 +383,13 @@ class LightCoinService
                     'nickname' => $aboutUser['nickname']
                 ];
             }
-            else if ($type === 18)
+            else if ($type == 18)
             {
                 $is_plus = false;
+            }
+            else if ($type == 19)
+            {
+                continue;
             }
             if ($type >= 4 && $type <= 8)
             {
@@ -429,6 +421,48 @@ class LightCoinService
             'list' => $result,
             'total' => $idsObj['total'],
             'noMore' => $idsObj['noMore']
+        ];
+    }
+
+    // 获取用户的收入、支出
+    public function getUserBanlance($userId)
+    {
+        $ids = $this->computeUserRecordIds($userId);
+        $records = DB
+            ::table($this->record_table)
+            ->whereIn('id', $ids)
+            ->select('to_product_type', 'order_amount', 'from_user_id')
+            ->get()
+            ->toArray();
+
+        $get = 0;
+        $set = 0;
+        foreach ($records as $item)
+        {
+            $type = (int)$item->to_product_type;
+            $amount = $item->order_amount;
+            if (in_array($type, [0, 2, 3, 13, 14, 15, 16]))
+            {
+                $get += $amount;
+            }
+            if (in_array($type, [4, 5, 6, 7, 8, 9, 10, 11, 12, 18]))
+            {
+                $set += $amount;
+            }
+            if ($type == 1 || $type == 17)
+            {
+                if ($userId == $item->from_user_id)
+                {
+                    // 当前用户是被邀请者
+                    continue;
+                }
+                $get += $amount;
+            }
+        }
+
+        return [
+            'get' => $get,
+            'set' => $set
         ];
     }
 
@@ -1077,5 +1111,22 @@ class LightCoinService
         {
             Redis::HINCRBYFLOAT("user_{$userId}", $key, $value);
         }
+    }
+
+    private function computeUserRecordIds($userId)
+    {
+        $repository = new Repository();
+        return $repository->RedisList($this->userRecordCacheKey($userId), function () use ($userId)
+        {
+            return DB
+                ::table($this->record_table)
+                ->where('to_user_id', $userId)
+                ->orWhere('from_user_id', $userId)
+                ->orderBy('created_at', 'DESC')
+                ->groupBy('order_id')
+                ->pluck('id')
+                ->toArray();
+
+        }, 0, -1, 'm');
     }
 }

@@ -688,6 +688,10 @@ class UserController extends Controller
         $userId = $this->getAuthUserId();
         $lightCoinService = new LightCoinService();
         $result = $lightCoinService->getUserRecord($userId, $page, $take);
+        if ($page == 0)
+        {
+            $result['banlance'] = $lightCoinService->getUserBanlance($userId);
+        }
 
         return $this->resOK($result);
     }
@@ -879,6 +883,7 @@ class UserController extends Controller
         $userRepository = new UserRepository();
         $userLevel = new UserLevel();
         $userActivityService = new UserActivity();
+        $lightCoinServce = new LightCoinService();
 
         if ($type === 'ip_address')
         {
@@ -888,6 +893,7 @@ class UserController extends Controller
             {
                 $users[$i]['level'] = $userLevel->convertExpToLevel($user['exp']);
                 $users[$i]['power'] = $userActivityService->get($user['id']);
+                $users[$i]['banlacen'] = $lightCoinServce->getUserBanlance($user['id']);
             }
             return $this->resOK($users);
         }
@@ -928,6 +934,7 @@ class UserController extends Controller
             ::where('to_product_type', 1)
             ->where('to_user_id', $userId)
             ->count();
+        $user['banlacen'] = $lightCoinServce->getUserBanlance($user['id']);
 
         return $this->resOK($user);
     }
