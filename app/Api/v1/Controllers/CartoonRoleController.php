@@ -11,6 +11,7 @@ use App\Api\V1\Services\Counter\CartoonRoleFansCounter;
 use App\Api\V1\Services\Counter\CartoonRoleStarCounter;
 use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\Owner\BangumiManager;
+use App\Api\V1\Services\Tag\Base\UserBadgeService;
 use App\Api\V1\Services\Trending\CartoonRoleTrendingService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\UserTransformer;
@@ -243,6 +244,7 @@ class CartoonRoleController extends Controller
         $role['star_count'] = $cartoonRoleStarCounter->get($id);
         $role['fans_count'] = $cartoonRoleFansCounter->get($id);
         $role['trending'] = is_null($trending) ? 0 : $trending + 1;
+        $role['history'] = $cartoonRoleRepository->history($id);
 
         return $this->resOK($cartoonTransformer->show([
             'bangumi' => $bangumi,
@@ -598,6 +600,7 @@ class CartoonRoleController extends Controller
         return $this->resNoContent();
     }
 
+    // 后台根据用户 IP 来移除应援
     public function removeStarByIp(Request $request)
     {
         $userId = $this->getAuthUserId();
@@ -640,5 +643,96 @@ class CartoonRoleController extends Controller
         Redis::DEL('cartoon_role_star_newbie_users');
 
         return $this->resNoContent();
+    }
+
+    // 计算守护者
+    public function computeTheLover(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        if (1 != $userId)
+        {
+            return $this->resErrRole();
+        }
+        $begin = $request->get('begin_time') ?: '2017-01-01 00:00:00';
+        $end = $request->get('end_time') ?: '2019-02-04 00:00:00';
+        $baseline = $request->get('baseline') ?: 100;
+
+        $list = LightCoinRecord
+            ::select(DB::raw('COUNT(*) AS star_count, from_user_id AS user_id, to_product_id AS role_id'))
+            ->where('to_product_type', 9)
+            ->where('created_at', '>=', $begin)
+            ->where('created_at', '<', $end)
+            ->havingRaw("star_count > {$baseline}")
+            ->groupBy('to_product_id', 'from_user_id')
+            ->orderBy('star_count', 'DESC')
+            ->get()
+            ->toArray();
+
+        $lover = [];
+        $users = [];
+        $loverHasRoleId = [];
+        $greateUserIds = [];
+
+        foreach ($list as $item)
+        {
+            if (in_array($item['role_id'], $loverHasRoleId))
+            {
+                $users[] = $item;
+                continue;
+            }
+            $trending = Redis::ZREVRANK('trending_cartoon_role_bangumi_0_hot_ids', $item['role_id']);
+            $item['user_order'] = 1;
+            $item['role_order'] = is_null($trending) ? 0 : $trending + 1;
+            $lover[] = $item;
+            $loverHasRoleId[] = $item['role_id'];
+            $greateUserIds[] = $item['user_id'];
+        }
+
+        DB
+            ::table('cartoon_role_fans')
+            ->insert($lover);
+
+        Redis::pipeline(function ($pipe) use ($lover)
+        {
+            foreach ($lover as $item)
+            {
+                $pipe->DEL("cartoon_role_{$item['role_id']}");
+            }
+        });
+
+        $userBadgeService = new UserBadgeService();
+        $cartoonRoleRepository = new CartoonRoleRepository();
+
+        foreach ($lover as $item)
+        {
+            $role = $cartoonRoleRepository->item($item['role_id']);
+            $userBadgeService->setUserBadge(
+                $item['user_id'],
+                6,
+                "在初代守护者争夺战中，该用户为「{$role['name']}」应援了{$item['star_count']}个团子，获得了守护者的称号，此荣耀将永存于世"
+            );
+        }
+
+        $list = LightCoinRecord
+            ::select(DB::raw('COUNT(*) AS star_count, from_user_id AS user_id, to_product_id AS role_id'))
+            ->where('to_product_type', 9)
+            ->where('created_at', '>=', $begin)
+            ->where('created_at', '<', $end)
+            ->havingRaw('star_count > 30')
+            ->groupBy('to_product_id', 'from_user_id')
+            ->orderBy('star_count', 'DESC')
+            ->get()
+            ->toArray();
+
+        foreach ($list as $item)
+        {
+            if (in_array($item['user_id'], $greateUserIds))
+            {
+                continue;
+            }
+            $userBadgeService->setUserBadge($item['user_id'], 7);
+        }
+
+        return $this->resOK();
     }
 }

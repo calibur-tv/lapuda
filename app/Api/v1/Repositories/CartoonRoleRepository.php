@@ -8,8 +8,10 @@
 
 namespace App\Api\V1\Repositories;
 
+use App\Api\V1\Transformers\UserTransformer;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
+use Illuminate\Support\Facades\DB;
 
 class CartoonRoleRepository extends Repository
 {
@@ -29,7 +31,8 @@ class CartoonRoleRepository extends Repository
                return null;
            }
 
-           $userId = CartoonRoleFans::where('role_id', $id)
+           $userId = CartoonRoleFans
+               ::where('role_id', $id)
                ->orderBy('star_count', 'DESC')
                ->pluck('user_id')
                ->first();
@@ -37,6 +40,31 @@ class CartoonRoleRepository extends Repository
 
            return $role->toArray();
         }, 'h');
+    }
+
+    public function history($roleId)
+    {
+        return $this->Cache("cartoon_role_{$roleId}_history", function () use ($roleId)
+        {
+            $userRepository = new UserRepository();
+            $userTransformer = new UserTransformer();
+
+            $list = DB
+                ::table('cartoon_role_lovers')
+                ->where('role_id', $roleId)
+                ->get()
+                ->toArray();
+
+            $result = [];
+            foreach ($list as $item)
+            {
+                $user = $userRepository->item($item->user_id);
+                $item->user = $userTransformer->item($user);
+                $result[] = $item;
+            }
+
+            return $list;
+        });
     }
 
     public function checkHasStar($roleId, $userId)
