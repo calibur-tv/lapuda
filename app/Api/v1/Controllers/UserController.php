@@ -933,6 +933,7 @@ class UserController extends Controller
         $user['invite_count'] = LightCoinRecord
             ::where('to_product_type', 1)
             ->where('to_user_id', $userId)
+            ->groupBy('order_id')
             ->count();
         $user['banlacen'] = $lightCoinServce->getUserBanlance($user['id']);
 
