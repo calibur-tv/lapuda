@@ -867,8 +867,8 @@ class LightCoinService
             DB::beginTransaction();
             $result = $this->exchange([
                 'from_user_id' => $fromUserId,
-                'to_user_id' => 0,
-                'to_user_type' => 0,
+                'to_user_id' => $roleId,
+                'to_user_type' => 2,
                 'to_product_id' => $roleId,
                 'to_product_type' => 9,
                 'count' => $count,
