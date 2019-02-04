@@ -80,7 +80,7 @@ class SearchController extends Controller
     {
         $record = LightCoinRecord
             ::where('to_product_type', 9)
-            ->where('state', 0)
+            ->where('migration_state', 0)
             ->get()
             ->toArray();
 
