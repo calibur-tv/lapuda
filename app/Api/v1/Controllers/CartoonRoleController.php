@@ -45,10 +45,11 @@ class CartoonRoleController extends Controller
      *      @Response(403, body={"code": 40301, "message": "没有足够的团子"})
      * })
      */
-    public function star($id)
+    public function star(Request $request, $id)
     {
         $cartoonRoleRepository = new CartoonRoleRepository();
         $cartoonRole = $cartoonRoleRepository->item($id);
+        $amount = $request->get('amount') ?: 1;
         if (is_null($cartoonRole))
         {
             return $this->resErrNotFound();
@@ -65,12 +66,12 @@ class CartoonRoleController extends Controller
 
         $lightCoinService = new LightCoinService();
         $banlance = $lightCoinService->hasMoneyCount($user);
-        if (!$banlance)
+        if ($banlance < $amount)
         {
             return $this->resErrRole('没有足够的团子');
         }
 
-        $result = $lightCoinService->cheerForIdol($userId, $id, 1);
+        $result = $lightCoinService->cheerForIdol($userId, $id, $amount);
         if (!$result)
         {
             return $this->resErrServiceUnavailable('系统升级中');
