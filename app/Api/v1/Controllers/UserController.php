@@ -522,6 +522,7 @@ class UserController extends Controller
                 ::where('to_product_type', 1)
                 ->where('to_user_id', $userId)
                 ->orderBy('created_at', 'DESC')
+                ->groupBy('from_user_id')
                 ->pluck('from_user_id')
                 ->toArray();
 
