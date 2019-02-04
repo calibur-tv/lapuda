@@ -78,33 +78,40 @@ class SearchController extends Controller
 
     public function test()
     {
-        $record = LightCoinRecord
-            ::where('to_product_type', 9)
-            ->where('migration_state', 0)
-            ->get()
-            ->toArray();
-
-        if (empty($record))
+        try
         {
-            return $this->resOK('success');
-        }
+            $record = LightCoinRecord
+                ::where('to_product_type', 9)
+                ->where('migration_state', 0)
+                ->get()
+                ->toArray();
 
-        foreach ($record as $item)
+            if (empty($record))
+            {
+                return $this->resOK('success');
+            }
+
+            foreach ($record as $item)
+            {
+                LightCoin
+                    ::where('id', $item['coin_id'])
+                    ->update([
+                        'holder_type' => 2,
+                        'holder_id' => $item['to_product_id']
+                    ]);
+
+                LightCoinRecord
+                    ::where('id', $item['id'])
+                    ->update([
+                        'migration_state' => 1
+                    ]);
+            }
+
+            return $this->resOK('ok');
+        }
+        catch (\Exception $e)
         {
-            LightCoin
-                ::where('id', $item['coin_id'])
-                ->update([
-                    'holder_type' => 2,
-                    'holder_id' => $item['to_product_id']
-                ]);
-
-            LightCoinRecord
-                ::where('id', $item['id'])
-                ->update([
-                    'migration_state' => 1
-                ]);
+            return $e;
         }
-
-        return $this->resOK('ok');
     }
 }
