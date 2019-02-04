@@ -75,44 +75,4 @@ class SearchController extends Controller
 
         return $this->resOK($bangumiRepository->searchAll());
     }
-
-    public function test()
-    {
-        try
-        {
-            $record = LightCoinRecord
-                ::where('to_product_type', 9)
-                ->where('migration_state', 0)
-                ->take(10000)
-                ->get()
-                ->toArray();
-
-            if (empty($record))
-            {
-                return $this->resOK('success');
-            }
-
-            foreach ($record as $item)
-            {
-                LightCoin
-                    ::where('id', $item['coin_id'])
-                    ->update([
-                        'holder_type' => 2,
-                        'holder_id' => $item['to_product_id']
-                    ]);
-
-                LightCoinRecord
-                    ::where('id', $item['id'])
-                    ->update([
-                        'migration_state' => 1
-                    ]);
-            }
-
-            return $this->resOK('ok');
-        }
-        catch (\Exception $e)
-        {
-            return $e;
-        }
-    }
 }
