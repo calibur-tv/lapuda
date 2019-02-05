@@ -44,7 +44,7 @@ class InviteUser implements ShouldQueue
 
         if (
             $inviter &&
-            $inviter->phone &&
+            // $inviter->phone &&
             // preg_match('/^(13[0-9]|15[012356789]|166|17[3678]|18[0-9]|14[57])[0-9]{8}$/', $inviter->phone) &&
             !intval($inviter->faker)
         )
@@ -60,8 +60,11 @@ class InviteUser implements ShouldQueue
             $userRepository = new UserRepository();
             $newUser = $userRepository->item($this->inviteUserId);
 
-            $sms = new Message();
-            $sms->inviteUser($inviter->phone, $inviter->nickname, $newUser['nickname']);
+            if ($inviter->phone)
+            {
+                $sms = new Message();
+                $sms->inviteUser($inviter->phone, $inviter->nickname, $newUser['nickname']);
+            }
         }
     }
 }
