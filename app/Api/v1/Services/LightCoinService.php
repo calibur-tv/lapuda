@@ -1097,6 +1097,9 @@ class LightCoinService
             case 12:
                 return null;
                 break;
+            case 17:
+                return new UserRepository();
+                break;
             default:
                 return null;
         }
