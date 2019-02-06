@@ -92,7 +92,7 @@ class VideoController extends Controller
         $buyed = $buyVideoService->check($userId, $season_id);
         $bangumiManager = new BangumiManager();
         $isLeader = $bangumiManager->isALeader($userId);
-        $isManager = $bangumiManager->isOwner($info['bangumi_id'], $userId);
+        // $isManager = $bangumiManager->isOwner($info['bangumi_id'], $userId);
         $mustReward = !$isLeader;
         $blocked = $userIpAddress->check($userId);
         if ($user && $user->banned_to)
@@ -110,7 +110,7 @@ class VideoController extends Controller
             'buyed' => $buyed,
             'buy_price' => 10,
             'need_min_level' => 0,
-            'is_manager' => $isLeader || $isManager,
+            'is_manager' => $isLeader,
             'share_data' => [
                 'title' => "《{$bangumi['name']}》第{$info['part']}话",
                 'desc' => $info['name'],
