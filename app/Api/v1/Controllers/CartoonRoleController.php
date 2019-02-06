@@ -23,7 +23,6 @@ use App\Services\Trial\UserIpAddress;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Mews\Purifier\Facades\Purifier;
@@ -225,9 +224,10 @@ class CartoonRoleController extends Controller
         $cartoonRoleStarCounter = new CartoonRoleStarCounter();
         $cartoonRoleFansCounter = new CartoonRoleFansCounter();
 
-        $role['lover'] = $role['loverId'] ? $userTransformer->item($userRepository->item($role['loverId'])) : null;
-        if ($role['loverId'])
+        $role['lover'] = $role['loverId'] ? $userRepository->item($role['loverId']) : null;
+        if ($role['lover'])
         {
+            $role['lover'] = $userTransformer->item($role['lover']);
             $loverScore = Redis::ZSCORE('cartoon_role_' . $id . '_hot_fans_ids', $role['loverId']);
             $role['lover']['score'] = $loverScore ? intval($loverScore) : 0;
         }
@@ -245,17 +245,7 @@ class CartoonRoleController extends Controller
         $role['star_count'] = $cartoonRoleStarCounter->get($id);
         $role['fans_count'] = $cartoonRoleFansCounter->get($id);
         $role['trending'] = is_null($trending) ? 0 : $trending + 1;
-        Log::info('role', $role);
-        Log::info('data', [
-            'bangumi' => $bangumi,
-            'data' => $role,
-            'share_data' => [
-                'title' => $role['name'],
-                'desc' => $role['intro'],
-                'link' => $this->createShareLink('role', $id, $userId),
-                'image' => "{$role['avatar']}-share120jpg"
-            ]
-        ]);
+
         return $this->resOK($cartoonTransformer->show([
             'bangumi' => $bangumi,
             'data' => $role,
