@@ -23,6 +23,7 @@ use App\Services\Trial\UserIpAddress;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Mews\Purifier\Facades\Purifier;
@@ -244,7 +245,17 @@ class CartoonRoleController extends Controller
         $role['star_count'] = $cartoonRoleStarCounter->get($id);
         $role['fans_count'] = $cartoonRoleFansCounter->get($id);
         $role['trending'] = is_null($trending) ? 0 : $trending + 1;
-
+        Log::info('role', $role);
+        Log::info('data', [
+            'bangumi' => $bangumi,
+            'data' => $role,
+            'share_data' => [
+                'title' => $role['name'],
+                'desc' => $role['intro'],
+                'link' => $this->createShareLink('role', $id, $userId),
+                'image' => "{$role['avatar']}-share120jpg"
+            ]
+        ]);
         return $this->resOK($cartoonTransformer->show([
             'bangumi' => $bangumi,
             'data' => $role,
