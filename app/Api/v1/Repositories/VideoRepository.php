@@ -82,7 +82,9 @@ class VideoRepository extends Repository
                 'user_id' => $video['user_id'],
                 'deleted_at' => $video['deleted_at'],
                 'is_released' => $isReleased,
-                'bangumi_season_id' => $video['bangumi_season_id']
+                'bangumi_season_id' => $video['bangumi_season_id'],
+                'baidu_cloud_src' => $video['baidu_cloud_src'],
+                'baidu_cloud_pwd' => $video['baidu_cloud_pwd']
             ];
         }, 'h');
 
@@ -91,15 +93,21 @@ class VideoRepository extends Repository
             return null;
         }
 
-        if (!isset($result['bangumi_season_id']) && !$loop)
+        if (!isset($result['baidu_cloud_src']) && !$loop)
         {
             Redis::DEL('video_'.$id);
             return $this->item($id, false, false, true);
         }
 
         $otherSiteResource = $result['src_other'] ?: '';
+        $result['is_baidu_cloud'] = false;
 
-        if ($result['other_site'])
+        if ($result['baidu_cloud_src'])
+        {
+            $result['src'] = $result['baidu_cloud_src'];
+            $result['is_baidu_cloud'] = true;
+        }
+        else if ($result['other_site'])
         {
             $result['src'] = $otherSiteResource;
         }

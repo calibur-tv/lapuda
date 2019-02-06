@@ -98,7 +98,18 @@ class BangumiSeasonController extends Controller
             return $this->resErrNotFound('没有找到番剧');
         }
 
+        $bangumiSeasonRepository = new BangumiSeasonRepository();
         $result = $bangumiRepository->videos($id);
+        $season = $bangumiSeasonRepository->listByBangumiId($id);
+        $resultSeason = [];
+        foreach ($season as $item)
+        {
+            $resultSeason[] = [
+                'id' => $item['id'],
+                'name' => $item['name']
+            ];
+        }
+        $result['season'] = $resultSeason;
 
         return $this->resOK($result);
     }

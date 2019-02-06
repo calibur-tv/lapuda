@@ -204,6 +204,7 @@ class BangumiController extends Controller
 
         $bangumiManager = new BangumiManager();
         $bangumi['is_master'] = $bangumiManager->isOwner($id, $userId);
+        $bangumi['is_leader'] = $bangumiManager->isALeader($userId);
         $bangumi['manager_users'] = $bangumiManager->users($id);
 
         $bangumiTagService = new BangumiTagService();
@@ -235,29 +236,6 @@ class BangumiController extends Controller
         }
 
         return $this->resOK($bangumiTransformer->show($bangumi));
-    }
-
-    /**
-     * 番剧视频
-     *
-     * @Get("/bangumi/`bangumiId`/videos")
-     *
-     * @Transaction({
-     *      @Response(200, body={"code": 0, "data": {"videos": "视频列表", "has_season": "是否有多个季度", "total": "视频总数"}}),
-     *      @Response(404, body={"code": 40401, "message": "不存在的番剧"})
-     * })
-     */
-    public function videos($id)
-    {
-        $repository = new BangumiRepository();
-        $bangumi = $repository->item($id);
-
-        if (is_null($bangumi))
-        {
-            return $this->resErrNotFound('没有找到番剧');
-        }
-
-        return $this->resOK($repository->videos($id, json_decode($bangumi['season'])));
     }
 
     /**

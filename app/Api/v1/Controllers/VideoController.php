@@ -91,7 +91,9 @@ class VideoController extends Controller
 
         $buyed = $buyVideoService->check($userId, $season_id);
         $bangumiManager = new BangumiManager();
-        $mustReward = !$bangumiManager->isALeader($userId);
+        $isLeader = $bangumiManager->isALeader($userId);
+        $isManager = $bangumiManager->isOwner($info['bangumi_id'], $userId);
+        $mustReward = !$isLeader;
         $blocked = $userIpAddress->check($userId);
         if ($user && $user->banned_to)
         {
@@ -108,6 +110,7 @@ class VideoController extends Controller
             'buyed' => $buyed,
             'buy_price' => 10,
             'need_min_level' => 0,
+            'is_manager' => $isLeader || $isManager,
             'share_data' => [
                 'title' => "《{$bangumi['name']}》第{$info['part']}话",
                 'desc' => $info['name'],
@@ -117,6 +120,130 @@ class VideoController extends Controller
         ]);
     }
 
+    /**
+     * 版主更新视频
+     *
+     * @Post("/video/${videoId}/update")
+     */
+    public function update(Request $request, $id)
+    {
+        $userId = $this->getAuthUserId();
+        $bangumi_id = $request->get('bangumi_id');
+        $bangumiManager = new BangumiManager();
+        if (
+            !$bangumiManager->isALeader($userId) ||
+            !$bangumiManager->isOwner($bangumi_id, $userId))
+        {
+            return $this->resErrRole();
+        }
+        $name = $request->get('name');
+        $poster = $request->get('poster');
+        $episode = $request->get('episode');
+        $baidu_cloud_src = $request->get('baidu_cloud_src');
+        $baidu_cloud_pwd = $request->get('baidu_cloud_pwd');
+        $season_id = $request->get('season_id');
+        $hasVideo = Video
+            ::where('episode', $episode)
+            ->where('id', '<>', $id)
+            ->where('bangumi_season_id', $season_id)
+            ->count();
+        if ($hasVideo)
+        {
+            return $this->resErrBad('集数重复');
+        }
+
+        Video::withTrashed()
+            ->where('id', $id)
+            ->update([
+                'name' => $name,
+                'poster' => $poster,
+                'episode' => $episode,
+                'baidu_cloud_src' => $baidu_cloud_src,
+                'baidu_cloud_pwd' => $baidu_cloud_pwd
+            ]);
+
+        Redis::DEL('video_' . $id);
+        Redis::DEL('bangumi_' . $bangumi_id . '_videos');
+
+        $videoRepository = new VideoRepository();
+        $videoRepository->migrateSearchIndex('U', $id);
+
+        return $this->resNoContent();
+    }
+
+
+    /**
+     * 版主创建视频
+     *
+     * @Post("/video/create")
+     */
+    public function create(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $bangumi_id = $request->get('bangumi_id');
+        $bangumiManager = new BangumiManager();
+        if (
+            !$bangumiManager->isALeader($userId) ||
+            !$bangumiManager->isOwner($bangumi_id, $userId))
+        {
+            return $this->resErrRole();
+        }
+        $name = $request->get('name');
+        $poster = $request->get('poster');
+        $episode = $request->get('episode');
+        $baidu_cloud_src = $request->get('baidu_cloud_src');
+        $baidu_cloud_pwd = $request->get('baidu_cloud_pwd');
+        $season_id = $request->get('season_id');
+
+        $time = Carbon::now();
+        $newId = Video::insertGetId([
+            'bangumi_id' => $bangumi_id,
+            'bangumi_season_id' => $season_id,
+            'part' => '',
+            'name' => $name,
+            'episode' => $episode,
+            'url' => '',
+            'resource' => '',
+            'poster' => $poster,
+            'user_id' => 2,
+            'is_creator' => 1,
+            'created_at' => $time,
+            'updated_at' => $time,
+            'baidu_cloud_src' => $baidu_cloud_src,
+            'baidu_cloud_pwd' => $baidu_cloud_pwd
+        ]);
+
+        $oldVideos = BangumiSeason
+            ::where('id', $season_id)
+            ->pluck('videos')
+            ->first();
+
+        if ($oldVideos)
+        {
+            $resultVideos = $oldVideos . ',' . $newId;
+        }
+        else
+        {
+            $resultVideos = $newId;
+        }
+
+        BangumiSeason
+            ::where('id', $season_id)
+            ->update([
+                'videos' => $resultVideos
+            ]);
+
+        $videoRepository = new VideoRepository();
+        $videoRepository->migrateSearchIndex('C', $newId);
+
+        Redis::DEL('bangumi_'. $bangumi_id .'_videos');
+        Redis::DEL('bangumi_season:bangumi:' . $bangumi_id);
+
+        $job = (new \App\Jobs\Push\Baidu('bangumi/' . $bangumi_id . '/video', 'update'));
+        dispatch($job);
+
+        return $this->resCreated($newId);
+    }
 
     /**
      * 承包季度视频
@@ -218,7 +345,9 @@ class VideoController extends Controller
                 'episode' => $request->get('episode'),
                 'poster' => $request->get('poster'),
                 'url' => $request->get('url') ? $request->get('url') : '',
-                'resource' => json_encode($request->get('resource'))
+                'resource' => json_encode($request->get('resource')),
+                'baidu_cloud_pwd' => $request->get('baidu_cloud_pwd'),
+                'baidu_cloud_src' => $request->get('baidu_cloud_src')
             ]);
 
         Redis::DEL('video_' . $videoId);

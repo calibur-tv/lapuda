@@ -90,7 +90,11 @@ $api->version(['v1', 'latest'], function ($api)
         $api->group(['prefix' => '/{id}'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\VideoController@show');
+
+            $api->post('/update', 'App\Api\V1\Controllers\VideoController@update')->middleware(['jwt.auth']);
         });
+
+        $api->post('/create', 'App\Api\V1\Controllers\VideoController@create')->middleware(['jwt.auth']);
 
         $api->post('/playing', 'App\Api\V1\Controllers\VideoController@playing');
 

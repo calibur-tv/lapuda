@@ -21,7 +21,8 @@ class VideoTransformer extends Transformer
                 'bangumi_id' => (int)$video['bangumi_id'],
                 'src' => $video['src'],
                 'name' => $video['name'],
-                'part' => (int)$video['part'],
+                'part' => (int)$video['episode'],
+                'episode' => (int)$video['episode'],
                 'poster' => $video['poster'],
                 'other_site' => (boolean)$video['other_site'],
                 'is_creator' => true,
@@ -30,7 +31,9 @@ class VideoTransformer extends Transformer
                 'rewarded' => $video['rewarded'],
                 'reward_users' => $video['reward_users'],
                 'marked' => $video['marked'],
-                'mark_users' => $video['mark_users']
+                'mark_users' => $video['mark_users'],
+                'baidu_cloud_pwd' => $video['baidu_cloud_pwd'],
+                'is_baidu_cloud' => $video['is_baidu_cloud']
             ];
         });
     }
