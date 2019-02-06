@@ -563,6 +563,11 @@ class DoorController extends Controller
             $user = User
                 ::where('wechat_unique_id', $uniqueId)
                 ->first();
+
+            if (is_null($user))
+            {
+                return $this->resErrRole('该账号不存在了');
+            }
         }
 
         $userId = $user->id;

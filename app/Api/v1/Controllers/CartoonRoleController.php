@@ -244,7 +244,6 @@ class CartoonRoleController extends Controller
         $role['star_count'] = $cartoonRoleStarCounter->get($id);
         $role['fans_count'] = $cartoonRoleFansCounter->get($id);
         $role['trending'] = is_null($trending) ? 0 : $trending + 1;
-        $role['history'] = $cartoonRoleRepository->history($id);
 
         return $this->resOK($cartoonTransformer->show([
             'bangumi' => $bangumi,
