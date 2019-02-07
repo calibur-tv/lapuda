@@ -12,12 +12,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class VirtualIdolOwner extends Model
 {
-    protected $table = 'virtual_idol_owners';
+    protected $table = 'cartoon_role_fans';
 
     protected $fillable = [
-        'idol_id',
+        'role_id',
         'user_id',
-        'stock_count', // 持有的股数
-        'total_price', // 持有股数对应的总价
+        'star_count',   // 持有的股数
+        'total_price',  // 持有股数对应的总价
     ];
 }

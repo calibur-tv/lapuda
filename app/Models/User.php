@@ -55,9 +55,14 @@ class User extends Authenticatable
         );
     }
 
+    public function getNicknameAttribute($name)
+    {
+        return $name ? trim($name) : '空白';
+    }
+
     public function getSignatureAttribute($text)
     {
-        return $text ? $text : '这个人还很神秘...';
+        return $text ? trim($text) : '这个人还很神秘...';
     }
 
     public function getBannerAttribute($banner)

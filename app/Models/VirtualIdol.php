@@ -15,7 +15,7 @@ class VirtualIdol extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'virtual_idols';
+    protected $table = 'cartoon_role';
 
     protected $fillable = [
         'name',
@@ -26,8 +26,8 @@ class VirtualIdol extends Model
         'bangumi_id',   // 番剧id
         'manager_id',   // 经纪人id
         'stock_price',  // 每股的股价
-        'stock_count',  // 发行的总股数
-        'owner_count',  // 持股人数
-        'state',        // 状态
+        'star_count',   // 发行的总股数
+        'fans_count',   // 持股人数
+        'company_state',// 公司状态
     ];
 }
