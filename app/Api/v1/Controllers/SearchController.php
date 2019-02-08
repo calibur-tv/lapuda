@@ -89,6 +89,7 @@ class SearchController extends Controller
             ::where('migration_state', 0)
             ->take(10000)
             ->get()
+            ->orderBy('id', 'ASC')
             ->toArray();
 
         if (empty($sign))
