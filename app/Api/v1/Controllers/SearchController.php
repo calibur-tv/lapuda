@@ -87,9 +87,9 @@ class SearchController extends Controller
     {
         $sign = UserSign
             ::where('migration_state', 0)
+            ->orderBy('id', 'ASC')
             ->take(10000)
             ->get()
-            ->orderBy('id', 'ASC')
             ->toArray();
 
         if (empty($sign))
