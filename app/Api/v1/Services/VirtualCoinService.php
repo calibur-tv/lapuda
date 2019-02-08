@@ -17,6 +17,7 @@ use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Models\User;
 use App\Models\VirtualCoin;
+use Illuminate\Support\Facades\Redis;
 
 class VirtualCoinService
 {
