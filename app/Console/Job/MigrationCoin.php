@@ -17,6 +17,7 @@ use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\VirtualCoinService;
 use App\Models\LightCoinRecord;
 use App\Models\UserSign;
+use App\Models\VirtualCoin;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -54,6 +55,7 @@ class MigrationCoin extends Command
         $this->migration_step_10();
         $this->migration_step_11();
         $this->migration_step_12();
+        $this->migration_step_14();
 
         return true;
     }
@@ -654,6 +656,33 @@ class MigrationCoin extends Command
     protected function migration_step_13()
     {
         return true;
+    }
+
+    // 删除重复数据
+    protected function migration_step_14()
+    {
+        $ids = VirtualCoin
+            ::select(DB::raw('MIN(id) AS id'))
+            ->where('channel_type', '<>', 9)
+            ->take(1000)
+            ->groupBy(['user_id', 'created_at', 'channel_type', 'about_user_id'])
+            ->havingRaw('COUNT(id) > 1')
+            ->pluck('id')
+            ->toArray();
+
+        VirtualCoin::whereIn('id', $ids)->delete();
+    }
+
+    // 偶像应援对账
+    protected function migration_step_17()
+    {
+
+    }
+
+    // 修改 user 信息
+    protected function migration_step_16()
+    {
+
     }
 
     protected function getRepositoryByType($type)
