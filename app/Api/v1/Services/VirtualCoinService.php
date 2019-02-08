@@ -301,6 +301,11 @@ class VirtualCoinService
         User
             ::where('id', $userId)
             ->increment('virtual_coin', $amount);
+
+        if (Redis::EXISTS("user_{$userId}"))
+        {
+            Redis::HINCRBYFLOAT("user_{$userId}", 'virtual_coin', $amount);
+        }
         /*
         if ($balance['virtual_coin'] + $amount < 0)
         {
@@ -349,6 +354,11 @@ class VirtualCoinService
         User
             ::where('id', $userId)
             ->increment('money_coin', $amount);
+
+        if (Redis::EXISTS("user_{$userId}"))
+        {
+            Redis::HINCRBYFLOAT("user_{$userId}", 'money_coin', $amount);
+        }
         /*
         if ($balance['money_coin'] + $amount < 0)
         {
@@ -389,6 +399,11 @@ class VirtualCoinService
         User
             ::where('id', $userId)
             ->increment('virtual_coin', $amount);
+
+        if (Redis::EXISTS("user_{$userId}"))
+        {
+            Redis::HINCRBYFLOAT("user_{$userId}", 'virtual_coin', $amount);
+        }
     }
 
     private function addMoney($userId, $amount, $channel_type, $product_id, $about_user_id)
@@ -411,6 +426,11 @@ class VirtualCoinService
         User
             ::where('id', $userId)
             ->increment('money_coin', $amount);
+
+        if (Redis::EXISTS("user_{$userId}"))
+        {
+            Redis::HINCRBYFLOAT("user_{$userId}", 'money_coin', $amount);
+        }
     }
 
     private function getProductRepositoryByType($type)
