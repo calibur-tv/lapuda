@@ -20,6 +20,12 @@ use App\Models\VirtualCoin;
 
 class VirtualCoinService
 {
+    private $time;
+
+    public function setTime($time)
+    {
+        $this->time = $time;
+    }
     // 拥有光玉+团子个数
     public function hasMoneyCount($currentUser)
     {
@@ -116,10 +122,9 @@ class VirtualCoinService
     }
 
     // 邀请用户注册赠送团子
-    public function inviteUser($oldUserId, $newUserId)
+    public function inviteUser($oldUserId, $newUserId, $amount = 5)
     {
-        $this->addCoin($oldUserId, 5, 1, 0, $newUserId);
-        $this->addCoin($newUserId, 2, 20, 0, $oldUserId);
+        $this->addCoin($oldUserId, $amount, 1, 0, $newUserId);
     }
 
     // 用户活跃送团子
@@ -130,10 +135,16 @@ class VirtualCoinService
     }
 
     // 版主活跃送光玉
-    public function masterActiveReward($userId)
+    public function masterActiveReward($userId, $isNew = true)
     {
-        // $this->addCoin($userId, 1, 3, 0, 0);
-        $this->addMoney($userId, 1, 19, 0, 0);
+        if ($isNew)
+        {
+            $this->addMoney($userId, 1, 19, 0, 0);
+        }
+        else
+        {
+            $this->addCoin($userId, 1, 3, 0, 0);
+        }
     }
 
     // 给用户赠送团子
@@ -148,17 +159,18 @@ class VirtualCoinService
         $this->addMoney($toUserId, $amount, 17, 0, 0);
     }
 
-    // 被邀请用户送团子
-    public function invitedNewbieCoinGift($oldUser, $newUser, $amount = 2)
+    // 被邀请注册用户送团子
+    public function invitedNewbieCoinGift($oldUserId, $newUserId, $amount = 2)
     {
         // do nothing
+        $this->addCoin($newUserId, $amount, 20, 0, $oldUserId);
     }
 
     // 承包视频
-    public function buyVideoPackage($fromUserId, $toProductId, $amount, $toUserId = 2)
+    public function buyVideoPackage($fromUserId, $productId, $amount, $toUserId = 2)
     {
-        $this->useCoinFirst($fromUserId, $amount, 21, $toProductId, $toUserId);
-        $this->addMoney($toUserId, $amount, 23, $toProductId, $fromUserId);
+        $this->useCoinFirst($fromUserId, $amount, 21, $productId, $toUserId);
+        $this->addMoney($toUserId, $amount, 23, $productId, $fromUserId);
     }
 
     // TODO：给别人打赏，参数变了
@@ -269,19 +281,27 @@ class VirtualCoinService
             ->first()
             ->toArray();
 
+        /*
         if ($balance['virtual_coin'] + $balance['money_coin'] + $amount < 0)
         {
             return false;
         }
+        */
 
-        VirtualCoin::create([
+        VirtualCoin::insert([
             'user_id' => $userId,
             'amount' => $amount,
             'channel_type' => $channel_type,
             'product_id' => $product_id,
-            'about_user_id' => $about_user_id
+            'about_user_id' => $about_user_id,
+            'created_at' => $this->time,
+            'updated_at' => $this->time
         ]);
 
+        User
+            ::where('id', $userId)
+            ->increment('virtual_coin', $amount);
+        /*
         if ($balance['virtual_coin'] + $amount < 0)
         {
             User
@@ -298,6 +318,7 @@ class VirtualCoinService
                 ::where('id', $userId)
                 ->increment('virtual_coin', $amount);
         }
+        */
 
         return true;
     }
@@ -308,20 +329,27 @@ class VirtualCoinService
         {
             $amount = -$amount;
         }
+
         $balance = User
             ::where('id', $userId)
             ->select('virtual_coin', 'money_coin')
             ->first()
             ->toArray();
 
-        VirtualCoin::create([
+        VirtualCoin::insert([
             'user_id' => $userId,
             'amount' => $amount,
             'channel_type' => $channel_type,
             'product_id' => $product_id,
-            'about_user_id' => $about_user_id
+            'about_user_id' => $about_user_id,
+            'created_at' => $this->time,
+            'updated_at' => $this->time
         ]);
 
+        User
+            ::where('id', $userId)
+            ->increment('money_coin', $amount);
+        /*
         if ($balance['money_coin'] + $amount < 0)
         {
             User
@@ -338,6 +366,7 @@ class VirtualCoinService
                 ::where('id', $userId)
                 ->increment('money_coin', $amount);
         }
+        */
     }
 
     private function addCoin($userId, $amount, $channel_type, $product_id, $about_user_id)
@@ -347,12 +376,14 @@ class VirtualCoinService
             $amount = +$amount;
         }
 
-        VirtualCoin::create([
+        VirtualCoin::insert([
             'user_id' => $userId,
             'amount' => $amount,
             'channel_type' => $channel_type,
             'product_id' => $product_id,
-            'about_user_id' => $about_user_id
+            'about_user_id' => $about_user_id,
+            'created_at' => $this->time,
+            'updated_at' => $this->time
         ]);
 
         User
@@ -367,12 +398,14 @@ class VirtualCoinService
             $amount = +$amount;
         }
 
-        VirtualCoin::create([
+        VirtualCoin::insert([
             'user_id' => $userId,
             'amount' => $amount,
             'channel_type' => $channel_type,
             'product_id' => $product_id,
-            'about_user_id' => $about_user_id
+            'about_user_id' => $about_user_id,
+            'created_at' => $this->time,
+            'updated_at' => $this->time
         ]);
 
         User
