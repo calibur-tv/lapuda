@@ -145,7 +145,7 @@ class MigrationCoin extends Command
             $coinService->inviteUser($item['to_user_id'], $item['from_user_id'], $item['order_amount']);
 
             LightCoinRecord
-                ::where('id', $item['id'])
+                ::where('order_id', $item['order_id'])
                 ->update([
                     'migration_state' => 2
                 ]);
@@ -194,7 +194,7 @@ class MigrationCoin extends Command
             $coinService->invitedNewbieCoinGift($item['from_user_id'], $item['to_user_id'], $item['order_amount']);
 
             LightCoinRecord
-                ::where('id', $item['id'])
+                ::where('order_id', $item['order_id'])
                 ->update([
                     'migration_state' => 2
                 ]);
@@ -341,7 +341,7 @@ class MigrationCoin extends Command
             $coinService->coinGift($item['to_user_id'], $item['order_amount']);
 
             LightCoinRecord
-                ::where('id', $item['id'])
+                ::where('order_id', $item['order_id'])
                 ->update([
                     'migration_state' => 2
                 ]);
@@ -390,7 +390,7 @@ class MigrationCoin extends Command
             $coinService->lightGift($item['to_user_id'], $item['order_amount']);
 
             LightCoinRecord
-                ::where('id', $item['id'])
+                ::where('order_id', $item['order_id'])
                 ->update([
                     'migration_state' => 2
                 ]);
@@ -592,7 +592,7 @@ class MigrationCoin extends Command
             $coinService->withdraw($item['from_user_id'], $item['order_amount'] < 100 ? 100 : $item['order_amount']);
 
             LightCoinRecord
-                ::where('id', $item['id'])
+                ::where('order_id', $item['order_id'])
                 ->update([
                     'migration_state' => 2
                 ]);
@@ -641,7 +641,7 @@ class MigrationCoin extends Command
             $coinService->buyVideoPackage($item['from_user_id'], $item['to_product_id'], 10);
 
             LightCoinRecord
-                ::where('id', $item['id'])
+                ::where('order_id', $item['order_id'])
                 ->update([
                     'migration_state' => 2
                 ]);
