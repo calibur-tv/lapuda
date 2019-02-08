@@ -96,8 +96,6 @@ class SearchController extends Controller
             return $this->resOK('done');
         }
 
-        return $this->resOK('what\'s wrong?');
-
         $coinService = new VirtualCoinService();
         foreach ($sign as $item)
         {
