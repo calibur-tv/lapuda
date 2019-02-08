@@ -88,6 +88,7 @@ class SearchController extends Controller
         $sign = UserSign
             ::where('migration_state', 0)
             ->get()
+            ->take(10000)
             ->toArray();
 
         if (empty($sign))
