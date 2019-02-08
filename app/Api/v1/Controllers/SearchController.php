@@ -88,7 +88,7 @@ class SearchController extends Controller
         $sign = UserSign
             ::where('migration_state', 0)
             ->get()
-            ->take(10000)
+            ->take(1000)
             ->toArray();
 
         if (empty($sign))
@@ -393,7 +393,7 @@ class SearchController extends Controller
             ->where('to_product_type', 9)
             ->orderBy('created_at', 'DESC')
             ->groupBy('order_id')
-            ->take(10000)
+            ->take(1000)
             ->get()
             ->toArray();
 
