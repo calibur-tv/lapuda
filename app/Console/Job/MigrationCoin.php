@@ -44,6 +44,12 @@ class MigrationCoin extends Command
     public function handle()
     {
         $this->migration_step_1();
+        $this->migration_step_2();
+        $this->migration_step_3();
+        $this->migration_step_4();
+        $this->migration_step_5();
+        $this->migration_step_6();
+        $this->migration_step_7();
 
         return true;
     }
