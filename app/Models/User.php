@@ -36,7 +36,9 @@ class User extends Authenticatable
         'wechat_unique_id',
         'wechat_open_id',
         'light_count',
-        'coin_count_v2'
+        'coin_count_v2',
+        'virtual_coin', // 团子
+        'money_coin',   // 光玉
     ];
 
     protected $hidden = ['password'];
