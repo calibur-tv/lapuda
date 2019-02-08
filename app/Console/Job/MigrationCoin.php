@@ -54,7 +54,7 @@ class MigrationCoin extends Command
         $sign = UserSign
             ::where('migration_state', 0)
             ->orderBy('id', 'ASC')
-            ->take(1000)
+            ->take(2500)
             ->get()
             ->toArray();
 
@@ -103,7 +103,7 @@ class MigrationCoin extends Command
             ->where('to_product_type', 1)
             ->orderBy('created_at', 'DESC')
             ->groupBy('order_id')
-            ->take(1000)
+            ->take(2500)
             ->get()
             ->toArray();
 
@@ -152,7 +152,7 @@ class MigrationCoin extends Command
             ->where('to_product_type', 17)
             ->orderBy('created_at', 'DESC')
             ->groupBy('order_id')
-            ->take(1000)
+            ->take(2500)
             ->get()
             ->toArray();
 
@@ -201,7 +201,7 @@ class MigrationCoin extends Command
             ->where('to_product_type', 2)
             ->orderBy('created_at', 'DESC')
             ->groupBy('order_id')
-            ->take(1000)
+            ->take(2500)
             ->get()
             ->toArray();
 
@@ -250,7 +250,7 @@ class MigrationCoin extends Command
             ->whereIn('to_product_type', [3, 16])
             ->orderBy('created_at', 'DESC')
             ->groupBy('order_id')
-            ->take(1000)
+            ->take(2500)
             ->get()
             ->toArray();
 
@@ -299,7 +299,7 @@ class MigrationCoin extends Command
             ->where('to_product_type', 13)
             ->orderBy('created_at', 'DESC')
             ->groupBy('order_id')
-            ->take(1000)
+            ->take(2500)
             ->get()
             ->toArray();
 
@@ -348,7 +348,7 @@ class MigrationCoin extends Command
             ->where('to_product_type', 14)
             ->orderBy('created_at', 'DESC')
             ->groupBy('order_id')
-            ->take(1000)
+            ->take(2500)
             ->get()
             ->toArray();
 
@@ -396,7 +396,7 @@ class MigrationCoin extends Command
         $list = DB
             ::table($table)
             ->where('migration_state', 0)
-            ->take(1000)
+            ->take(2500)
             ->get()
             ->toArray();
 
@@ -406,7 +406,7 @@ class MigrationCoin extends Command
             $list = DB
                 ::table($table)
                 ->where('migration_state', 0)
-                ->take(1000)
+                ->take(2500)
                 ->get()
                 ->toArray();
         }
@@ -417,7 +417,7 @@ class MigrationCoin extends Command
             $list = DB
                 ::table($table)
                 ->where('migration_state', 0)
-                ->take(1000)
+                ->take(2500)
                 ->get()
                 ->toArray();
         }
@@ -428,7 +428,7 @@ class MigrationCoin extends Command
             $list = DB
                 ::table($table)
                 ->where('migration_state', 0)
-                ->take(1000)
+                ->take(2500)
                 ->get()
                 ->toArray();
         }
@@ -439,7 +439,7 @@ class MigrationCoin extends Command
             $list = DB
                 ::table($table)
                 ->where('migration_state', 0)
-                ->take(1000)
+                ->take(2500)
                 ->get()
                 ->toArray();
         }
@@ -501,7 +501,7 @@ class MigrationCoin extends Command
             ->where('to_product_type', 9)
             ->orderBy('created_at', 'DESC')
             ->groupBy('order_id')
-            ->take(1000)
+            ->take(2500)
             ->get()
             ->toArray();
 
@@ -550,7 +550,7 @@ class MigrationCoin extends Command
             ->where('to_product_type', 10)
             ->orderBy('created_at', 'DESC')
             ->groupBy('order_id')
-            ->take(1000)
+            ->take(2500)
             ->get()
             ->toArray();
 
@@ -599,7 +599,7 @@ class MigrationCoin extends Command
             ->where('to_product_type', 18)
             ->orderBy('created_at', 'DESC')
             ->groupBy('order_id')
-            ->take(1000)
+            ->take(2500)
             ->get()
             ->toArray();
 
