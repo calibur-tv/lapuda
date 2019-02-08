@@ -11,6 +11,20 @@ $api->version(['v1', 'latest'], function ($api)
 {
     $api->get('/migrate', 'App\Api\V1\Controllers\BangumiSeasonController@videoControl');
 
+    $api->get('/migration_step_1', 'App\Api\V1\Controllers\SearchController@migration_step_1');
+    $api->get('/migration_step_2', 'App\Api\V1\Controllers\SearchController@migration_step_2');
+    $api->get('/migration_step_3', 'App\Api\V1\Controllers\SearchController@migration_step_3');
+    $api->get('/migration_step_4', 'App\Api\V1\Controllers\SearchController@migration_step_4');
+    $api->get('/migration_step_5', 'App\Api\V1\Controllers\SearchController@migration_step_5');
+    $api->get('/migration_step_6', 'App\Api\V1\Controllers\SearchController@migration_step_6');
+    $api->get('/migration_step_7', 'App\Api\V1\Controllers\SearchController@migration_step_7');
+    $api->get('/migration_step_8', 'App\Api\V1\Controllers\SearchController@migration_step_8');
+    $api->get('/migration_step_9', 'App\Api\V1\Controllers\SearchController@migration_step_9');
+    $api->get('/migration_step_10', 'App\Api\V1\Controllers\SearchController@migration_step_10');
+    $api->get('/migration_step_11', 'App\Api\V1\Controllers\SearchController@migration_step_11');
+    $api->get('/migration_step_12', 'App\Api\V1\Controllers\SearchController@migration_step_12');
+    $api->get('/migration_step_13', 'App\Api\V1\Controllers\SearchController@migration_step_13');
+
     $api->group(['prefix' => '/search'], function ($api)
     {
         $api->get('/new', 'App\Api\V1\Controllers\SearchController@search');

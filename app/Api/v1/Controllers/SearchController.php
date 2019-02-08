@@ -99,13 +99,29 @@ class SearchController extends Controller
         $coinService = new VirtualCoinService();
         foreach ($sign as $item)
         {
+            $state = UserSign
+                ::where('id', $item['id'])
+                ->pluck('migration_state')
+                ->first();
+
+            if ($state != 0)
+            {
+                continue;
+            }
+
+            UserSign
+                ::where('id', $item['id'])
+                ->update([
+                    'migration_state' => 1
+                ]);
+
             $coinService->setTime($item['created_at']);
             $coinService->daySign($item['user_id']);
 
             UserSign
                 ::where('id', $item['id'])
                 ->update([
-                    'migration_state' => 1
+                    'migration_state' => 2
                 ]);
         }
 
@@ -131,13 +147,29 @@ class SearchController extends Controller
         $coinService = new VirtualCoinService();
         foreach ($records as $item)
         {
+            $state = LightCoinRecord
+                ::where('id', $item['id'])
+                ->pluck('migration_state')
+                ->first();
+
+            if ($state != 0)
+            {
+                continue;
+            }
+
+            LightCoinRecord
+                ::where('id', $item['id'])
+                ->update([
+                    'migration_state' => 1
+                ]);
+
             $coinService->setTime($item['created_at']);
             $coinService->inviteUser($item['to_user_id'], $item['from_user_id'], $item['order_amount']);
 
             LightCoinRecord
                 ::where('id', $item['id'])
                 ->update([
-                    'migration_state' => 1
+                    'migration_state' => 2
                 ]);
         }
 
@@ -163,13 +195,29 @@ class SearchController extends Controller
         $coinService = new VirtualCoinService();
         foreach ($records as $item)
         {
+            $state = LightCoinRecord
+                ::where('id', $item['id'])
+                ->pluck('migration_state')
+                ->first();
+
+            if ($state != 0)
+            {
+                continue;
+            }
+
+            LightCoinRecord
+                ::where('id', $item['id'])
+                ->update([
+                    'migration_state' => 1
+                ]);
+
             $coinService->setTime($item['created_at']);
             $coinService->invitedNewbieCoinGift($item['from_user_id'], $item['to_user_id'], $item['order_amount']);
 
             LightCoinRecord
                 ::where('id', $item['id'])
                 ->update([
-                    'migration_state' => 1
+                    'migration_state' => 2
                 ]);
         }
 
@@ -195,13 +243,29 @@ class SearchController extends Controller
         $coinService = new VirtualCoinService();
         foreach ($records as $item)
         {
+            $state = LightCoinRecord
+                ::where('id', $item['id'])
+                ->pluck('migration_state')
+                ->first();
+
+            if ($state != 0)
+            {
+                continue;
+            }
+
+            LightCoinRecord
+                ::where('id', $item['id'])
+                ->update([
+                    'migration_state' => 1
+                ]);
+
             $coinService->setTime($item['created_at']);
             $coinService->userActivityReward($item['to_user_id']);
 
             LightCoinRecord
                 ::where('id', $item['id'])
                 ->update([
-                    'migration_state' => 1
+                    'migration_state' => 2
                 ]);
         }
 
@@ -227,13 +291,29 @@ class SearchController extends Controller
         $coinService = new VirtualCoinService();
         foreach ($records as $item)
         {
+            $state = LightCoinRecord
+                ::where('id', $item['id'])
+                ->pluck('migration_state')
+                ->first();
+
+            if ($state != 0)
+            {
+                continue;
+            }
+
+            LightCoinRecord
+                ::where('id', $item['id'])
+                ->update([
+                    'migration_state' => 1
+                ]);
+
             $coinService->setTime($item['created_at']);
             $coinService->masterActiveReward($item['to_user_id'], $item['to_product_type'] == 16);
 
             LightCoinRecord
                 ::where('id', $item['id'])
                 ->update([
-                    'migration_state' => 1
+                    'migration_state' => 2
                 ]);
         }
 
@@ -259,13 +339,29 @@ class SearchController extends Controller
         $coinService = new VirtualCoinService();
         foreach ($records as $item)
         {
+            $state = LightCoinRecord
+                ::where('id', $item['id'])
+                ->pluck('migration_state')
+                ->first();
+
+            if ($state != 0)
+            {
+                continue;
+            }
+
+            LightCoinRecord
+                ::where('id', $item['id'])
+                ->update([
+                    'migration_state' => 1
+                ]);
+
             $coinService->setTime($item['created_at']);
             $coinService->coinGift($item['to_user_id'], $item['order_amount']);
 
             LightCoinRecord
                 ::where('id', $item['id'])
                 ->update([
-                    'migration_state' => 1
+                    'migration_state' => 2
                 ]);
         }
 
@@ -291,13 +387,29 @@ class SearchController extends Controller
         $coinService = new VirtualCoinService();
         foreach ($records as $item)
         {
+            $state = LightCoinRecord
+                ::where('id', $item['id'])
+                ->pluck('migration_state')
+                ->first();
+
+            if ($state != 0)
+            {
+                continue;
+            }
+
+            LightCoinRecord
+                ::where('id', $item['id'])
+                ->update([
+                    'migration_state' => 1
+                ]);
+
             $coinService->setTime($item['created_at']);
             $coinService->lightGift($item['to_user_id'], $item['order_amount']);
 
             LightCoinRecord
                 ::where('id', $item['id'])
                 ->update([
-                    'migration_state' => 1
+                    'migration_state' => 2
                 ]);
         }
 
@@ -362,6 +474,24 @@ class SearchController extends Controller
         $coinService = new VirtualCoinService();
         foreach ($list as $item)
         {
+            $state = DB
+                ::table($table)
+                ->where('id', $item['id'])
+                ->pluck('migration_state')
+                ->first();
+
+            if ($state != 0)
+            {
+                continue;
+            }
+
+            DB
+                ::table($table)
+                ->where('id', $item->id)
+                ->update([
+                    'migration_state' => 1
+                ]);
+
             $coinService->setTime($item->created_at);
             $modelType = explode('_', $table)[0];
             $repository = $this->getRepositoryByType($modelType);
@@ -372,7 +502,7 @@ class SearchController extends Controller
                 ::table($table)
                 ->where('id', $item->id)
                 ->update([
-                    'migration_state' => 1
+                    'migration_state' => 2
                 ]);
         }
 
@@ -405,13 +535,29 @@ class SearchController extends Controller
         $coinService = new VirtualCoinService();
         foreach ($records as $item)
         {
+            $state = LightCoinRecord
+                ::where('id', $item['id'])
+                ->pluck('migration_state')
+                ->first();
+
+            if ($state != 0)
+            {
+                continue;
+            }
+
+            LightCoinRecord
+                ::where('id', $item['id'])
+                ->update([
+                    'migration_state' => 1
+                ]);
+
             $coinService->setTime($item['created_at']);
             $coinService->cheerForIdol($item['from_user_id'], $item['to_product_id']);
 
             LightCoinRecord
                 ::where('id', $item['id'])
                 ->update([
-                    'migration_state' => 1
+                    'migration_state' => 2
                 ]);
         }
 
@@ -437,13 +583,29 @@ class SearchController extends Controller
         $coinService = new VirtualCoinService();
         foreach ($records as $item)
         {
+            $state = LightCoinRecord
+                ::where('id', $item['id'])
+                ->pluck('migration_state')
+                ->first();
+
+            if ($state != 0)
+            {
+                continue;
+            }
+
+            LightCoinRecord
+                ::where('id', $item['id'])
+                ->update([
+                    'migration_state' => 1
+                ]);
+
             $coinService->setTime($item['created_at']);
             $coinService->withdraw($item['from_user_id'], $item['order_amount'] < 100 ? 100 : $item['order_amount']);
 
             LightCoinRecord
                 ::where('id', $item['id'])
                 ->update([
-                    'migration_state' => 1
+                    'migration_state' => 2
                 ]);
         }
 
@@ -469,13 +631,29 @@ class SearchController extends Controller
         $coinService = new VirtualCoinService();
         foreach ($records as $item)
         {
+            $state = LightCoinRecord
+                ::where('id', $item['id'])
+                ->pluck('migration_state')
+                ->first();
+
+            if ($state != 0)
+            {
+                continue;
+            }
+
+            LightCoinRecord
+                ::where('id', $item['id'])
+                ->update([
+                    'migration_state' => 1
+                ]);
+
             $coinService->setTime($item['created_at']);
             $coinService->buyVideoPackage($item['from_user_id'], $item['to_product_id'], 10);
 
             LightCoinRecord
                 ::where('id', $item['id'])
                 ->update([
-                    'migration_state' => 1
+                    'migration_state' => 2
                 ]);
         }
 
