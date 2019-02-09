@@ -88,7 +88,6 @@ class SearchController extends Controller
         $ids = VirtualCoin
             ::select(DB::raw('MIN(id) AS id'))
             ->where('channel_type', '<>', 9)
-            ->take(1000)
             ->groupBy(['user_id', 'created_at', 'channel_type', 'about_user_id'])
             ->havingRaw('COUNT(id) > 1')
             ->pluck('id')
