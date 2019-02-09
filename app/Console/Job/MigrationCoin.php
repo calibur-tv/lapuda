@@ -63,6 +63,7 @@ class MigrationCoin extends Command
         $this->migration_step_11();
         $this->migration_step_12();
         $this->migration_step_16();
+        $this->migration_step_17();
         return true;
     }
 
@@ -852,6 +853,73 @@ class MigrationCoin extends Command
                 ]);
 
             // Redis::DEL("user_{$userId}");
+        }
+
+        return false;
+    }
+
+    // 找出收支不平衡的人
+    protected function migration_step_17()
+    {
+        $ids = User
+            ::where('migration_state', 2)
+            ->withTrashed()
+            ->take(2000)
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($ids))
+        {
+            return true;
+        }
+
+        $coinService = new VirtualCoinService();
+        foreach ($ids as $userId)
+        {
+            $state = User
+                ::where('id', $userId)
+                ->withTrashed()
+                ->pluck('migration_state')
+                ->first();
+
+            if ($state != 2)
+            {
+                continue;
+            }
+
+            User
+                ::where('id', $userId)
+                ->withTrashed()
+                ->update([
+                    'migration_state' => 3
+                ]);
+
+            $balance = User
+                ::where('id', $userId)
+                ->withTrashed()
+                ->select('virtual_coin', 'money_coin')
+                ->first()
+                ->toArray();
+
+            $pocket = $coinService->getUserBalance($userId);
+            if ($pocket['get'] - $pocket['set'] != $balance['virtual_coin'] + $balance['money_coin'])
+            {
+                User
+                    ::where('id', $userId)
+                    ->withTrashed()
+                    ->update([
+                        'migration_state' => 4
+                    ]);
+            }
+            else
+            {
+                User
+                    ::where('id', $userId)
+                    ->withTrashed()
+                    ->update([
+                        'migration_state' => 5
+                    ]);
+            }
         }
 
         return false;
