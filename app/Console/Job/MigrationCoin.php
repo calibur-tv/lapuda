@@ -781,30 +781,31 @@ class MigrationCoin extends Command
     // 修改 user 信息
     protected function migration_step_16()
     {
-        $ids = User
-            ::where('migration_state', 0)
-            ->withTrashed()
-            ->take(2000)
-            ->pluck('id')
-            ->toArray();
-
-        if (empty($ids))
-        {
-            return true;
-        }
+//        $ids = User
+//            ::where('migration_state', 0)
+//            ->withTrashed()
+//            ->take(2000)
+//            ->pluck('id')
+//            ->toArray();
+//
+//        if (empty($ids))
+//        {
+//            return true;
+//        }
+        $ids = [15325, 21433, 27230, 61822];
 
         foreach ($ids as $userId)
         {
-            $state = User
-                ::where('id', $userId)
-                ->withTrashed()
-                ->pluck('migration_state')
-                ->first();
-
-            if ($state != 0)
-            {
-                continue;
-            }
+//            $state = User
+//                ::where('id', $userId)
+//                ->withTrashed()
+//                ->pluck('migration_state')
+//                ->first();
+//
+//            if ($state != 0)
+//            {
+//                continue;
+//            }
 
             User
                 ::where('id', $userId)
@@ -846,10 +847,12 @@ class MigrationCoin extends Command
                 ::where('id', $userId)
                 ->withTrashed()
                 ->update([
-                    'migration_state' => $state,
+                    'migration_state' => 2,
                     'virtual_coin' => $coinCount,
                     'money_coin' => $moneyCount
                 ]);
+
+            // Redis::DEL("user_{$userId}");
         }
 
         return false;
