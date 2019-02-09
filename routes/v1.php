@@ -11,8 +11,6 @@ $api->version(['v1', 'latest'], function ($api)
 {
     $api->get('/migrate', 'App\Api\V1\Controllers\BangumiSeasonController@videoControl');
 
-    $api->get('/test', 'App\Api\V1\Controllers\SearchController@test');
-
     $api->group(['prefix' => '/search'], function ($api)
     {
         $api->get('/new', 'App\Api\V1\Controllers\SearchController@search');

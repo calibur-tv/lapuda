@@ -748,6 +748,7 @@ class MigrationCoin extends Command
     {
         $ids = VirtualCoin
             ::select(DB::raw('MIN(id) AS id'))
+            ->withTrashed()
             ->where('channel_type', '<>', 9)
             ->groupBy(['user_id', 'created_at', 'channel_type', 'about_user_id', 'product_id'])
             ->havingRaw('COUNT(id) > 1')
@@ -758,6 +759,7 @@ class MigrationCoin extends Command
 
         $ids = VirtualCoin
             ::select(DB::raw('MIN(id) AS id'))
+            ->withTrashed()
             ->whereIn('channel_type', [4, 5, 6, 7, 8])
             ->groupBy(['user_id', 'channel_type', 'about_user_id', 'product_id'])
             ->havingRaw('COUNT(id) > 1')
