@@ -84,10 +84,10 @@ class VirtualCoinService
                 $repository = $this->getProductRepositoryByType($type);
                 if ($repository)
                 {
-                    $item = $repository->item($product_id, true);
+                    $aboutModel = $repository->item($product_id, true);
                     $model = [
                         'id' => $product_id,
-                        'title' => isset($item['title']) ? $item['title'] : $item['name']
+                        'title' => isset($aboutModel['title']) ? $aboutModel['title'] : $aboutModel['name']
                     ];
                 }
             }
