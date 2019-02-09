@@ -63,8 +63,8 @@ class MigrationCoin extends Command
 //        $this->migration_step_10();
 //        $this->migration_step_11();
 //        $this->migration_step_12();
-        $this->migration_step_15();
-//        $this->migration_step_16();
+//        $this->migration_step_15();
+        $this->migration_step_16();
 //        $this->migration_step_17();
         return true;
     }
@@ -818,7 +818,7 @@ class MigrationCoin extends Command
     protected function migration_step_16()
     {
         $ids = User
-            ::where('migration_state', 0)
+            ::where('migration_state', 5)
             ->withTrashed()
             ->take(2000)
             ->pluck('id')
