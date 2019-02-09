@@ -850,8 +850,6 @@ class MigrationCoin extends Command
                     'virtual_coin' => $coinCount,
                     'money_coin' => $moneyCount
                 ]);
-
-            Redis::DEL("user_{$userId}");
         }
 
         return false;
