@@ -925,6 +925,7 @@ class UserController extends Controller
             ->first();
 
         $user['coin_count'] = $banlance->virtual_coin;
+        $user['coin_count_v2'] = $banlance->virtual_coin;
         $user['light_count'] = $banlance->money_coin;
         $user['ip_address'] = $userIpAddress->userIps($userId);
         $user['level'] = $userLevel->convertExpToLevel($user['exp']);
