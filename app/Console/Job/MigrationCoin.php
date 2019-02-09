@@ -44,17 +44,17 @@ class MigrationCoin extends Command
      */
     public function handle()
     {
-        $this->migration_step_1();
-        $this->migration_step_2();
-        $this->migration_step_3();
-        $this->migration_step_4();
-        $this->migration_step_5();
-        $this->migration_step_6();
-        $this->migration_step_7();
-        $this->migration_step_8();
-        $this->migration_step_10();
-        $this->migration_step_11();
-        $this->migration_step_12();
+//        $this->migration_step_1();
+//        $this->migration_step_2();
+//        $this->migration_step_3();
+//        $this->migration_step_4();
+//        $this->migration_step_5();
+//        $this->migration_step_6();
+//        $this->migration_step_7();
+//        $this->migration_step_8();
+//        $this->migration_step_10();
+//        $this->migration_step_11();
+//        $this->migration_step_12();
         return true;
     }
 
@@ -484,7 +484,7 @@ class MigrationCoin extends Command
             $modelType = explode('_', $table)[0];
             $repository = $this->getRepositoryByType($modelType);
             $model = $repository->item($item->modal_id, true);
-            $coinService->rewardUserContent($modelType, $item->user_id, $model->user_id, $item->modal_id);
+            $coinService->rewardUserContent($modelType, $item->user_id, $model['user_id'], $item->modal_id);
 
             DB
                 ::table($table)
