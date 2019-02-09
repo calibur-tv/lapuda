@@ -16,10 +16,12 @@ use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\VirtualCoinService;
 use App\Models\LightCoinRecord;
+use App\Models\User;
 use App\Models\UserSign;
 use App\Models\VirtualCoin;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class MigrationCoin extends Command
 {
@@ -671,7 +673,7 @@ class MigrationCoin extends Command
         VirtualCoin::whereIn('id', $ids)->delete();
     }
 
-    // 偶像应援对账
+    // TODO：偶像应援对账
     protected function migration_step_15()
     {
 
@@ -680,7 +682,80 @@ class MigrationCoin extends Command
     // 修改 user 信息
     protected function migration_step_16()
     {
+        $ids = User
+            ::where('migration_state', 0)
+            ->withTrashed()
+            ->take(2000)
+            ->pluck('id')
+            ->toArray();
 
+        if (empty($ids))
+        {
+            return true;
+        }
+
+        foreach ($ids as $userId)
+        {
+            $state = User
+                ::where('id', $userId)
+                ->withTrashed()
+                ->pluck('migration_state')
+                ->first();
+
+            if ($state != 0)
+            {
+                continue;
+            }
+
+            User
+                ::where('id', $userId)
+                ->withTrashed()
+                ->update([
+                    'migration_state' => 1
+                ]);
+
+            $coinCount = VirtualCoin
+                ::where('user_id', $userId)
+                ->whereIn('channel_type', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 16, 20, 21])
+                ->sum('amount');
+
+            $moneyCount = VirtualCoin
+                ::where('user_id', $userId)
+                ->whereIn('channel_type', [10, 11, 12, 13, 14, 15, 17, 18, 19, 23])
+                ->sum('amount');
+
+            $state = 2;
+            if ($coinCount + $moneyCount < 0)
+            {
+                $state = 3;
+            }
+            else
+            {
+                if ($coinCount < 0)
+                {
+                    $coinCount = 0;
+                    $moneyCount = $moneyCount + $coinCount;
+                }
+                if ($moneyCount < 0)
+                {
+                    $moneyCount = 0;
+                    $coinCount = $coinCount + $moneyCount;
+                }
+            }
+
+            User
+                ::where('id', $userId)
+                ->withTrashed()
+                ->update([
+                    'migration_state' => $state,
+                    'virtual_coin' => $coinCount,
+                    'money_coin' => $moneyCount
+                ]);
+
+            Redis::DEL("user_{$userId}");
+        }
+
+        return false;
     }
 
     protected function getRepositoryByType($type)

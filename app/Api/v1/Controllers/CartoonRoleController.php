@@ -45,7 +45,7 @@ class CartoonRoleController extends Controller
      *      @Response(403, body={"code": 40301, "message": "没有足够的团子"})
      * })
      */
-    public function star($id)
+    public function star(Request $request, $id)
     {
         $cartoonRoleRepository = new CartoonRoleRepository();
         $cartoonRole = $cartoonRoleRepository->item($id);
@@ -65,12 +65,13 @@ class CartoonRoleController extends Controller
 
         $lightCoinService = new LightCoinService();
         $banlance = $lightCoinService->hasMoneyCount($user);
-        if (!$banlance)
+        $amount = $request->get('amount') ?: 1;
+        if ($banlance < $amount)
         {
             return $this->resErrRole('没有足够的团子');
         }
 
-        $result = $lightCoinService->cheerForIdol($userId, $id, 1);
+        $result = $lightCoinService->cheerForIdol($userId, $id, $amount);
         if (!$result)
         {
             return $this->resErrServiceUnavailable('系统升级中');
@@ -83,11 +84,11 @@ class CartoonRoleController extends Controller
         {
             CartoonRoleFans
                 ::whereRaw('role_id = ? and user_id = ?', [$id, $userId])
-                ->increment('star_count');
+                ->increment('star_count', $amount);
 
             if (Redis::EXISTS('cartoon_role_'.$id))
             {
-                Redis::HINCRBYFLOAT('cartoon_role_'.$id, 'star_count', 1);
+                Redis::HINCRBYFLOAT('cartoon_role_'.$id, 'star_count', $amount);
             }
         }
         else
@@ -95,7 +96,7 @@ class CartoonRoleController extends Controller
             CartoonRoleFans::create([
                 'role_id' => $id,
                 'user_id' => $userId,
-                'star_count' => 1
+                'star_count' => $amount
             ]);
 
             $cartoonRoleFansCounter = new CartoonRoleFansCounter();
@@ -104,12 +105,12 @@ class CartoonRoleController extends Controller
             if (Redis::EXISTS('cartoon_role_'.$id))
             {
                 Redis::HINCRBYFLOAT('cartoon_role_'.$id, 'fans_count', 1);
-                Redis::HINCRBYFLOAT('cartoon_role_'.$id, 'star_count', 1);
+                Redis::HINCRBYFLOAT('cartoon_role_'.$id, 'star_count', $amount);
             }
         }
         $cartoonRoleTrendingService->update($id, $isOldFans);
         // 今日动态榜单
-        $cartoonRoleRepository->SortAdd('cartoon_role_today_activity_ids', $id, 1);
+        $cartoonRoleRepository->SortAdd('cartoon_role_today_activity_ids', $id, $amount);
 
         $newCacheKey = 'cartoon_role_' . $id . '_new_fans_ids';
         $hotCacheKey = 'cartoon_role_' . $id . '_hot_fans_ids';
@@ -120,11 +121,11 @@ class CartoonRoleController extends Controller
         }
         if (Redis::EXISTS($hotCacheKey))
         {
-            Redis::ZINCRBY($hotCacheKey, 1, $userId);
+            Redis::ZINCRBY($hotCacheKey, $amount, $userId);
         }
 
         $cartoonRoleStarCounter = new CartoonRoleStarCounter();
-        $cartoonRoleStarCounter->add($id);
+        $cartoonRoleStarCounter->add($id, $amount);
 
         $userActivityService = new UserActivity();
         $userActivityService->update($userId, 3);
