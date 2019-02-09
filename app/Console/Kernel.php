@@ -38,10 +38,10 @@ class Kernel extends ConsoleKernel
         $schedule->command('ClearSearch')->dailyAt('05:00');
         $schedule->command('CronFreeUser')->everyFiveMinutes();
         $schedule->command('Trending')->hourly();
-        $schedule
-            ->command('MigrationCoin')
-            ->everyMinute()
-            ->withoutOverlapping();
+//        $schedule
+//            ->command('MigrationCoin')
+//            ->everyMinute()
+//            ->withoutOverlapping();
 //        $schedule->command('VideoUp')
 //            ->dailyAt('19:00')
 //            ->weekdays();

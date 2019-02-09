@@ -4,7 +4,6 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Activity\UserActivity;
-use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\Role;
 use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Services\VirtualCoinService;
@@ -241,10 +240,8 @@ class DoorController extends Controller
         }
         else
         {
-            $lightCoinService = new LightCoinService();
             $virtualCoinService = new VirtualCoinService();
             $virtualCoinService->coinGift($userId, 1);
-            $lightCoinService->coinGift($userId, 1);
         }
 
         $userRepository = new UserRepository();

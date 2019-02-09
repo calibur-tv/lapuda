@@ -11,7 +11,6 @@ namespace App\Api\V1\Services\Activity;
 
 use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\UserRepository;
-use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\VirtualCoinService;
 use App\Models\Notifications;
@@ -38,11 +37,9 @@ class UserActivity extends Activity
         {
             return;
         }
-        $lightCoinService = new LightCoinService();
         $virtualCoinService = new VirtualCoinService();
         // 送团子
         $virtualCoinService->userActivityReward($userId);
-        $lightCoinService->userActivityReward($userId);
         $this->createNotification(42, $userId);
 
         $bangumiManager = new BangumiManager();
@@ -52,7 +49,6 @@ class UserActivity extends Activity
         }
         // 送团子
         $virtualCoinService->masterActiveReward($userId);
-        $lightCoinService->masterActiveReward($userId);
         $this->createNotification(43, $userId);
     }
 

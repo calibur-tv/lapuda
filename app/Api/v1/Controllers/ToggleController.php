@@ -17,7 +17,6 @@ use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Activity\BangumiActivity;
-use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Owner\QuestionLog;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
@@ -39,7 +38,6 @@ use App\Api\V1\Services\Toggle\Video\VideoRewardService;
 use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Services\VirtualCoinService;
 use App\Api\V1\Services\Vote\AnswerVoteService;
-use App\Models\User;
 use App\Services\Trial\UserIpAddress;
 use Illuminate\Http\Request;
 
@@ -457,7 +455,6 @@ class ToggleController extends Controller
             return $this->resErrBad();
         }
 
-        $lightCoinService = new LightCoinService();
         $virtualCoinService = new VirtualCoinService();
         $banlance = $virtualCoinService->hasMoneyCount($user);
         if (!$banlance)
@@ -494,14 +491,6 @@ class ToggleController extends Controller
             return $this->resErrRole('已打赏过的内容');
         }
 
-        // TODO：delete
-        $lightCoinService->rewardUserContent([
-            'from_user_id' => $userId,
-            'to_user_id' => $item['user_id'],
-            'content_id' => $item['id'],
-            'content_type' => $type
-        ]);
-        //
         $result = $virtualCoinService->rewardUserContent($type, $userId, $item['user_id'], $item['id']);
         if (!$result)
         {

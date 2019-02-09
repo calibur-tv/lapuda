@@ -49,6 +49,7 @@ class VirtualCoinService
         {
             return VirtualCoin
                 ::where('user_id', $userId)
+                ->withTrashed()
                 ->orderBy('created_at', 'DESC')
                 ->pluck('id')
                 ->toArray();
@@ -56,6 +57,7 @@ class VirtualCoinService
         $idsObj = $repository->filterIdsByPage($ids, $page, $count);
         $records = VirtualCoin
             ::whereIn('id', $idsObj['ids'])
+            ->withTrashed()
             ->orderBy('created_at', 'DESC')
             ->get()
             ->toArray();
@@ -111,11 +113,13 @@ class VirtualCoinService
         $get = VirtualCoin
             ::where('user_id', $userId)
             ->where('amount', '>', 0)
+            ->withTrashed()
             ->sum('amount');
 
         $set = VirtualCoin
             ::where('user_id', $userId)
             ->where('amount', '<', 0)
+            ->withTrashed()
             ->sum('amount');
 
         return [
@@ -268,7 +272,10 @@ class VirtualCoinService
     // 撤销用户的所有应援
     public function undoUserCheer($userId)
     {
-        // 因为不扣钱，也不给钱，所以 do nothing
+        VirtualCoin
+            ::where('channel_type', 9)
+            ->where('user_id', $userId)
+            ->delete();
     }
 
     private function useCoinFirst($userId, $amount, $channel_type, $product_id, $about_user_id)

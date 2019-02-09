@@ -3,7 +3,6 @@
 namespace App\Jobs\User;
 
 use App\Api\V1\Repositories\UserRepository;
-use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\VirtualCoinService;
 use App\Models\User;
 use App\Services\Sms\Message;
@@ -50,10 +49,6 @@ class InviteUser implements ShouldQueue
             !intval($inviter->faker)
         )
         {
-            $lightCoinService = new LightCoinService();
-            $lightCoinService->inviteUser($inviter->id, $this->inviteUserId);
-            $lightCoinService->invitedNewbieCoinGift($inviter->id, $this->inviteUserId);
-
             $virtualCoinService = new VirtualCoinService();
             $virtualCoinService->inviteUser($inviter->id, $this->inviteUserId);
             $virtualCoinService->invitedNewbieCoinGift($inviter->id, $this->inviteUserId);

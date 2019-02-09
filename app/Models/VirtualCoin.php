@@ -9,9 +9,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class VirtualCoin extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'virtual_coins';
     /**
      * channel_type

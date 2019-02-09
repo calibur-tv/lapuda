@@ -74,8 +74,8 @@ class UserTransformer extends Transformer
                 'coin' => (int)$user['coin_count_v2'] + (int)$user['light_count'],
                 'coin_from_sign' => 0,
                 'banlance' => [
-                    'coin_count' => (int)$user['coin_count_v2'],
-                    'light_count' => (int)$user['light_count'],
+                    'coin_count' => (int)$user['virtual_coin'],
+                    'light_count' => (int)$user['money_coin'],
                 ],
                 'faker' => (boolean)$user['faker'],
                 'is_admin' => (boolean)$user['is_admin'],
@@ -121,8 +121,8 @@ class UserTransformer extends Transformer
                 'banned_to' => $user['banned_to'],
                 'badge' => $user['badge'],
                 'banlance' => [
-                    'coin_count' => $user['coin_count_v2'],
-                    'light_count' => $user['light_count']
+                    'coin_count' => $user['virtual_coin'],
+                    'light_count' => $user['money_coin']
                 ]
             ];
         });

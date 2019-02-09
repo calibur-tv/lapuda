@@ -16,7 +16,6 @@ use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Counter\Stats\TotalUserCount;
-use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\Role;
 use App\Api\V1\Services\Tag\Base\UserBadgeService;
 use App\Api\V1\Services\Toggle\Image\ImageMarkService;
@@ -71,18 +70,11 @@ class UserController extends Controller
             return $this->resErrRole('已签到');
         }
 
-        $lightCoinService = new LightCoinService();
         $virtualCoinService = new VirtualCoinService();
-        $result = $lightCoinService->daySign($userId);
         $virtualCoinService->daySign($userId);
-        if (!$result)
-        {
-            return $this->resErrServiceUnavailable('系统维护中');
-        }
 
         UserSign::create([
-            'user_id' => $userId,
-            'migration_state' => 2
+            'user_id' => $userId
         ]);
 
         User::where('id', $userId)->increment('coin_count', 1);
@@ -758,16 +750,13 @@ class UserController extends Controller
         $amount = $request->get('amount');
         $state = $request->get('state');
 
-        $lightCoinService = new LightCoinService();
         $virtualCoinService = new VirtualCoinService();
         if ($state == 0)
         {
-            $lightCoinService->coinGift($userId, $amount);
             $virtualCoinService->coinGift($userId, $amount);
         }
         else if ($state == 1)
         {
-            $lightCoinService->lightGift($userId, $amount);
             $virtualCoinService->lightGift($userId, $amount);
         }
 
@@ -890,7 +879,7 @@ class UserController extends Controller
         $userRepository = new UserRepository();
         $userLevel = new UserLevel();
         $userActivityService = new UserActivity();
-        $lightCoinServce = new LightCoinService();
+        $virtualCoinService = new VirtualCoinService();
 
         if ($type === 'ip_address')
         {
@@ -900,7 +889,7 @@ class UserController extends Controller
             {
                 $users[$i]['level'] = $userLevel->convertExpToLevel($user['exp']);
                 $users[$i]['power'] = $userActivityService->get($user['id']);
-                $users[$i]['banlacen'] = $lightCoinServce->getUserBanlance($user['id']);
+                $users[$i]['banlacen'] = $virtualCoinService->getUserBalance($user['id']);
             }
             return $this->resOK($users);
         }
@@ -942,7 +931,7 @@ class UserController extends Controller
             ->where('to_user_id', $userId)
             ->groupBy('order_id')
             ->count();
-        $user['banlacen'] = $lightCoinServce->getUserBanlance($user['id']);
+        $user['banlacen'] = $virtualCoinService->getUserBalance($user['id']);
 
         return $this->resOK($user);
     }
@@ -1238,8 +1227,8 @@ class UserController extends Controller
         $toPage = $request->get('to_page') ?: 1;
         $take = $request->get('take') ?: 10;
         $userId = $request->get('id');
-        $lightCoinService = new LightCoinService();
-        $result = $lightCoinService->getUserRecord($userId, $curPage, ($toPage - $curPage) * $take);
+        $virtualCoinService = new VirtualCoinService();
+        $result = $virtualCoinService->getUserRecord($userId, $curPage, ($toPage - $curPage) * $take);
 
         return $this->resOK($result);
     }
@@ -1255,13 +1244,11 @@ class UserController extends Controller
 
         $userId = $request->get('id');
         $money = $request->get('money');
-        $lightCoinService = new LightCoinService();
-        $lightCoinService->withdraw($userId, $money);
         $virtualCoinService = new VirtualCoinService();
         $result = $virtualCoinService->withdraw($userId, $money);
         if (!$result)
         {
-            $lightCoinService->resErrServiceUnavailable('提现失败');
+            return $this->resErrServiceUnavailable('提现失败');
         }
 
         Redis::DEL('user_' . $userId);

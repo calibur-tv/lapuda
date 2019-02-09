@@ -9,7 +9,6 @@ use App\Api\V1\Services\Activity\BangumiActivity;
 use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Counter\CartoonRoleFansCounter;
 use App\Api\V1\Services\Counter\CartoonRoleStarCounter;
-use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Tag\Base\UserBadgeService;
 use App\Api\V1\Services\Trending\CartoonRoleTrendingService;
@@ -64,7 +63,6 @@ class CartoonRoleController extends Controller
             return $this->resErrRole('你已被封禁，无权应援');
         }
 
-        $lightCoinService = new LightCoinService();
         $virtualCoinService = new VirtualCoinService();
         $banlance = $virtualCoinService->hasMoneyCount($user);
         $amount = $request->get('amount') ?: 1;
@@ -73,7 +71,6 @@ class CartoonRoleController extends Controller
             return $this->resErrRole('没有足够的团子');
         }
 
-        $lightCoinService->cheerForIdol($userId, $id, $amount);
         $result = $virtualCoinService->cheerForIdol($userId, $id, $amount);
         if (!$result)
         {
@@ -625,7 +622,7 @@ class CartoonRoleController extends Controller
         $cartoonRoleIds = CartoonRoleFans
             ::whereIn('role_id', $userIds)
             ->pluck('role_id');
-        $lightCoinService = new LightCoinService();
+        $virtualCoinService = new VirtualCoinService();
 
         foreach ($userIds as $userId)
         {
@@ -633,7 +630,7 @@ class CartoonRoleController extends Controller
                 ::where('user_id', $userId)
                 ->delete();
 
-            $lightCoinService->undoUserCheer($userId);
+            $virtualCoinService->undoUserCheer($userId);
         }
 
         $cartoonRoleFansCounter = new CartoonRoleFansCounter();
