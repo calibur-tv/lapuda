@@ -755,7 +755,7 @@ class MigrationCoin extends Command
             ->pluck('id')
             ->toArray();
 
-        VirtualCoin::withTrashed()->whereIn('id', $ids)->delete();
+        VirtualCoin::withTrashed()->whereIn('id', $ids)->forceDelete();
 
         $ids = VirtualCoin
             ::select(DB::raw('MIN(id) AS id'))
@@ -766,7 +766,7 @@ class MigrationCoin extends Command
             ->pluck('id')
             ->toArray();
 
-        VirtualCoin::withTrashed()->whereIn('id', $ids)->delete();
+        VirtualCoin::withTrashed()->whereIn('id', $ids)->forceDelete();
     }
 
     // 偶像应援对账
