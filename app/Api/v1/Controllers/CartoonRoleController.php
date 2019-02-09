@@ -426,7 +426,7 @@ class CartoonRoleController extends Controller
             'bangumi_id' => 'required|integer',
             'name' => 'required|min:1|max:35',
             'alias' => 'required|min:1|max:120',
-            'intro' => 'required|min:1|max:200',
+            'intro' => 'required|min:1|max:1000',
             'avatar' => 'required'
         ]);
 
