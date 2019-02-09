@@ -16,6 +16,7 @@ use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\VirtualCoinService;
 use App\Models\Answer;
+use App\Models\CartoonRoleFans;
 use App\Models\Image;
 use App\Models\LightCoinRecord;
 use App\Models\Post;
@@ -50,20 +51,20 @@ class MigrationCoin extends Command
      */
     public function handle()
     {
-        $this->migration_step_1();
-        $this->migration_step_2();
-        $this->migration_step_3();
-        $this->migration_step_4();
-        $this->migration_step_5();
-        $this->migration_step_6();
-        $this->migration_step_7();
-        $this->migration_step_8();
-        $this->migration_step_9();
-        $this->migration_step_10();
-        $this->migration_step_11();
-        $this->migration_step_12();
-        $this->migration_step_16();
-        $this->migration_step_17();
+//        $this->migration_step_1();
+//        $this->migration_step_2();
+//        $this->migration_step_3();
+//        $this->migration_step_4();
+//        $this->migration_step_5();
+//        $this->migration_step_6();
+//        $this->migration_step_7();
+//        $this->migration_step_8();
+//        $this->migration_step_9();
+//        $this->migration_step_10();
+//        $this->migration_step_11();
+//        $this->migration_step_12();
+//        $this->migration_step_16();
+//        $this->migration_step_17();
         return true;
     }
 
@@ -740,12 +741,6 @@ class MigrationCoin extends Command
         return false;
     }
 
-    // TODO：同步撤销应援
-    protected function migration_step_13()
-    {
-        return true;
-    }
-
     // 删除重复数据
     protected function migration_step_14()
     {
@@ -764,7 +759,27 @@ class MigrationCoin extends Command
     // TODO：偶像应援对账
     protected function migration_step_15()
     {
+        $record = CartoonRoleFans
+            ::where('migration_state', 0)
+            ->take(2000)
+            ->get()
+            ->toArray();
 
+        if (empty($record))
+        {
+            return true;
+        }
+
+        foreach ($record as $item)
+        {
+            $starCount = VirtualCoin
+                ::where('user_id', $item['user_id'])
+                ->where('channel_type', 9)
+                ->where('product_id', $item['role_id'])
+                ->count();
+        }
+
+        return false;
     }
 
     // 修改 user 信息

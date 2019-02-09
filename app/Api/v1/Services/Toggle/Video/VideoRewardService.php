@@ -10,6 +10,8 @@ namespace App\Api\V1\Services\Toggle\Video;
 
 
 use App\Api\V1\Services\Toggle\Base\RewardService;
+use App\Api\V1\Services\Counter\Base\RelationCounterService;
+use Illuminate\Support\Facades\DB;
 
 class VideoRewardService extends RewardService
 {
