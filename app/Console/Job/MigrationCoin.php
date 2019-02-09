@@ -797,7 +797,7 @@ class MigrationCoin extends Command
                 CartoonRoleFans
                     ::where('id', $item['id'])
                     ->update([
-                        'state' => $state
+                        'migration_state' => $state
                     ]);
             }
             else
@@ -806,7 +806,7 @@ class MigrationCoin extends Command
                     ::where('id', $item['id'])
                     ->update([
                         'star_count' => $starCount,
-                        'state' => $state
+                        'migration_state' => $state
                     ]);
             }
         }
