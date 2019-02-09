@@ -3,6 +3,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
+use App\Models\VirtualCoin;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
 use Mews\Purifier\Facades\Purifier;
@@ -65,5 +66,30 @@ class SearchController extends Controller
         $bangumiRepository = new BangumiRepository();
 
         return $this->resOK($bangumiRepository->searchAll());
+    }
+
+    public function test()
+    {
+        $ids = VirtualCoin
+            ::select(DB::raw('MIN(id) AS id'))
+            ->where('channel_type', '<>', 9)
+            ->groupBy(['user_id', 'created_at', 'channel_type', 'about_user_id', 'product_id'])
+            ->havingRaw('COUNT(id) > 1')
+            ->pluck('id')
+            ->toArray();
+
+        VirtualCoin::whereIn('id', $ids)->delete();
+
+        $ids = VirtualCoin
+            ::select(DB::raw('MIN(id) AS id'))
+            ->whereIn('channel_type', [4, 5, 6, 7, 8])
+            ->groupBy(['user_id', 'channel_type', 'about_user_id', 'product_id'])
+            ->havingRaw('COUNT(id) > 1')
+            ->pluck('id')
+            ->toArray();
+
+        VirtualCoin::whereIn('id', $ids)->delete();
+
+        return $this->resOK('success');
     }
 }
