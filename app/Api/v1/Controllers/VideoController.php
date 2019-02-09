@@ -130,9 +130,7 @@ class VideoController extends Controller
         $userId = $this->getAuthUserId();
         $bangumi_id = $request->get('bangumi_id');
         $bangumiManager = new BangumiManager();
-        if (
-            !$bangumiManager->isALeader($userId) ||
-            !$bangumiManager->isOwner($bangumi_id, $userId))
+        if (!$bangumiManager->isALeader($userId))
         {
             return $this->resErrRole();
         }
@@ -182,9 +180,7 @@ class VideoController extends Controller
         $userId = $this->getAuthUserId();
         $bangumi_id = $request->get('bangumi_id');
         $bangumiManager = new BangumiManager();
-        if (
-            !$bangumiManager->isALeader($userId) ||
-            !$bangumiManager->isOwner($bangumi_id, $userId))
+        if (!$bangumiManager->isALeader($userId))
         {
             return $this->resErrRole();
         }
