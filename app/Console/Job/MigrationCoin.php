@@ -783,7 +783,7 @@ class MigrationCoin extends Command
     protected function migration_step_16()
     {
         $ids = User
-            ::where('migration_state', 4)
+            ::where('migration_state', 0)
             ->withTrashed()
             ->take(2000)
             ->pluck('id')
@@ -796,23 +796,23 @@ class MigrationCoin extends Command
 
         foreach ($ids as $userId)
         {
-//            $state = User
-//                ::where('id', $userId)
-//                ->withTrashed()
-//                ->pluck('migration_state')
-//                ->first();
-//
-//            if ($state != 0)
-//            {
-//                continue;
-//            }
-//
-//            User
-//                ::where('id', $userId)
-//                ->withTrashed()
-//                ->update([
-//                    'migration_state' => 1
-//                ]);
+            $state = User
+                ::where('id', $userId)
+                ->withTrashed()
+                ->pluck('migration_state')
+                ->first();
+
+            if ($state != 0)
+            {
+                continue;
+            }
+
+            User
+                ::where('id', $userId)
+                ->withTrashed()
+                ->update([
+                    'migration_state' => 1
+                ]);
 
             $coinCount = VirtualCoin
                 ::where('user_id', $userId)
