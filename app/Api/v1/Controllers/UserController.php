@@ -34,6 +34,7 @@ use App\Models\SystemNotice;
 use App\Models\User;
 use App\Api\V1\Repositories\UserRepository;
 use App\Models\UserSign;
+use App\Models\VirtualCoin;
 use App\Services\OpenSearch\Search;
 use App\Services\Trial\UserIpAddress;
 use Carbon\Carbon;
@@ -520,14 +521,13 @@ class UserController extends Controller
         $take = $request->get('take') ?: 15;
 
         $userRepository = new UserRepository();
-        $userIds = $userRepository->RedisList("user_invite_users_{$userId}", function () use ($userId)
+        $userIds = $userRepository->RedisList("user_{$userId}_invite_users", function () use ($userId)
         {
-            return LightCoinRecord
-                ::where('to_product_type', 1)
-                ->where('to_user_id', $userId)
+            return VirtualCoin
+                ::where('channel_type', 1)
+                ->where('user_id', $userId)
                 ->orderBy('created_at', 'DESC')
-                ->groupBy('from_user_id')
-                ->pluck('from_user_id')
+                ->pluck('about_user_id')
                 ->toArray();
 
         }, 0, -1, 'm');
@@ -536,7 +536,11 @@ class UserController extends Controller
 
         if (empty($idsObj['ids']))
         {
-            return [];
+            return $this->resOK([
+                'list' => [],
+                'noMore' => true,
+                'total' => 0
+            ]);
         }
 
         $users = $userRepository->list($idsObj['ids']);
@@ -675,36 +679,9 @@ class UserController extends Controller
     }
 
     /**
-     * 用户交易记录列表
-     *
-     * @Get("/user/transactions")
-     *
-     * @Transaction({
-     *      @Request({"min_id": "看过的最小id", "default": 0, "required": true}),
-     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
-     *      @Response(200, body={"code": 0, "data": "消息列表"}),
-     *      @Response(401, body={"code": 40104, "message": "未登录的用户"})
-     * })
-     */
-    public function transactions(Request $request)
-    {
-        $take = $request->get('take') ?: 20;
-        $page = $request->get('page') ?: 0;
-        $userId = $this->getAuthUserId();
-        $lightCoinService = new LightCoinService();
-        $result = $lightCoinService->getUserRecord($userId, $page, $take);
-        if ($page == 0)
-        {
-            $result['banlance'] = $lightCoinService->getUserBanlance($userId);
-        }
-
-        return $this->resOK($result);
-    }
-
-    /**
      * 用户的虚拟币记录列表
      *
-     * @Get("/user/virtual_coin_records")
+     * @Get("/user/transactions")
      *
      * @Transaction({
      *      @Request({"page": "页码", "default": 0, "required": true}),
@@ -713,7 +690,7 @@ class UserController extends Controller
      *      @Response(401, body={"code": 40104, "message": "未登录的用户"})
      * })
      */
-    public function virtualCoinRecords(Request $request)
+    public function transactions(Request $request)
     {
         $take = $request->get('take') ?: 20;
         $page = $request->get('page') ?: 0;
