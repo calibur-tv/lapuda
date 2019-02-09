@@ -278,6 +278,7 @@ class VirtualCoinService
 
         $balance = User
             ::where('id', $userId)
+            ->withTrashed()
             ->select('virtual_coin', 'money_coin')
             ->first()
             ->toArray();
@@ -301,6 +302,7 @@ class VirtualCoinService
 
         User
             ::where('id', $userId)
+            ->withTrashed()
             ->increment('virtual_coin', $amount);
 
         if (Redis::EXISTS("user_{$userId}"))
@@ -312,16 +314,19 @@ class VirtualCoinService
         {
             User
                 ::where('id', $userId)
+                ->withTrashed()
                 ->increment('virtual_coin', -$balance['virtual_coin']);
 
             User
                 ::where('id', $userId)
+                ->withTrashed()
                 ->increment('money_coin', $balance['virtual_coin'] + $amount);
         }
         else
         {
             User
                 ::where('id', $userId)
+                ->withTrashed()
                 ->increment('virtual_coin', $amount);
         }
         */
@@ -338,6 +343,7 @@ class VirtualCoinService
 
         $balance = User
             ::where('id', $userId)
+            ->withTrashed()
             ->select('virtual_coin', 'money_coin')
             ->first()
             ->toArray();
@@ -354,6 +360,7 @@ class VirtualCoinService
 
         User
             ::where('id', $userId)
+            ->withTrashed()
             ->increment('money_coin', $amount);
 
         if (Redis::EXISTS("user_{$userId}"))
@@ -365,6 +372,7 @@ class VirtualCoinService
         {
             User
                 ::where('id', $userId)
+                ->withTrashed()
                 ->increment('money_coin', -$balance['money_coin']);
 
             User
@@ -375,6 +383,7 @@ class VirtualCoinService
         {
             User
                 ::where('id', $userId)
+                ->withTrashed()
                 ->increment('money_coin', $amount);
         }
         */
@@ -399,6 +408,7 @@ class VirtualCoinService
 
         User
             ::where('id', $userId)
+            ->withTrashed()
             ->increment('virtual_coin', $amount);
 
         if (Redis::EXISTS("user_{$userId}"))
@@ -426,6 +436,7 @@ class VirtualCoinService
 
         User
             ::where('id', $userId)
+            ->withTrashed()
             ->increment('money_coin', $amount);
 
         if (Redis::EXISTS("user_{$userId}"))
