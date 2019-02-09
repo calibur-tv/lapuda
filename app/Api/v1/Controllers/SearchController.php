@@ -86,21 +86,59 @@ class SearchController extends Controller
 
     public function migration_9()
     {
-        $users = User
-            ::where('migration_state', 4)
-            ->withTrashed()
-            ->select('id', 'virtual_coin', 'money_coin')
-            ->get()
-            ->toArray();
+//        $users = User
+//            ::where('migration_state', 4)
+//            ->withTrashed()
+//            ->select('id', 'virtual_coin', 'money_coin')
+//            ->get()
+//            ->toArray();
+//
+//        $coinService = new VirtualCoinService();
+//        foreach ($users as $i => $user)
+//        {
+//            $balance = $coinService->getUserBalance($user['id']);
+//            $users[$i]['balance'] = $balance;
+//            $users[$i]['delta'] = $user['virtual_coin'] + $user['money_coin'] - ($balance['get'] - $balance['set']);
+//        }
+//
+//        return $this->resOK($users);
+        $coinCount = VirtualCoin
+            ::where('user_id', 100)
+            ->whereIn('channel_type', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 16, 20, 21])
+            ->sum('amount');
 
-        $coinService = new VirtualCoinService();
-        foreach ($users as $i => $user)
+        $coinCount = floatval($coinCount);
+
+        $moneyCount = VirtualCoin
+            ::where('user_id', 100)
+            ->whereIn('channel_type', [10, 11, 12, 13, 14, 15, 17, 18, 19, 23])
+            ->sum('amount');
+
+        $moneyCount = floatval($moneyCount);
+
+        $state = 2;
+        if ($coinCount + $moneyCount < 0)
         {
-            $balance = $coinService->getUserBalance($user['id']);
-            $users[$i]['balance'] = $balance;
-            $users[$i]['delta'] = $user['virtual_coin'] + $user['money_coin'] - ($balance['get'] - $balance['set']);
+            $state = 3;
+        }
+        else
+        {
+            if ($coinCount < 0)
+            {
+                $coinCount = 0;
+                $moneyCount = $moneyCount + $coinCount;
+            }
+            if ($moneyCount < 0)
+            {
+                $moneyCount = 0;
+                $coinCount = $coinCount + $moneyCount;
+            }
         }
 
-        return $this->resOK($users);
+        return $this->resOK([
+           'state' => $state,
+            'virtual_coin' => $coinCount,
+            'money_coin' => $moneyCount
+        ]);
     }
 }
