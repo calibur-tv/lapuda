@@ -85,20 +85,13 @@ class SearchController extends Controller
 
     public function delete_same_data()
     {
-        $ids = VirtualCoin
-            ::select(DB::raw('MIN(id) AS id'))
-            ->where('channel_type', '<>', 9)
-            ->groupBy(['user_id', 'created_at', 'channel_type', 'about_user_id'])
-            ->havingRaw('COUNT(id) > 1')
-            ->pluck('id')
-            ->toArray();
+        VirtualCoin
+            ::whereRaw('created_at = ? and user_id = ? and channel_type = ? and id <> ?', ['2019-02-02 11:47:13', 39110, 17, 513283])
+            ->delete();
 
-        if (empty($ids))
-        {
-            return $this->resOK('done');
-        }
-
-        VirtualCoin::whereIn('id', $ids)->delete();
+        VirtualCoin
+            ::whereRaw('created_at = ? and user_id = ? and channel_type = ? and id <> ?', ['2019-02-02 07:17:54', 3667, 17, 513369])
+            ->delete();
 
         return $this->resOK('success');
     }
