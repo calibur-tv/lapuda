@@ -701,6 +701,35 @@ class UserController extends Controller
         return $this->resOK($result);
     }
 
+    /**
+     * 用户的虚拟币记录列表
+     *
+     * @Get("/user/virtual_coin_records")
+     *
+     * @Transaction({
+     *      @Request({"page": "页码", "default": 0, "required": true}),
+     *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
+     *      @Response(200, body={"code": 0, "data": "消息列表"}),
+     *      @Response(401, body={"code": 40104, "message": "未登录的用户"})
+     * })
+     */
+    public function virtualCoinRecords(Request $request)
+    {
+        $take = $request->get('take') ?: 20;
+        $page = $request->get('page') ?: 0;
+//        $userId = $this->getAuthUserId();
+        $userId = 1;
+
+        $virtualCoinService = new VirtualCoinService();
+        $result = $virtualCoinService->getUserRecord($userId, $page, $take);
+        if ($page == 0)
+        {
+            $result['balance'] = $virtualCoinService->getUserBalance($userId);
+        }
+
+        return $this->resOK($result);
+    }
+
     // 给后台用的，分析用户邀请的人都是什么样
     public function userInviteList(Request $request)
     {

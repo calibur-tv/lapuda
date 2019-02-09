@@ -196,6 +196,9 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/transactions', 'App\Api\V1\Controllers\UserController@transactions')->middleware('jwt.auth');
 
+//        $api->get('/virtual_coin_records', 'App\Api\V1\Controllers\UserController@virtualCoinRecords')->middleware('jwt.auth');
+        $api->get('/virtual_coin_records', 'App\Api\V1\Controllers\UserController@virtualCoinRecords');
+
         $api->get('/recommended', 'App\Api\V1\Controllers\UserController@recommendedUsers');
 
         $api->get('/bookmarks', 'App\Api\V1\Controllers\UserController@bookmarks')->middleware('jwt.auth');

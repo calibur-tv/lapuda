@@ -101,7 +101,6 @@ class MigrationCoin extends Command
                     'migration_state' => 1
                 ]);
 
-            $coinService->setTime($item['created_at']);
             $coinService->daySign($item['user_id']);
 
             UserSign
@@ -150,7 +149,6 @@ class MigrationCoin extends Command
                     'migration_state' => 1
                 ]);
 
-            $coinService->setTime($item['created_at']);
             $coinService->inviteUser($item['to_user_id'], $item['from_user_id'], $item['order_amount']);
 
             LightCoinRecord
@@ -199,7 +197,6 @@ class MigrationCoin extends Command
                     'migration_state' => 1
                 ]);
 
-            $coinService->setTime($item['created_at']);
             $coinService->invitedNewbieCoinGift($item['from_user_id'], $item['to_user_id'], $item['order_amount']);
 
             LightCoinRecord
@@ -248,7 +245,6 @@ class MigrationCoin extends Command
                     'migration_state' => 1
                 ]);
 
-            $coinService->setTime($item['created_at']);
             $coinService->userActivityReward($item['to_user_id']);
 
             LightCoinRecord
@@ -297,7 +293,6 @@ class MigrationCoin extends Command
                     'migration_state' => 1
                 ]);
 
-            $coinService->setTime($item['created_at']);
             $coinService->masterActiveReward($item['to_user_id'], $item['to_product_type'] == 16);
 
             LightCoinRecord
@@ -346,7 +341,6 @@ class MigrationCoin extends Command
                     'migration_state' => 1
                 ]);
 
-            $coinService->setTime($item['created_at']);
             $coinService->coinGift($item['to_user_id'], $item['order_amount']);
 
             LightCoinRecord
@@ -395,7 +389,6 @@ class MigrationCoin extends Command
                     'migration_state' => 1
                 ]);
 
-            $coinService->setTime($item['created_at']);
             $coinService->lightGift($item['to_user_id'], $item['order_amount']);
 
             LightCoinRecord
@@ -489,7 +482,6 @@ class MigrationCoin extends Command
                     'migration_state' => 1
                 ]);
 
-            $coinService->setTime($item->created_at);
             $modelType = explode('_', $table)[0];
             $repository = $this->getRepositoryByType($modelType);
             $model = $repository->item($item->modal_id, true);
@@ -590,7 +582,6 @@ class MigrationCoin extends Command
         $coinService = new VirtualCoinService();
         foreach ($list as $item)
         {
-            $coinService->setTime($item['deleted_at']);
             $modelType = explode('_', $table)[0];
             $amount = DB::table($table)->where('modal_id', $item['id'])->count();
             $coinService->deleteUserContent($modelType, $item['user_id'], $item['id'], $amount);
@@ -641,7 +632,6 @@ class MigrationCoin extends Command
                     'migration_state' => 1
                 ]);
 
-            $coinService->setTime($item['created_at']);
             $coinService->cheerForIdol($item['from_user_id'], $item['to_product_id']);
 
             LightCoinRecord
@@ -690,7 +680,6 @@ class MigrationCoin extends Command
                     'migration_state' => 1
                 ]);
 
-            $coinService->setTime($item['created_at']);
             $coinService->withdraw($item['from_user_id'], $item['order_amount'] < 100 ? 100 : $item['order_amount']);
 
             LightCoinRecord
@@ -739,7 +728,6 @@ class MigrationCoin extends Command
                     'migration_state' => 1
                 ]);
 
-            $coinService->setTime($item['created_at']);
             $coinService->buyVideoPackage($item['from_user_id'], $item['to_product_id'], 10);
 
             LightCoinRecord

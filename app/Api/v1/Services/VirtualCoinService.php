@@ -22,12 +22,6 @@ use Illuminate\Support\Facades\Redis;
 
 class VirtualCoinService
 {
-    private $time;
-
-    public function setTime($time)
-    {
-        $this->time = $time;
-    }
     // 拥有光玉+团子个数
     public function hasMoneyCount($currentUser)
     {
@@ -46,7 +40,7 @@ class VirtualCoinService
         return $currentUser->virtual_coin;
     }
 
-    // TODO：获取用户的交易记录，写一个新的接口
+    // 用户的交易记录
     public function getUserRecord($userId, $page = 0, $count = 15)
     {
         $repository = new Repository();
@@ -106,7 +100,7 @@ class VirtualCoinService
         ];
     }
 
-    // TODO：fixed typo，写一个新的接口
+    // 用户的收入支出成交额
     public function getUserBalance($userId)
     {
         $get = VirtualCoin
@@ -217,7 +211,7 @@ class VirtualCoinService
         return true;
     }
 
-    // TODO：移除某个内容的打赏，参数变了
+    // 移除某个内容的打赏
     public function deleteUserContent($model, $authorId, $productId, $amount)
     {
         switch ($model)
