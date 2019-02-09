@@ -90,6 +90,7 @@ class SearchController extends Controller
             ::where('migration_state', 4)
             ->withTrashed()
             ->select('id', 'virtual_coin', 'money_coin')
+            ->get()
             ->toArray();
 
         $coinService = new VirtualCoinService();
