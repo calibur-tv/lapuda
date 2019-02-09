@@ -63,7 +63,7 @@ class MigrationCoin extends Command
 //        $this->migration_step_10();
 //        $this->migration_step_11();
 //        $this->migration_step_12();
-        $this->migration_step_14();
+//        $this->migration_step_14();
 //        $this->migration_step_15();
 //        $this->migration_step_16();
 //        $this->migration_step_17();
