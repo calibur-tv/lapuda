@@ -81,4 +81,25 @@ class SearchController extends Controller
 
         return $this->resOK($bangumiRepository->searchAll());
     }
+
+    public function delete_same_data()
+    {
+        $ids = VirtualCoin
+            ::select(DB::raw('MIN(id) AS id'))
+            ->where('channel_type', '<>', 9)
+            ->take(1000)
+            ->groupBy(['user_id', 'created_at', 'channel_type', 'about_user_id'])
+            ->havingRaw('COUNT(id) > 1')
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($ids))
+        {
+            return $this->resOK('done');
+        }
+
+        VirtualCoin::whereIn('id', $ids)->delete();
+
+        return $this->resOK('success');
+    }
 }
