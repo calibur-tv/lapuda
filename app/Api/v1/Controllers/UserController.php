@@ -25,6 +25,7 @@ use App\Api\V1\Services\Toggle\Question\AnswerMarkService;
 use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
 use App\Api\V1\Services\Toggle\Video\VideoMarkService;
 use App\Api\V1\Services\UserLevel;
+use App\Api\V1\Services\VirtualCoinService;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
 use App\Models\LightCoinRecord;
@@ -70,14 +71,17 @@ class UserController extends Controller
         }
 
         $lightCoinService = new LightCoinService();
+        $virtualCoinService = new VirtualCoinService();
         $result = $lightCoinService->daySign($userId);
+        $virtualCoinService->daySign($userId);
         if (!$result)
         {
             return $this->resErrServiceUnavailable('系统维护中');
         }
 
         UserSign::create([
-            'user_id' => $userId
+            'user_id' => $userId,
+            'migration_state' => 2
         ]);
 
         User::where('id', $userId)->increment('coin_count', 1);
@@ -750,19 +754,16 @@ class UserController extends Controller
         $state = $request->get('state');
 
         $lightCoinService = new LightCoinService();
-        $result = false;
+        $virtualCoinService = new VirtualCoinService();
         if ($state == 0)
         {
-            $result = $lightCoinService->coinGift($userId, $amount);
+            $lightCoinService->coinGift($userId, $amount);
+            $virtualCoinService->coinGift($userId, $amount);
         }
         else if ($state == 1)
         {
-            $result = $lightCoinService->lightGift($userId, $amount);
-        }
-
-        if (!$result)
-        {
-            return $this->resErrServiceUnavailable();
+            $lightCoinService->lightGift($userId, $amount);
+            $virtualCoinService->lightGift($userId, $amount);
         }
 
         return $this->resOK();
@@ -1250,7 +1251,9 @@ class UserController extends Controller
         $userId = $request->get('id');
         $money = $request->get('money');
         $lightCoinService = new LightCoinService();
-        $result = $lightCoinService->withdraw($userId, $money);
+        $lightCoinService->withdraw($userId, $money);
+        $virtualCoinService = new VirtualCoinService();
+        $result = $virtualCoinService->withdraw($userId, $money);
         if (!$result)
         {
             $lightCoinService->resErrServiceUnavailable('提现失败');

@@ -4,6 +4,7 @@ namespace App\Jobs\User;
 
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\LightCoinService;
+use App\Api\V1\Services\VirtualCoinService;
 use App\Models\User;
 use App\Services\Sms\Message;
 use Illuminate\Bus\Queueable;
@@ -50,12 +51,12 @@ class InviteUser implements ShouldQueue
         )
         {
             $lightCoinService = new LightCoinService();
-            $result = $lightCoinService->inviteUser($inviter->id, $this->inviteUserId);
+            $lightCoinService->inviteUser($inviter->id, $this->inviteUserId);
             $lightCoinService->invitedNewbieCoinGift($inviter->id, $this->inviteUserId);
-            if (!$result)
-            {
-                return;
-            }
+
+            $virtualCoinService = new VirtualCoinService();
+            $virtualCoinService->inviteUser($inviter->id, $this->inviteUserId);
+            $virtualCoinService->invitedNewbieCoinGift($inviter->id, $this->inviteUserId);
 
             $userRepository = new UserRepository();
             $newUser = $userRepository->item($this->inviteUserId);

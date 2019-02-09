@@ -11,6 +11,7 @@ use App\Api\V1\Services\Toggle\Video\BuyVideoService;
 use App\Api\V1\Services\Toggle\Video\VideoLikeService;
 use App\Api\V1\Services\Toggle\Video\VideoMarkService;
 use App\Api\V1\Services\Toggle\Video\VideoRewardService;
+use App\Api\V1\Services\VirtualCoinService;
 use App\Api\V1\Transformers\VideoTransformer;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Models\Bangumi;
@@ -260,14 +261,16 @@ class VideoController extends Controller
         }
 
         $lightCoinService = new LightCoinService();
-        $banlance = $lightCoinService->hasMoneyCount($user);
+        $virtualCoinService = new VirtualCoinService();
+        $banlance = $virtualCoinService->hasMoneyCount($user);
         $PRICE = 10;
         if ($banlance < $PRICE)
         {
             return $this->resErrRole('没有足够的虚拟币');
         }
 
-        $result = $lightCoinService->buyVideoPackage($userId, $seasonId, $PRICE);
+        $lightCoinService->buyVideoPackage($userId, $seasonId, $PRICE);
+        $result = $virtualCoinService->buyVideoPackage($userId, $seasonId, $PRICE);
         if (!$result)
         {
             return $this->resErrServiceUnavailable('系统维护中');

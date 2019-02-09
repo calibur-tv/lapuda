@@ -13,6 +13,7 @@ use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Tag\Base\UserBadgeService;
 use App\Api\V1\Services\Trending\CartoonRoleTrendingService;
+use App\Api\V1\Services\VirtualCoinService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\CartoonRole;
@@ -64,14 +65,16 @@ class CartoonRoleController extends Controller
         }
 
         $lightCoinService = new LightCoinService();
-        $banlance = $lightCoinService->hasMoneyCount($user);
+        $virtualCoinService = new VirtualCoinService();
+        $banlance = $virtualCoinService->hasMoneyCount($user);
         $amount = $request->get('amount') ?: 1;
         if ($banlance < $amount)
         {
             return $this->resErrRole('没有足够的团子');
         }
 
-        $result = $lightCoinService->cheerForIdol($userId, $id, $amount);
+        $lightCoinService->cheerForIdol($userId, $id, $amount);
+        $result = $virtualCoinService->cheerForIdol($userId, $id, $amount);
         if (!$result)
         {
             return $this->resErrServiceUnavailable('系统升级中');

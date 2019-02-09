@@ -71,7 +71,8 @@ class LightCoinService
                     'to_product_type' => $toProductType,
                     'order_amount' => $amount,
                     'created_at' => $now,
-                    'updated_at' => $now
+                    'updated_at' => $now,
+                    'migration_state' => 2
                 ];
             }
 
@@ -203,7 +204,8 @@ class LightCoinService
                     'to_product_type' => $to_product_type,
                     'order_amount' => $exchange_count,
                     'created_at' => $now,
-                    'updated_at' => $now
+                    'updated_at' => $now,
+                    'migration_state' => 2
                 ];
             }
 
@@ -758,7 +760,8 @@ class LightCoinService
                         'to_product_type' => 11,
                         'order_amount' => $amount,
                         'created_at' => $now,
-                        'updated_at' => $now
+                        'updated_at' => $now,
+                        'migration_state' => 2
                     ];
                     $deletedLightCount++;
                 }
@@ -787,7 +790,8 @@ class LightCoinService
                         'to_product_type' => 11,
                         'order_amount' => $amount,
                         'created_at' => $now,
-                        'updated_at' => $now
+                        'updated_at' => $now,
+                        'migration_state' => 2
                     ];
                     $deletedLightCount++;
                 }
@@ -814,7 +818,8 @@ class LightCoinService
                             'to_product_type' => 11,
                             'order_amount' => $amount,
                             'created_at' => $now,
-                            'updated_at' => $now
+                            'updated_at' => $now,
+                            'migration_state' => 2
                         ];
                         $deletedCoinCount++;
                     }
@@ -952,7 +957,8 @@ class LightCoinService
                     'to_product_type' => 10,
                     'order_amount' => $count,
                     'created_at' => $now,
-                    'updated_at' => $now
+                    'updated_at' => $now,
+                    'migration_state' => 2
                 ];
             }
 
@@ -1025,7 +1031,8 @@ class LightCoinService
                     'to_product_type' => 19,
                     'order_amount' => $amount,
                     'created_at' => $now,
-                    'updated_at' => $now
+                    'updated_at' => $now,
+                    'migration_state' => 2
                 ];
             }
 

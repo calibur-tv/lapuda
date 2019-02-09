@@ -106,7 +106,7 @@ class VirtualCoinService
         ];
     }
 
-    // TODO：fixed typo
+    // TODO：fixed typo，写一个新的接口
     public function getUserBalance($userId)
     {
         $get = VirtualCoin
@@ -145,16 +145,9 @@ class VirtualCoinService
     }
 
     // 版主活跃送光玉
-    public function masterActiveReward($userId, $isNew = true)
+    public function masterActiveReward($userId)
     {
-        if ($isNew)
-        {
-            $this->addMoney($userId, 1, 19, 0, 0);
-        }
-        else
-        {
-            $this->addCoin($userId, 1, 3, 0, 0);
-        }
+        $this->addMoney($userId, 1, 19, 0, 0);
     }
 
     // 给用户赠送团子
@@ -172,18 +165,22 @@ class VirtualCoinService
     // 被邀请注册用户送团子
     public function invitedNewbieCoinGift($oldUserId, $newUserId, $amount = 2)
     {
-        // do nothing
         $this->addCoin($newUserId, $amount, 20, 0, $oldUserId);
     }
 
     // 承包视频
     public function buyVideoPackage($fromUserId, $productId, $amount, $toUserId = 2)
     {
-        $this->useCoinFirst($fromUserId, $amount, 21, $productId, $toUserId);
+        $result = $this->useCoinFirst($fromUserId, $amount, 21, $productId, $toUserId);
+        if (!$result)
+        {
+            return false;
+        }
         $this->addMoney($toUserId, $amount, 23, $productId, $fromUserId);
+        return true;
     }
 
-    // TODO：给别人打赏，参数变了
+    // 给别人打赏
     public function rewardUserContent($model, $fromUserId, $toUserId, $productId, $amount = 1)
     {
         switch ($model)
@@ -248,9 +245,7 @@ class VirtualCoinService
             return false;
         }
 
-        $this->useMoneyFirst($authorId, $amount, $channelType, $productId, 0);
-
-        return true;
+        return $this->useMoneyFirst($authorId, $amount, $channelType, $productId, 0);
     }
 
     // TODO
@@ -268,7 +263,7 @@ class VirtualCoinService
     // 提现
     public function withdraw($userId, $amount)
     {
-        $this->useMoneyFirst($userId, $amount, 10, 0, 0);
+        return $this->useMoneyFirst($userId, $amount, 10, 0, 0);
     }
 
     // 撤销用户的所有应援
@@ -277,7 +272,6 @@ class VirtualCoinService
         // 因为不扣钱，也不给钱，所以 do nothing
     }
 
-    // amount 小于 0
     private function useCoinFirst($userId, $amount, $channel_type, $product_id, $about_user_id)
     {
         if ($amount > 0)
@@ -285,7 +279,6 @@ class VirtualCoinService
             $amount = -$amount;
         }
 
-        /*
         $balance = User
             ::where('id', $userId)
             ->withTrashed()
@@ -297,28 +290,15 @@ class VirtualCoinService
         {
             return false;
         }
-        */
 
-        VirtualCoin::insert([
+        VirtualCoin::create([
             'user_id' => $userId,
             'amount' => $amount,
             'channel_type' => $channel_type,
             'product_id' => $product_id,
-            'about_user_id' => $about_user_id,
-            'created_at' => $this->time,
-            'updated_at' => $this->time
+            'about_user_id' => $about_user_id
         ]);
 
-        User
-            ::where('id', $userId)
-            ->withTrashed()
-            ->increment('virtual_coin', $amount);
-
-        if (Redis::EXISTS("user_{$userId}"))
-        {
-            Redis::HINCRBYFLOAT("user_{$userId}", 'virtual_coin', $amount);
-        }
-        /*
         if ($balance['virtual_coin'] + $amount < 0)
         {
             User
@@ -330,6 +310,12 @@ class VirtualCoinService
                 ::where('id', $userId)
                 ->withTrashed()
                 ->increment('money_coin', $balance['virtual_coin'] + $amount);
+
+            if (Redis::EXISTS("user_{$userId}"))
+            {
+                Redis::HINCRBYFLOAT("user_{$userId}", 'virtual_coin', -$balance['virtual_coin']);
+                Redis::HINCRBYFLOAT("user_{$userId}", 'money_coin', $balance['virtual_coin'] + $amount);
+            }
         }
         else
         {
@@ -337,8 +323,12 @@ class VirtualCoinService
                 ::where('id', $userId)
                 ->withTrashed()
                 ->increment('virtual_coin', $amount);
+
+            if (Redis::EXISTS("user_{$userId}"))
+            {
+                Redis::HINCRBYFLOAT("user_{$userId}", 'virtual_coin', $amount);
+            }
         }
-        */
 
         return true;
     }
@@ -350,35 +340,26 @@ class VirtualCoinService
             $amount = -$amount;
         }
 
-        /*
         $balance = User
             ::where('id', $userId)
             ->withTrashed()
             ->select('virtual_coin', 'money_coin')
             ->first()
             ->toArray();
-        */
 
-        VirtualCoin::insert([
+        if ($balance['virtual_coin'] + $balance['money_coin'] + $amount < 0)
+        {
+            return false;
+        }
+
+        VirtualCoin::create([
             'user_id' => $userId,
             'amount' => $amount,
             'channel_type' => $channel_type,
             'product_id' => $product_id,
-            'about_user_id' => $about_user_id,
-            'created_at' => $this->time,
-            'updated_at' => $this->time
+            'about_user_id' => $about_user_id
         ]);
 
-        User
-            ::where('id', $userId)
-            ->withTrashed()
-            ->increment('money_coin', $amount);
-
-        if (Redis::EXISTS("user_{$userId}"))
-        {
-            Redis::HINCRBYFLOAT("user_{$userId}", 'money_coin', $amount);
-        }
-        /*
         if ($balance['money_coin'] + $amount < 0)
         {
             User
@@ -389,6 +370,12 @@ class VirtualCoinService
             User
                 ::where('id', $userId)
                 ->increment('virtual_coin', $balance['money_coin'] + $amount);
+
+            if (Redis::EXISTS("user_{$userId}"))
+            {
+                Redis::HINCRBYFLOAT("user_{$userId}", 'money_coin', -$balance['money_coin']);
+                Redis::HINCRBYFLOAT("user_{$userId}", 'virtual_coin', $balance['money_coin'] + $amount);
+            }
         }
         else
         {
@@ -396,8 +383,14 @@ class VirtualCoinService
                 ::where('id', $userId)
                 ->withTrashed()
                 ->increment('money_coin', $amount);
+
+            if (Redis::EXISTS("user_{$userId}"))
+            {
+                Redis::HINCRBYFLOAT("user_{$userId}", 'money_coin', $amount);
+            }
         }
-        */
+
+        return true;
     }
 
     private function addCoin($userId, $amount, $channel_type, $product_id, $about_user_id)
@@ -407,14 +400,12 @@ class VirtualCoinService
             $amount = +$amount;
         }
 
-        VirtualCoin::insert([
+        VirtualCoin::create([
             'user_id' => $userId,
             'amount' => $amount,
             'channel_type' => $channel_type,
             'product_id' => $product_id,
-            'about_user_id' => $about_user_id,
-            'created_at' => $this->time,
-            'updated_at' => $this->time
+            'about_user_id' => $about_user_id
         ]);
 
         User
@@ -435,14 +426,12 @@ class VirtualCoinService
             $amount = +$amount;
         }
 
-        VirtualCoin::insert([
+        VirtualCoin::create([
             'user_id' => $userId,
             'amount' => $amount,
             'channel_type' => $channel_type,
             'product_id' => $product_id,
-            'about_user_id' => $about_user_id,
-            'created_at' => $this->time,
-            'updated_at' => $this->time
+            'about_user_id' => $about_user_id
         ]);
 
         User

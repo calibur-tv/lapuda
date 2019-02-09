@@ -10,6 +10,7 @@ namespace App\Http\Controllers;
 
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\LightCoinService;
+use App\Api\V1\Services\VirtualCoinService;
 use App\Models\User;
 use App\Models\UserZone;
 use App\Models\Video;
@@ -267,6 +268,10 @@ class CallbackController extends Controller
                         $lightCoinService = new LightCoinService();
                         $lightCoinService->inviteUser($invite, $newUserId);
                         $lightCoinService->invitedNewbieCoinGift($invite, $newUserId);
+
+                        $virtualCoinService = new VirtualCoinService();
+                        $virtualCoinService->inviteUser($invite, $newUserId);
+                        $virtualCoinService->invitedNewbieCoinGift($invite, $newUserId);
                     }
                 }
             }
@@ -392,6 +397,10 @@ class CallbackController extends Controller
                         $lightCoinService = new LightCoinService();
                         $lightCoinService->inviteUser($invite, $newUserId);
                         $lightCoinService->invitedNewbieCoinGift($invite, $newUserId);
+
+                        $virtualCoinService = new VirtualCoinService();
+                        $virtualCoinService->inviteUser($invite, $newUserId);
+                        $virtualCoinService->invitedNewbieCoinGift($invite, $newUserId);
                     }
                 }
             }
@@ -508,6 +517,10 @@ class CallbackController extends Controller
                         $lightCoinService = new LightCoinService();
                         $lightCoinService->inviteUser($invite, $newUserId);
                         $lightCoinService->invitedNewbieCoinGift($invite, $newUserId);
+
+                        $virtualCoinService = new VirtualCoinService();
+                        $virtualCoinService->inviteUser($invite, $newUserId);
+                        $virtualCoinService->invitedNewbieCoinGift($invite, $newUserId);
                     }
                 }
             }

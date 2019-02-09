@@ -37,6 +37,7 @@ use App\Api\V1\Services\Toggle\Score\ScoreRewardService;
 use App\Api\V1\Services\Toggle\Video\VideoMarkService;
 use App\Api\V1\Services\Toggle\Video\VideoRewardService;
 use App\Api\V1\Services\UserLevel;
+use App\Api\V1\Services\VirtualCoinService;
 use App\Api\V1\Services\Vote\AnswerVoteService;
 use App\Models\User;
 use App\Services\Trial\UserIpAddress;
@@ -457,7 +458,8 @@ class ToggleController extends Controller
         }
 
         $lightCoinService = new LightCoinService();
-        $banlance = $lightCoinService->hasMoneyCount($user);
+        $virtualCoinService = new VirtualCoinService();
+        $banlance = $virtualCoinService->hasMoneyCount($user);
         if (!$banlance)
         {
             return $this->resErrRole('团子不足');
@@ -492,12 +494,15 @@ class ToggleController extends Controller
             return $this->resErrRole('已打赏过的内容');
         }
 
-        $result = $lightCoinService->rewardUserContent([
+        // TODO：delete
+        $lightCoinService->rewardUserContent([
             'from_user_id' => $userId,
             'to_user_id' => $item['user_id'],
             'content_id' => $item['id'],
             'content_type' => $type
         ]);
+        //
+        $result = $virtualCoinService->rewardUserContent($type, $userId, $item['user_id'], $item['id']);
         if (!$result)
         {
             return $this->resErrServiceUnavailable('系统升级中');

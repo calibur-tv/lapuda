@@ -13,6 +13,7 @@ use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\Owner\BangumiManager;
+use App\Api\V1\Services\VirtualCoinService;
 use App\Models\Notifications;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Redis;
@@ -38,13 +39,11 @@ class UserActivity extends Activity
             return;
         }
         $lightCoinService = new LightCoinService();
+        $virtualCoinService = new VirtualCoinService();
         // 送团子
-        $result = $lightCoinService->userActivityReward($userId);
-        if ($result)
-        {
-            // 发消息通知
-            $this->createNotification(42, $userId);
-        }
+        $virtualCoinService->userActivityReward($userId);
+        $lightCoinService->userActivityReward($userId);
+        $this->createNotification(42, $userId);
 
         $bangumiManager = new BangumiManager();
         if (!$bangumiManager->isAManager($userId))
@@ -52,12 +51,9 @@ class UserActivity extends Activity
             return;
         }
         // 送团子
-        $result = $lightCoinService->masterActiveReward($userId);
-        if ($result)
-        {
-            // 发消息通知
-            $this->createNotification(43, $userId);
-        }
+        $virtualCoinService->masterActiveReward($userId);
+        $lightCoinService->masterActiveReward($userId);
+        $this->createNotification(43, $userId);
     }
 
     protected function createNotification($type, $userId)

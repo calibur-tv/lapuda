@@ -2,26 +2,9 @@
 
 namespace App\Api\V1\Controllers;
 
-use App\Api\V1\Repositories\AnswerRepository;
 use App\Api\V1\Repositories\BangumiRepository;
-use App\Api\V1\Repositories\ImageRepository;
-use App\Api\V1\Repositories\PostRepository;
-use App\Api\V1\Repositories\ScoreRepository;
-use App\Api\V1\Repositories\VideoRepository;
-use App\Api\V1\Services\LightCoinService;
-use App\Api\V1\Services\VirtualCoinService;
-use App\Models\CartoonRole;
-use App\Models\CartoonRoleFans;
-use App\Models\LightCoin;
-use App\Models\LightCoinRecord;
-use App\Models\Post;
-use App\Models\User;
-use App\Models\UserSign;
-use App\Models\VirtualCoin;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
 
 /**
@@ -82,25 +65,5 @@ class SearchController extends Controller
         $bangumiRepository = new BangumiRepository();
 
         return $this->resOK($bangumiRepository->searchAll());
-    }
-
-    public function migration_9()
-    {
-        $users = User
-            ::where('migration_state', 4)
-            ->withTrashed()
-            ->select('id', 'virtual_coin', 'money_coin')
-            ->get()
-            ->toArray();
-
-        $coinService = new VirtualCoinService();
-        foreach ($users as $i => $user)
-        {
-            $balance = $coinService->getUserBalance($user['id']);
-            $users[$i]['balance'] = $balance;
-            $users[$i]['delta'] = $user['virtual_coin'] + $user['money_coin'] - ($balance['get'] - $balance['set']);
-        }
-
-        return $this->resOK($users);
     }
 }

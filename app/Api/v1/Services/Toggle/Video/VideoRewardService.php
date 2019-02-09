@@ -17,4 +17,23 @@ class VideoRewardService extends RewardService
     {
         parent::__construct('video_reward', 14);
     }
+
+    public function do($userId, $modalId, $count = 1)
+    {
+        $id = DB::table($this->table)
+            ->insertGetId([
+                'user_id' => $userId,
+                'modal_id' => $modalId,
+                'created_at' => Carbon::now(),
+                'migration_state' => 2
+            ]);
+
+        $relationCounterService = new RelationCounterService($this->table);
+        $relationCounterService->add($modalId, $count);
+
+        $this->SortAdd($this->doUsersCacheKey($modalId), $userId);
+        $this->SortAdd($this->usersDoCacheKey($userId), $modalId);
+
+        return $id;
+    }
 }
