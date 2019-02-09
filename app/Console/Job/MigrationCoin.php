@@ -63,6 +63,7 @@ class MigrationCoin extends Command
 //        $this->migration_step_10();
 //        $this->migration_step_11();
 //        $this->migration_step_12();
+        $this->migration_step_15();
 //        $this->migration_step_16();
 //        $this->migration_step_17();
         return true;
@@ -756,7 +757,7 @@ class MigrationCoin extends Command
         VirtualCoin::whereIn('id', $ids)->delete();
     }
 
-    // TODO：偶像应援对账
+    // 偶像应援对账
     protected function migration_step_15()
     {
         $record = CartoonRoleFans
@@ -777,6 +778,37 @@ class MigrationCoin extends Command
                 ->where('channel_type', 9)
                 ->where('product_id', $item['role_id'])
                 ->count();
+
+            if ($item['star_count'] == $starCount)
+            {
+                $state = 2;
+            }
+            else if ($item['star_count'] - $starCount > 0)
+            {
+                $state = 3;
+            }
+            else
+            {
+                $state = 4;
+            }
+
+            if ($state == 2)
+            {
+                CartoonRoleFans
+                    ::where('id', $item['id'])
+                    ->update([
+                        'state' => $state
+                    ]);
+            }
+            else
+            {
+                CartoonRoleFans
+                    ::where('id', $item['id'])
+                    ->update([
+                        'star_count' => $starCount,
+                        'state' => $state
+                    ]);
+            }
         }
 
         return false;
