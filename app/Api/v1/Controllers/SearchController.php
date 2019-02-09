@@ -116,6 +116,11 @@ class SearchController extends Controller
 
         $moneyCount = floatval($moneyCount);
 
+        return $this->resOK([
+            'virtual_coin' => $coinCount,
+            'money_coin' => $moneyCount
+        ]);
+
         $state = 2;
         if ($coinCount + $moneyCount < 0)
         {
