@@ -782,38 +782,37 @@ class MigrationCoin extends Command
     // 修改 user 信息
     protected function migration_step_16()
     {
-//        $ids = User
-//            ::where('migration_state', 0)
-//            ->withTrashed()
-//            ->take(2000)
-//            ->pluck('id')
-//            ->toArray();
-//
-//        if (empty($ids))
-//        {
-//            return true;
-//        }
-        $ids = [2, 43340];
+        $ids = User
+            ::where('migration_state', 0)
+            ->withTrashed()
+            ->take(2000)
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($ids))
+        {
+            return true;
+        }
 
         foreach ($ids as $userId)
         {
-//            $state = User
-//                ::where('id', $userId)
-//                ->withTrashed()
-//                ->pluck('migration_state')
-//                ->first();
-//
-//            if ($state != 0)
-//            {
-//                continue;
-//            }
-//
-//            User
-//                ::where('id', $userId)
-//                ->withTrashed()
-//                ->update([
-//                    'migration_state' => 1
-//                ]);
+            $state = User
+                ::where('id', $userId)
+                ->withTrashed()
+                ->pluck('migration_state')
+                ->first();
+
+            if ($state != 0)
+            {
+                continue;
+            }
+
+            User
+                ::where('id', $userId)
+                ->withTrashed()
+                ->update([
+                    'migration_state' => 1
+                ]);
 
             $coinCount = VirtualCoin
                 ::where('user_id', $userId)
