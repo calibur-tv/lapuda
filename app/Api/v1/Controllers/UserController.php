@@ -911,18 +911,21 @@ class UserController extends Controller
             return $this->resErrNotFound();
         }
 
-        $user = $userRepository->item($userId, true);
+        $user = User
+            ::where('id', $userId)
+            ->first();
         if (is_null($user))
         {
             return $this->resOK(null);
         }
+        $user = $user->toArray();
         $banlance = User
             ::where('id', $userId)
-            ->select('coin_count_v2', 'light_count')
+            ->select('virtual_coin', 'money_coin')
             ->first();
 
-        $user['coin_count'] = $banlance->coin_count_v2;
-        $user['light_count'] = $banlance->light_count;
+        $user['coin_count'] = $banlance->virtual_coin;
+        $user['light_count'] = $banlance->money_coin;
         $user['ip_address'] = $userIpAddress->userIps($userId);
         $user['level'] = $userLevel->convertExpToLevel($user['exp']);
         $user['power'] = $userActivityService->get($userId);
