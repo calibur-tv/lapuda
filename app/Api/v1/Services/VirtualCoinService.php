@@ -276,6 +276,7 @@ class VirtualCoinService
             $amount = -$amount;
         }
 
+        /*
         $balance = User
             ::where('id', $userId)
             ->withTrashed()
@@ -283,7 +284,6 @@ class VirtualCoinService
             ->first()
             ->toArray();
 
-        /*
         if ($balance['virtual_coin'] + $balance['money_coin'] + $amount < 0)
         {
             return false;
@@ -341,12 +341,14 @@ class VirtualCoinService
             $amount = -$amount;
         }
 
+        /*
         $balance = User
             ::where('id', $userId)
             ->withTrashed()
             ->select('virtual_coin', 'money_coin')
             ->first()
             ->toArray();
+        */
 
         VirtualCoin::insert([
             'user_id' => $userId,
