@@ -717,8 +717,7 @@ class UserController extends Controller
     {
         $take = $request->get('take') ?: 20;
         $page = $request->get('page') ?: 0;
-//        $userId = $this->getAuthUserId();
-        $userId = 1;
+        $userId = $this->getAuthUserId();
 
         $virtualCoinService = new VirtualCoinService();
         $result = $virtualCoinService->getUserRecord($userId, $page, $take);
