@@ -12,6 +12,7 @@ namespace App\Api\V1\Services;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\QuestionRepository;
+use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Repositories\VideoRepository;
@@ -48,13 +49,17 @@ class VirtualCoinService
     // TODO：获取用户的交易记录，写一个新的接口
     public function getUserRecord($userId, $page = 0, $count = 15)
     {
-        $records = VirtualCoin
-            ::where('user_id', $userId)
-            ->orderBy('created_at', 'DESC')
-            ->take($count)
-            ->skip($page * $count)
-            ->get()
-            ->toArray();
+        $repository = new Repository();
+        $ids = $repository->RedisList("user_{$userId}_virtual_coin_records", function () use ($userId)
+        {
+            return VirtualCoin
+                ::where('user_id', $userId)
+                ->orderBy('created_at', 'DESC')
+                ->get()
+                ->toArray();
+        });
+        $idsObj = $repository->filterIdsByPage($ids, $page, $count);
+        $records = $idsObj['ids'];
 
         $result = [];
         foreach ($records as $item)
@@ -89,12 +94,16 @@ class VirtualCoinService
                 'type' => $type,
                 'user' => $user,
                 'model' => $model,
-                'amount' => $amount,
+                'amount' => floatval($amount),
                 'created_at' => $item['created_at']
             ];
         }
 
-        return $result;
+        return [
+            'list' => $result,
+            'total' => $idsObj['total'],
+            'noMore' => $idsObj['noMore']
+        ];
     }
 
     // TODO：fixed typo
