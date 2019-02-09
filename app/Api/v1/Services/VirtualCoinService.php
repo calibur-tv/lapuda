@@ -103,12 +103,12 @@ class VirtualCoinService
         $get = VirtualCoin
             ::where('user_id', $userId)
             ->where('amount', '>', 0)
-            ::sum('amount');
+            ->sum('amount');
 
         $set = VirtualCoin
             ::where('user_id', $userId)
             ->where('amount', '<', 0)
-            ::sum('amount');
+            ->sum('amount');
 
         return [
             'get' => $get,
