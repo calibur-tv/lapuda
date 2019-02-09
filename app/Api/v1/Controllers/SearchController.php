@@ -6,6 +6,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Models\VirtualCoin;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
+use Illuminate\Support\Facades\DB;
 use Mews\Purifier\Facades\Purifier;
 
 /**
