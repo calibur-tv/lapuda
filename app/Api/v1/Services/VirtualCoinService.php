@@ -111,8 +111,8 @@ class VirtualCoinService
             ->sum('amount');
 
         return [
-            'get' => $get,
-            'set' => -$set
+            'get' => floatval($get),
+            'set' => -floatval($set)
         ];
     }
 

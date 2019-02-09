@@ -783,7 +783,7 @@ class MigrationCoin extends Command
     protected function migration_step_16()
     {
         $ids = User
-            ::where('migration_state', 0)
+            ::where('migration_state', 4)
             ->withTrashed()
             ->take(2000)
             ->pluck('id')
