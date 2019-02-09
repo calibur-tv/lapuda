@@ -16,6 +16,7 @@ use App\Models\LightCoin;
 use App\Models\LightCoinRecord;
 use App\Models\User;
 use App\Models\UserSign;
+use App\Models\VirtualCoin;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
 use Illuminate\Support\Facades\DB;
