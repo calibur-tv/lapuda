@@ -63,9 +63,10 @@ class MigrationCoin extends Command
 //        $this->migration_step_10();
 //        $this->migration_step_11();
 //        $this->migration_step_12();
+        $this->migration_step_14();
 //        $this->migration_step_15();
 //        $this->migration_step_16();
-        $this->migration_step_17();
+//        $this->migration_step_17();
         return true;
     }
 
@@ -748,7 +749,6 @@ class MigrationCoin extends Command
         $ids = VirtualCoin
             ::select(DB::raw('MIN(id) AS id'))
             ->where('channel_type', '<>', 9)
-            ->take(1000)
             ->groupBy(['user_id', 'created_at', 'channel_type', 'about_user_id', 'product_id'])
             ->havingRaw('COUNT(id) > 1')
             ->pluck('id')
