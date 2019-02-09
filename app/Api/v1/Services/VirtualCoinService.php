@@ -49,11 +49,14 @@ class VirtualCoinService
             return VirtualCoin
                 ::where('user_id', $userId)
                 ->orderBy('created_at', 'DESC')
-                ->get()
+                ->pluck('id')
                 ->toArray();
         });
         $idsObj = $repository->filterIdsByPage($ids, $page, $count);
-        $records = $idsObj['ids'];
+        $records = VirtualCoin
+            ::whereIn('id', $idsObj['ids'])
+            ->get()
+            ->toArray();
 
         $result = [];
         foreach ($records as $item)
