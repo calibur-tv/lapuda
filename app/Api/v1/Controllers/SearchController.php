@@ -82,17 +82,4 @@ class SearchController extends Controller
 
         return $this->resOK($bangumiRepository->searchAll());
     }
-
-    public function delete_same_data()
-    {
-        VirtualCoin
-            ::whereRaw('created_at = ? and user_id = ? and channel_type = ? and id <> ?', ['2019-02-02 11:47:13', 39110, 17, 513283])
-            ->delete();
-
-        VirtualCoin
-            ::whereRaw('created_at = ? and user_id = ? and channel_type = ? and id <> ?', ['2019-02-02 07:17:54', 3667, 17, 513369])
-            ->delete();
-
-        return $this->resOK('success');
-    }
 }
