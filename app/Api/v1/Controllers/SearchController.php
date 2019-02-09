@@ -86,22 +86,20 @@ class SearchController extends Controller
 
     public function migration_9()
     {
-        // DB::raw('SELECT modal_id FROM post_reward WHERE migration_state = 2')
-        $list = Post
-            ::where('is_creator', 1)
-            ->onlyTrashed()
-            ->whereIn('id', function ($query)
-            {
-                $query
-                    ->from('post_reward')
-                    ->select('modal_id')
-                    ->where('migration_state', 2)
-                    ->groupBy('modal_id');
-            })
-            ->select('id', 'user_id')
-            ->get()
+        $users = User
+            ::where('migration_state', 4)
+            ->withTrashed()
+            ->select('id', 'virtual_coin', 'money_coin')
             ->toArray();
 
-        return $this->resOK($list);
+        $coinService = new VirtualCoinService();
+        foreach ($users as $i => $user)
+        {
+            $balance = $coinService->getUserBalance($user['id']);
+            $users[$i]['balance'] = $balance;
+            $users[$i]['delta'] = $user['virtual_coin'] + $user['money_coin'] - ($balance['get'] - $balance['set']);
+        }
+
+        return $this->resOK($users);
     }
 }
