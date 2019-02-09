@@ -55,8 +55,6 @@ class MigrationCoin extends Command
         $this->migration_step_10();
         $this->migration_step_11();
         $this->migration_step_12();
-        $this->migration_step_14();
-
         return true;
     }
 
@@ -466,7 +464,7 @@ class MigrationCoin extends Command
         {
             $state = DB
                 ::table($table)
-                ->where('id', $item['id'])
+                ->where('id', $item->id)
                 ->pluck('migration_state')
                 ->first();
 
@@ -674,7 +672,7 @@ class MigrationCoin extends Command
     }
 
     // 偶像应援对账
-    protected function migration_step_17()
+    protected function migration_step_15()
     {
 
     }
