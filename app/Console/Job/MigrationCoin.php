@@ -15,7 +15,11 @@ use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\VirtualCoinService;
+use App\Models\Answer;
+use App\Models\Image;
 use App\Models\LightCoinRecord;
+use App\Models\Post;
+use App\Models\Score;
 use App\Models\User;
 use App\Models\UserSign;
 use App\Models\VirtualCoin;
@@ -54,6 +58,7 @@ class MigrationCoin extends Command
         $this->migration_step_6();
         $this->migration_step_7();
         $this->migration_step_8();
+        $this->migration_step_9();
         $this->migration_step_10();
         $this->migration_step_11();
         $this->migration_step_12();
@@ -499,10 +504,103 @@ class MigrationCoin extends Command
         return false;
     }
 
-    // TODO：同步原创内容被删除
+    // 同步原创内容被删除
     protected function migration_step_9()
     {
-        return true;
+        $table = 'post_reward';
+        $list = Post
+            ::where('is_creator', 1)
+            ->onlyTrashed()
+            ->whereIn('id', function ($query) use ($table)
+            {
+                $query
+                    ->from($table)
+                    ->select('modal_id')
+                    ->where('migration_state', 2)
+                    ->groupBy('modal_id');
+            })
+            ->select('id', 'user_id', 'deleted_at')
+            ->get()
+            ->toArray();
+
+        if (empty($list))
+        {
+            $table = 'score_reward';
+            $list = Score
+                ::where('is_creator', 1)
+                ->onlyTrashed()
+                ->whereIn('id', function ($query) use ($table)
+                {
+                    $query
+                        ->from($table)
+                        ->select('modal_id')
+                        ->where('migration_state', 2)
+                        ->groupBy('modal_id');
+                })
+                ->select('id', 'user_id', 'deleted_at')
+                ->get()
+                ->toArray();
+        }
+
+        if (empty($list))
+        {
+            $table = 'image_reward';
+            $list = Image
+                ::where('is_creator', 1)
+                ->onlyTrashed()
+                ->whereIn('id', function ($query) use ($table)
+                {
+                    $query
+                        ->from($table)
+                        ->select('modal_id')
+                        ->where('migration_state', 2)
+                        ->groupBy('modal_id');
+                })
+                ->select('id', 'user_id', 'deleted_at')
+                ->get()
+                ->toArray();
+        }
+
+        if (empty($list))
+        {
+            $table = 'answer_reward';
+            $list = Answer
+                ::where('source_url', '<>', '')
+                ->onlyTrashed()
+                ->whereIn('id', function ($query) use ($table)
+                {
+                    $query
+                        ->from($table)
+                        ->select('modal_id')
+                        ->where('migration_state', 2)
+                        ->groupBy('modal_id');
+                })
+                ->select('id', 'user_id', 'deleted_at')
+                ->get()
+                ->toArray();
+        }
+
+        if (empty($list))
+        {
+            return true;
+        }
+
+        $coinService = new VirtualCoinService();
+        foreach ($list as $item)
+        {
+            $coinService->setTime($item['deleted_at']);
+            $modelType = explode('_', $table)[0];
+            $amount = DB::table($table)->where('modal_id', $item['id'])->count();
+            $coinService->deleteUserContent($modelType, $item['user_id'], $item['id'], $amount);
+            DB
+                ::table($table)
+                ->where('modal_id', $item['id'])
+                ->update([
+                    'migration_state' => 3
+                ]);
+        }
+
+        return false;
     }
 
     // 同步应援偶像

@@ -14,6 +14,7 @@ use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
 use App\Models\LightCoin;
 use App\Models\LightCoinRecord;
+use App\Models\Post;
 use App\Models\User;
 use App\Models\UserSign;
 use App\Models\VirtualCoin;
@@ -81,5 +82,26 @@ class SearchController extends Controller
         $bangumiRepository = new BangumiRepository();
 
         return $this->resOK($bangumiRepository->searchAll());
+    }
+
+    public function migration_9()
+    {
+        // DB::raw('SELECT modal_id FROM post_reward WHERE migration_state = 2')
+        $list = Post
+            ::where('is_creator', 1)
+            ->onlyTrashed()
+            ->whereIn('id', function ($query)
+            {
+                $query
+                    ->from('post_reward')
+                    ->select('modal_id')
+                    ->where('migration_state', 2)
+                    ->groupBy('modal_id');
+            })
+            ->select('id', 'user_id')
+            ->get()
+            ->toArray();
+
+        return $this->resOK($list);
     }
 }
