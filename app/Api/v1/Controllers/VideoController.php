@@ -103,7 +103,7 @@ class VideoController extends Controller
         return $this->resOK([
             'info' => $videoTransformer->show($info),
             'bangumi' => $bangumi,
-            'user' => [
+            'upload_user' => [
                 'nickname' => $user['nickname'],
                 'avatar' => $user['avatar'],
                 'zone' => $user['zone'],
