@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Redis;
 
 class VideoRepository extends Repository
 {
-    public function item($id, $isShow = false, $isPC = false, $loop = false)
+    public function item($id, $isShow = false, $isPC = false)
     {
         if (!$id)
         {
@@ -91,12 +91,6 @@ class VideoRepository extends Repository
         if (!$result || ($result['deleted_at'] && !$isShow))
         {
             return null;
-        }
-
-        if (!isset($result['baidu_cloud_src']) && !$loop)
-        {
-            Redis::DEL('video_'.$id);
-            return $this->item($id, false, false, true);
         }
 
         $otherSiteResource = $result['src_other'] ?: '';

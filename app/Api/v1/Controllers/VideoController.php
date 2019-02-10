@@ -2,6 +2,7 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Counter\VideoPlayCounter;
 use App\Api\V1\Services\Owner\BangumiManager;
@@ -77,6 +78,7 @@ class VideoController extends Controller
         $videoRewardService = new VideoRewardService();
         $videoLikeService = new VideoLikeService();
         $buyVideoService = new BuyVideoService();
+        $userRepository = new UserRepository();
 
         $info['rewarded'] = $videoRewardService->check($userId, $id);
         $info['reward_users'] = $videoRewardService->users($id);
@@ -96,10 +98,17 @@ class VideoController extends Controller
         {
             $blocked = true;
         }
+        $user = $userRepository->item($info['user_id']);
 
         return $this->resOK([
             'info' => $videoTransformer->show($info),
             'bangumi' => $bangumi,
+            'user' => [
+                'nickname' => $user['nickname'],
+                'avatar' => $user['avatar'],
+                'zone' => $user['zone'],
+                'signature' => $user['signature']
+            ],
             'season_id' => $season_id,
             'list' => $videoPackage,
             'ip_blocked' => $blocked,
@@ -136,6 +145,7 @@ class VideoController extends Controller
             return $this->resErrNotFound();
         }
         if (
+            !$bangumiManager->isALeader($userId) &&             // 不是一个leader，临时，之后删除
             !$bangumiManager->isLeader($bangumi_id, $userId) && // 不是当前番剧的版主
             !($currentUser->is_admin && !$baidu_cloud_src) &&   // 不（是管理员并且链接为空）
             $video['user_id'] != $userId                        // 不是当前的UP主
