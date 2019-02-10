@@ -124,17 +124,28 @@ class VideoController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $userId = $this->getAuthUserId();
+        $currentUser = $this->getAuthUser();
+        $userId = $currentUser->id;
         $bangumi_id = $request->get('bangumi_id');
+        $baidu_cloud_src = $request->get('baidu_cloud_src');
         $bangumiManager = new BangumiManager();
-        if (!$bangumiManager->isALeader($userId))
+        $videoRepository = new VideoRepository();
+        $video = $videoRepository->item($id);
+        if (is_null($video))
+        {
+            return $this->resErrNotFound();
+        }
+        if (
+            !$bangumiManager->isLeader($bangumi_id, $userId) && // 不是当前番剧的版主
+            !($currentUser->is_admin && !$baidu_cloud_src) &&   // 不（是管理员并且链接为空）
+            $video['user_id'] != $userId                        // 不是当前的UP主
+        )
         {
             return $this->resErrRole();
         }
         $name = $request->get('name');
         $poster = $request->get('poster');
         $episode = $request->get('episode');
-        $baidu_cloud_src = $request->get('baidu_cloud_src');
         $baidu_cloud_pwd = $request->get('baidu_cloud_pwd');
         $season_id = $request->get('season_id');
         $hasVideo = Video
@@ -146,13 +157,22 @@ class VideoController extends Controller
         {
             return $this->resErrBad('集数重复');
         }
-
+        if ($baidu_cloud_src)
+        {
+            $newUserId = $userId;
+        }
+        else
+        {
+            $newUserId = 2;
+        }
         Video::withTrashed()
             ->where('id', $id)
             ->update([
                 'name' => $name,
                 'poster' => $poster,
                 'episode' => $episode,
+                'user_id' => $newUserId,
+                'is_creator' => $newUserId === 2,
                 'baidu_cloud_src' => $baidu_cloud_src,
                 'baidu_cloud_pwd' => $baidu_cloud_pwd
             ]);
@@ -160,7 +180,6 @@ class VideoController extends Controller
         Redis::DEL('video_' . $id);
         Redis::DEL('bangumi_' . $bangumi_id . '_videos');
 
-        $videoRepository = new VideoRepository();
         $videoRepository->migrateSearchIndex('U', $id);
 
         return $this->resNoContent();
@@ -198,8 +217,8 @@ class VideoController extends Controller
             'url' => '',
             'resource' => '',
             'poster' => $poster,
-            'user_id' => 2,
-            'is_creator' => 1,
+            'user_id' => $userId,
+            'is_creator' => false,
             'created_at' => $time,
             'updated_at' => $time,
             'baidu_cloud_src' => $baidu_cloud_src,
