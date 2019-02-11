@@ -133,7 +133,7 @@ class CartoonRoleTrendingService extends TrendingService
 
         foreach ($list as $i => $role)
         {
-            $hasLover = intval($role['loverId']);
+            $hasLover = false;
             $user = $hasLover ? $userRepository->item($role['loverId']) : null;
 
             if ($hasLover)

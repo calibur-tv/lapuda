@@ -237,7 +237,7 @@ class CartoonRoleController extends Controller
         if ($role['lover'])
         {
             $role['lover'] = $userTransformer->item($role['lover']);
-            $loverScore = Redis::ZSCORE('cartoon_role_' . $id . '_hot_fans_ids', $role['loverId']);
+            $loverScore = Redis::ZSCORE('cartoon_role_' . $id . '_hot_fans_ids', $loverId);
             $role['lover']['score'] = $loverScore ? intval($loverScore) : 0;
         }
         $role['hasStar'] = $cartoonRoleRepository->checkHasStar($role['id'], $userId);
