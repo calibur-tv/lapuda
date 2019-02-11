@@ -391,15 +391,15 @@ class CartoonRoleController extends Controller
             return $this->resErrServiceUnavailable('入股失败');
         }
 
-        $isOldFans = VirtualIdolOwner
+        $oldOwnerData = VirtualIdolOwner
             ::where('idol_id', $id)
             ->where('user_id', $userId)
-            ->count();
+            ->first();
+        $isOldFans = !is_null($oldOwnerData);
 
         if ($isOldFans)
         {
             // 如果是老粉丝，就更新之前的数据
-            // TODO：更新用户的偶像列表缓存
             VirtualIdolOwner
                 ::where('idol_id', $id)
                 ->where('user_id', $userId)
@@ -414,7 +414,6 @@ class CartoonRoleController extends Controller
         {
             // 如果是新粉丝，就新建数据
             // 并且粉丝数 + 1
-            // TODO：更新用户的偶像列表缓存
             VirtualIdolOwner::create([
                 'idol_id' => $id,
                 'user_id' => $userId,
@@ -434,17 +433,6 @@ class CartoonRoleController extends Controller
         CartoonRole
             ::where('id', $id)
             ->increment('star_count', $buyCount);
-
-        $newCacheKey = $cartoonRoleRepository->newOwnerIdsCacheKey($id);
-        $hotCacheKey = $cartoonRoleRepository->bigOwnerIdsCacheKey($id);
-        if (Redis::EXISTS($newCacheKey))
-        {
-            Redis::ZADD($newCacheKey, strtotime('now'), $userId);
-        }
-        if (Redis::EXISTS($hotCacheKey))
-        {
-            Redis::ZINCRBY($hotCacheKey, $buyCount, $userId);
-        }
 
         // 上市
         $doIPO = !$isOldFans && intval($cartoonRole['fans_count']) >= 19 && $cartoonRole['company_state'] == 0;
@@ -466,20 +454,84 @@ class CartoonRoleController extends Controller
             $cartoonRoleRepository->setIdolMaxStockCount($id, $starCount);
         }
 
-        $redisKey = "virtual_idol_{$id}";
-        if (Redis::EXISTS($redisKey))
+        // 更新新股东列表
+        $cacheKey = $cartoonRoleRepository->newOwnerIdsCacheKey($id);
+        if (Redis::EXISTS($cacheKey))
         {
-            Redis::HINCRBYFLOAT($redisKey, 'star_count', $buyCount);
-            Redis::HINCRBYFLOAT($redisKey, 'market_price', $payAmount);
+            Redis::ZADD($cacheKey, strtotime('now'), $userId);
+        }
+        // 更新大股东列表
+        $cacheKey = $cartoonRoleRepository->bigOwnerIdsCacheKey($id);
+        if (Redis::EXISTS($cacheKey))
+        {
+            if ($isOldFans)
+            {
+                Redis::ZADD($cacheKey, $oldOwnerData->stock_count + $buyCount, $userId);
+            }
+            else
+            {
+                Redis::ZADD($cacheKey, $buyCount, $userId);
+            }
+        }
+        // 更新用户的缓存列表
+        $cacheKey = $cartoonRoleRepository->userIdolListCacheKey($userId);
+        if (Redis::EXISTS($cacheKey))
+        {
+            if ($isOldFans)
+            {
+                if ($isOldFans)
+                {
+                    Redis::ZADD($cacheKey, $oldOwnerData->stock_count + $buyCount, $userId);
+                }
+                else
+                {
+                    Redis::ZADD($cacheKey, $buyCount, $userId);
+                }
+            }
+        }
+        // 更新偶像缓存
+        $cacheKey = $cartoonRoleRepository->idolItemCacheKey($id);
+        if (Redis::EXISTS($cacheKey))
+        {
+            Redis::HINCRBYFLOAT($cacheKey, 'star_count', $buyCount);
+            Redis::HINCRBYFLOAT($cacheKey, 'market_price', $payAmount);
             if (!$isOldFans)
             {
-                Redis::HINCRBYFLOAT($redisKey, 'fans_count', 1);
+                Redis::HINCRBYFLOAT($cacheKey, 'fans_count', 1);
             }
-            // TODO：把偶像加到上市列表里，从融资列表里删除
             if ($doIPO)
             {
-                Redis::HSET($redisKey, 'company_state', 1);
+                Redis::HSET($cacheKey, 'company_state', 1);
             }
+        }
+        if ($doIPO)
+        {
+            $cacheKey = $cartoonRoleRepository->newbieIdolListCacheKey('newest');
+            if (Redis::EXISTS($cacheKey))
+            {
+                Redis::ZREM($cacheKey, $id);
+            }
+            $cacheKey = $cartoonRoleRepository->newbieIdolListCacheKey('star_count');
+            if (Redis::EXISTS($cacheKey))
+            {
+                Redis::ZREM($cacheKey, $id);
+            }
+        }
+        // 更新公司列表
+        $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('activity');
+        if (Redis::EXISTS($cacheKey))
+        {
+            Redis::ZADD($cacheKey, strtotime('now'), $id);
+        }
+        $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('market_price');
+        if (Redis::EXISTS($cacheKey))
+        {
+            Redis::ZADD($cacheKey, $cartoonRole['market_price'] + $payAmount, $id);
+        }
+        if (!$isOldFans)
+        {
+            $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('fans_count');
+            Redis::ZADD($cacheKey, $cartoonRole['fans_count'] + 1, $id);
         }
 
         return $this->resOK();
@@ -780,10 +832,18 @@ class CartoonRoleController extends Controller
         $dealId = $request->get('id');
         $product_price = floatval($request->get('product_price'));
         $product_count = floatval($request->get('product_count'));
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $idol = $cartoonRoleRepository->item($idolId);
+        if (is_null($idol))
+        {
+            return $this->resErrNotFound('不存在的偶像');
+        }
+
         if ($this->calculate($product_count * $product_price) < 0.01)
         {
             return $this->resErrBad('交易额不能低于0.01');
         }
+
         $deal = null;
         if ($dealId)
         {
@@ -816,7 +876,7 @@ class CartoonRoleController extends Controller
 
         if (floatval($myStock) < $product_count)
         {
-            return $this->resErrBad('没有足够的股份用于交易');
+            return $this->resErrBad('没有足够的股份发起交易');
         }
 
         if ($deal)
@@ -829,8 +889,6 @@ class CartoonRoleController extends Controller
                     'last_count' => $product_count,
                     'last_edit_at' => Carbon::now()
                 ]);
-
-            // TODO：修改交易大厅列表的缓存
         }
         else
         {
@@ -842,8 +900,11 @@ class CartoonRoleController extends Controller
                 'last_count' => $product_count,
                 'last_edit_at' => Carbon::now()
             ]);
-
-            // TODO：添加缓存到交易大厅列表
+        }
+        $cacheKey = $cartoonRoleRepository->idolDealListCacheKey();
+        if (Redis::EXISTS($cacheKey))
+        {
+            Redis::ZADD($cacheKey, strtotime('now'), $deal->id);
         }
 
         return $this->resCreated($deal->id);
@@ -1450,7 +1511,20 @@ class CartoonRoleController extends Controller
 
         $cartoonRoleRepository->migrateSearchIndex('U', $id);
 
-        Redis::DEL("virtual_idol_{$id}");
+        Redis::DEL($cartoonRoleRepository->idolItemCacheKey($id));
+        if ($data['stock_price'] || $data['max_stock_count'])
+        {
+            $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('stock_price');
+            if (Redis::EXISTS($cacheKey))
+            {
+                Redis::ZADD($cacheKey, $data['stock_price'], $id);
+            }
+            $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('activity');
+            if (Redis::EXISTS($cacheKey))
+            {
+                Redis::ZADD($cacheKey, strtotime('now'), $id);
+            }
+        }
 
         return $this->resOK();
     }
