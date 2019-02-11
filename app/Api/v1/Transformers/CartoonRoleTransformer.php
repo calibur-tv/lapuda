@@ -145,23 +145,9 @@ class CartoonRoleTransformer extends Transformer
                 })
             ];
 
-            if ($item['loverId'])
-            {
-                $result = array_merge($result, [
-                    'lover' => [
-                        'id' => $item['loverId'],
-                        'avatar' => $item['lover_avatar'],
-                        'nickname' => $item['lover_nickname'],
-                        'zone' => $item['lover_zone']
-                    ]
-                ]);
-            }
-            else
-            {
-                $result = array_merge($result, [
-                    'lover' => null
-                ]);
-            }
+            $result = array_merge($result, [
+                'lover' => null
+            ]);
 
             return $result;
         });
