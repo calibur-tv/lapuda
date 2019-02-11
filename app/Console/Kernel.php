@@ -22,7 +22,8 @@ class Kernel extends ConsoleKernel
         Job\VideoDown::class,
         Job\VideoUp::class,
         Job\MigrationCoin::class,
-        Job\UpdateIdolBoss::class
+        Job\UpdateIdolBoss::class,
+        Job\SetPortecterBadge::class,
     ];
 
     /**
@@ -40,6 +41,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('CronFreeUser')->everyFiveMinutes();
         $schedule->command('Trending')->hourly();
         $schedule->command('UpdateIdolBoss')->hourly();
+        $schedule->command('SetPortecterBadge')->daily();
 //        $schedule
 //            ->command('MigrationCoin')
 //            ->everyMinute()
