@@ -233,7 +233,7 @@ class CartoonRoleController extends Controller
             ->pluck('user_id')
             ->first();
 
-        $role['lover'] = $loverId ? $userRepository->item($role['loverId']) : null;
+        $role['lover'] = $loverId ? $userRepository->item($loverId) : null;
         if ($role['lover'])
         {
             $role['lover'] = $userTransformer->item($role['lover']);
