@@ -202,7 +202,7 @@ class CartoonRoleRepository extends Repository
                 ::where('bangumi_id', $bangumiId)
                 ->orderBy('market_price', 'DESC')
                 ->pluck('market_price', 'id');
-        }, false, true);
+        }, false, true, 'm');
 
         return $this->filterIdsBySeenIds($ids, $seenIds, $count, true);
     }
