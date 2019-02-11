@@ -121,8 +121,8 @@ class UserTransformer extends Transformer
                 'banned_to' => $user['banned_to'],
                 'badge' => $user['badge'],
                 'banlance' => [
-                    'coin_count' => (int)$user['virtual_coin'],
-                    'light_count' => (int)$user['money_coin']
+                    'coin_count' => $user['virtual_coin'],
+                    'light_count' => $user['money_coin']
                 ]
             ];
         });

@@ -5,6 +5,7 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\v1\Repositories\BangumiSeasonRepository;
 use App\Api\V1\Repositories\VideoRepository;
+use App\Api\V1\Services\VirtualCoinService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Models\BangumiSeason;
 use Carbon\Carbon;

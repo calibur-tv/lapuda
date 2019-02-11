@@ -26,19 +26,19 @@ class VirtualCoinService
     // 拥有光玉+团子个数
     public function hasMoneyCount($currentUser)
     {
-        return $currentUser->money_coin + $currentUser->virtual_coin;
+        return floatval($currentUser->money_coin) + floatval($currentUser->virtual_coin);
     }
 
     // 拥有光玉个数
     public function hasLightCount($currentUser)
     {
-        return $currentUser->money_coin;
+        return floatval($currentUser->money_coin);
     }
 
     // 拥有团子个数
     public function hasCoinCount($currentUser)
     {
-        return $currentUser->virtual_coin;
+        return floatval($currentUser->virtual_coin);
     }
 
     // 用户的交易记录

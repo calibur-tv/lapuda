@@ -11,7 +11,9 @@ namespace App\Api\V1\Repositories;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
+use App\Models\VirtualIdolOwner;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class CartoonRoleRepository extends Repository
 {
@@ -22,7 +24,7 @@ class CartoonRoleRepository extends Repository
             return null;
         }
 
-        return $this->RedisHash('cartoon_role_' . $id, function () use ($id)
+        return $this->RedisHash($this->idolItemCacheKey($id), function () use ($id)
         {
            $role = CartoonRole::find($id);
 
@@ -31,15 +33,8 @@ class CartoonRoleRepository extends Repository
                return null;
            }
 
-           $userId = CartoonRoleFans
-               ::where('role_id', $id)
-               ->orderBy('star_count', 'DESC')
-               ->pluck('user_id')
-               ->first();
-           $role->loverId = is_null($userId) ? 0 : intval($userId);
-
            return $role->toArray();
-        }, 'h');
+        });
     }
 
     public function history($roleId)
@@ -112,6 +107,244 @@ class CartoonRoleRepository extends Repository
         }, false, true);
 
         return $this->filterIdsBySeenIds($ids, $seenIds, config('website.list_count'), true);
+    }
+
+    public function newOwnerIds($roleId, $minId, $count = 20)
+    {
+        $ids = $this->RedisSort($this->newOwnerIdsCacheKey($roleId), function () use ($roleId)
+        {
+            return VirtualIdolOwner
+                ::where('idol_id', $roleId)
+                ->orderBy('updated_at', 'desc')
+                ->latest()
+                ->take(100)
+                ->pluck('updated_at', 'user_id AS id');
+
+        }, true, true);
+
+        return $this->filterIdsByMaxId($ids, $minId, $count, true);
+    }
+
+    public function bigOwnerIds($roleId, $seenIds, $count = 20)
+    {
+        $ids = $this->RedisSort($this->bigOwnerIdsCacheKey($roleId), function () use ($roleId)
+        {
+            return VirtualIdolOwner
+                ::where('idol_id', $roleId)
+                ->orderBy('stock_count', 'desc')
+                ->latest()
+                ->take(100)
+                ->pluck('stock_count', 'user_id AS id');
+
+        }, false, true);
+
+        return $this->filterIdsBySeenIds($ids, $seenIds, $count, true);
+    }
+
+    public function setIdolBiggestBoss($roleId)
+    {
+        $bossId = VirtualIdolOwner
+            ::where('idol_id', $roleId)
+            ->orderBy('stock_count', 'DESC')
+            ->orderBy('id', 'ASC')
+            ->pluck('user_id')
+            ->first();
+
+        if (is_null($bossId))
+        {
+            return 0;
+        }
+
+        CartoonRole
+            ::where('id', $roleId)
+            ->update([
+                'boss_id' => $bossId
+            ]);
+
+        if (Redis::EXISTS($this->idolItemCacheKey($roleId)))
+        {
+            Redis::HSET($this->idolItemCacheKey($roleId), 'boss_id', $bossId);
+        }
+
+        return $bossId;
+    }
+
+    public function setIdolMaxStockCount($roleId, $count)
+    {
+        CartoonRole
+            ::where('id', $roleId)
+            ->update([
+                'max_stock_count' => $count
+            ]);
+
+        if (Redis::EXISTS($this->idolItemCacheKey($roleId)))
+        {
+            Redis::HSET($this->idolItemCacheKey($roleId), 'max_stock_count', $count);
+        }
+    }
+
+    public function userIdolList($userId, $seenIds, $count)
+    {
+        $ids = $this->RedisSort($this->userIdolListCacheKey($userId), function () use ($userId)
+        {
+            return VirtualIdolOwner
+                ::where('user_id', $userId)
+                ->orderBy('stock_count', 'desc')
+                ->latest()
+                ->pluck('idol_id');
+        });
+
+        return $this->filterIdsBySeenIds($ids, $seenIds, $count);
+    }
+
+    public function bangumiIdolList($bangumiId, $seenIds, $count)
+    {
+        $ids = $this->RedisSort($this->bangumiIdolListCacheKey($bangumiId), function () use ($bangumiId)
+        {
+            return CartoonRole
+                ::where('bangumi_id', $bangumiId)
+                ->orderBy('market_price', 'DESC')
+                ->pluck('id');
+        });
+
+        return $this->filterIdsBySeenIds($ids, $seenIds, $count);
+    }
+
+    public function newbieIdolList($sort, $seenIds, $count)
+    {
+        /**
+         * sort
+         * newest => 最新创建的
+         * star_count => 最多人入股
+         */
+        $ids = $this->RedisSort($this->newbieIdolListCacheKey($sort), function () use ($sort)
+        {
+            if ($sort === 'newest')
+            {
+                return CartoonRole
+                    ::where('company_state', 0)
+                    ->orderBy('id', 'DESC')
+                    ->pluck('id');
+            }
+            else if ($sort === 'star_count')
+            {
+                return CartoonRole
+                    ::where('company_state', 0)
+                    ->orderBy('star_count', 'DESC')
+                    ->pluck('id');
+            }
+            else
+            {
+                return [];
+            }
+        });
+
+        return $this->filterIdsBySeenIds($ids, $seenIds, $count);
+    }
+
+    public function marketIdolList($sort, $seenIds, $count)
+    {
+        /**
+         * sort
+         * market_price => 市值最高
+         * fans_count => 粉丝最多
+         * stock_price => 股价最高
+         * newest => 最新上市
+         * activity => 最新交易
+         */
+        $ids = $this->RedisSort($this->marketIdolListCacheKey($sort), function () use ($sort)
+        {
+            if ($sort === 'market_price')
+            {
+                return CartoonRole
+                    ::where('company_state', 1)
+                    ->orderBy('market_price', 'DESC')
+                    ->pluck('market_price', 'id');
+            }
+            else if ($sort === 'fans_count')
+            {
+                return CartoonRole
+                    ::where('company_state', 1)
+                    ->orderBy('fans_count', 'DESC')
+                    ->pluck('fans_count', 'id');
+            }
+            else if ($sort === 'stock_price')
+            {
+                return CartoonRole
+                    ::where('company_state', 1)
+                    ->orderBy('stock_price', 'DESC')
+                    ->pluck('stock_price', 'id');
+            }
+            else if ($sort === 'newest')
+            {
+                return CartoonRole
+                    ::where('company_state', 1)
+                    ->where('max_stock_count', '<>', '0.00')
+                    ->orderBy('ipo_at', 'DESC')
+                    ->pluck('ipo_at', 'id');
+            }
+            else if ($sort === 'activity')
+            {
+                return CartoonRole
+                    ::where('company_state', 1)
+                    ->where('max_stock_count', '<>', '0.00')
+                    ->orderBy('updated_at', 'DESC')
+                    ->pluck('updated_at', 'id');
+            }
+            else
+            {
+                return [];
+            }
+        }, false, true);
+
+        $result = $this->filterIdsBySeenIds($ids, $seenIds, $count, true);
+        $roleId = [];
+        foreach ($result['ids'] as $id => $score)
+        {
+            $roleId[] = $id;
+        }
+        $result['ids'] = $roleId;
+        return $result;
+    }
+
+    public function marketIdolListCacheKey($sort)
+    {
+        return "market_virtual_idol_list_{$sort}_ids";
+    }
+
+    public function newbieIdolListCacheKey($sort)
+    {
+        return "newbie_virtual_idol_list_{$sort}_ids";
+    }
+
+    // 用户的偶像列表缓存 key
+    public function userIdolListCacheKey($userId)
+    {
+        return "user_{$userId}_virtual_idol_list_ids";
+    }
+
+    // 番剧的偶像列表缓存 key
+    public function bangumiIdolListCacheKey($bangumi_id)
+    {
+        return "bangumi_{$bangumi_id}_virtual_idol_list_ids";
+    }
+
+    // 单个偶像的缓存 key
+    public function idolItemCacheKey($roleId)
+    {
+        return "virtual_idol_{$roleId}";
+    }
+
+    // 偶像的最新投资人列表缓存 key
+    public function newOwnerIdsCacheKey($roleId)
+    {
+        return "virtual_idol_{$roleId}_newest_owner_ids";
+    }
+
+    // 偶像的大股东列表缓存 key
+    public function bigOwnerIdsCacheKey($roleId)
+    {
+        return "virtual_idol_{$roleId}_biggest_owner_ids";
     }
 
     public function migrateSearchIndex($type, $id, $async = true)

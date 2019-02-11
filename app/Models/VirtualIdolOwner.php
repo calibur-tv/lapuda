@@ -9,15 +9,18 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class VirtualIdolOwner extends Model
 {
-    protected $table = 'cartoon_role_fans';
+    use SoftDeletes;
+
+    protected $table = 'virtual_idol_owners';
 
     protected $fillable = [
-        'role_id',
+        'idol_id',
         'user_id',
-        'star_count',   // 持有的股数
-        'total_price',  // 持有股数对应的总价
+        'stock_count',   // 持有的股数
+        'total_price',   // 持有股数对应的总价
     ];
 }

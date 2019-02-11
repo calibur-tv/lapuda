@@ -18,7 +18,9 @@ use App\Api\V1\Transformers\UserTransformer;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
 use App\Models\LightCoinRecord;
+use App\Models\VirtualIdolOwner;
 use App\Services\OpenSearch\Search;
+use App\Services\Trial\ImageFilter;
 use App\Services\Trial\UserIpAddress;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -225,7 +227,13 @@ class CartoonRoleController extends Controller
         $cartoonRoleStarCounter = new CartoonRoleStarCounter();
         $cartoonRoleFansCounter = new CartoonRoleFansCounter();
 
-        $role['lover'] = $role['loverId'] ? $userRepository->item($role['loverId']) : null;
+        $loverId = CartoonRoleFans
+            ::where('role_id', $id)
+            ->orderBy('star_count', 'DESC')
+            ->pluck('user_id')
+            ->first();
+
+        $role['lover'] = $loverId ? $userRepository->item($role['loverId']) : null;
         if ($role['lover'])
         {
             $role['lover'] = $userTransformer->item($role['lover']);
@@ -257,6 +265,272 @@ class CartoonRoleController extends Controller
                 'image' => "{$role['avatar']}-share120jpg"
             ]
         ]));
+    }
+
+    // 新偶像详情
+    public function stock_show($id)
+    {
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $role = $cartoonRoleRepository->item($id);
+        if (is_null($role))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $userId = $this->getAuthUserId();
+
+        $bangumiRepository = new BangumiRepository();
+        $bangumi = $bangumiRepository->panel($role['bangumi_id'], $userId);
+        if (is_null($bangumi))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $userRepository = new UserRepository();
+        $userTransformer = new UserTransformer();
+        $role['boss'] = null;
+        $role['manager'] = null;
+        if ($role['boss_id'])
+        {
+            $boss = $userRepository->item($role['boss_id']);
+            if ($boss)
+            {
+                $role['boss'] = $userTransformer->item($boss);
+            }
+        }
+        if ($role['manager_id'])
+        {
+            $manager = $userRepository->item($role['manager_id']);
+            if ($manager)
+            {
+                $role['manager'] = $userTransformer->item($manager);
+            }
+        }
+        if ($userId)
+        {
+            $role['has_star'] = VirtualIdolOwner
+                ::where('idol_id', $id)
+                ->where('user_id', $userId)
+                ->pluck('stock_count')
+                ->first();
+        }
+        else
+        {
+            $role['has_star'] = 0;
+        }
+
+        $searchService = new Search();
+        if ($searchService->checkNeedMigrate('role', $id))
+        {
+            $job = (new \App\Jobs\Search\UpdateWeight('role', $id));
+            dispatch($job);
+        }
+
+        $cartoonTransformer = new CartoonRoleTransformer();
+        return $this->resOK([
+            'bangumi' => $bangumi,
+            'role' => $cartoonTransformer->idol($role),
+            'share_data' => [
+                'title' => $role['name'],
+                'desc' => $role['intro'],
+                'link' => $this->createShareLink('role', $id, $userId),
+                'image' => "{$role['avatar']}-share120jpg"
+            ]
+        ]);
+    }
+
+    // 入股
+    public function get_stock(Request $request, $id)
+    {
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $cartoonRole = $cartoonRoleRepository->item($id);
+        if (is_null($cartoonRole))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $user = $this->getAuthUser();
+        $userId = $user->id;
+        $userIpAddress = new UserIpAddress();
+        $blocked = $userIpAddress->check($userId);
+        if ($blocked)
+        {
+            return $this->resErrRole('你已被封禁，无权入股');
+        }
+
+        $buyCount = $request->get('amount') ?: 1;
+        if (floatval($cartoonRole['max_stock_count']) == floatval($cartoonRole['star_count']))
+        {
+            return $this->resErrRole('股份已售完，无法入股');
+        }
+        if (floatval($cartoonRole['max_stock_count']) < floatval($cartoonRole['star_count']) + floatval($buyCount))
+        {
+            return $this->resErrRole('入股数量超限额，无法购买');
+        }
+
+        $virtualCoinService = new VirtualCoinService();
+        $balance = $virtualCoinService->hasMoneyCount($user);
+
+        $stockPrice = floatval(CartoonRole
+            ::where('id', $id)
+            ->pluck('stock_price')
+            ->first());
+        $payAmount = $this->calculate($buyCount * $stockPrice);
+
+        if ($balance < $payAmount)
+        {
+            return $this->resErrRole('没有足够的虚拟币');
+        }
+
+        $result = $virtualCoinService->cheerForIdol($userId, $id, $payAmount);
+        if (!$result)
+        {
+            return $this->resErrServiceUnavailable('入股失败');
+        }
+
+        $isOldFans = VirtualIdolOwner
+            ::where('idol_id', $id)
+            ->where('user_id', $userId)
+            ->count();
+
+        if ($isOldFans)
+        {
+            // 如果是老粉丝，就更新之前的数据
+            // TODO：更新用户的偶像列表缓存
+            VirtualIdolOwner
+                ::where('idol_id', $id)
+                ->where('user_id', $userId)
+                ->increment('total_price', $payAmount);
+
+            VirtualIdolOwner
+                ::where('idol_id', $id)
+                ->where('user_id', $userId)
+                ->increment('stock_count', $buyCount);
+        }
+        else
+        {
+            // 如果是新粉丝，就新建数据
+            // 并且粉丝数 + 1
+            // TODO：更新用户的偶像列表缓存
+            VirtualIdolOwner::create([
+                'idol_id' => $id,
+                'user_id' => $userId,
+                'total_price' => $payAmount,
+                'stock_count' => $buyCount
+            ]);
+
+            CartoonRole
+                ::where('id', $id)
+                ->increment('fans_count');
+        }
+
+        // 更新市值和发行的股数
+        CartoonRole
+            ::where('id', $id)
+            ->increment('market_price', $payAmount);
+        CartoonRole
+            ::where('id', $id)
+            ->increment('star_count', $buyCount);
+
+        $newCacheKey = $cartoonRoleRepository->newOwnerIdsCacheKey($id);
+        $hotCacheKey = $cartoonRoleRepository->bigOwnerIdsCacheKey($id);
+        if (Redis::EXISTS($newCacheKey))
+        {
+            Redis::ZADD($newCacheKey, strtotime('now'), $userId);
+        }
+        if (Redis::EXISTS($hotCacheKey))
+        {
+            Redis::ZINCRBY($hotCacheKey, $buyCount, $userId);
+        }
+
+        // 上市
+        $doIPO = !$isOldFans && intval($cartoonRole['fans_count']) >= 19 && $cartoonRole['company_state'] == 0;
+        if ($doIPO)
+        {
+            CartoonRole
+                ::where('id', $id)
+                ->update([
+                    'company_state' => 1,
+                    'ipo_at' => Carbon::now()
+                ]);
+
+            $starCount = CartoonRole
+                ::where('id', $id)
+                ->pluck('star_count')
+                ->first();
+
+            $cartoonRoleRepository->setIdolBiggestBoss($id);
+            $cartoonRoleRepository->setIdolMaxStockCount($id, $starCount);
+        }
+
+        $redisKey = "virtual_idol_{$id}";
+        if (Redis::EXISTS($redisKey))
+        {
+            Redis::HINCRBYFLOAT($redisKey, 'star_count', $buyCount);
+            Redis::HINCRBYFLOAT($redisKey, 'market_price', $payAmount);
+            if (!$isOldFans)
+            {
+                Redis::HINCRBYFLOAT($redisKey, 'fans_count', 1);
+            }
+            // TODO：把偶像加到上市列表里，从融资列表里删除
+            if ($doIPO)
+            {
+                Redis::HSET($redisKey, 'company_state', 1);
+            }
+        }
+
+        return $this->resOK();
+    }
+
+    // 股东列表
+    public function owners(Request $request, $id)
+    {
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $cartoonRole = $cartoonRoleRepository->item($id);
+        if (is_null($cartoonRole))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $sort = $request->get('sort') ?: 'biggest';
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $minId = $request->get('minId') ?: 0;
+
+        $idsObj = $sort === 'newest'
+            ? $cartoonRoleRepository->newOwnerIds($id, $minId)
+            : $cartoonRoleRepository->bigOwnerIds($id, $seen);
+
+        $ids = $idsObj['ids'];
+        if (empty($ids))
+        {
+            return $this->resOK([
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ]);
+        }
+
+        $userRepository = new UserRepository();
+        $users = [];
+        foreach ($ids as $userId => $score)
+        {
+            $user = $userRepository->item($userId);
+            if (is_null($user))
+            {
+                continue;
+            }
+            $user['score'] = $score;
+            $users[] = $user;
+        }
+
+        $transformer = new CartoonRoleTransformer();
+        $list = $transformer->owners($users);
+
+        return $this->resOK([
+            'list' => $list,
+            'total' => $idsObj['total'],
+            'noMore' => $idsObj['noMore']
+        ]);
     }
 
     /**
@@ -400,6 +674,156 @@ class CartoonRoleController extends Controller
         return $this->resOK($result);
     }
 
+    // 开放创建偶像
+    public function publicCreate(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'bangumi_id' => 'required|integer',
+            'name' => 'required|min:1|max:35',
+            'alias' => 'required|min:1|max:120',
+            'intro' => 'required|min:1|max:400',
+            'avatar' => 'required'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $user = $this->getAuthUser();
+        $virtualCoinService = new VirtualCoinService();
+        $balance = $virtualCoinService->hasMoneyCount($user);
+        $CREATE_PRICE = 10;
+        if ($balance < $CREATE_PRICE)
+        {
+            return $this->resErrBad('至少需要10个虚拟币');
+        }
+        $userId = $user->id;
+        $name = Purifier::clean($request->get('name'));
+        $alias = Purifier::clean($request->get('alias'));
+        $intro = Purifier::clean($request->get('intro'));
+        $avatar = $request->get('avatar');
+        $bangumiId = $request->get('bangumi_id');
+        $hasRole = CartoonRole
+            ::where('bangumi_id', $bangumiId)
+            ->where('name', $name)
+            ->count();
+
+        if ($hasRole)
+        {
+            return $this->resErrBad('该偶像已存在，请勿重复创建');
+        }
+
+        $imageFilter = new ImageFilter();
+        $badImage = $imageFilter->bad($avatar);
+        if ($badImage)
+        {
+            return $this->resErrBad('请勿使用违规图片');
+        }
+
+        $cartoonRoleRepository = new CartoonRoleRepository();
+
+        $role = CartoonRole::create([
+            'name' => $name,
+            'bangumi_id' => $bangumiId,
+            'alias' => $alias,
+            'intro' => $intro,
+            'avatar' => $cartoonRoleRepository->convertImagePath($avatar),
+            'state' => $userId,
+            'market_price' => $CREATE_PRICE
+        ]);
+
+        if (is_null($role))
+        {
+            return $this->resErrServiceUnavailable('偶像创建失败');
+        }
+
+        $roleId = $role->id;
+        $result = $virtualCoinService->cheerForIdol($userId, $roleId, $CREATE_PRICE);
+        if ($result)
+        {
+            CartoonRole
+                ::where('id', $roleId)
+                ->update([
+                    'star_count' => $CREATE_PRICE,
+                    'fans_count' => 1
+                ]);
+
+            VirtualIdolOwner::create([
+                'idol_id' => $roleId,
+                'user_id' => $userId,
+                'stock_count' => $CREATE_PRICE,
+                'total_price' => $CREATE_PRICE
+            ]);
+        }
+
+        $cartoonRoleRepository->migrateSearchIndex('C', $roleId);
+        $cartoonRoleTrendingService = new CartoonRoleTrendingService($bangumiId);
+        $cartoonRoleTrendingService->create($roleId);
+
+        $bangumiActivityService = new BangumiActivity();
+        $bangumiActivityService->update($bangumiId, 3);
+        $userActivityService = new UserActivity();
+        $userActivityService->update($userId, 3);
+
+        return $this->resCreated($roleId);
+    }
+
+    // 创建一笔交易
+    public function createExchange(Request $request)
+    {
+
+    }
+
+    // 获取偶像列表
+    public function getIdolList(Request $request)
+    {
+        $type = $request->get('type') ?: 'trending'; // trending 或者 user 或者 bangumi
+        $state = $request->get('state') ?: 0;   // 0 是融资中，1是已上市
+        $seen = $request->get('seenIds') ? explode(',', $request->get('seenIds')) : [];
+        $take = $request->get('take') ?: 20;
+        $sort = $request->get('sort') ?: 'newest';
+        $id = $request->get('id');
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        if ($type === 'user')
+        {
+            $idsObj = $cartoonRoleRepository->userIdolList($id, $seen, $take);
+        }
+        else if ($type === 'bangumi')
+        {
+            $idsObj = $cartoonRoleRepository->bangumiIdolList($id, $seen, $take);
+        }
+        else
+        {
+            if ($state == 0)
+            {
+                // 融资中的公司
+                $idsObj = $cartoonRoleRepository->newbieIdolList($sort, $seen, $take);
+            }
+            else
+            {
+                $idsObj = $cartoonRoleRepository->marketIdolList($sort, $seen, $take);
+            }
+        }
+        if (empty($idsObj['ids']))
+        {
+            return [
+                'list' => [],
+                'noMore' => true,
+                'total' => 0
+            ];
+        }
+
+        $list = $cartoonRoleRepository->list($idsObj['ids']);
+        $cartoonRoleTransformer = new CartoonRoleTransformer();
+
+        return $this->resOK([
+            'list' => $cartoonRoleTransformer->market($list),
+            'noMore' => count($list) ? $idsObj['noMore'] : true,
+            'total' => $idsObj['total']
+        ]);
+    }
+
     /**
      * 创建偶像
      *
@@ -426,7 +850,7 @@ class CartoonRoleController extends Controller
             'bangumi_id' => 'required|integer',
             'name' => 'required|min:1|max:35',
             'alias' => 'required|min:1|max:120',
-            'intro' => 'required|min:1|max:1000',
+            'intro' => 'required|min:1|max:400',
             'avatar' => 'required'
         ]);
 
@@ -523,29 +947,49 @@ class CartoonRoleController extends Controller
         if (!$user->is_admin)
         {
             $bangumiManager = new BangumiManager();
-            if (!$bangumiManager->isOwner($bangumiId, $userId))
+            if (
+                !$bangumiManager->isOwner($bangumiId, $userId) &&
+                $cartoonRole['boss_id'] != $userId
+            )
             {
                 return $this->resErrRole();
+            }
+            $lastEditAt = $cartoonRole['last_edit_at'];
+            if ($lastEditAt && strtotime($lastEditAt) > strtotime('1 week ago'))
+            {
+                return $this->resErrBad('一周只能修改一次');
             }
         }
 
         $alias = Purifier::clean($request->get('alias'));
         $alias = $alias ? $alias : $cartoonRole['alias'];
+        $data = [
+            'bangumi_id' => $bangumiId,
+            'avatar' => $request->get('avatar'),
+            'name' => Purifier::clean($request->get('name')),
+            'intro' => Purifier::clean($request->get('intro')),
+            'alias' => $alias,
+            'state' => $userId,
+            'last_edit_at' => Carbon::now()
+        ];
+        $stock_price = $request->get('stock_price');
+        if ($stock_price)
+        {
+            $data['stock_price'] = $stock_price;
+        }
+        $max_stock_count = $request->get('max_stock_count');
+        if ($max_stock_count)
+        {
+            $data['max_stock_count'] = $max_stock_count;
+        }
 
         CartoonRole
             ::where('id', $id)
-            ->update([
-                'bangumi_id' => $bangumiId,
-                'avatar' => $request->get('avatar'),
-                'name' => Purifier::clean($request->get('name')),
-                'intro' => Purifier::clean($request->get('intro')),
-                'alias' => $alias,
-                'state' => $userId
-            ]);
+            ->update($data);
 
         $cartoonRoleRepository->migrateSearchIndex('U', $id);
 
-        Redis::DEL('cartoon_role_' . $id);
+        Redis::DEL("virtual_idol_{$id}");
 
         return $this->resOK();
     }
@@ -735,5 +1179,21 @@ class CartoonRoleController extends Controller
         }
 
         return $this->resOK();
+    }
+
+    // 四舍六入算法
+    protected function calculate($num, $precision = 2)
+    {
+        $pow = pow(10, $precision);
+        if (
+            (floor($num * $pow * 10) % 5 == 0) &&
+            (floor($num * $pow * 10) == $num * $pow * 10) &&
+            (floor($num * $pow) % 2 == 0)
+        )
+        {
+            return floor($num * $pow) / $pow;
+        } else {
+            return round($num, $precision);
+        }
     }
 }

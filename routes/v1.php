@@ -9,8 +9,6 @@ $api = app('Dingo\Api\Routing\Router');
 
 $api->version(['v1', 'latest'], function ($api)
 {
-    $api->get('/migrate', 'App\Api\V1\Controllers\BangumiSeasonController@videoControl');
-
     $api->group(['prefix' => '/search'], function ($api)
     {
         $api->get('/new', 'App\Api\V1\Controllers\SearchController@search');
@@ -330,19 +328,29 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/create', 'App\Api\V1\Controllers\CartoonRoleController@create');
 
             $api->post('/edit', 'App\Api\V1\Controllers\CartoonRoleController@edit');
+
+            $api->post('/user_create', 'App\Api\V1\Controllers\CartoonRoleController@publicCreate');
         });
 
         $api->group(['prefix' => '/{id}'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\CartoonRoleController@show');
 
+            $api->get('/stock_show', 'App\Api\V1\Controllers\CartoonRoleController@stock_show');
+
             $api->get('/fans', 'App\Api\V1\Controllers\CartoonRoleController@fans');
 
+            $api->get('/owners', 'App\Api\V1\Controllers\CartoonRoleController@owners');
+
             $api->post('/star', 'App\Api\V1\Controllers\CartoonRoleController@star')->middleware(['jwt.auth']);
+
+            $api->post('/get_stock', 'App\Api\V1\Controllers\CartoonRoleController@get_stock')->middleware(['jwt.auth']);
         });
 
         $api->group(['prefix' => '/list'], function ($api)
         {
+            $api->get('/idols', 'App\Api\V1\Controllers\CartoonRoleController@getIdolList');
+
             $api->get('/today', 'App\Api\V1\Controllers\CartoonRoleController@todayActivity');
 
             $api->get('/dalao', 'App\Api\V1\Controllers\CartoonRoleController@dalaoUsers');
