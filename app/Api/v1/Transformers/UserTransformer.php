@@ -123,7 +123,8 @@ class UserTransformer extends Transformer
                 'banlance' => [
                     'coin_count' => $user['virtual_coin'],
                     'light_count' => $user['money_coin']
-                ]
+                ],
+                'balance' => floatval($user['virtual_coin']) + floatval($user['money_coin'])
             ];
         });
     }

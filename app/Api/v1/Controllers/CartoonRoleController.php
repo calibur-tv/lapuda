@@ -588,6 +588,47 @@ class CartoonRoleController extends Controller
         ]);
     }
 
+    // 我发起的交易
+    public function myDeal()
+    {
+        $userId = $this->getAuthUserId();
+        $ids = VirtualIdolDeal
+            ::where('user_id', $userId)
+            ->orderBy('id', 'DESC')
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($ids))
+        {
+            return $this->resOK([
+                'list' => [],
+                'noMore' => true,
+                'total' => 0
+            ]);
+        }
+
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $result = [];
+        foreach ($ids as $id)
+        {
+            $deal = $cartoonRoleRepository->dealItem($id, true);
+            $idol = $cartoonRoleRepository->item($deal['idol_id']);
+            if (is_null($idol))
+            {
+                continue;
+            }
+            $deal['idol'] = $idol;
+            $result[] = $deal;
+        }
+        $cartoonRoleTransformer = new CartoonRoleTransformer();
+
+        return $this->resOK([
+            'list' => $cartoonRoleTransformer->mineDealList($result),
+            'noMore' => true,
+            'total' => count($result)
+        ]);
+    }
+
     /**
      * 24小时偶像动态榜单
      *
@@ -1327,7 +1368,13 @@ class CartoonRoleController extends Controller
                 $idsObj = $cartoonRoleRepository->marketIdolList($sort, $seen, $take);
             }
         }
-        if (empty($idsObj['ids']))
+        $ids = [];
+        foreach ($idsObj['ids'] as $id => $score)
+        {
+            $ids[] = $id;
+        }
+
+        if (empty($ids))
         {
             return $this->resOK([
                 'list' => [],
@@ -1336,7 +1383,7 @@ class CartoonRoleController extends Controller
             ]);
         }
 
-        $list = $cartoonRoleRepository->list($idsObj['ids']);
+        $list = $cartoonRoleRepository->list($ids);
         $cartoonRoleTransformer = new CartoonRoleTransformer();
 
         return $this->resOK([

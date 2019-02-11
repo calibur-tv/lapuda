@@ -187,10 +187,11 @@ class CartoonRoleRepository extends Repository
             return VirtualIdolOwner
                 ::where('user_id', $userId)
                 ->orderBy('stock_count', 'desc')
-                ->pluck('idol_id');
-        });
+                ->pluck('stock_count', 'idol_id AS id');
 
-        return $this->filterIdsBySeenIds($ids, $seenIds, $count);
+        }, false, true);
+
+        return $this->filterIdsBySeenIds($ids, $seenIds, $count, true);
     }
 
     public function bangumiIdolList($bangumiId, $seenIds, $count)
@@ -200,10 +201,10 @@ class CartoonRoleRepository extends Repository
             return CartoonRole
                 ::where('bangumi_id', $bangumiId)
                 ->orderBy('market_price', 'DESC')
-                ->pluck('id');
-        });
+                ->pluck('market_price', 'id');
+        }, false, true);
 
-        return $this->filterIdsBySeenIds($ids, $seenIds, $count);
+        return $this->filterIdsBySeenIds($ids, $seenIds, $count, true);
     }
 
     public function newbieIdolList($sort, $seenIds, $count)
@@ -220,22 +221,22 @@ class CartoonRoleRepository extends Repository
                 return CartoonRole
                     ::where('company_state', 0)
                     ->orderBy('id', 'DESC')
-                    ->pluck('id');
+                    ->pluck('id', 'id');
             }
             else if ($sort === 'star_count')
             {
                 return CartoonRole
                     ::where('company_state', 0)
                     ->orderBy('star_count', 'DESC')
-                    ->pluck('id');
+                    ->pluck('star_count', 'id');
             }
             else
             {
                 return [];
             }
-        });
+        }, false, true);
 
-        return $this->filterIdsBySeenIds($ids, $seenIds, $count);
+        return $this->filterIdsBySeenIds($ids, $seenIds, $count, true);
     }
 
     public function marketIdolList($sort, $seenIds, $count)
@@ -293,14 +294,7 @@ class CartoonRoleRepository extends Repository
             }
         }, false, true);
 
-        $result = $this->filterIdsBySeenIds($ids, $seenIds, $count, true);
-        $roleId = [];
-        foreach ($result['ids'] as $id => $score)
-        {
-            $roleId[] = $id;
-        }
-        $result['ids'] = $roleId;
-        return $result;
+        return $this->filterIdsBySeenIds($ids, $seenIds, $count, true);
     }
 
     public function marketIdolListCacheKey($sort)
@@ -313,16 +307,19 @@ class CartoonRoleRepository extends Repository
         return "newbie_virtual_idol_list_{$sort}_ids";
     }
 
-    public function dealItem($id)
+    public function dealItem($id, $showDeleted = false)
     {
         if (!$id)
         {
             return null;
         }
 
-        return $this->RedisHash($this->idolDealItemCacheKey($id), function () use ($id)
+        $result = $this->RedisHash($this->idolDealItemCacheKey($id), function () use ($id)
         {
-            $deal = VirtualIdolDeal::find($id);
+            $deal = VirtualIdolDeal
+                ::withTrashed()
+                ->where('id', $id)
+                ->first();
 
             if (is_null($deal))
             {
@@ -331,6 +328,18 @@ class CartoonRoleRepository extends Repository
 
             return $deal->toArray();
         });
+
+        if (!$result)
+        {
+            return null;
+        }
+
+        if (!$result || ($result['deleted_at'] && !$showDeleted))
+        {
+            return null;
+        }
+
+        return $result;
     }
 
     public function idolDealIds($seenIds, $count)

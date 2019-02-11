@@ -134,6 +134,34 @@ class CartoonRoleTransformer extends Transformer
         });
     }
 
+    public function mineDealList($list)
+    {
+        return $this->collection($list, function ($info)
+        {
+            return [
+                'id' => (int)$info['id'],
+                'product_count' => sprintf("%.2f", $info['product_count']),
+                'product_price' => sprintf("%.2f", $info['product_price']),
+                'last_count' => sprintf("%.2f", $info['last_count']),
+                'idol' => $this->transformer($info['idol'], function ($idol)
+                {
+                    return [
+                        'id' => (int)$idol['id'],
+                        'avatar' => $idol['avatar'],
+                        'name' => $idol['name'],
+                        'market_price' => sprintf("%.2f", $idol['market_price']),
+                        'stock_price' => sprintf("%.2f", $idol['stock_price']),
+                        'star_count' => sprintf("%.2f", $idol['star_count']),
+                        'is_locked' => floatval($idol['max_stock_count']) && floatval($idol['max_stock_count']) <= floatval($idol['star_count']),
+                        'fans_count' => intval($idol['fans_count']),
+                    ];
+                }),
+                'deleted_at' => $info['deleted_at'],
+                'created_at' => $info['created_at']
+            ];
+        });
+    }
+
     public function owners($users)
     {
         return $this->collection($users, function ($user)
