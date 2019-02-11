@@ -263,6 +263,18 @@ class VirtualCoinService
         return $this->useCoinFirst($userId, $amount, 9, $idolId, 0);
     }
 
+    // 进行偶像交易
+    public function makeIdolDeal($fromUserId, $toUserId, $idolId, $amount)
+    {
+        $result = $this->useCoinFirst($fromUserId, $amount, 22, $idolId, $toUserId);
+        if (!$result)
+        {
+            return false;
+        }
+        $this->addCoin($toUserId, $amount, 22, $idolId, $fromUserId);
+        return true;
+    }
+
     // 提现
     public function withdraw($userId, $amount)
     {

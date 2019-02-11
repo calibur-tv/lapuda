@@ -336,7 +336,7 @@ $api->version(['v1', 'latest'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\CartoonRoleController@show');
 
-            $api->get('/stock_show', 'App\Api\V1\Controllers\CartoonRoleController@stock_show');
+            $api->get('/stock_show', 'App\Api\V1\Controllers\CartoonRoleController@stockShow');
 
             $api->get('/fans', 'App\Api\V1\Controllers\CartoonRoleController@fans');
 
@@ -344,8 +344,18 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->post('/star', 'App\Api\V1\Controllers\CartoonRoleController@star')->middleware(['jwt.auth']);
 
-            $api->post('/get_stock', 'App\Api\V1\Controllers\CartoonRoleController@get_stock')->middleware(['jwt.auth']);
+            $api->post('/buy_stock', 'App\Api\V1\Controllers\CartoonRoleController@buyStock')->middleware(['jwt.auth']);
+
+            $api->get('/get_deal', 'App\Api\V1\Controllers\CartoonRoleController@getCurrentDeal')->middleware(['jwt.auth']);
         });
+
+        $api->get('/deal_list', 'App\Api\V1\Controllers\CartoonRoleController@getDealList');
+
+        $api->post('/create_deal', 'App\Api\V1\Controllers\CartoonRoleController@createDeal')->middleware(['jwt.auth']);
+
+        $api->post('/delete_deal', 'App\Api\V1\Controllers\CartoonRoleController@deleteDeal')->middleware(['jwt.auth']);
+
+        $api->post('/make_deal', 'App\Api\V1\Controllers\CartoonRoleController@makeDeal')->middleware(['jwt.auth']);
 
         $api->group(['prefix' => '/list'], function ($api)
         {

@@ -33,9 +33,9 @@ class LightCoin extends Model
      * 2 => 石头（已消费）
      */
     protected $fillable = [
-        'holder_id',    // 持有者 id
-        'holder_type',  // 持有者类型
-        'origin_from',  // 团子的来源
-        'state'         // 流通的状态
+        'holder_id', // 持有者 id
+        'holder_type', // 持有者类型
+        'origin_from', // 团子的来源
+        'state' // 流通的状态
     ];
 }

@@ -11,16 +11,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class VirtualIdolOwner extends Model
+class VirtualIdolDeal extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'virtual_idol_owners';
+    protected $table = 'virtual_idol_deals';
 
     protected $fillable = [
         'idol_id',
         'user_id',
-        'stock_count', // 持有的股数
-        'total_price' // 持有股数对应的总价
+        'product_count',
+        'product_price',
+        'last_count'
     ];
 }

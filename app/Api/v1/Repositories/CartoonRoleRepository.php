@@ -11,6 +11,7 @@ namespace App\Api\V1\Repositories;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
+use App\Models\VirtualIdolDeal;
 use App\Models\VirtualIdolOwner;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -85,7 +86,6 @@ class CartoonRoleRepository extends Repository
         {
             return CartoonRoleFans::where('role_id', $roleId)
                 ->orderBy('updated_at', 'desc')
-                ->latest()
                 ->take(100)
                 ->pluck('updated_at', 'user_id AS id');
 
@@ -100,7 +100,6 @@ class CartoonRoleRepository extends Repository
         {
             return CartoonRoleFans::where('role_id', $roleId)
                 ->orderBy('star_count', 'desc')
-                ->latest()
                 ->take(100)
                 ->pluck('star_count', 'user_id AS id');
 
@@ -116,7 +115,6 @@ class CartoonRoleRepository extends Repository
             return VirtualIdolOwner
                 ::where('idol_id', $roleId)
                 ->orderBy('updated_at', 'desc')
-                ->latest()
                 ->take(100)
                 ->pluck('updated_at', 'user_id AS id');
 
@@ -132,7 +130,6 @@ class CartoonRoleRepository extends Repository
             return VirtualIdolOwner
                 ::where('idol_id', $roleId)
                 ->orderBy('stock_count', 'desc')
-                ->latest()
                 ->take(100)
                 ->pluck('stock_count', 'user_id AS id');
 
@@ -190,7 +187,6 @@ class CartoonRoleRepository extends Repository
             return VirtualIdolOwner
                 ::where('user_id', $userId)
                 ->orderBy('stock_count', 'desc')
-                ->latest()
                 ->pluck('idol_id');
         });
 
@@ -317,6 +313,46 @@ class CartoonRoleRepository extends Repository
         return "newbie_virtual_idol_list_{$sort}_ids";
     }
 
+    public function dealItem($id)
+    {
+        if (!$id)
+        {
+            return null;
+        }
+
+        return $this->RedisHash($this->idolDealItemCacheKey($id), function () use ($id)
+        {
+            $deal = VirtualIdolDeal::find($id);
+
+            if (is_null($deal))
+            {
+                return null;
+            }
+
+            return $deal->toArray();
+        });
+    }
+
+    public function idolDealIds($seenIds, $count)
+    {
+        $ids = $this->RedisSort($this->idolDealListCacheKey(), function ()
+        {
+            return VirtualIdolDeal
+                ::orderBy('updated_at', 'desc')
+                ->pluck('updated_at', 'id');
+
+        }, true, true);
+
+        $result = $this->filterIdsBySeenIds($ids, $seenIds, $count, true);
+        $roleId = [];
+        foreach ($result['ids'] as $id => $score)
+        {
+            $roleId[] = $id;
+        }
+        $result['ids'] = $roleId;
+        return $result;
+    }
+
     // 用户的偶像列表缓存 key
     public function userIdolListCacheKey($userId)
     {
@@ -345,6 +381,18 @@ class CartoonRoleRepository extends Repository
     public function bigOwnerIdsCacheKey($roleId)
     {
         return "virtual_idol_{$roleId}_biggest_owner_ids";
+    }
+
+    // 交易大厅的列表id缓存
+    public function idolDealListCacheKey()
+    {
+        return 'virtual_idol_deal_list_ids';
+    }
+
+    // 交易的缓存key
+    public function idolDealItemCacheKey($id)
+    {
+        return "virtual_idol_deal_{$id}";
     }
 
     public function migrateSearchIndex($type, $id, $async = true)

@@ -38,7 +38,7 @@ class User extends Authenticatable
         'light_count',
         'coin_count_v2',
         'virtual_coin', // 团子
-        'money_coin',   // 光玉
+        'money_coin' // 光玉
     ];
 
     protected $hidden = ['password'];

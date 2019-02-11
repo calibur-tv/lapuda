@@ -40,7 +40,7 @@ class VirtualCoin extends Model
      * 19 => 活跃吧主送光玉
      * 20 => 被人邀请注册送团
      * 21 => 承包季度视频
-     * 22 => TODO：待定
+     * 22 => 偶像股份交易
      * 23 => 视频被承包
      */
     protected $fillable = [

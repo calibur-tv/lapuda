@@ -75,6 +75,7 @@ class CartoonRoleTransformer extends Transformer
                 'market_price' => sprintf("%.2f", $info['market_price']),
                 'stock_price' => sprintf("%.2f", $info['stock_price']),
                 'star_count' => sprintf("%.2f", $info['star_count']),
+                'is_locked' => floatval($info['max_stock_count']) && floatval($info['max_stock_count']) <= floatval($info['star_count']),
                 'fans_count' => intval($info['fans_count']),
                 'company_state' => intval($info['company_state']),
                 'ipo_at' => $info['ipo_at'],
@@ -93,6 +94,42 @@ class CartoonRoleTransformer extends Transformer
                 'avatar' => $user['avatar'],
                 'nickname' => $user['nickname'],
                 'score' => (int)$user['score']
+            ];
+        });
+    }
+
+    public function dealList($list)
+    {
+        return $this->collection($list, function ($info)
+        {
+            return [
+                'id' => (int)$info['id'],
+                'product_count' => sprintf("%.2f", $info['product_count']),
+                'product_price' => sprintf("%.2f", $info['product_price']),
+                'last_count' => sprintf("%.2f", $info['last_count']),
+                'idol' => $this->transformer($info['idol'], function ($idol)
+                {
+                    return [
+                        'id' => (int)$idol['id'],
+                        'avatar' => $idol['avatar'],
+                        'name' => $idol['name'],
+                        'market_price' => sprintf("%.2f", $idol['market_price']),
+                        'stock_price' => sprintf("%.2f", $idol['stock_price']),
+                        'star_count' => sprintf("%.2f", $idol['star_count']),
+                        'is_locked' => floatval($idol['max_stock_count']) && floatval($idol['max_stock_count']) <= floatval($idol['star_count']),
+                        'fans_count' => intval($idol['fans_count']),
+                    ];
+                }),
+                'user' => $this->transformer($info['user'], function ($user)
+                {
+                    return [
+                        'id' => (int)$user['id'],
+                        'avatar' => $user['avatar'],
+                        'nickname' => $user['nickname'],
+                        'zone' => $user['zone']
+                    ];
+                }),
+                'created_at' => $info['created_at']
             ];
         });
     }

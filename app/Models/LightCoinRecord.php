@@ -44,12 +44,12 @@ class LightCoinRecord extends Model
      * 19 => 撤销应援
      */
     protected $fillable = [
-        'coin_id',          // 货币的id
-        'order_id',         // 订单的id
-        'from_user_id',     // 消费者id
-        'to_user_id',       // 收费者id
-        'to_product_id',    // 产品id
-        'to_product_type',  // 产品的类型
-        'order_amount'      // 订单的金额
+        'coin_id', // 货币的id
+        'order_id', // 订单的id
+        'from_user_id', // 消费者id
+        'to_user_id', // 收费者id
+        'to_product_id', // 产品id
+        'to_product_type', // 产品的类型
+        'order_amount' // 订单的金额
     ];
 }
