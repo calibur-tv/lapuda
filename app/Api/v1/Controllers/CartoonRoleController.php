@@ -520,21 +520,30 @@ class CartoonRoleController extends Controller
                 Redis::ZREM($cacheKey, $id);
             }
         }
-        // 更新公司列表
-        $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('activity');
-        if (Redis::EXISTS($cacheKey))
+        if ($cartoonRole['company_state'] == 1 || $doIPO)
         {
-            Redis::ZADD($cacheKey, strtotime('now'), $id);
+            // 更新公司列表
+            $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('activity');
+            if (Redis::EXISTS($cacheKey))
+            {
+                Redis::ZADD($cacheKey, strtotime('now'), $id);
+            }
+            $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('market_price');
+            if (Redis::EXISTS($cacheKey))
+            {
+                Redis::ZADD($cacheKey, $cartoonRole['market_price'] + $payAmount, $id);
+            }
+            if (!$isOldFans)
+            {
+                $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('fans_count');
+                Redis::ZADD($cacheKey, $cartoonRole['fans_count'] + 1, $id);
+            }
         }
-        $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('market_price');
-        if (Redis::EXISTS($cacheKey))
+        else if (!$doIPO)
         {
-            Redis::ZADD($cacheKey, $cartoonRole['market_price'] + $payAmount, $id);
-        }
-        if (!$isOldFans)
-        {
-            $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('fans_count');
-            Redis::ZADD($cacheKey, $cartoonRole['fans_count'] + 1, $id);
+            // 融资中的公司
+            $cacheKey = $cartoonRoleRepository->newbieIdolListCacheKey('star_count');
+            Redis::ZADD($cacheKey, $cartoonRole['star_count'] + $buyCount, $id);
         }
 
         return $this->resOK();
