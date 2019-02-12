@@ -364,11 +364,12 @@ class CartoonRoleController extends Controller
         }
 
         $buyCount = $request->get('amount') ?: 1;
-        if (floatval($cartoonRole['max_stock_count']) == floatval($cartoonRole['star_count']))
+        $maxStarCount = floatval($cartoonRole['max_stock_count']);
+        if ($maxStarCount && $maxStarCount == floatval($cartoonRole['star_count']))
         {
             return $this->resErrRole('产品已停牌，无法入股');
         }
-        if (floatval($cartoonRole['max_stock_count']) < floatval($cartoonRole['star_count']) + floatval($buyCount))
+        if ($maxStarCount && ($maxStarCount < floatval($cartoonRole['star_count']) + floatval($buyCount)))
         {
             return $this->resErrRole('入股数量超限额，无法购买');
         }
