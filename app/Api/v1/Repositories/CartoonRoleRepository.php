@@ -249,6 +249,7 @@ class CartoonRoleRepository extends Repository
          * newest => 最新上市
          * activity => 最新交易
          */
+        $isTime = $sort === 'activity' || $sort === 'newest';
         $ids = $this->RedisSort($this->marketIdolListCacheKey($sort), function () use ($sort)
         {
             if ($sort === 'market_price')
@@ -292,7 +293,7 @@ class CartoonRoleRepository extends Repository
             {
                 return [];
             }
-        }, false, true);
+        }, $isTime, true);
 
         return $this->filterIdsBySeenIds($ids, $seenIds, $count, true);
     }

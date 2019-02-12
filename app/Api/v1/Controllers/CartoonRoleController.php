@@ -1426,10 +1426,10 @@ class CartoonRoleController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'bangumi_id' => 'required|integer',
-            'name' => 'required|min:1|max:35',
-            'alias' => 'required|min:1|max:120',
-            'intro' => 'required|min:1|max:400',
-            'avatar' => 'required'
+            'name' => 'required|stSring|min:1|max:35',
+            'alias' => 'required|string|min:1|max:120',
+            'intro' => 'required|string|min:1|max:400',
+            'avatar' => 'required|string'
         ]);
 
         if ($validator->fails())
@@ -1509,6 +1509,19 @@ class CartoonRoleController extends Controller
      */
     public function edit(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'bangumi_id' => 'required|integer',
+            'name' => 'required|string|min:1|max:35',
+            'alias' => 'required|string|min:1|max:120',
+            'intro' => 'required|string|min:1|max:400',
+            'avatar' => 'required|string'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
         $user = $this->getAuthUser();
         $userId = $user->id;
         $id = $request->get('id');
