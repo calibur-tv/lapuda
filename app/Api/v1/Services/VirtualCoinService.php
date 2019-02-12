@@ -534,7 +534,7 @@ class VirtualCoinService
                 return new VideoRepository();
                 break;
             case 22:
-                return null;
+                return new CartoonRoleRepository();
                 break;
             case 23:
                 return new VideoRepository();
