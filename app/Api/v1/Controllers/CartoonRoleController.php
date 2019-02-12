@@ -482,14 +482,11 @@ class CartoonRoleController extends Controller
         {
             if ($isOldFans)
             {
-                if ($isOldFans)
-                {
-                    Redis::ZADD($cacheKey, $oldOwnerData->stock_count + $buyCount, $userId);
-                }
-                else
-                {
-                    Redis::ZADD($cacheKey, $buyCount, $userId);
-                }
+                Redis::ZADD($cacheKey, $oldOwnerData->stock_count + $buyCount, $userId);
+            }
+            else
+            {
+                Redis::ZADD($cacheKey, $buyCount, $userId);
             }
         }
         // 更新偶像缓存
