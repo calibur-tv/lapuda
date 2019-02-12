@@ -482,11 +482,11 @@ class CartoonRoleController extends Controller
         {
             if ($isOldFans)
             {
-                Redis::ZADD($cacheKey, $oldOwnerData->stock_count + $buyCount, $userId);
+                Redis::ZADD($cacheKey, $oldOwnerData->stock_count + $buyCount, $id);
             }
             else
             {
-                Redis::ZADD($cacheKey, $buyCount, $userId);
+                Redis::ZADD($cacheKey, $buyCount, $id);
             }
         }
         // 更新偶像缓存
@@ -522,6 +522,11 @@ class CartoonRoleController extends Controller
         {
             // 更新公司列表
             $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('activity');
+            if (Redis::EXISTS($cacheKey))
+            {
+                Redis::ZADD($cacheKey, strtotime('now'), $id);
+            }
+            $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('newest');
             if (Redis::EXISTS($cacheKey))
             {
                 Redis::ZADD($cacheKey, strtotime('now'), $id);
