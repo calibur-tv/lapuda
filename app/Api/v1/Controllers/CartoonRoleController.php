@@ -1298,6 +1298,25 @@ class CartoonRoleController extends Controller
         return $this->resOK($deal);
     }
 
+    public function getMyIdolDeal($id)
+    {
+        $userId = $this->getAuthUserId();
+        $deal = VirtualIdolDeal
+            ::where('user_id', $userId)
+            ->where('idol_id', $id)
+            ->first();
+
+        $has_star = VirtualIdolOwner
+            ::where('idol_id', $id)
+            ->pluck('stock_count')
+            ->first();
+
+        return $this->resOK([
+            'deal' => $deal,
+            'has_star' => $has_star
+        ]);
+    }
+
     // 交易大厅列表
     public function getDealList(Request $request)
     {

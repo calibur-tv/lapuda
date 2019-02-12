@@ -347,6 +347,8 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/buy_stock', 'App\Api\V1\Controllers\CartoonRoleController@buyStock')->middleware(['jwt.auth']);
 
             $api->get('/get_deal', 'App\Api\V1\Controllers\CartoonRoleController@getCurrentDeal')->middleware(['jwt.auth']);
+
+            $api->get('/get_idol_deal', 'App\Api\V1\Controllers\CartoonRoleController@getMyIdolDeal')->middleware(['jwt.auth']);
         });
 
         $api->get('/deal_list', 'App\Api\V1\Controllers\CartoonRoleController@getDealList');
