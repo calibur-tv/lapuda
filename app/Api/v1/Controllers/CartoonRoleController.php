@@ -52,6 +52,8 @@ class CartoonRoleController extends Controller
      */
     public function star(Request $request, $id)
     {
+        return $this->resErrServiceUnavailable('应援功能暂时关闭');
+
         $cartoonRoleRepository = new CartoonRoleRepository();
         $cartoonRole = $cartoonRoleRepository->item($id);
         if (is_null($cartoonRole))
