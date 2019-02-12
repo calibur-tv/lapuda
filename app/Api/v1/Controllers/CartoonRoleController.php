@@ -1535,23 +1535,6 @@ class CartoonRoleController extends Controller
 
         $bangumiId = $cartoonRole['bangumi_id'];
 
-        if (!$user->is_admin)
-        {
-            $bangumiManager = new BangumiManager();
-            if (
-                !$bangumiManager->isOwner($bangumiId, $userId) &&
-                $cartoonRole['boss_id'] != $userId
-            )
-            {
-                return $this->resErrRole();
-            }
-            $lastEditAt = $cartoonRole['last_edit_at'];
-            if ($lastEditAt && strtotime($lastEditAt) > strtotime('1 week ago'))
-            {
-                return $this->resErrBad('一周只能修改一次');
-            }
-        }
-
         $alias = Purifier::clean($request->get('alias'));
         $alias = $alias ? $alias : $cartoonRole['alias'];
         $data = [
@@ -1572,6 +1555,23 @@ class CartoonRoleController extends Controller
         if ($max_stock_count)
         {
             $data['max_stock_count'] = $max_stock_count;
+        }
+
+        if ($max_stock_count || $stock_price)
+        {
+            $bangumiManager = new BangumiManager();
+            if (
+                !$bangumiManager->isOwner($bangumiId, $userId) &&
+                $cartoonRole['boss_id'] != $userId
+            )
+            {
+                return $this->resErrRole();
+            }
+            $lastEditAt = $cartoonRole['last_edit_at'];
+            if ($lastEditAt && strtotime($lastEditAt) > strtotime('1 week ago'))
+            {
+                return $this->resErrBad('一周只能修改一次');
+            }
         }
 
         CartoonRole
