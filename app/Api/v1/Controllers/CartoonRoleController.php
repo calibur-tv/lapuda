@@ -502,7 +502,7 @@ class CartoonRoleController extends Controller
             if ($doIPO)
             {
                 Redis::HSET($cacheKey, 'company_state', 1);
-                Redis::HSET($cacheKey, 'ipo_at', strtotime('now'));
+                Redis::HSET($cacheKey, 'ipo_at', Carbon::now());
             }
         }
         if ($doIPO)
