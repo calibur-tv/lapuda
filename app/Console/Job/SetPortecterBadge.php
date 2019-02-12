@@ -15,6 +15,7 @@ use App\Api\V1\Services\Tag\Base\UserBadgeService;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class SetPortecterBadge extends Command
 {
