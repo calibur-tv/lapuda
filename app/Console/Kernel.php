@@ -43,7 +43,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('UpdateIdolBoss')->hourly();
         $schedule
             ->command('SetPortecterBadge')
-            ->dailyAt('9:20');
+            ->dailyAt('10:00');
 //        $schedule
 //            ->command('MigrationCoin')
 //            ->everyMinute()

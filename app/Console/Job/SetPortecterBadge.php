@@ -80,7 +80,7 @@ class SetPortecterBadge extends Command
                 );
                 $lovers[] = $lover_id;
             }
-            $userIds = CartoonRole
+            $userIds = CartoonRoleFans
                 ::where('role_id', $idol_id)
                 ->where('user_id', '<>', $lover_id)
                 ->where('star_count', '>=', 30)
