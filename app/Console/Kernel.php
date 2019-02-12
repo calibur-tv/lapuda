@@ -41,9 +41,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('CronFreeUser')->everyFiveMinutes();
         $schedule->command('Trending')->hourly();
         $schedule->command('UpdateIdolBoss')->hourly();
-        $schedule
-            ->command('SetPortecterBadge')
-            ->dailyAt('10:00');
+//        $schedule
+//            ->command('SetPortecterBadge')
+//            ->dailyAt('10:00');
 //        $schedule
 //            ->command('MigrationCoin')
 //            ->everyMinute()
