@@ -121,10 +121,10 @@ class UserTransformer extends Transformer
                 'banned_to' => $user['banned_to'],
                 'badge' => $user['badge'],
                 'banlance' => [
-                    'coin_count' => $user['virtual_coin'],
-                    'light_count' => $user['money_coin']
+                    'coin_count' => sprintf("%.2f", $user['virtual_coin']),
+                    'light_count' => sprintf("%.2f", $user['money_coin'])
                 ],
-                'balance' => floatval($user['virtual_coin']) + floatval($user['money_coin'])
+                'pocket' => floatval($user['virtual_coin']) + floatval($user['money_coin'])
             ];
         });
     }
