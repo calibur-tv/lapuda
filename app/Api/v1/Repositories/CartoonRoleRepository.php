@@ -444,6 +444,13 @@ class CartoonRoleRepository extends Repository
         return 'virtual_idol_recent_buy_list';
     }
 
+    // 每日实时股市价格变动
+    public function idolRealtimeMarketPrice($idol_id, $time = null)
+    {
+        $data = $time ? $time : date('Y-m-d');
+        return "virtual_idol_{$idol_id}_{$data}_market_price";
+    }
+
     // 最近交易的记录列表
     public function recentDealStockCacheKey()
     {
