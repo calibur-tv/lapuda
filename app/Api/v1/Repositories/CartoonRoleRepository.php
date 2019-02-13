@@ -405,6 +405,18 @@ class CartoonRoleRepository extends Repository
         return "virtual_idol_deal_{$id}";
     }
 
+    // 最近入股的记录列表
+    public function recentBuyStockCacheKey()
+    {
+        return 'virtual_idol_recent_buy_list';
+    }
+
+    // 最近交易的记录列表
+    public function recentDealStockCacheKey()
+    {
+        return 'virtual_idol_recent_deal_list';
+    }
+
     public function migrateSearchIndex($type, $id, $async = true)
     {
         $type = $type === 'C' ? 'C' : 'U';

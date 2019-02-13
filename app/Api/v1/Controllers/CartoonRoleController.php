@@ -451,11 +451,12 @@ class CartoonRoleController extends Controller
             $cartoonRoleRepository->setIdolBiggestBoss($id);
         }
 
+        $currentTime = strtotime('now');
         // 更新新股东列表
         $cacheKey = $cartoonRoleRepository->newOwnerIdsCacheKey($id);
         if (Redis::EXISTS($cacheKey))
         {
-            Redis::ZADD($cacheKey, strtotime('now'), $userId);
+            Redis::ZADD($cacheKey, $currentTime, $userId);
         }
         // 更新大股东列表
         $cacheKey = $cartoonRoleRepository->bigOwnerIdsCacheKey($id);
@@ -518,12 +519,12 @@ class CartoonRoleController extends Controller
             $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('activity');
             if (Redis::EXISTS($cacheKey))
             {
-                Redis::ZADD($cacheKey, strtotime('now'), $id);
+                Redis::ZADD($cacheKey, $currentTime, $id);
             }
             $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('newest');
             if (Redis::EXISTS($cacheKey))
             {
-                Redis::ZADD($cacheKey, strtotime('now'), $id);
+                Redis::ZADD($cacheKey, $currentTime, $id);
             }
             $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('market_price');
             if (Redis::EXISTS($cacheKey))
@@ -542,6 +543,8 @@ class CartoonRoleController extends Controller
             $cacheKey = $cartoonRoleRepository->newbieIdolListCacheKey('star_count');
             Redis::ZADD($cacheKey, $cartoonRole['star_count'] + $buyCount, $id);
         }
+        $cacheKey = $cartoonRoleRepository->recentBuyStockCacheKey();
+        Redis::ZADD($cacheKey, $currentTime, "{$userId}-{$id}-{$buyCount}");
 
         return $this->resOK();
     }
@@ -647,9 +650,32 @@ class CartoonRoleController extends Controller
     }
 
 
+    // 最近发生的交易
     public function recentDealList()
     {
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $list = $cartoonRoleRepository->RedisSort($cartoonRoleRepository->recentDealStockCacheKey(), function ()
+        {
+            return [];
+        }, true, true);
 
+        $idsObj = $cartoonRoleRepository->filterIdsByPage($list, 0, 30, true);
+
+        return $this->resOK($idsObj);
+    }
+
+    // 最近的入股记录
+    public function recentBuyList()
+    {
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $list = $cartoonRoleRepository->RedisSort($cartoonRoleRepository->recentBuyStockCacheKey(), function ()
+        {
+            return [];
+        }, true, true);
+
+        $idsObj = $cartoonRoleRepository->filterIdsByPage($list, 0, 30, true);
+
+        return $this->resOK($idsObj);
     }
 
     // 我发起的交易
@@ -1214,6 +1240,7 @@ class CartoonRoleController extends Controller
             }
             // TODO：操作缓存，是否应该使用 pipeline 优化性能？
             // 交易的数据
+            $currentTime = strtotime('now');
             $cacheKey = $cartoonRoleRepository->idolDealItemCacheKey($dealId);
             if (Redis::EXISTS($cacheKey))
             {
@@ -1241,7 +1268,7 @@ class CartoonRoleController extends Controller
             }
             // 最新股东列表
             $cacheKey = $cartoonRoleRepository->newOwnerIdsCacheKey($idolId);
-            Redis::ZADD($cacheKey, strtotime('now'), $fromUserId);
+            Redis::ZADD($cacheKey, $currentTime, $fromUserId);
             if (Redis::EXISTS($cacheKey) && $deleteOldOwner)
             {
                 Redis::ZREM($cacheKey, $toUserId);
@@ -1277,7 +1304,7 @@ class CartoonRoleController extends Controller
                 }
                 else
                 {
-                    Redis::ZADD($cacheKey, strtotime('now'), $dealId);
+                    Redis::ZADD($cacheKey, $currentTime, $dealId);
                 }
             }
             // 修改上市公司列表数据
@@ -1303,7 +1330,7 @@ class CartoonRoleController extends Controller
             $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('activity');
             if (Redis::EXISTS($cacheKey))
             {
-                Redis::ZADD($cacheKey, strtotime('now'), $idolId);
+                Redis::ZADD($cacheKey, $currentTime, $idolId);
             }
             // 修改用户列表数据（买家）
             $cacheKey = $cartoonRoleRepository->userIdolListCacheKey($fromUserId);
@@ -1331,6 +1358,8 @@ class CartoonRoleController extends Controller
                     Redis::ZADD($cacheKey, $oldOwnerData->stock_count - $buy_count, $idolId);
                 }
             }
+            $cacheKey = $cartoonRoleRepository->recentDealStockCacheKey();
+            Redis::ZADD($cacheKey, $currentTime, "{$idolId}-{$fromUserId}-{$toUserId}-{$buy_count}-{$pay_price}");
         }
         catch (\Exception $e)
         {
