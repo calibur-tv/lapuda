@@ -448,13 +448,7 @@ class CartoonRoleController extends Controller
                     'ipo_at' => Carbon::now()
                 ]);
 
-            $starCount = CartoonRole
-                ::where('id', $id)
-                ->pluck('star_count')
-                ->first();
-
             $cartoonRoleRepository->setIdolBiggestBoss($id);
-            $cartoonRoleRepository->setIdolMaxStockCount($id, $starCount);
         }
 
         // 更新新股东列表
