@@ -169,7 +169,14 @@ class VideoController extends Controller
         }
         if ($baidu_cloud_src)
         {
-            $newUserId = $userId;
+            if ($video['baidu_cloud_src'] == $baidu_cloud_src)
+            {
+                $newUserId = $video['user_id'];
+            }
+            else
+            {
+                $newUserId = $userId;
+            }
         }
         else
         {

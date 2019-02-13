@@ -18,7 +18,9 @@ class Video extends Model
         'episode',
         'bangumi_season_id',
         'resource',
-        'count_played'
+        'count_played',
+        'baidu_cloud_src',
+        'baidu_cloud_pwd'
     ];
 
     protected $casts = [
