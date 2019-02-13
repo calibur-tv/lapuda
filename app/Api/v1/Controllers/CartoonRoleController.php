@@ -1854,9 +1854,20 @@ class CartoonRoleController extends Controller
     }
 
     // 后台删除偶像
+    // TODO：
+    // 1. 删除该偶像的应援记录
+    // 2. 删除该偶像的交易
+    // 3. 归还偶像的团子给用户
     public function ban(Request $request)
     {
+        $cartoonRoleRepository = new CartoonRoleRepository();
         $id = $request->get('id');
+        $idol = $cartoonRoleRepository->item($id);
+        if (is_null($idol))
+        {
+            return $this->resErrNotFound();
+        }
+
         $bangumiId = $request->get('bangumi_id');
 
         DB::table('cartoon_role')
@@ -1871,6 +1882,8 @@ class CartoonRoleController extends Controller
 
         $job = (new \App\Jobs\Search\Index('D', 'role', $id));
         dispatch($job);
+
+        Redis::DEL($cartoonRoleRepository->idolItemCacheKey($id));
 
         return $this->resNoContent();
     }
