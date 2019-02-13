@@ -1598,6 +1598,7 @@ class CartoonRoleController extends Controller
             return $this->resErrRole();
         }
 
+        /*
         if (
             floatval($idol['max_stock_count']) != 0 &&
             floatval($idol['max_stock_count']) != floatval($idol['star_count'])
@@ -1605,6 +1606,7 @@ class CartoonRoleController extends Controller
         {
             return $this->resErrBad('挂牌交易中不能发起提案');
         }
+        */
 
         $hasDraft = VirtualIdolPriceDraft
             ::where('idol_id', $idolId)
