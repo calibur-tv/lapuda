@@ -588,7 +588,14 @@ class CartoonRoleController extends Controller
         }
 
         $transformer = new CartoonRoleTransformer();
-        $list = $transformer->owners($users);
+        if ($sort === 'newest')
+        {
+            $list = $transformer->new_owners($users);
+        }
+        else
+        {
+            $list = $transformer->big_owners($users);
+        }
 
         return $this->resOK([
             'list' => $list,
@@ -1193,9 +1200,9 @@ class CartoonRoleController extends Controller
             }
             // 大股东列表
             $cacheKey = $cartoonRoleRepository->bigOwnerIdsCacheKey($idolId);
-            Redis::ZINCRBY($cacheKey, $buy_count, $fromUserId);
             if (Redis::EXISTS($cacheKey))
             {
+                Redis::ZINCRBY($cacheKey, $buy_count, $fromUserId);
                 if ($deleteOldOwner)
                 {
                     Redis::ZREM($cacheKey, $toUserId);
