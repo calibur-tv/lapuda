@@ -594,6 +594,12 @@ class CartoonRoleController extends Controller
             return $this->resErrBad('一周只能修改一次');
         }
 
+        $maxCount = floatval($request->get('max_stock_count'));
+        if ($maxCount < $idol['star_count'] + 500)
+        {
+            return $this->resErrBad('增发份额不能低于500');
+        }
+
         CartoonRole
             ::where('id', $idolId)
             ->update([
