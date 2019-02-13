@@ -357,6 +357,8 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/my_deal', 'App\Api\V1\Controllers\CartoonRoleController@myDeal')->middleware(['jwt.auth']);
 
+        $api->get('/recent_deal', 'App\Api\V1\Controllers\CartoonRoleController@recentDealList');
+
         $api->post('/create_deal', 'App\Api\V1\Controllers\CartoonRoleController@createDeal')->middleware(['jwt.auth']);
 
         $api->post('/delete_deal', 'App\Api\V1\Controllers\CartoonRoleController@deleteDeal')->middleware(['jwt.auth']);

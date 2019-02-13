@@ -579,7 +579,8 @@ class CartoonRoleController extends Controller
             ::where('id', $idolId)
             ->update([
                 'max_stock_count' => $request->get('max_stock_count'),
-                'stock_price' => $request->get('stock_price')
+                'stock_price' => $request->get('stock_price'),
+                'last_edit_at' => Carbon::now()
             ]);
 
         Redis::DEL($cartoonRoleRepository->idolItemCacheKey($idolId));
@@ -643,6 +644,12 @@ class CartoonRoleController extends Controller
             'total' => $idsObj['total'],
             'noMore' => $idsObj['noMore']
         ]);
+    }
+
+
+    public function recentDealList()
+    {
+
     }
 
     // 我发起的交易
@@ -1609,65 +1616,32 @@ class CartoonRoleController extends Controller
 
         $bangumiId = $cartoonRole['bangumi_id'];
 
-        $alias = Purifier::clean($request->get('alias'));
-        $alias = $alias ? $alias : $cartoonRole['alias'];
-        $data = [
-            'bangumi_id' => $bangumiId,
-            'avatar' => $request->get('avatar'),
-            'name' => Purifier::clean($request->get('name')),
-            'intro' => Purifier::clean($request->get('intro')),
-            'alias' => $alias,
-            'state' => $userId,
-            'last_edit_at' => Carbon::now()
-        ];
-        $stock_price = $request->get('stock_price');
-        if ($stock_price)
-        {
-            $data['stock_price'] = $stock_price;
-        }
-        $max_stock_count = $request->get('max_stock_count');
-        if ($max_stock_count)
-        {
-            $data['max_stock_count'] = $max_stock_count;
-        }
-
-        if ($max_stock_count || $stock_price)
+        if (!$user->is_admin)
         {
             $bangumiManager = new BangumiManager();
-            if (
-                !$bangumiManager->isOwner($bangumiId, $userId) &&
-                $cartoonRole['boss_id'] != $userId
-            )
+            if (!$bangumiManager->isOwner($bangumiId, $userId))
             {
                 return $this->resErrRole();
             }
-            $lastEditAt = $cartoonRole['last_edit_at'];
-            if ($lastEditAt && strtotime($lastEditAt) > strtotime('1 week ago'))
-            {
-                return $this->resErrBad('一周只能修改一次');
-            }
         }
+
+        $alias = Purifier::clean($request->get('alias'));
+        $alias = $alias ? $alias : $cartoonRole['alias'];
 
         CartoonRole
             ::where('id', $id)
-            ->update($data);
+            ->update([
+                'bangumi_id' => $bangumiId,
+                'avatar' => $request->get('avatar'),
+                'name' => Purifier::clean($request->get('name')),
+                'intro' => Purifier::clean($request->get('intro')),
+                'alias' => $alias,
+                'state' => $userId
+            ]);
 
         $cartoonRoleRepository->migrateSearchIndex('U', $id);
 
         Redis::DEL($cartoonRoleRepository->idolItemCacheKey($id));
-        if ($data['stock_price'] || $data['max_stock_count'])
-        {
-            $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('stock_price');
-            if (Redis::EXISTS($cacheKey))
-            {
-                Redis::ZADD($cacheKey, $data['stock_price'], $id);
-            }
-            $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('activity');
-            if (Redis::EXISTS($cacheKey))
-            {
-                Redis::ZADD($cacheKey, strtotime('now'), $id);
-            }
-        }
 
         return $this->resOK();
     }
