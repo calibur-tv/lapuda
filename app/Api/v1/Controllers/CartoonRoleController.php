@@ -546,6 +546,47 @@ class CartoonRoleController extends Controller
         return $this->resOK();
     }
 
+    // 修改股价
+    public function changeStockPrice(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $idolId = $request->get('idol_id');
+        $cartoonRoleRepository = new CartoonRoleRepository();
+
+        $idol = $cartoonRoleRepository->item($idolId);
+        if (is_null($idol))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($idol['company_state'] != 1)
+        {
+            return $this->resErrBad('公司上市之后才能增发股票');
+        }
+
+        if ($idol['boss_id'] != $userId)
+        {
+            return $this->resErrRole();
+        }
+
+        $lastEditAt = $idol['last_edit_at'];
+        if ($lastEditAt && strtotime($lastEditAt) > strtotime('1 week ago'))
+        {
+            return $this->resErrBad('一周只能修改一次');
+        }
+
+        CartoonRole
+            ::where('id', $idolId)
+            ->update([
+                'max_stock_count' => $request->get('max_stock_count'),
+                'stock_price' => $request->get('stock_price')
+            ]);
+
+        Redis::DEL($cartoonRoleRepository->idolItemCacheKey($idolId));
+
+        return $this->resNoContent();
+    }
+
     // 股东列表
     public function owners(Request $request, $id)
     {

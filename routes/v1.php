@@ -330,6 +330,8 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/edit', 'App\Api\V1\Controllers\CartoonRoleController@edit');
 
             $api->post('/user_create', 'App\Api\V1\Controllers\CartoonRoleController@publicCreate');
+
+            $api->post('/change_price', 'App\Api\V1\Controllers\CartoonRoleController@changeStockPrice');
         });
 
         $api->group(['prefix' => '/{id}'], function ($api)
