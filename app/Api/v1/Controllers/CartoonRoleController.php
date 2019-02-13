@@ -570,6 +570,8 @@ class CartoonRoleController extends Controller
     // 修改股价
     public function changeStockPrice(Request $request)
     {
+        return $this->resErrServiceUnavailable('请前往PC端网页发起投票');
+
         $userId = $this->getAuthUserId();
         $idolId = $request->get('idol_id');
         $cartoonRoleRepository = new CartoonRoleRepository();
