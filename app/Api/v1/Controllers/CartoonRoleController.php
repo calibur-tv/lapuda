@@ -597,7 +597,7 @@ class CartoonRoleController extends Controller
         $maxCount = floatval($request->get('max_stock_count'));
         if (floatval($idol['max_stock_count']) == 0)
         {
-            $maxCount = $maxCount + $idol['max_stock_count'];
+            $maxCount = $maxCount + $idol['star_count'];
         }
 
         CartoonRole
