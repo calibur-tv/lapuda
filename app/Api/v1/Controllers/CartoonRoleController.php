@@ -595,15 +595,15 @@ class CartoonRoleController extends Controller
         }
 
         $maxCount = floatval($request->get('max_stock_count'));
-        if ($maxCount < $idol['star_count'] + 500)
+        if (floatval($idol['max_stock_count']) == 0)
         {
-            return $this->resErrBad('增发份额不能低于500');
+            $maxCount = $maxCount + $idol['max_stock_count'];
         }
 
         CartoonRole
             ::where('id', $idolId)
             ->update([
-                'max_stock_count' => $request->get('max_stock_count'),
+                'max_stock_count' => $maxCount,
                 'stock_price' => $request->get('stock_price'),
                 'last_edit_at' => Carbon::now()
             ]);
