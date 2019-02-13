@@ -363,6 +363,14 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/recent_deal', 'App\Api\V1\Controllers\CartoonRoleController@recentDealList');
 
+        $api->get('/market_price_draft_list', 'App\Api\V1\Controllers\CartoonRoleController@getIdolMarketPriceDraftList');
+
+        $api->post('/create_market_price_draft', 'App\Api\V1\Controllers\CartoonRoleController@createIdolMarketPriceDraft')->middleware(['jwt.auth']);
+
+        $api->post('/delete_market_price_draft', 'App\Api\V1\Controllers\CartoonRoleController@deleteIdolMarketPriceDraft')->middleware(['jwt.auth']);
+
+        $api->post('/vote_market_price_draft', 'App\Api\V1\Controllers\CartoonRoleController@voteIdolMarketPriceDraft')->middleware(['jwt.auth']);
+
         $api->post('/create_deal', 'App\Api\V1\Controllers\CartoonRoleController@createDeal')->middleware(['jwt.auth']);
 
         $api->post('/delete_deal', 'App\Api\V1\Controllers\CartoonRoleController@deleteDeal')->middleware(['jwt.auth']);

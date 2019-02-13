@@ -13,6 +13,7 @@ use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Tag\Base\UserBadgeService;
 use App\Api\V1\Services\Trending\CartoonRoleTrendingService;
 use App\Api\V1\Services\VirtualCoinService;
+use App\Api\V1\Services\Vote\IdolVoteService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\CartoonRole;
@@ -21,6 +22,7 @@ use App\Models\LightCoinRecord;
 use App\Models\VirtualIdolDeal;
 use App\Models\VirtualIdolDealRecord;
 use App\Models\VirtualIdolOwner;
+use App\Models\VirtualIdolPriceDraft;
 use App\Services\OpenSearch\Search;
 use App\Services\Trial\ImageFilter;
 use App\Services\Trial\UserIpAddress;
@@ -1001,7 +1003,7 @@ class CartoonRoleController extends Controller
         return $this->resOK($result);
     }
 
-    // 开放创建偶像
+    // 公开创建偶像
     public function publicCreate(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -1554,6 +1556,7 @@ class CartoonRoleController extends Controller
         return $this->resOK($deal);
     }
 
+    // 获取我发起的交易列表
     public function getMyIdolDeal($id)
     {
         $userId = $this->getAuthUserId();
@@ -1571,6 +1574,237 @@ class CartoonRoleController extends Controller
             'deal' => $deal,
             'has_star' => $has_star
         ]);
+    }
+
+    // 新建一个股份发行的草案
+    public function createIdolMarketPriceDraft(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $idolId = $request->get('idol_id');
+        $stock_price = $request->get('stock_price');
+        $add_stock_count = $request->get('add_stock_count');
+
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $idol = $cartoonRoleRepository->item($idolId);
+        if (is_null($idol))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($idol['boss_id'] != $userId)
+        {
+            return $this->resErrRole();
+        }
+
+        if (
+            floatval($idol['max_stock_count']) != 0 &&
+            floatval($idol['max_stock_count']) != floatval($idol['star_count'])
+        )
+        {
+            return $this->resErrBad('挂牌交易中不能发起提案');
+        }
+
+        $hasDraft = VirtualIdolPriceDraft
+            ::where('idol_id', $idolId)
+            ->where('result', 0)
+            ->count();
+
+        if ($hasDraft)
+        {
+            return $this->resErrBad('有正在商议的提案');
+        }
+
+        $draft = VirtualIdolPriceDraft
+            ::create([
+                'user_id' => $userId,
+                'idol_id' => $idolId,
+                'stock_price' => $stock_price,
+                'add_stock_count' => $add_stock_count
+            ]);
+
+        return $this->resCreated($draft);
+    }
+
+    // 获取偶像的股份发行草案列表
+    public function getIdolMarketPriceDraftList(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $idolId = $request->get('idol_id');
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $idol = $cartoonRoleRepository->item($idolId);
+        if (is_null($idol))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $list = VirtualIdolPriceDraft
+            ::where('idol_id', $idolId)
+            ->orderBy('id', 'DESC')
+            ->get()
+            ->toArray();
+
+        if (empty($list))
+        {
+            return $this->resOK([
+                'list' => [],
+                'noMore' => true,
+                'total' => 0
+            ]);
+        }
+
+        $userRepository = new UserRepository();
+        $result = [];
+        foreach ($list as $draft)
+        {
+            $user = $userRepository->item($draft['user_id']);
+            if (is_null($user))
+            {
+                continue;
+            }
+
+            $result[] = [
+                'user' => [
+                    'id' => $user['id'],
+                    'nickname' => $user['nickname'],
+                    'avatar' => $user['avatar'],
+                    'zone' => $user['zone']
+                ],
+                'id' => $draft['id'],
+                'stock_price' => $draft['stock_price'],
+                'add_stock_count' => $draft['add_stock_count'],
+                'result' => intval($draft['result']),
+                'created_at' => $draft['created_at'],
+                'idol_id' => $draft['idol_id'],
+                'pass_percent' => 0,
+                'ban_percent' => 0,
+                'pass_count' => 0,
+                'ban_count' => 0,
+                'voted' => 0
+            ];
+        }
+        if ($result[0]['result'] == 0)
+        {
+            $draft = $result[0];
+            $idolVoteService = new IdolVoteService();
+            $agreeUsersId = $idolVoteService->agreeUsersId($draft['id']);
+            if (count($agreeUsersId))
+            {
+                $amount = VirtualIdolOwner
+                    ::where('idol_id', $idolId)
+                    ->whereIn('user_id', $agreeUsersId)
+                    ->sum('stock_count');
+
+                $result[0]['pass_percent'] = sprintf("%.2f", $amount / $idol['star_count'] * 100);
+                $result[0]['pass_count'] = count($agreeUsersId);
+            }
+            $bannedUsersId = $idolVoteService->bannedUsersId($draft['id']);
+            if (count($bannedUsersId))
+            {
+                $amount = VirtualIdolOwner
+                    ::where('idol_id', $idolId)
+                    ->whereIn('user_id', $bannedUsersId)
+                    ->sum('stock_count');
+
+                $result[0]['ban_percent'] = sprintf("%.2f", $amount / $idol['star_count'] * 100);
+                $result[0]['ban_count'] = count($bannedUsersId);
+            }
+
+            $result[0]['voted'] = $idolVoteService->check($userId, $draft['id']);
+        }
+
+        return $this->resOK([
+            'list' => $result,
+            'noMore' => true,
+            'total' => count($result)
+        ]);
+    }
+
+    // 为股份发行草案投票
+    public function voteIdolMarketPriceDraft(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $idolId = $request->get('idol_id');
+        $draftId = $request->get('draft_id');
+        $isAgree = $request->get('is_agree');
+
+        $draft = VirtualIdolPriceDraft
+            ::where('id', $draftId)
+            ->where('result', 0)
+            ->where('idol_id', $idolId)
+            ->count();
+        if (!$draft)
+        {
+            return $this->resErrBad();
+        }
+
+        $isOwner = VirtualIdolOwner
+            ::where('idol_id', $idolId)
+            ->where('user_id', $userId)
+            ->count();
+        if (!$isOwner)
+        {
+            return $this->resErrRole('你不是股东，无投票权');
+        }
+
+        $idolVoteService = new IdolVoteService();
+        if ($isAgree)
+        {
+            $resultScore = $idolVoteService->toggleLike($userId, $draftId);
+        }
+        else
+        {
+            $resultScore = $idolVoteService->toggleDislike($userId, $draftId);
+        }
+        /**
+         * $resultScore
+         *  0 => 弃权
+         *  1 => 同意
+         * -1 => 反对
+         */
+        return $this->resCreated($resultScore);
+    }
+
+    // 删除某个股份发行草案
+    public function deleteIdolMarketPriceDraft(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $draftId = $request->get('draft_id');
+        $draft = VirtualIdolPriceDraft
+            ::where('id', $draftId)
+            ->first();
+
+        if (is_null($draft))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($draft['user_id'] != $userId)
+        {
+            return $this->resErrRole();
+        }
+
+        if ($draft['result'] != 0)
+        {
+            return $this->resErrBad('不能删除已定论的草案');
+        }
+
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $idol = $cartoonRoleRepository->item($draft['idol_id']);
+        if (is_null($idol))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($idol['boss_id'] != $userId)
+        {
+            return $this->resErrRole();
+        }
+
+        VirtualIdolPriceDraft
+            ::where('id', $draftId)
+            ->delete();
+
+        return $this->resNoContent();
     }
 
     // 交易大厅列表
