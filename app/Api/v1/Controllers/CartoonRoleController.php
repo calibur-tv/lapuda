@@ -649,7 +649,6 @@ class CartoonRoleController extends Controller
         ]);
     }
 
-
     // 最近发生的交易
     public function recentDealList()
     {
@@ -660,8 +659,65 @@ class CartoonRoleController extends Controller
         }, true, true);
 
         $idsObj = $cartoonRoleRepository->filterIdsByPage($list, 0, 30, true);
+        $list = $idsObj['ids'];
+        if (empty($list))
+        {
+            return $this->resOK([
+                'list' => [],
+                'noMore' => true,
+                'total' => 0
+            ]);
+        }
+        $result = [];
+        $userRepository = new UserRepository();
+        foreach ($list as $item => $time)
+        {
+            // "{$idolId}-{$fromUserId}-{$toUserId}-{$buy_count}-{$pay_price}"
+            $arr = explode('-', $item);
+            if (count($arr) != 5)
+            {
+                continue;
+            }
+            $idol = $cartoonRoleRepository->item($arr[0]);
+            if (is_null($idol))
+            {
+                continue;
+            }
+            $buyer = $userRepository->item($arr[1]);
+            if (is_null($buyer))
+            {
+                continue;
+            }
+            $dealer = $userRepository->item($arr[2]);
+            if (is_null($dealer))
+            {
+                continue;
+            }
+            $result[] = [
+                'time' => $time,
+                'idol' => [
+                    'id' => $idol['id'],
+                    'name' => $idol['name']
+                ],
+                'buyer' => [
+                    'nickname' => $buyer['nickname'],
+                    'zone' => $buyer['zone'],
+                    'avatar' => $buyer['avatar']
+                ],
+                'dealer' => [
+                    'nickname' => $dealer['nickname'],
+                    'zone' => $dealer['zone']
+                ],
+                'count' => $arr[3],
+                'price' => $arr[4]
+            ];
+        }
 
-        return $this->resOK($idsObj);
+        return $this->resOK([
+            'list' => $result,
+            'total' => $idsObj['total'],
+            'noMore' => $idsObj['noMore']
+        ]);
     }
 
     // 最近的入股记录
@@ -674,8 +730,55 @@ class CartoonRoleController extends Controller
         }, true, true);
 
         $idsObj = $cartoonRoleRepository->filterIdsByPage($list, 0, 30, true);
+        $list = $idsObj['ids'];
+        if (empty($list))
+        {
+            return $this->resOK([
+                'list' => [],
+                'noMore' => true,
+                'total' => 0
+            ]);
+        }
+        $result = [];
+        $userRepository = new UserRepository();
+        foreach ($list as $item => $time)
+        {
+            // "{$userId}-{$id}-{$buyCount}"
+            $arr = explode('-', $item);
+            if (count($arr) != 3)
+            {
+                continue;
+            }
+            $user = $userRepository->item($arr[0]);
+            if (is_null($user))
+            {
+                continue;
+            }
+            $idol = $cartoonRoleRepository->item($arr[1]);
+            if (is_null($idol))
+            {
+                continue;
+            }
+            $result[] = [
+                'user' => [
+                    'zone' => $user['zone'],
+                    'nickname' => $user['nickname'],
+                    'avatar' => $user['avatar']
+                ],
+                'idol' => [
+                    'id' => $idol['id'],
+                    'name' => $idol['name']
+                ],
+                'count' => $arr[2],
+                'time' => $time
+            ];
+        }
 
-        return $this->resOK($idsObj);
+        return $this->resOK([
+            'list' => $result,
+            'noMore' => $idsObj['noMore'],
+            'total' => $idsObj['total']
+        ]);
     }
 
     // 我发起的交易
