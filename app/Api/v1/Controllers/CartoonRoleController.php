@@ -1202,14 +1202,21 @@ class CartoonRoleController extends Controller
             $cacheKey = $cartoonRoleRepository->bigOwnerIdsCacheKey($idolId);
             if (Redis::EXISTS($cacheKey))
             {
-                Redis::ZINCRBY($cacheKey, $buy_count, $fromUserId);
+                if ($createNewOwner)
+                {
+                    Redis::ZADD($cacheKey, $buy_count, $fromUserId);
+                }
+                else
+                {
+                    Redis::ZADD($cacheKey, $newOwnerData->stock_count + $buy_count, $fromUserId);
+                }
                 if ($deleteOldOwner)
                 {
                     Redis::ZREM($cacheKey, $toUserId);
                 }
                 else
                 {
-                    Redis::ZINCRBY($cacheKey, -$buy_count, $toUserId);
+                    Redis::ZADD($cacheKey, $oldOwnerData->stock_count - $buy_count, $toUserId);
                 }
             }
             // 修改交易大厅列表
