@@ -12,6 +12,7 @@ use App\Api\V1\Transformers\UserTransformer;
 use App\Models\CartoonRole;
 use App\Models\CartoonRoleFans;
 use App\Models\VirtualIdolDeal;
+use App\Models\VirtualIdolDealRecord;
 use App\Models\VirtualIdolOwner;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -363,6 +364,38 @@ class CartoonRoleRepository extends Repository
         return $result;
     }
 
+    public function stockBuyerTotalCount()
+    {
+        return $this->RedisItem($this->stockBuyerTotolCountKey(), function ()
+        {
+            return VirtualIdolOwner::count();
+        });
+    }
+
+    public function stockBuyerTotalMoney()
+    {
+        return $this->RedisItem($this->stockBuyerTotalMoneyKey(), function ()
+        {
+            return VirtualIdolOwner::sum('total_price');
+        });
+    }
+
+    public function stockDealTotalCount()
+    {
+        return $this->RedisItem($this->stockDealTotalCountCacheKey(), function ()
+        {
+            return VirtualIdolDealRecord::count();
+        });
+    }
+
+    public function stockDealTotalMoney()
+    {
+        return $this->RedisItem($this->stockDealTotalMoneyCacheKey(), function ()
+        {
+            return VirtualIdolDealRecord::sum('exchange_amount');
+        });
+    }
+
     // 用户的偶像列表缓存 key
     public function userIdolListCacheKey($userId)
     {
@@ -415,6 +448,30 @@ class CartoonRoleRepository extends Repository
     public function recentDealStockCacheKey()
     {
         return 'virtual_idol_recent_deal_list';
+    }
+
+    // 投资人总数
+    public function stockBuyerTotolCountKey()
+    {
+        return 'virtual_idol_buyer_total_count';
+    }
+
+    // 股市总盘
+    public function stockBuyerTotalMoneyKey()
+    {
+        return 'virtual_idol_buyer_total_money';
+    }
+
+    // 总交易笔数
+    public function stockDealTotalCountCacheKey()
+    {
+        return 'virtual_idol_deal_total_count';
+    }
+
+    // 总交易额
+    public function stockDealTotalMoneyCacheKey()
+    {
+        return 'virtual_idol_deal_total_money';
     }
 
     public function migrateSearchIndex($type, $id, $async = true)

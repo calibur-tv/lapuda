@@ -357,6 +357,8 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/my_deal', 'App\Api\V1\Controllers\CartoonRoleController@myDeal')->middleware(['jwt.auth']);
 
+        $api->get('/stock_meta', 'App\Api\V1\Controllers\CartoonRoleController@stockMeta');
+
         $api->get('/recent_buy', 'App\Api\V1\Controllers\CartoonRoleController@recentBuyList');
 
         $api->get('/recent_deal', 'App\Api\V1\Controllers\CartoonRoleController@recentDealList');

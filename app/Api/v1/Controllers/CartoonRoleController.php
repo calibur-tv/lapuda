@@ -543,8 +543,24 @@ class CartoonRoleController extends Controller
             $cacheKey = $cartoonRoleRepository->newbieIdolListCacheKey('star_count');
             Redis::ZADD($cacheKey, $cartoonRole['star_count'] + $buyCount, $id);
         }
+        // 更新最近的入股列表
         $cacheKey = $cartoonRoleRepository->recentBuyStockCacheKey();
-        Redis::ZADD($cacheKey, $currentTime, "{$userId}-{$id}-{$buyCount}");
+        Redis::ZADD($cacheKey, $currentTime, "{$userId}-{$id}-{$buyCount}-{$payAmount}");
+        // 如果是新股民，就让总数加1
+        if (!$isOldFans)
+        {
+            $cacheKey = $cartoonRoleRepository->stockBuyerTotolCountKey();
+            if (Redis::EXISTS($cacheKey))
+            {
+                Redis::INCR($cacheKey);
+            }
+        }
+        // 股市总盘增加
+        $cacheKey = $cartoonRoleRepository->stockBuyerTotalMoneyKey();
+        if (Redis::EXISTS($cacheKey))
+        {
+            Redis::INCRBYFLOAT($cacheKey, $payAmount);
+        }
 
         return $this->resOK();
     }
@@ -650,15 +666,16 @@ class CartoonRoleController extends Controller
     }
 
     // 最近发生的交易
-    public function recentDealList()
+    public function recentDealList(Request $request)
     {
+        $page = $request->get('page') ?: 0;
         $cartoonRoleRepository = new CartoonRoleRepository();
         $list = $cartoonRoleRepository->RedisSort($cartoonRoleRepository->recentDealStockCacheKey(), function ()
         {
             return [];
         }, true, true);
 
-        $idsObj = $cartoonRoleRepository->filterIdsByPage($list, 0, 30, true);
+        $idsObj = $cartoonRoleRepository->filterIdsByPage($list, $page, 10, true);
         $list = $idsObj['ids'];
         if (empty($list))
         {
@@ -721,15 +738,16 @@ class CartoonRoleController extends Controller
     }
 
     // 最近的入股记录
-    public function recentBuyList()
+    public function recentBuyList(Request $request)
     {
+        $page = $request->get('page') ?: 0;
         $cartoonRoleRepository = new CartoonRoleRepository();
         $list = $cartoonRoleRepository->RedisSort($cartoonRoleRepository->recentBuyStockCacheKey(), function ()
         {
             return [];
         }, true, true);
 
-        $idsObj = $cartoonRoleRepository->filterIdsByPage($list, 0, 30, true);
+        $idsObj = $cartoonRoleRepository->filterIdsByPage($list, $page, 10, true);
         $list = $idsObj['ids'];
         if (empty($list))
         {
@@ -745,7 +763,7 @@ class CartoonRoleController extends Controller
         {
             // "{$userId}-{$id}-{$buyCount}"
             $arr = explode('-', $item);
-            if (count($arr) != 3)
+            if (count($arr) != 4)
             {
                 continue;
             }
@@ -770,6 +788,7 @@ class CartoonRoleController extends Controller
                     'name' => $idol['name']
                 ],
                 'count' => $arr[2],
+                'price' => $arr[3],
                 'time' => $time
             ];
         }
@@ -778,6 +797,19 @@ class CartoonRoleController extends Controller
             'list' => $result,
             'noMore' => $idsObj['noMore'],
             'total' => $idsObj['total']
+        ]);
+    }
+
+    // 股市的信息
+    public function stockMeta()
+    {
+        $cartoonRoleRepository = new CartoonRoleRepository();
+
+        return $this->resOK([
+            'buyer_count' => $cartoonRoleRepository->stockBuyerTotalCount(),
+            'money_count' => $cartoonRoleRepository->stockBuyerTotalMoney(),
+            'deal_count' =>$cartoonRoleRepository->stockDealTotalCount(),
+            'exchang_money_count' => $cartoonRoleRepository->stockDealTotalMoney()
         ]);
     }
 
@@ -1419,6 +1451,12 @@ class CartoonRoleController extends Controller
                 {
                     Redis::ZADD($cacheKey, $idol['market_price'] + $deltaPrice, $idolId);
                 }
+                // 市值总盘数额变动
+                $cacheKey = $cartoonRoleRepository->stockBuyerTotalMoneyKey();
+                if (Redis::EXISTS($cacheKey))
+                {
+                    Redis::INCRBYFLOAT($cacheKey, $deltaPrice);
+                }
             }
             if ($addOwnerCount)
             {
@@ -1427,6 +1465,12 @@ class CartoonRoleController extends Controller
                 if (Redis::EXISTS($cacheKey))
                 {
                     Redis::ZADD($cacheKey, $idol['fans_count'] + $addOwnerCount, $idolId);
+                }
+                // 总投资人统计变动
+                $cacheKey = $cartoonRoleRepository->stockBuyerTotolCountKey();
+                if (Redis::EXISTS($cacheKey))
+                {
+                    Redis::INCRBY($cacheKey, $addOwnerCount);
                 }
             }
             // 动态列表
@@ -1461,8 +1505,21 @@ class CartoonRoleController extends Controller
                     Redis::ZADD($cacheKey, $oldOwnerData->stock_count - $buy_count, $idolId);
                 }
             }
+            // 最近的交易列表增加
             $cacheKey = $cartoonRoleRepository->recentDealStockCacheKey();
             Redis::ZADD($cacheKey, $currentTime, "{$idolId}-{$fromUserId}-{$toUserId}-{$buy_count}-{$pay_price}");
+            // 交易次数增加
+            $cacheKey = $cartoonRoleRepository->stockDealTotalCountCacheKey();
+            if (Redis::EXISTS($cacheKey))
+            {
+                Redis::INCR($cacheKey);
+            }
+            // 交易金额增加
+            $cacheKey = $cartoonRoleRepository->stockDealTotalMoneyCacheKey();
+            if (Redis::EXISTS($cacheKey))
+            {
+                Redis::INCRBYFLOAT($cacheKey, $pay_price);
+            }
         }
         catch (\Exception $e)
         {
