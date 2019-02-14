@@ -65,7 +65,7 @@ class AutoChangeMarketStock extends Command
                     ->whereIn('user_id', $agreeUsersId)
                     ->sum('stock_count');
 
-                if ($agreeAmount / $starCount > 66.66)
+                if ($agreeAmount / $starCount > 0.66)
                 {
                     VirtualIdolPriceDraft
                         ::where($item['id'])
@@ -94,7 +94,7 @@ class AutoChangeMarketStock extends Command
                     ->whereIn('user_id', $bannedUsersId)
                     ->sum('stock_count');
 
-                if ($bannedAmount / $starCount > 66.66)
+                if ($bannedAmount / $starCount > 0.66)
                 {
                     VirtualIdolPriceDraft
                         ::where($item['id'])
