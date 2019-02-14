@@ -330,8 +330,6 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/edit', 'App\Api\V1\Controllers\CartoonRoleController@edit');
 
             $api->post('/user_create', 'App\Api\V1\Controllers\CartoonRoleController@publicCreate');
-
-            $api->post('/change_price', 'App\Api\V1\Controllers\CartoonRoleController@changeStockPrice');
         });
 
         $api->group(['prefix' => '/{id}'], function ($api)
@@ -364,6 +362,8 @@ $api->version(['v1', 'latest'], function ($api)
         $api->get('/recent_deal', 'App\Api\V1\Controllers\CartoonRoleController@recentDealList');
 
         $api->get('/market_price_draft_list', 'App\Api\V1\Controllers\CartoonRoleController@getIdolMarketPriceDraftList');
+
+        $api->post('/change_idol_profile', 'App\Api\V1\Controllers\CartoonRoleController@changeIdolProfile')->middleware(['jwt.auth']);
 
         $api->post('/create_market_price_draft', 'App\Api\V1\Controllers\CartoonRoleController@createIdolMarketPriceDraft')->middleware(['jwt.auth']);
 

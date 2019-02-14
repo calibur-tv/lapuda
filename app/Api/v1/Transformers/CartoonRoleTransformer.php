@@ -50,6 +50,7 @@ class CartoonRoleTransformer extends Transformer
                 'boss' => $info['boss'],
                 'manager' => $info['manager'],
                 'lover_words' => $info['lover_words'],
+                'qq_group' => isset($info['qq_group']) ? $info['qq_group']: '',
                 'has_star' => sprintf("%.2f", $info['has_star']),
                 'market_price' => sprintf("%.2f", $info['market_price']),
                 'stock_price' => sprintf("%.2f", $info['stock_price']),

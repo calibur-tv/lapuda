@@ -567,56 +567,6 @@ class CartoonRoleController extends Controller
         return $this->resOK();
     }
 
-    // 修改股价
-    public function changeStockPrice(Request $request)
-    {
-        return $this->resErrServiceUnavailable('请前往PC端网页发起投票');
-
-        $userId = $this->getAuthUserId();
-        $idolId = $request->get('idol_id');
-        $cartoonRoleRepository = new CartoonRoleRepository();
-
-        $idol = $cartoonRoleRepository->item($idolId);
-        if (is_null($idol))
-        {
-            return $this->resErrNotFound();
-        }
-
-        if ($idol['company_state'] != 1)
-        {
-            return $this->resErrBad('公司上市之后才能增发股票');
-        }
-
-        if ($idol['boss_id'] != $userId)
-        {
-            return $this->resErrRole();
-        }
-
-        $lastEditAt = $idol['last_edit_at'];
-        if ($lastEditAt && strtotime($lastEditAt) > strtotime('1 week ago'))
-        {
-            return $this->resErrBad('一周只能修改一次');
-        }
-
-        $maxCount = floatval($request->get('max_stock_count'));
-        if (floatval($idol['max_stock_count']) == 0)
-        {
-            $maxCount = $maxCount + $idol['star_count'];
-        }
-
-        CartoonRole
-            ::where('id', $idolId)
-            ->update([
-                'max_stock_count' => $maxCount,
-                'stock_price' => $request->get('stock_price'),
-                'last_edit_at' => Carbon::now()
-            ]);
-
-        Redis::DEL($cartoonRoleRepository->idolItemCacheKey($idolId));
-
-        return $this->resNoContent();
-    }
-
     // 股东列表
     public function owners(Request $request, $id)
     {
@@ -1627,6 +1577,66 @@ class CartoonRoleController extends Controller
             ]);
 
         return $this->resCreated($draft);
+    }
+
+    // 修改大股东寄语和QQ群号
+    public function changeIdolProfile(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'qq_group' => 'required|integer',
+            'lover_words' => 'required|string|min:1|max:20'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $userId = $this->getAuthUserId();
+        $idolId = $request->get('idol_id');
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $idol = $cartoonRoleRepository->item($idolId);
+        if (is_null($idol))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($idol['boss_id'] != $userId)
+        {
+            return $this->resErrRole();
+        }
+
+        $lastEditAt = $idol['last_edit_at'];
+        if ($lastEditAt && strtotime($lastEditAt) > strtotime('1 week ago'))
+        {
+            return $this->resErrBad('每周只能修改一次');
+        }
+
+        $lover_words = Purifier::clean($request->get('lover_words'));
+        $qq_group = $request->get('qq_group');
+        if ($idol['qq_group'])
+        {
+            $qq_group = $idol['qq_group'];
+        }
+
+        $now = Carbon::now();
+        CartoonRole
+            ::where('id', $idolId)
+            ->update([
+                'qq_group' => $qq_group,
+                'lover_words' => $lover_words,
+                'last_edit_at' => $now
+            ]);
+
+        $cacheKey = $cartoonRoleRepository->idolItemCacheKey($idolId);
+        if (Redis::EXISTS($cacheKey))
+        {
+            Redis::HSET($cacheKey, 'qq_group', $qq_group);
+            Redis::HSET($cacheKey, 'lover_words', $lover_words);
+            Redis::HSET($cacheKey, 'last_edit_at', $now);
+        }
+
+        return $this->resNoContent();
     }
 
     // 获取偶像的股份发行草案列表
