@@ -1614,7 +1614,7 @@ class CartoonRoleController extends Controller
 
         $lover_words = Purifier::clean($request->get('lover_words'));
         $qq_group = $request->get('qq_group');
-        if ($idol['qq_group'] || !$qq_group)
+        if ((isset($idol['qq_group']) && $idol['qq_group']) || !$qq_group)
         {
             $qq_group = $idol['qq_group'];
         }
