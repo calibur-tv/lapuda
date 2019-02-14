@@ -60,6 +60,7 @@ class CartoonRoleTransformer extends Transformer
                 'company_state' => intval($info['company_state']),
                 'fans_count' => intval($info['fans_count']),
                 'ipo_at' => $info['ipo_at'],
+                'chart' => $info['chart'],
                 'created_at' => $info['created_at']
             ];
         });

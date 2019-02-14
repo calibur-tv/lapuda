@@ -325,6 +325,7 @@ class CartoonRoleController extends Controller
         {
             $role['has_star'] = 0;
         }
+        $role['chart'] = $cartoonRoleRepository->idolStockChartData($id);
 
         $searchService = new Search();
         if ($searchService->checkNeedMigrate('role', $id))
