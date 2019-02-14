@@ -68,7 +68,7 @@ class AutoChangeMarketStock extends Command
                 if ($agreeAmount / $starCount > 0.66)
                 {
                     VirtualIdolPriceDraft
-                        ::where($item['id'])
+                        ::where('id', $item['id'])
                         ->update([
                             'result' => 1
                         ]);
@@ -97,7 +97,7 @@ class AutoChangeMarketStock extends Command
                 if ($bannedAmount / $starCount > 0.66)
                 {
                     VirtualIdolPriceDraft
-                        ::where($item['id'])
+                        ::where('id', $item['id'])
                         ->update([
                             'result' => 2
                         ]);
