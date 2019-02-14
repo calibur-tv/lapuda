@@ -567,6 +567,15 @@ class CartoonRoleController extends Controller
         return $this->resOK();
     }
 
+    // 偶像的市值变动图标数据
+    public function stochChart($id)
+    {
+        $cartoonRepository = new CartoonRoleRepository();
+        $data = $cartoonRepository->idolStockChartData($id);
+
+        return $this->resOK($data);
+    }
+
     // 股东列表
     public function owners(Request $request, $id)
     {

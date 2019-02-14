@@ -338,6 +338,8 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->get('/stock_show', 'App\Api\V1\Controllers\CartoonRoleController@stockShow');
 
+            $api->get('/stock_chart', 'App\Api\V1\Controllers\CartoonRoleController@stochChart');
+
             $api->get('/fans', 'App\Api\V1\Controllers\CartoonRoleController@fans');
 
             $api->get('/owners', 'App\Api\V1\Controllers\CartoonRoleController@owners');

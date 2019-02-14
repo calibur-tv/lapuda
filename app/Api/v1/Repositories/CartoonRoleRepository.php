@@ -109,6 +109,14 @@ class CartoonRoleRepository extends Repository
         return $this->filterIdsBySeenIds($ids, $seenIds, config('website.list_count'), true);
     }
 
+    public function idolStockChartData($idolId)
+    {
+        return $this->RedisSort($this->idolRealtimeMarketPrice($idolId), function ()
+        {
+            return [];
+        }, true, true);
+    }
+
     public function newOwnerIds($roleId, $minId, $count = 20)
     {
         $ids = $this->RedisSort($this->newOwnerIdsCacheKey($roleId), function () use ($roleId)
