@@ -1583,7 +1583,7 @@ class CartoonRoleController extends Controller
     public function changeIdolProfile(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'qq_group' => 'required|integer',
+            'qq_group' => 'present|integer',
             'lover_words' => 'required|string|min:1|max:20'
         ]);
 
@@ -1614,7 +1614,7 @@ class CartoonRoleController extends Controller
 
         $lover_words = Purifier::clean($request->get('lover_words'));
         $qq_group = $request->get('qq_group');
-        if ($idol['qq_group'])
+        if ($idol['qq_group'] || !$qq_group)
         {
             $qq_group = $idol['qq_group'];
         }
