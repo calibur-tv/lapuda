@@ -156,12 +156,15 @@ class CartoonRoleRepository extends Repository
         CartoonRole
             ::where('id', $roleId)
             ->update([
-                'boss_id' => $bossId
+                'boss_id' => $bossId,
+                'last_edit_at' => null
             ]);
 
-        if (Redis::EXISTS($this->idolItemCacheKey($roleId)))
+        $cacheKey = $this->idolItemCacheKey($roleId);
+        if (Redis::EXISTS($cacheKey))
         {
-            Redis::HSET($this->idolItemCacheKey($roleId), 'boss_id', $bossId);
+            Redis::HSET($cacheKey, 'boss_id', $bossId);
+            Redis::HSET($cacheKey, 'last_edit_at', null);
         }
 
         return $bossId;
