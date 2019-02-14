@@ -111,10 +111,22 @@ class CartoonRoleRepository extends Repository
 
     public function idolStockChartData($idolId)
     {
-        return $this->RedisSort($this->idolRealtimeMarketPrice($idolId), function ()
+        $data = $this->RedisSort($this->idolRealtimeMarketPrice($idolId), function ()
         {
             return [];
         }, true, true);
+
+        $result = [];
+
+        foreach ($data as $price => $time)
+        {
+            $result[] = [
+                'time' => $time,
+                'value' => $price
+            ];
+        }
+
+        return $result;
     }
 
     public function newOwnerIds($roleId, $minId, $count = 20)
