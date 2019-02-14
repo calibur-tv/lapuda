@@ -12,6 +12,7 @@ namespace App\Console\Job;
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Services\Vote\IdolVoteService;
 use App\Models\CartoonRole;
+use App\Models\VirtualIdolOwner;
 use App\Models\VirtualIdolPriceDraft;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
