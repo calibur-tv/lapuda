@@ -1616,7 +1616,7 @@ class CartoonRoleController extends Controller
         $qq_group = $request->get('qq_group');
         if ((isset($idol['qq_group']) && $idol['qq_group']) || !$qq_group)
         {
-            $qq_group = $idol['qq_group'];
+            $qq_group = isset($idol['qq_group']) ? $idol['qq_group'] : '';
         }
 
         $now = Carbon::now();
