@@ -43,8 +43,8 @@ class SaveIdolMarketPrice extends Command
             ->toArray();
 
         $cartoonRoleRepository = new CartoonRoleRepository();
-        // 不删除昨天的缓存，删除前天的缓存
-        $timeSeed = date('Y-m-d', strtotime('-2 day'));
+        $timeSeed_1 = date('Y-m-d', strtotime('-1 day'));
+        $timeSeed_2 = date('Y-m-d', strtotime('-2 day'));
         foreach ($list as $item)
         {
             DB
@@ -55,7 +55,9 @@ class SaveIdolMarketPrice extends Command
                     'day' => Carbon::now()->yesterday()
                 ]);
 
-            $cacheKey = $cartoonRoleRepository->idolRealtimeMarketPrice($item['id'], $timeSeed);
+            $cacheKey = $cartoonRoleRepository->idolRealtimeMarketPrice($item['id'], $timeSeed_1);
+            Redis::DEL($cacheKey);
+            $cacheKey = $cartoonRoleRepository->idolRealtimeMarketPrice($item['id'], $timeSeed_2);
             Redis::DEL($cacheKey);
         }
 

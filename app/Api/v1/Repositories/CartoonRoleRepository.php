@@ -475,6 +475,11 @@ class CartoonRoleRepository extends Repository
         return "virtual_idol_{$idol_id}_{$data}_market_price";
     }
 
+    public function idol24HourMarketPrice($idol_id)
+    {
+        return "virtual_idol_{$idol_id}_24_hour_market_price";
+    }
+
     // 最近交易的记录列表
     public function recentDealStockCacheKey()
     {

@@ -36,15 +36,23 @@ class ComputeIdolMarketPrice extends Command
     {
         $cartoonRoleRepository = new CartoonRoleRepository();
         $list = CartoonRole
-            ::where('company_state', 1)
+            ::where('fans_count', '>', 0)
             ->select('id', 'market_price')
             ->get()
             ->toArray();
 
+        $time = strtotime('now');
         foreach ($list as $item)
         {
             $cacheKey = $cartoonRoleRepository->idolRealtimeMarketPrice($item['id']);
-            Redis::ZADD($cacheKey, strtotime('now'), $item['market_price']);
+            Redis::ZADD($cacheKey, $time, $item['market_price']);
+        }
+
+        foreach ($list as $item)
+        {
+            $cacheKey = $cartoonRoleRepository->idol24HourMarketPrice($item['id']);
+            Redis::LPUSH($cacheKey, "{$time}-{$item['market_price']}");
+            Redis::LTRIM($cacheKey, 0, 288);
         }
 
         return true;
