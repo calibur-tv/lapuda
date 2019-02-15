@@ -60,16 +60,23 @@ class MigrationQQ extends Command
                 ]
             );
 
-            $data = $resp->body;
-            $json = $this->removeCallback($data);
-            $unique_id = json_decode($json, true)['unionid'];
+            try
+            {
+                $data = $resp->body;
+                $json = $this->removeCallback($data);
+                $unique_id = json_decode($json, true)['unionid'];
 
-            User
-                ::withTrashed()
-                ->where('id', $user['id'])
-                ->update([
-                    'qq_unique_id' => $unique_id
-                ]);
+                User
+                    ::withTrashed()
+                    ->where('id', $user['id'])
+                    ->update([
+                        'qq_unique_id' => $unique_id
+                    ]);
+            }
+            catch (\Exception $e)
+            {
+                continue;
+            }
         }
 
         return true;
