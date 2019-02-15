@@ -73,11 +73,17 @@ class AutoChangeMarketStock extends Command
                             'result' => 1
                         ]);
 
+                    $oldPrice = $idol['max_stock_count'];
+                    if (intval($oldPrice) == 0)
+                    {
+                        $oldPrice = $idol['star_count'];
+                    }
+
                     CartoonRole
                         ::where('id', $item['idol_id'])
                         ->update([
                             'stock_price' => $item['stock_price'],
-                            'max_stock_count' => floatval($idol['max_stock_count'] + $item['add_stock_count'])
+                            'max_stock_count' => floatval($oldPrice + $item['add_stock_count'])
                         ]);
 
                     Redis::DEL($cartoonRoleRepository->idolItemCacheKey($item['idol_id']));
