@@ -150,7 +150,8 @@ class CartoonRoleRepository extends Repository
         {
             return VirtualIdolOwner
                 ::where('idol_id', $roleId)
-                ->orderBy('stock_count', 'desc')
+                ->orderBy('stock_count', 'DESC')
+                ->orderBy('id', 'ASC')
                 ->take(100)
                 ->pluck('stock_count', 'user_id AS id');
 
