@@ -42,11 +42,6 @@ class ComputeIdolMarketPrice extends Command
             ->toArray();
 
         $time = strtotime('now');
-        foreach ($list as $item)
-        {
-            $cacheKey = $cartoonRoleRepository->idolRealtimeMarketPrice($item['id']);
-            Redis::ZADD($cacheKey, $time, $item['market_price']);
-        }
 
         foreach ($list as $item)
         {
