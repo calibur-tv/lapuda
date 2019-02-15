@@ -572,7 +572,7 @@ class CartoonRoleController extends Controller
     public function stochChart($id)
     {
         $cartoonRepository = new CartoonRoleRepository();
-        $data = $cartoonRepository->idolStockChartData($id);
+        $data = $cartoonRepository->idol24HourStockChartData($id);
 
         return $this->resOK($data);
     }

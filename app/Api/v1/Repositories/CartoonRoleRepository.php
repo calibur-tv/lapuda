@@ -129,6 +129,27 @@ class CartoonRoleRepository extends Repository
         return $result;
     }
 
+    public function idol24HourStockChartData($idolId)
+    {
+        $data = $this->RedisList($this->idol24HourMarketPrice($idolId), function ()
+        {
+            return [];
+        });
+
+        $result = [];
+
+        foreach ($data as $item)
+        {
+            $arr = explode('-', $item);
+            $result[] = [
+                'time' => $arr[0],
+                'value' => $arr[1]
+            ];
+        }
+
+        return $result;
+    }
+
     public function newOwnerIds($roleId, $minId, $count = 20)
     {
         $ids = $this->RedisSort($this->newOwnerIdsCacheKey($roleId), function () use ($roleId)
