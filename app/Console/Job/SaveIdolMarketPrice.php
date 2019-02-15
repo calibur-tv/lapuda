@@ -43,7 +43,8 @@ class SaveIdolMarketPrice extends Command
             ->toArray();
 
         $cartoonRoleRepository = new CartoonRoleRepository();
-        $timeSeed = date('Y-m-d', strtotime('-1 day'));
+        // 不删除昨天的缓存，删除前天的缓存
+        $timeSeed = date('Y-m-d', strtotime('-2 day'));
         foreach ($list as $item)
         {
             DB
