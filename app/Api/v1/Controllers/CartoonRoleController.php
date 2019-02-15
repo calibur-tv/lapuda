@@ -1926,7 +1926,22 @@ class CartoonRoleController extends Controller
             ]);
         }
 
+        $userRepository = new UserRepository();
         $list = $cartoonRoleRepository->list($ids);
+        foreach ($list as $i => $item)
+        {
+            $list[$i]['market_trend'] = $cartoonRoleRepository->idol24HourStockChartData($item['id']);
+            $boss = null;
+            if ($item['boss_id'])
+            {
+                $boss = $userRepository->item($item['boss_id']);
+            }
+            $list[$i]['boss'] = is_null($boss) ? null : [
+                'zone' => $boss['zone'],
+                'avatar' => $boss['avatar'],
+                'nickname' => $boss['nickname']
+            ];
+        }
         $cartoonRoleTransformer = new CartoonRoleTransformer();
 
         return $this->resOK([

@@ -74,6 +74,8 @@ class CartoonRoleTransformer extends Transformer
                 'id' => (int)$info['id'],
                 'avatar' => $info['avatar'],
                 'name' => $info['name'],
+                'boss' => $info['boss'],
+                'market_trend' => $info['market_trend'],
                 'market_price' => sprintf("%.2f", $info['market_price']),
                 'stock_price' => sprintf("%.2f", $info['stock_price']),
                 'star_count' => sprintf("%.2f", $info['star_count']),
