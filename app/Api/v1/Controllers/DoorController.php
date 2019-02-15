@@ -19,7 +19,6 @@ use App\Services\Trial\UserIpAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -424,10 +423,6 @@ class DoorController extends Controller
             {
                 app('sentry')->captureException($e);
 
-                Log::info('qq auth error，open_id', [
-                    'open_id' => $openId
-                ]);
-
                 return $this->resErrServiceUnavailable('请修改QQ昵称后重试');
             }
         }
@@ -437,6 +432,11 @@ class DoorController extends Controller
             $user = User
                 ::where('qq_unique_id', $uniqueId)
                 ->first();
+
+            if (is_null($user))
+            {
+                return $this->resErrRole('该账号不存在了');
+            }
         }
 
         $userId = $user->id;

@@ -205,7 +205,7 @@ class CallbackController extends Controller
 
         $openId = $user['id'];
         $uniqueId = $user['unionid'];
-        $isNewUser = $this->isNewUser('qq_open_id', $openId);
+        $isNewUser = $this->isNewUser('qq_unique_id', $uniqueId);
 
         if ($from === 'bind')
         {
@@ -281,16 +281,12 @@ class CallbackController extends Controller
         {
             // signIn
             $user = User
-                ::where('qq_open_id', $openId)
+                ::where('qq_unique_id', $uniqueId)
                 ->first();
 
-            if (!$user->qq_unique_id)
+            if (is_null($user))
             {
-                User
-                    ::where('id', $user->id)
-                    ->update([
-                        'qq_unique_id' => $uniqueId
-                    ]);
+                return redirect('https://www.calibur.tv/callback/auth-error?message=' . '这个用户消失了');
             }
         }
 
