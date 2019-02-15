@@ -10,6 +10,7 @@ namespace App\Console\Job;
 
 use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Models\CartoonRole;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
