@@ -611,7 +611,12 @@ class PostController extends Controller
             $list[$i]['f_content'] = $filter->filter($row['content']);
             $list[$i]['words'] = $filter->filter($row['title'] . $row['content']);
             $list[$i]['images'] = PostImages::where('post_id', $row['id'])->get();
-            $list[$i]['user'] = $userRepository->item($row['user_id']);
+            $user = $userRepository->item($row['user_id']);
+            if (is_null($user))
+            {
+                continue;
+            }
+            $list[$i]['user'] = $user;
         }
 
         return $this->resOK($list);
