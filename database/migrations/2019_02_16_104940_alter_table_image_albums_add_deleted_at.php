@@ -15,6 +15,7 @@ class AlterTableImageAlbumsAddDeletedAt extends Migration
     {
         Schema::table('image_albums', function (Blueprint $table) {
             $table->softDeletes();
+            $table->bigInteger('rank')->unsigned()->comment('图片顺序')->change();
         });
     }
 
@@ -26,6 +27,7 @@ class AlterTableImageAlbumsAddDeletedAt extends Migration
     public function down()
     {
         Schema::table('image_albums', function (Blueprint $table) {
+            $table->integer('rank')->unsigned()->comment('图片顺序')->change();
             $table->dropSoftDeletes();
         });
     }

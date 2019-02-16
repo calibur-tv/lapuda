@@ -292,6 +292,8 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/sort', 'App\Api\V1\Controllers\ImageController@albumSort')->middleware(['jwt.auth']);
 
             $api->post('/deleteImage', 'App\Api\V1\Controllers\ImageController@deleteAlbumImage')->middleware(['jwt.auth']);
+
+            $api->post('/image', 'App\Api\V1\Controllers\ImageController@addImageToAlbum');//->middleware(['jwt.auth']);
         });
 
         $api->group(['prefix' => '/single', 'middleware' => ['jwt.auth']], function ($api)

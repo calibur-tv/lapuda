@@ -994,6 +994,42 @@ class ImageController extends Controller
         return $this->resOK();
     }
 
+    /**
+     * 给相册增加图片（转引自帖子图片）
+     *
+     * @Post("/image/album/`albumId`/image")
+     *
+     * @Parameters({
+     *     @Parameter("image_id", description="需要添加的图片 id", type="int", required=true),
+     * })
+     *
+     * @Transaction({
+     *     @Request(header={"Authorization": "Bearer JWT-Token"}),
+     *     @Response(204),
+     *     @Response(400, body={"code": 40003, "data": "请求参数错误"}),
+     *     @Response(404, body={"code": 40401, "message": "不存在的相册"})
+     * })
+     */
+    public function addImageToAlbum(Request $request, $id)
+    {
+        $imageId = $request->post('image_id');
+
+        $imageRepository = new ImageRepository();
+        $image = $imageRepository->getOneImage($imageId);
+        if (is_null($image)) {
+            return $this->resErrNotFound();
+        }
+
+        $album = $imageRepository->item($id);
+        if (is_null($album)) {
+            return $this->resErrNotFound();
+        }
+
+        $imageRepository->addImageToAlbum([$imageId], $id);
+
+        return $this->resCreated('');
+    }
+
     // 后台待审图片列表
     public function trials()
     {

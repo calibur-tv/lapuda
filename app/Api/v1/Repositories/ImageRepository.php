@@ -443,4 +443,31 @@ class ImageRepository extends Repository
         $job = (new \App\Jobs\Search\Index($type, 'image', $id, $content));
         dispatch($job);
     }
+
+    public function getOneImage($imageId)
+    {
+        return $this->Cache($this->imageItemCacheKey($imageId), function () use ($imageId) {
+            $image = PostImages::where('id', $imageId)->first();
+
+            return $image;
+        });
+    }
+
+    public function addImageToAlbum($imageIds, $albumId)
+    {
+        $existImageIds = ImageAlbum::where('album_id', $albumId)->whereIn('image_id', $imageIds)->pluck('image_id')->toArray();
+
+        $newImageIds = array_diff($imageIds, $existImageIds);
+
+        $data = [];
+        foreach ($newImageIds as $imageId) {
+            $data[] = [
+                'album_id' => $albumId,
+                'image_id' => $imageId,
+                'rank' => microtime(true) * 10000,
+            ];
+        }
+
+        ImageAlbum::insert($data);
+    }
 }
