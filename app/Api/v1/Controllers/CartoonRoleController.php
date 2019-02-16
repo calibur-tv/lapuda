@@ -336,7 +336,7 @@ class CartoonRoleController extends Controller
             {
                 $idolVoteService = new IdolVoteService();
                 $role['has_market_price_draft'] = true;
-                $role['market_price_draft_voted'] = $idolVoteService->check($userId, $id);
+                $role['market_price_draft_voted'] = $idolVoteService->check($userId, $draftId);
             }
         }
 
