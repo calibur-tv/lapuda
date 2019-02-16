@@ -14,6 +14,7 @@ use App\Models\CartoonRoleFans;
 use App\Models\VirtualIdolDeal;
 use App\Models\VirtualIdolDealRecord;
 use App\Models\VirtualIdolOwner;
+use App\Models\VirtualIdolPriceDraft;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
@@ -148,6 +149,25 @@ class CartoonRoleRepository extends Repository
         }
 
         return $result;
+    }
+
+    public function lastIdolMarketPriceDraftId($idolId)
+    {
+        return $this->RedisItem($this->lastIdolMarketPriceDraftCacheKey($idolId), function () use ($idolId)
+        {
+            $id = VirtualIdolPriceDraft
+                ::where('idol_id', $idolId)
+                ->where('result', 0)
+                ->pluck('id')
+                ->first();
+
+            if (!$id)
+            {
+                return 0;
+            }
+
+            return $id;
+        });
     }
 
     public function newOwnerIds($roleId, $minId, $count = 20)
@@ -529,6 +549,12 @@ class CartoonRoleRepository extends Repository
     public function stockDealTotalMoneyCacheKey()
     {
         return 'virtual_idol_deal_total_money';
+    }
+
+    // 偶像最后一个正在投票的提案的id缓存
+    public function lastIdolMarketPriceDraftCacheKey($idolId)
+    {
+        return "virtual_idol_{$idolId}_last_market_price_draft_id";
     }
 
     public function migrateSearchIndex($type, $id, $async = true)

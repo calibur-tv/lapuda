@@ -59,6 +59,8 @@ class CartoonRoleTransformer extends Transformer
                 'is_locked' => floatval($info['max_stock_count']) && floatval($info['max_stock_count']) <= floatval($info['star_count']),
                 'company_state' => intval($info['company_state']),
                 'fans_count' => intval($info['fans_count']),
+                'has_market_price_draft' => $info['has_market_price_draft'],
+                'market_price_draft_voted' => $info['market_price_draft_voted'],
                 'ipo_at' => $info['ipo_at'],
                 'chart' => $info['chart'],
                 'created_at' => $info['created_at']

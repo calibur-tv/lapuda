@@ -326,6 +326,18 @@ class CartoonRoleController extends Controller
             $role['has_star'] = 0;
         }
         $role['chart'] = $cartoonRoleRepository->idol24HourStockChartData($id);
+        $role['has_market_price_draft'] = false;
+        $role['market_price_draft_voted'] = 0;
+        if ($role['has_star'])
+        {
+            // 通知
+            $draftId = $cartoonRoleRepository->lastIdolMarketPriceDraftId($id);
+            if ($draftId != 0)
+            {
+                $idolVoteService = new IdolVoteService();
+                $role['market_price_draft_voted'] = $idolVoteService->check($userId, $id);
+            }
+        }
 
         $searchService = new Search();
         if ($searchService->checkNeedMigrate('role', $id))
@@ -1585,6 +1597,9 @@ class CartoonRoleController extends Controller
                 'stock_price' => $stock_price,
                 'add_stock_count' => $add_stock_count
             ]);
+
+        $cacheKey = $cartoonRoleRepository->lastIdolMarketPriceDraftCacheKey($idolId);
+        Redis::SET($cacheKey, $draft->id);
 
         return $this->resCreated($draft);
     }
