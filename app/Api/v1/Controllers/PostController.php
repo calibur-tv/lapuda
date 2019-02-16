@@ -615,6 +615,11 @@ class PostController extends Controller
             $user = $userRepository->item($row['user_id']);
             if (is_null($user))
             {
+                Post
+                    ::where('id', $row['id'])
+                    ->update([
+                        'state' => 0
+                    ]);
                 continue;
             }
             $row['user'] = $user;
