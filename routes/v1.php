@@ -365,6 +365,8 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/market_price_draft_list', 'App\Api\V1\Controllers\CartoonRoleController@getIdolMarketPriceDraftList');
 
+        $api->get('/user_draft_work', 'App\Api\V1\Controllers\CartoonRoleController@getMyTodoWork')->middleware(['jwt.auth']);
+
         $api->post('/change_idol_profile', 'App\Api\V1\Controllers\CartoonRoleController@changeIdolProfile')->middleware(['jwt.auth']);
 
         $api->post('/create_market_price_draft', 'App\Api\V1\Controllers\CartoonRoleController@createIdolMarketPriceDraft')->middleware(['jwt.auth']);

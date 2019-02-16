@@ -166,7 +166,7 @@ class PostTrendingService extends TrendingService
         return Post
             ::where('user_id', $this->userId)
             ->orderBy('created_at', 'desc')
-            ->pluck('id');
+            ->pluck('created_at', 'id');
     }
 
     public function checkCanUpdateBangumiIds($id)

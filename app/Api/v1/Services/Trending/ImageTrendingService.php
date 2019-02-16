@@ -133,7 +133,7 @@ class ImageTrendingService extends TrendingService
             ::where('user_id', $this->userId)
             ->where('is_cartoon', 0)
             ->latest()
-            ->pluck('id');
+            ->pluck('created_at', 'id');
     }
 
     public function getListByIds($ids, $flowType)

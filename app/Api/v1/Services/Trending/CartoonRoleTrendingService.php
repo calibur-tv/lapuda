@@ -83,7 +83,7 @@ class CartoonRoleTrendingService extends TrendingService
         return CartoonRoleFans
             ::where('user_id', $this->userId)
             ->orderBy('updated_at', 'DESC')
-            ->pluck('role_id');
+            ->pluck('updated_at', 'role_id');
     }
 
     public function users($page, $take)

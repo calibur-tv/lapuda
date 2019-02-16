@@ -796,6 +796,51 @@ class CartoonRoleController extends Controller
         ]);
     }
 
+    // 获取用户需要参与的会议列表
+    public function getMyTodoWork()
+    {
+        $userId = $this->getAuthUserId();
+        $list = VirtualIdolPriceDraft
+            ::where('result', 0)
+            ->whereIn('idol_id', function ($query) use ($userId)
+            {
+                $query
+                    ->from('virtual_idol_owners')
+                    ->select('idol_id')
+                    ->where('user_id', $userId);
+            })
+            ->select('id', 'idol_id')
+            ->toArray();
+
+        if (empty($list))
+        {
+            return $this->resOK([]);
+        }
+
+        $idolVoteService = new IdolVoteService();
+        $list = $idolVoteService->batchCheck($list, $userId);
+        $result = [];
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        foreach ($list as $item)
+        {
+            if ($item['voted'] == 0)
+            {
+                $idol = $cartoonRoleRepository->item($item['idol_id']);
+                if (is_null($idol))
+                {
+                    continue;
+                }
+                $result[] = [
+                    'id' => $idol['id'],
+                    'name' => $idol['name'],
+                    'avatar' => $idol['avatar']
+                ];
+            }
+        }
+
+        return $this->resOK($result);
+    }
+
     // 我发起的交易
     public function myDeal()
     {

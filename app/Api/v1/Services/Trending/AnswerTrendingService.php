@@ -115,10 +115,10 @@ class AnswerTrendingService extends TrendingService
     {
         return
             Answer
-            ::where('user_id', $this->userId)
-            ->orderBy('created_at', 'desc')
-            ->whereNotNull('published_at')
-            ->pluck('id');
+                ::where('user_id', $this->userId)
+                ->orderBy('published_at', 'desc')
+                ->whereNotNull('published_at')
+                ->pluck('published_at', 'id');
     }
 
     public function getListByIds($ids, $flowType)

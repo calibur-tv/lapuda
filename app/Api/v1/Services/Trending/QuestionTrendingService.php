@@ -59,7 +59,7 @@ class QuestionTrendingService extends TrendingService
                 ::where('user_id', $this->userId)
                 ->whereNull('deleted_at')
                 ->orderBy('created_at', 'desc')
-                ->pluck('id');
+                ->pluck('created_at', 'id');
     }
 
     public function computeHotIds()
