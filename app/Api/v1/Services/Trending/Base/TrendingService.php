@@ -157,7 +157,7 @@ class TrendingService extends Repository
         $ids = $this->RedisSort($this->trendingFlowUsersKey_v2(), function ()
         {
             return $this->computeUserIds();
-        });
+        }, true);
 
         return $this->filterIdsByPage($ids, $page, $take);
     }
