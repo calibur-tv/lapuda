@@ -15,7 +15,6 @@ use App\Models\CartoonRole;
 use App\Models\VirtualIdolOwner;
 use App\Models\VirtualIdolPriceDraft;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
 class AutoChangeMarketStock extends Command
@@ -87,6 +86,8 @@ class AutoChangeMarketStock extends Command
                         ]);
 
                     Redis::DEL($cartoonRoleRepository->idolItemCacheKey($item['idol_id']));
+                    Redis::DEL($cartoonRoleRepository->lastIdolMarketPriceDraftCacheKey($item['idol_id']));
+
                     continue;
                 }
             }
@@ -107,6 +108,8 @@ class AutoChangeMarketStock extends Command
                         ->update([
                             'result' => 2
                         ]);
+
+                    Redis::DEL($cartoonRoleRepository->lastIdolMarketPriceDraftCacheKey($item['idol_id']));
 
                     continue;
                 }
