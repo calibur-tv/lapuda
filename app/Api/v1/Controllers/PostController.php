@@ -617,6 +617,7 @@ class PostController extends Controller
             {
                 Post
                     ::where('id', $row['id'])
+                    ->withTrashed()
                     ->update([
                         'state' => 0
                     ]);
