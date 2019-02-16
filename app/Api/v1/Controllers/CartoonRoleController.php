@@ -810,6 +810,7 @@ class CartoonRoleController extends Controller
                     ->where('user_id', $userId);
             })
             ->select('id', 'idol_id')
+            ->get()
             ->toArray();
 
         if (empty($list))
