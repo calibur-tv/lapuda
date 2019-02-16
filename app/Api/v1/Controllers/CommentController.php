@@ -636,7 +636,11 @@ class CommentController extends Controller
             $repository = $this->getRepositoryByType($type);
             $parent = $repository->item($comment['modal_id']);
             // 不是主题的作者
-            if ($parent['user_id'] != $userId)
+            if ($type === 'role')
+            {
+                $isMaster = false;
+            }
+            else if ($parent['user_id'] != $userId)
             {
                 return $this->resErrRole();
             }
