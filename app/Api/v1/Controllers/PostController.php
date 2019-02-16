@@ -605,21 +605,23 @@ class PostController extends Controller
         $filter = new WordsFilter();
         $userRepository = new UserRepository();
 
+        $result = [];
         foreach ($list as $i =>$row)
         {
-            $list[$i]['f_title'] = $filter->filter($row['title']);
-            $list[$i]['f_content'] = $filter->filter($row['content']);
-            $list[$i]['words'] = $filter->filter($row['title'] . $row['content']);
-            $list[$i]['images'] = PostImages::where('post_id', $row['id'])->get();
+            $row['f_title'] = $filter->filter($row['title']);
+            $row['f_content'] = $filter->filter($row['content']);
+            $row['words'] = $filter->filter($row['title'] . $row['content']);
+            $row['images'] = PostImages::where('post_id', $row['id'])->get();
             $user = $userRepository->item($row['user_id']);
             if (is_null($user))
             {
                 continue;
             }
-            $list[$i]['user'] = $user;
+            $row['user'] = $user;
+            $result[] = $row;
         }
 
-        return $this->resOK($list);
+        return $this->resOK($result);
     }
 
     // 后台删除帖子
