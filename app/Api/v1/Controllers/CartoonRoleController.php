@@ -2175,6 +2175,31 @@ class CartoonRoleController extends Controller
         $cartoonRoleTrendingService = new CartoonRoleTrendingService($bangumiId);
         $cartoonRoleTrendingService->delete($id);
 
+        // 反还团子，但是溢价就惩罚掉了
+        $data = VirtualIdolOwner
+            ::where('idol_id', $id)
+            ->select('user_id', 'stock_count')
+            ->get()
+            ->toArray();
+        $virtualCoinService = new VirtualCoinService();
+        foreach ($data as $item)
+        {
+            $virtualCoinService->coinGift($item['user_id'], $item['stock_count']);
+        }
+
+        // 删除该偶像的交易
+        VirtualIdolDeal
+            ::where('idol_id', $id)
+            ->delete();
+
+        $cacheKey = $cartoonRoleRepository->idolDealListCacheKey();
+        Redis::DEL($cacheKey);
+
+        // 删除该偶像的应援记录
+        VirtualIdolOwner
+            ::where('idol_id', $id)
+            ->delete();
+
         $job = (new \App\Jobs\Search\Index('D', 'role', $id));
         dispatch($job);
 
