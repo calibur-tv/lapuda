@@ -173,6 +173,18 @@ class Repository
         });
     }
 
+    public function multiCache($key, $func, $exp = 'd')
+    {
+        $arr = call_user_func($func);
+        $needCache = [];
+        foreach ($arr as $obj) {
+            $needCache = array_add($needCache, "{$key}{$obj['id']}", $obj);
+        }
+        Cache::putMany($needCache, $this->expiredAt($exp));
+
+        return $needCache;
+    }
+
     public function ListInsertBefore($key, $value)
     {
         if (Redis::EXISTS($key))

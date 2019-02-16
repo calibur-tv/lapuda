@@ -18,8 +18,12 @@ use App\Api\V1\Transformers\ImageTransformer;
 use App\Models\AlbumImage;
 use App\Models\Banner;
 use App\Models\Image;
+use App\Models\ImageAlbum;
+use App\Models\PostImages;
 use App\Services\BaiduSearch\BaiduPush;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Mews\Purifier\Facades\Purifier;
@@ -176,46 +180,49 @@ class ImageRepository extends Repository
 
     public function albumImages($albumId)
     {
-        if (!$albumId)
-        {
+        if (!$albumId) {
             return [];
         }
 
-        return $this->Cache($this->cacheKeyAlbumImages($albumId), function () use ($albumId)
-        {
-            $imageIds = Image::where('id', $albumId)
-                ->pluck('image_ids')
-                ->first();
-
-            if (is_null($imageIds))
-            {
+        $key = $this->cacheKeyAlbumImageIds($albumId);
+        $redisCount = Redis::ZCOUNT($key, 0, '+inf');
+        if (0 == $redisCount) {
+            $imageIds = ImageAlbum::where('album_id', $albumId)->orderBy('rank')->get();
+            $imageIds = $imageIds->toArray();
+            $imageIds = array_column($imageIds, 'image_id', 'rank');
+            $redisCount = count($imageIds);
+            if (empty($imageIds)) {
                 return [];
             }
+        } else {
+            $imageIds = Redis::ZRANGEBYSCORE($key);
+        }
 
-            $ids = explode(',', $imageIds);
-            $images = [];
-            foreach ($ids as $id)
-            {
-                $image = AlbumImage::where('id', $id)
-                    ->select('id', 'url', 'width', 'height', 'size', 'type')
-                    ->first();
+        $imageKeys = [];
+        foreach ($imageIds as $imageId) {
+            $imageKeys[] = $this->imageItemCacheKey($imageId);
+        }
 
-                if (is_null($image))
-                {
-                    continue;
-                }
-                $images[] = $image->toArray();
-            }
+        $images = Cache::many($imageKeys);
 
-            if (empty($images))
-            {
-                return [];
-            }
+        $cachedImageIds = array_column($images, 'id');
+        if (count($cachedImageIds) < $redisCount) {
+            $lostIds = array_diff($imageIds, $cachedImageIds);
+            $images = $images + $this->multiCache($this->imageItemCacheKey(''), function () use ($lostIds) {
+                $images = PostImages::whereIn('id', $lostIds)->get();
 
-            $imageTransformer = new ImageTransformer();
+                return $images->toArray();
+            });
 
-            return $imageTransformer->albumImages($images);
-        });
+            $rankedImageIds = array_flip($imageIds);
+            usort($images, function ($a, $b) use ($rankedImageIds) {
+                return $rankedImageIds[$a['id']] < $rankedImageIds[$b['id']];
+            });
+        }
+
+        $imageTransformer = new ImageTransformer();
+
+        return $imageTransformer->albumImages($images);
     }
 
     public function getCartoonParts($bangumiId)
@@ -403,6 +410,11 @@ class ImageRepository extends Repository
         }
     }
 
+    public function imageItemCacheKey($id)
+    {
+        return "image:id#{$id}";
+    }
+
     public function itemCacheKey($id)
     {
         return 'image_' . $id;
@@ -416,6 +428,10 @@ class ImageRepository extends Repository
     public function cacheKeyCartoonParts($bangumiId)
     {
         return 'bangumi_' . $bangumiId . '_cartoon_parts';
+    }
+
+    public function cacheKeyAlbumImageIds($albumId) {
+        return "album:image_ids:albumId#{$albumId}";
     }
 
     public function migrateSearchIndex($type, $id, $async = true)
