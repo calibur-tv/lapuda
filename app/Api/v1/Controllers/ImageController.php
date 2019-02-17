@@ -931,65 +931,28 @@ class ImageController extends Controller
     {
         $imageRepository = new ImageRepository();
         $album = $imageRepository->item($id);
-        if (is_null($album))
-        {
-            return $this->resErrNotFound();
-        }
-
-        $image = AlbumImage::find($request->get('imageId'));
-        if (is_null($image))
-        {
+        if (is_null($album)) {
             return $this->resErrNotFound();
         }
 
         $user = $this->getAuthUser();
         $userId = $user->id;
 
-        if (!$user->is_admin)
-        {
-            if ($album['is_cartoon'])
-            {
+        if (!$user->is_admin) {
+            if ($album['is_cartoon']) {
                 $bangumiManager = new BangumiManager();
-                if (!$bangumiManager->isOwner($album['bangumi_id'], $userId))
-                {
+                if (!$bangumiManager->isOwner($album['bangumi_id'], $userId)) {
                     return $this->resErrRole();
                 }
             }
-            else if ($album['user_id'] !== $userId || $image->user_id != $userId || $image->album_id != $id)
-            {
+            else if ($album['user_id'] !== $userId) {
                 return $this->resErrRole();
             }
         }
 
-        $result = $request->get('result');
+        $imageId = $request->get('image_id');
 
-        $newIds = explode(',', $result);
-        if (count($newIds) >= $album['image_count'])
-        {
-            return $this->resErrBad();
-        }
-
-        $imageIds = Image::where('id', $id)
-            ->pluck('image_ids')
-            ->first();
-        if (count(array_diff($newIds, explode(',', $imageIds))))
-        {
-            // 包含了非本相册的图片
-            return $this->resErrRole();
-        }
-
-        Image::where('id', $id)
-            ->update([
-                'image_ids' => $result
-            ]);
-
-        $image->delete();
-
-        Redis::DEL($imageRepository->itemCacheKey($id));
-        Redis::DEL($imageRepository->cacheKeyAlbumImages($id));
-
-        $totalImageCount = new TotalImageCount();
-        $totalImageCount->add(-1);
+        $imageRepository->deleteImageFromAlbum([$imageId], $id);
 
         return $this->resOK();
     }

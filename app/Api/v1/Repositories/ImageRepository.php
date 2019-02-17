@@ -470,4 +470,11 @@ class ImageRepository extends Repository
 
         ImageAlbum::insert($data);
     }
+
+    public function deleteImageFromAlbum($imageIds, $albumId)
+    {
+        ImageAlbum::where('album_id', $albumId)->whereIn('image_id', $imageIds)->update([
+            'deleted_at' => Carbon::now(),
+        ]);
+    }
 }
