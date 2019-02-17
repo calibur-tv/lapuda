@@ -46,6 +46,7 @@ class AutoChangeMarketStock extends Command
 
         $cartoonRoleRepository = new CartoonRoleRepository();
         $idolVoteService = new IdolVoteService();
+        $PASS_LINE = 0.5;
         foreach ($drafts as $item)
         {
             $idol = $cartoonRoleRepository->item($item['idol_id']);
@@ -56,6 +57,12 @@ class AutoChangeMarketStock extends Command
 
             $starCount = $idol['star_count'];
             $agreeUsersId = $idolVoteService->agreeUsersId($item['id']);
+            $bannedUsersId = $idolVoteService->bannedUsersId($item['id']);
+            $agreeAmount = 0;
+            $bannedAmount = 0;
+            $pass = false;
+            $ban = false;
+
             if (count($agreeUsersId))
             {
                 // 赞同票数
@@ -64,55 +71,79 @@ class AutoChangeMarketStock extends Command
                     ->whereIn('user_id', $agreeUsersId)
                     ->sum('stock_count');
 
-                if ($agreeAmount / $starCount > 0.5)
+                if ($agreeAmount / $starCount > $PASS_LINE)
                 {
-                    VirtualIdolPriceDraft
-                        ::where('id', $item['id'])
-                        ->update([
-                            'result' => 1
-                        ]);
-
-                    $oldPrice = $idol['max_stock_count'];
-                    if (intval($oldPrice) == 0)
-                    {
-                        $oldPrice = $idol['star_count'];
-                    }
-
-                    CartoonRole
-                        ::where('id', $item['idol_id'])
-                        ->update([
-                            'stock_price' => $item['stock_price'],
-                            'max_stock_count' => floatval($oldPrice + $item['add_stock_count'])
-                        ]);
-
-                    Redis::DEL($cartoonRoleRepository->idolItemCacheKey($item['idol_id']));
-                    Redis::DEL($cartoonRoleRepository->lastIdolMarketPriceDraftCacheKey($item['idol_id']));
-
-                    continue;
+                    $pass = true;
                 }
             }
 
-            $bannedUsersId = $idolVoteService->bannedUsersId($item['id']);
-            if (count($bannedUsersId))
+            if (!$pass)
             {
-                // 反对票数
-                $bannedAmount = VirtualIdolOwner
-                    ::where('idol_id', $item['idol_id'])
-                    ->whereIn('user_id', $bannedUsersId)
-                    ->sum('stock_count');
-
-                if ($bannedAmount / $starCount > 0.5)
+                if (count($bannedUsersId))
                 {
-                    VirtualIdolPriceDraft
-                        ::where('id', $item['id'])
-                        ->update([
-                            'result' => 2
-                        ]);
+                    // 反对票数
+                    $bannedAmount = VirtualIdolOwner
+                        ::where('idol_id', $item['idol_id'])
+                        ->whereIn('user_id', $bannedUsersId)
+                        ->sum('stock_count');
 
-                    Redis::DEL($cartoonRoleRepository->lastIdolMarketPriceDraftCacheKey($item['idol_id']));
-
-                    continue;
+                    if ($bannedAmount / $starCount > $PASS_LINE)
+                    {
+                        $ban = true;
+                    }
                 }
+            }
+
+            // 超过两天了
+            if (!$ban && !$pass && strtotime($item['created_at']) < strtotime('2 day ago'))
+            {
+                // 有人投票
+                if (count($agreeUsersId) || count($bannedUsersId))
+                {
+                    if ($agreeAmount / ($agreeAmount + $bannedAmount) > $PASS_LINE)
+                    {
+                        $pass = true;
+                    }
+                    if ($bannedAmount / ($agreeAmount + $bannedAmount) > $PASS_LINE)
+                    {
+                        $ban = true;
+                    }
+                }
+            }
+
+            if ($pass)
+            {
+                VirtualIdolPriceDraft
+                    ::where('id', $item['id'])
+                    ->update([
+                        'result' => 1
+                    ]);
+
+                $oldPrice = $idol['max_stock_count'];
+                if (intval($oldPrice) == 0)
+                {
+                    $oldPrice = $idol['star_count'];
+                }
+
+                CartoonRole
+                    ::where('id', $item['idol_id'])
+                    ->update([
+                        'stock_price' => $item['stock_price'],
+                        'max_stock_count' => floatval($oldPrice + $item['add_stock_count'])
+                    ]);
+
+                Redis::DEL($cartoonRoleRepository->idolItemCacheKey($item['idol_id']));
+                Redis::DEL($cartoonRoleRepository->lastIdolMarketPriceDraftCacheKey($item['idol_id']));
+            }
+            if ($ban)
+            {
+                VirtualIdolPriceDraft
+                    ::where('id', $item['id'])
+                    ->update([
+                        'result' => 2
+                    ]);
+
+                Redis::DEL($cartoonRoleRepository->lastIdolMarketPriceDraftCacheKey($item['idol_id']));
             }
         }
 
