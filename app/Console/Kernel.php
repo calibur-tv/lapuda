@@ -24,6 +24,7 @@ class Kernel extends ConsoleKernel
         Job\ComputeIdolMarketPrice::class,
         Job\SaveIdolMarketPrice::class,
         Job\AutoChangeMarketStock::class,
+        Job\DeleteIdolDeal::class,
     ];
 
     /**
@@ -41,6 +42,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('ComputeIdolMarketPrice')->everyFiveMinutes();
         $schedule->command('AutoChangeMarketStock')->everyFiveMinutes();
         $schedule->command('SaveIdolMarketPrice')->dailyAt('00:01');
+        $schedule->command('DeleteIdolDeal')->dailyAt('03:01');
         $schedule->command('Trending')->hourly();
         $schedule->command('UpdateIdolBoss')->hourly();
         $schedule->command('VideoUp')->dailyAt('19:00')->weekdays();
