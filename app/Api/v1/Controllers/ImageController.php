@@ -881,31 +881,11 @@ class ImageController extends Controller
             }
         }
 
-        $result = $request->get('result');
+        $imageIds = $request->get('image_id');
 
-        $newIds = explode(',', $result);
-        if (!$result || $album['image_count'] !== count($newIds))
-        {
-            // 排序前后的个数不一致
-            return $this->resErrBad();
-        }
+        $imageRepository->updateImageSort($imageIds, $id);
 
-        $imageIds = Image::where('id', $id)
-            ->pluck('image_ids')
-            ->first();
-        if (count(array_diff($newIds, explode(',', $imageIds))))
-        {
-            // 包含了非本相册的图片
-            return $this->resErrRole();
-        }
-
-        Image::where('id', $id)
-            ->update([
-                'image_ids' => $result
-            ]);
-
-        Redis::DEL($imageRepository->itemCacheKey($id));
-        Redis::DEL($imageRepository->cacheKeyAlbumImages($id));
+        Redis::DEL($imageRepository->cacheKeyAlbumImageIds($id));
 
         return $this->resOK();
     }

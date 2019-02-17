@@ -19,7 +19,7 @@ class CreateImageAlbumsTable extends Migration
             $table->integer('image_id')->unsigned()->comment('图片 id');
             $table->integer('rank')->unsigned()->comment('图片顺序');
             $table->timestamps();
-            $table->unique(['album_id', 'rank']);
+            $table->unique(['album_id', 'image_id']);
         });
     }
 

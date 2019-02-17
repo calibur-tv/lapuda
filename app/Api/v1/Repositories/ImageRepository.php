@@ -477,4 +477,20 @@ class ImageRepository extends Repository
             'deleted_at' => Carbon::now(),
         ]);
     }
+
+    public function updateImageSort($imageIds, $albumId)
+    {
+        $albumId = intval($albumId);
+        $sql = 'INSERT INTO `image_albums` (`image_id`,`album_id`,`rank`) VALUES ';
+        foreach ($imageIds as $rank => $imageId) {
+            $rank = intval($rank);
+            $imageId = intval($imageId);
+            $sql .= "({$imageId},{$albumId},{$rank}),";
+        }
+        $sql = substr($sql, 0, strlen($sql) - 1);
+
+        $sql .= ' ON DUPLICATE KEY UPDATE `rank`=VALUES(`rank`)';
+
+        DB::statement($sql);
+    }
 }
