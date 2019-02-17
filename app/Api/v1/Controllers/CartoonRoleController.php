@@ -1952,6 +1952,7 @@ class CartoonRoleController extends Controller
         $take = $request->get('take') ?: 20;
         $sort = $request->get('sort') ?: 'newest';
         $id = $request->get('id');
+
         $cartoonRoleRepository = new CartoonRoleRepository();
         if ($type === 'user')
         {
@@ -1990,6 +1991,8 @@ class CartoonRoleController extends Controller
 
         $userRepository = new UserRepository();
         $list = $cartoonRoleRepository->list($ids);
+        $ids = [];
+
         foreach ($list as $i => $item)
         {
             $list[$i]['market_trend'] = $cartoonRoleRepository->idol24HourStockChartData($item['id']);
@@ -2003,6 +2006,25 @@ class CartoonRoleController extends Controller
                 'avatar' => $boss['avatar'],
                 'nickname' => $boss['nickname']
             ];
+            $list[$i]['has_star'] = 0;
+            $ids[] = $item['id'];
+        }
+        if ($type === 'user')
+        {
+            $referenceIdsStr = implode(',', $ids);
+            $userId = $request->get('id');
+
+            $stars = VirtualIdolOwner
+                ::whereIn('idol_id', $ids)
+                ->where('user_id', $userId)
+                ->orderByRaw(DB::raw("FIELD(idol_id, $referenceIdsStr)"))
+                ->pluck('stock_count')
+                ->toArray();
+
+            foreach ($stars as $i => $star)
+            {
+                $list[$i]['has_star'] = $star;
+            }
         }
         $cartoonRoleTransformer = new CartoonRoleTransformer();
 
