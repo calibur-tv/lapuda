@@ -105,6 +105,10 @@ class CommentController extends Controller
 
         $type = $request->get('type');
         $id = $request->get('id');
+        if ($type !== 'post')
+        {
+            $images = [];
+        }
 
         $commentService = $this->getCommentServiceByType($type);
         if (is_null($commentService))
