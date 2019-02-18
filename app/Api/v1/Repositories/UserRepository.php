@@ -24,6 +24,7 @@ use App\Models\User;
 use App\Models\UserSign;
 use App\Models\Video;
 use Carbon\Carbon;
+use App\Services\Qiniu\Http\Client;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
@@ -455,5 +456,33 @@ class UserRepository extends Repository
         }
 
         return $result;
+    }
+
+    public function getWechatAccessToken()
+    {
+        return $this->RedisItem('wechat_js_sdk_access_token', function ()
+        {
+            $client = new Client();
+            $appId = config('services.weixin.client_id');
+            $appSecret = config('services.weixin.client_secret');
+            $resp = $client->get(
+                "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={$appId}&secret={$appSecret}",
+                [
+                    'Accept' => 'application/json'
+                ]
+            );
+
+            try
+            {
+                $body = $resp->body;
+                $token = json_decode($body, true)['access_token'];
+            }
+            catch (\Exception $e)
+            {
+                $token = '';
+            }
+
+            return $token;
+        });
     }
 }

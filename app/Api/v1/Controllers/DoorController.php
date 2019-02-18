@@ -12,7 +12,6 @@ use App\Models\User;
 use App\Models\UserZone;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Services\Sms\Message;
-use App\Api\V1\Repositories\Repository;
 use App\Services\Socialite\AccessToken;
 use App\Services\Socialite\SocialiteManager;
 use App\Services\Trial\UserIpAddress;
@@ -32,9 +31,9 @@ class DoorController extends Controller
 {
     public function pageData(Request $request)
     {
-        $repository = new Repository();
+        $userRepository = new UserRepository();
 
-        $friendLinks = $repository->Cache('friend_sites', function ()
+        $friendLinks = $userRepository->Cache('friend_sites', function ()
         {
             return DB
                 ::table('friend_sites')
