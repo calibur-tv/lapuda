@@ -524,7 +524,8 @@ class UserRepository extends Repository
             'appId' => config('services.weixin.client_id'),
             'timestamp' => $timestamp,
             'nonceStr' => $noncestr,
-            'signature' => $signature
+            'signature' => $signature,
+            'url' => $url
         ];
     }
 
