@@ -186,16 +186,24 @@ class ImageRepository extends Repository
 
         $key = $this->cacheKeyAlbumImageIds($albumId);
         $redisCount = Redis::ZCOUNT($key, 0, '+inf');
+        $imageIds = [];
         if (0 == $redisCount) {
-            $imageIds = ImageAlbum::where('album_id', $albumId)->orderBy('rank')->get();
-            $imageIds = $imageIds->toArray();
-            $imageIds = array_column($imageIds, 'image_id', 'rank');
+            $images = ImageAlbum::where('album_id', $albumId)->orderBy('rank')->get();
+            $images = $images->toArray();
+            $data = [$key];
+            foreach ($images as $image) {
+                $imageIds[$image['rank']] = $image['image_id'];
+                $data[] = $image['rank'];
+                $data[] = $image['image_id'];
+            }
             $redisCount = count($imageIds);
             if (empty($imageIds)) {
                 return [];
             }
+
+            call_user_func_array([Redis::class, 'ZADD'], $data);
         } else {
-            $imageIds = Redis::ZRANGEBYSCORE($key);
+            $imageIds = Redis::ZRANGEBYSCORE($key, 0, '+inf');
         }
 
         $imageKeys = [];
