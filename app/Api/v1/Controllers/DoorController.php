@@ -36,7 +36,7 @@ class DoorController extends Controller
 
         if ($refer === 'h5')
         {
-            return $this->resOK($userRepository->getWechatJsSDKConfig($request->fullUrl()));
+            return $this->resOK($userRepository->getWechatJsSDKConfig($request->get('url')));
         }
 
         $friendLinks = $userRepository->Cache('friend_sites', function ()
