@@ -483,6 +483,59 @@ class UserRepository extends Repository
             }
 
             return $token;
-        });
+        }, 'h');
+    }
+
+    public function getWechatJsApiTicket()
+    {
+        return $this->RedisItem('wechat_js_sdk_api_ticket', function ()
+        {
+            $client = new Client();
+            $token = $this->getWechatAccessToken();
+            $resp = $client->get(
+                "https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token={$token}&type=jsapi",
+                [
+                    'Accept' => 'application/json'
+                ]
+            );
+
+            try
+            {
+                $body = $resp->body;
+                $ticket = json_decode($body, true)['ticket'];
+            }
+            catch (\Exception $e)
+            {
+                $ticket = '';
+            }
+
+            return $ticket;
+        }, 'h');
+    }
+
+    public function getWechatJsSDKConfig($url)
+    {
+        $jsapi_ticket = $this->getWechatJsApiTicket();
+        $noncestr = $this->randomStr(16);
+        $timestamp = time();
+        $signature = sha1("jsapi_ticket={$jsapi_ticket}&noncestr={$noncestr}&timestamp={$timestamp}&url={$url}");
+
+        return [
+            'appId' => config('services.weixin.client_id'),
+            'timestamp' => $timestamp,
+            'nonceStr' => $noncestr,
+            'signature' => $signature
+        ];
+    }
+
+    private function randomStr($length)
+    {
+        $pattern = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLOMNOPQRSTUVWXYZ';
+        $key = '';
+        for($i = 0; $i < $length; $i++)
+        {
+            $key .= $pattern{mt_rand(0,35)};
+        }
+        return $key;
     }
 }
