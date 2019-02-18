@@ -515,6 +515,7 @@ class UserRepository extends Repository
 
     public function getWechatJsSDKConfig($url)
     {
+        $url = str_replace('http://localhost', 'https://m.calibur.tv', $url);
         $jsapi_ticket = $this->getWechatJsApiTicket();
         $noncestr = $this->randomStr(16);
         $timestamp = time();
