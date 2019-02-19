@@ -4,14 +4,18 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\CartoonRoleRepository;
+use App\Api\V1\Repositories\PostRepository;
+use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Activity\BangumiActivity;
 use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Counter\CartoonRoleFansCounter;
 use App\Api\V1\Services\Counter\CartoonRoleStarCounter;
 use App\Api\V1\Services\Owner\BangumiManager;
+use App\Api\V1\Services\Owner\VirtualIdolManager;
 use App\Api\V1\Services\Tag\Base\UserBadgeService;
 use App\Api\V1\Services\Trending\CartoonRoleTrendingService;
+use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Services\VirtualCoinService;
 use App\Api\V1\Services\Vote\IdolVoteService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
@@ -22,6 +26,7 @@ use App\Models\LightCoinRecord;
 use App\Models\VirtualIdolDeal;
 use App\Models\VirtualIdolDealRecord;
 use App\Models\VirtualIdolOwner;
+use App\Models\VirtualIdolPorduct;
 use App\Models\VirtualIdolPriceDraft;
 use App\Services\OpenSearch\Search;
 use App\Services\Trial\ImageFilter;
@@ -881,6 +886,380 @@ class CartoonRoleController extends Controller
             'noMore' => true,
             'total' => count($result)
         ]);
+    }
+
+    // 获取市场上的商品
+    public function products(Request $request)
+    {
+        $idol_id = $request->get('idol_id') ?: 0;
+        $last_id = $request->get('last_id') ?: 0;
+    }
+
+    // 设置偶像的经纪人
+    public function set_idol_manager(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $idolId = $request->get('idol_id');
+        $setter_id = $request->get('user_id');
+
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $idol = $cartoonRoleRepository->item($idolId);
+        if (is_null($idol))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $lastEditAt = $idol['last_edit_at'];
+        if ($lastEditAt && strtotime($lastEditAt) > strtotime('1 week ago'))
+        {
+            return $this->resErrBad('每周只能修改一次');
+        }
+
+        if ($idolId['boss_id'] != $userId)
+        {
+            return $this->resErrRole();
+        }
+
+        $userRepository = new UserRepository();
+        $setter = $userRepository->item($setter_id);
+        if (is_null($setter))
+        {
+            return $this->resErrNotFound();
+        }
+
+//        $userLevel = new UserLevel();
+//        $level = $userLevel->convertExpToLevel($setter['exp']);
+//        if ($level < 8)
+//        {
+//            return $this->resErrBad();
+//        }
+
+        $virtualIdolManager = new VirtualIdolManager();
+        $virtualIdolManager->set($idolId, $setter_id, true);
+
+        CartoonRole
+            ::where('id', $idolId)
+            ->update([
+                'manager_id' => $setter_id,
+                'last_edit_at' => Carbon::now()
+            ]);
+
+        $cacheKey = $cartoonRoleRepository->idolItemCacheKey($idolId);
+        if (Redis::EXISTS($cacheKey))
+        {
+            Redis::HSET($cacheKey, 'manager_id', $setter_id);
+        }
+
+        return $this->resNoContent();
+    }
+
+    // 作者答复采购请求
+    public function check_product_request(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $orderId = $request->get('order_id');
+        $order = VirtualIdolPorduct
+            ::where('id', $orderId)
+            ->first();
+
+        if (is_null($order))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($order->author_id != $userId)
+        {
+            return $this->resErrRole();
+        }
+
+        $repository = null;
+        if ($order->product_type == 0)
+        {
+            $repository = new PostRepository();
+        }
+        else if ($order->product_type == 1)
+        {
+            $repository = new ScoreRepository();
+        }
+        if (is_null($repository))
+        {
+            return $this->resErrBad();
+        }
+
+        $product = $repository->item($order->product_id);
+        if (is_null($product))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $result = $request->get('result');
+        VirtualIdolPorduct
+            ::where('id', $order->id)
+            ->update([
+                'result' => $result
+            ]);
+
+        if ($result == 1)
+        {
+            // 其它的请求就挡掉了
+            VirtualIdolPorduct
+                ::where('product_id', $order->product_id)
+                ->where('product_type', $order->product_type)
+                ->where('id', '<>', $order->id)
+                ->update([
+                    'result' => 4
+                ]);
+
+            // TODO：product_id-product_type 加入到cache列表里
+        }
+
+        // TODO 发一个消息通知给买家
+        return $this->resNoContent();
+    }
+
+    // 获取商品的采购订单列表
+    public function get_product_request_list(Request $request)
+    {
+        $product_id = $request->get('product_id');
+        $product_type = $request->get('product_type');
+
+        $list = VirtualIdolPorduct
+            ::where('product_id', $product_id)
+            ->where('product_type', $product_type)
+            ->orderBy('id', 'DESC')
+            ->get()
+            ->toArray();
+
+        if (empty($list))
+        {
+            return $this->resOK();
+        }
+
+        $userRepository = new UserRepository();
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $result = [];
+        foreach ($list as $item)
+        {
+            $buyer = $userRepository->item($item['buyer_id']);
+            if (is_null($buyer))
+            {
+                continue;
+            }
+            $idol = $cartoonRoleRepository->item($item['idol_id']);
+            if (is_null($idol))
+            {
+                continue;
+            }
+
+            $result[] = [
+                'id' => $item['id'],
+                'idol' => [
+                    'id' => $idol['id'],
+                    'name' => $idol['name'],
+                    'avatar' => $idol['avatar']
+                ],
+                'buyer' => [
+                    'zone' => $buyer['zone'],
+                    'nickname' => $buyer['nickname'],
+                    'avatar' => $buyer['avatar']
+                ],
+                'amount' => $item['amount'],
+                'result' => $item['result'],
+                'income_ratio' => $item['income_ratio'],
+                'created_at' => $item['created_at']
+            ];
+        }
+
+        return $this->resOK($result);
+    }
+
+    // 获取偶像的采购列表
+    public function get_idol_request_list(Request $request)
+    {
+        $idolId = $request->get('idol_id');
+        $page = $request->get('page') ?: 0;
+        $take = $request->get('take') ?: 15;
+
+        $list = VirtualIdolPorduct
+            ::where('idol_id', $idolId)
+            ->skip($take * $page)
+            ->take($take)
+            ->get()
+            ->toArray();
+
+        if (empty($list))
+        {
+            return $this->resOK([]);
+        }
+
+        $userRepository = new UserRepository();
+        $postRepository = new PostRepository();
+        $scoreRepository = new ScoreRepository();
+        $result = [];
+        foreach ($list as $item)
+        {
+            $buyer = $userRepository->item($item['buyer_id']);
+            if (is_null($buyer))
+            {
+                continue;
+            }
+            $product = null;
+            if ($item['product_type'] == 0)
+            {
+                $product = $postRepository->item($item['product_id']);
+            }
+            else if ($item['product_type'] == 1)
+            {
+                $product = $scoreRepository->item($item['product_id']);
+            }
+            if (is_null($product))
+            {
+                continue;
+            }
+            $result[] = [
+                'id' => $item['id'],
+                'buyer' => [
+                    'zone' => $buyer['zone'],
+                    'nickname' => $buyer['nickname'],
+                    'avatar' => $buyer['avatar']
+                ],
+                'product' => [
+                    'id' => $product['id'],
+                    'title' => $product['title']
+                ],
+                'result' => $item['result'],
+                'product_type' => $item['product_type'],
+                'created_at' => $item['created_at']
+            ];
+        }
+
+        return $this->resOK($result);
+    }
+
+    // 删除一个采购订单
+    public function delete_buy_request(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $orderId = $request->get('order_id');
+        $order = VirtualIdolPorduct
+            ::where('id', $orderId)
+            ->first();
+
+        if (is_null($order))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($order->buyer_id != $userId)
+        {
+            return $this->resErrRole();
+        }
+
+        VirtualIdolPorduct
+            ::where('id', $order->id)
+            ->delete();
+
+        return $this->resNoContent();
+    }
+
+    // 创建一个采购订单，如果已有了，就更新
+    public function create_buy_request(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $idolId = $request->get('idol_id');
+        $product_id = $request->get('product_id');
+        $type = $request->get('product_type');
+        $amount = $request->get('amount');
+        $income_ratio = 0.5;
+        $product_type = '';
+        if ($type === 'post')
+        {
+            $product_type = 0;
+        }
+        else if ($type === 'score')
+        {
+            $product_type = 1;
+        }
+        if ($product_type === '')
+        {
+            return $this->resErrBad();
+        }
+
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $idol = $cartoonRoleRepository->item($idolId);
+        if (is_null($idol))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $repository = null;
+        if ($product_type === 0)
+        {
+            $repository = new PostRepository();
+        }
+        else if ($product_type === 1)
+        {
+            $repository = new ScoreRepository();
+        }
+
+        $product = $repository->item($product_id);
+        if (is_null($product))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if (!$product['is_creator'])
+        {
+            return $this->resErrBad('非原创内容不能采购');
+        }
+
+        if ($product['idol_id'])
+        {
+            return $this->resErrBad('该内容已出售');
+        }
+
+        $virtualIdolManager = new VirtualIdolManager();
+        if (!$virtualIdolManager->isOwner($idolId, $userId))
+        {
+            return $this->resErrRole();
+        }
+
+        $orderId = VirtualIdolPorduct
+            ::where('idol_id', $idolId)
+            ->where('product_id', $product_id)
+            ->where('product_type', $product_type)
+            ->pluck('id')
+            ->first();
+
+        if ($orderId)
+        {
+            // 更新
+            VirtualIdolPorduct
+                ::where('id', $orderId)
+                ->update([
+                    'amount' => $amount,
+                    'income_ratio' => $income_ratio
+                ]);
+        }
+        else
+        {
+            // 创建
+            $newOrder = VirtualIdolPorduct::create([
+                'idol_id' => $idolId,
+                'buyer_id' => $userId,
+                'author_id' => $product['user_id'],
+                'product_type' => $product_type,
+                'product_id' => $product_id,
+                'amount' => $amount,
+                'result' => 0,
+                'income_ratio' => $income_ratio
+            ]);
+
+            $orderId = $newOrder->id;
+        }
+        // TODO：给用户发一个消息提醒
+
+        return $this->resCreated($orderId);
     }
 
     /**

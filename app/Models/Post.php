@@ -20,6 +20,7 @@ class Post extends Model
     protected $fillable = [
         'title', // 帖子标题，只有 1 楼才有标题,
         'user_id', // 帖子作者的 id
+        'idol_id',
         'bangumi_id', // 帖子所属番剧的 id
         'content', // 帖子内容，富文本
         'desc', // content 的纯文本，最多 200 个字
