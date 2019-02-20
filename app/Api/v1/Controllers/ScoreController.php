@@ -110,6 +110,9 @@ class ScoreController extends Controller
         $scoreViewCounter = new ScoreViewCounter();
         $score['view_count'] = $scoreViewCounter->add($id);
 
+        $virtualIdolManager = new VirtualIdolManager();
+        $score['is_idol_manager'] = $virtualIdolManager->isAManager($userId);
+
         $transformer = new ScoreTransformer();
 
         $searchService = new Search();
