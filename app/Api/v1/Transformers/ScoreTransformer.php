@@ -39,7 +39,6 @@ class ScoreTransformer extends Transformer
             'banner' => $score['banner'],
             'content' => $score['content'],
             'is_creator' => (boolean)$score['is_creator'],
-            'is_idol_manager' => $score['is_idol_manager'],
             'liked' => $score['liked'],
             'like_users' => $score['like_users'],
             'rewarded' => $score['rewarded'],

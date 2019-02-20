@@ -257,9 +257,6 @@ class PostController extends Controller
         $viewCounter = new PostViewCounter();
         $post['view_count'] = $viewCounter->add($id);
 
-        $virtualIdolManager = new VirtualIdolManager();
-        $post['is_idol_manager'] = $virtualIdolManager->isAManager($userId);
-
         $postTransformer = new PostTransformer();
         $userTransformer = new UserTransformer();
 

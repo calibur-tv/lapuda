@@ -36,7 +36,6 @@ class PostTransformer extends Transformer
                 'is_nice' => (boolean)$post['is_nice'],
                 'is_top' => (boolean)$post['top_at'],
                 'is_creator' => (boolean)$post['is_creator'],
-                'is_idol_manager' => $post['is_idol_manager'],
                 'created_at' => $post['created_at'],
                 'updated_at' => $post['updated_at'],
                 'deleted_at' => $post['deleted_at']
