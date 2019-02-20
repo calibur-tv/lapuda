@@ -12,6 +12,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Counter\ScoreViewCounter;
+use App\Api\V1\Services\Owner\VirtualIdolManager;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
 use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
@@ -108,6 +109,9 @@ class ScoreController extends Controller
 
         $scoreViewCounter = new ScoreViewCounter();
         $score['view_count'] = $scoreViewCounter->add($id);
+
+        $virtualIdolManager = new VirtualIdolManager();
+        $score['is_idol_manager'] = $virtualIdolManager->isAManager($userId);
 
         $transformer = new ScoreTransformer();
 

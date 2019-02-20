@@ -895,64 +895,6 @@ class CartoonRoleController extends Controller
         $last_id = $request->get('last_id') ?: 0;
     }
 
-    // 设置偶像的经纪人
-    public function set_idol_manager(Request $request)
-    {
-        $userId = $this->getAuthUserId();
-        $idolId = $request->get('idol_id');
-        $setter_id = $request->get('user_id');
-
-        $cartoonRoleRepository = new CartoonRoleRepository();
-        $idol = $cartoonRoleRepository->item($idolId);
-        if (is_null($idol))
-        {
-            return $this->resErrNotFound();
-        }
-
-        $lastEditAt = $idol['last_edit_at'];
-        if ($lastEditAt && strtotime($lastEditAt) > strtotime('1 week ago'))
-        {
-            return $this->resErrBad('每周只能修改一次');
-        }
-
-        if ($idolId['boss_id'] != $userId)
-        {
-            return $this->resErrRole();
-        }
-
-        $userRepository = new UserRepository();
-        $setter = $userRepository->item($setter_id);
-        if (is_null($setter))
-        {
-            return $this->resErrNotFound();
-        }
-
-//        $userLevel = new UserLevel();
-//        $level = $userLevel->convertExpToLevel($setter['exp']);
-//        if ($level < 8)
-//        {
-//            return $this->resErrBad();
-//        }
-
-        $virtualIdolManager = new VirtualIdolManager();
-        $virtualIdolManager->set($idolId, $setter_id, true);
-
-        CartoonRole
-            ::where('id', $idolId)
-            ->update([
-                'manager_id' => $setter_id,
-                'last_edit_at' => Carbon::now()
-            ]);
-
-        $cacheKey = $cartoonRoleRepository->idolItemCacheKey($idolId);
-        if (Redis::EXISTS($cacheKey))
-        {
-            Redis::HSET($cacheKey, 'manager_id', $setter_id);
-        }
-
-        return $this->resNoContent();
-    }
-
     // 作者答复采购请求
     public function check_product_request(Request $request)
     {
@@ -2065,10 +2007,11 @@ class CartoonRoleController extends Controller
 
         $lover_words = Purifier::clean($request->get('lover_words'));
         $qq_group = $request->get('qq_group');
-        if ((isset($idol['qq_group']) && $idol['qq_group']) || !$qq_group)
+        if ($idol['qq_group'] || !$qq_group)
         {
-            $qq_group = isset($idol['qq_group']) ? $idol['qq_group'] : '';
+            $qq_group = $idol['qq_group'];
         }
+        $manager_id = $request->get('manager_id') ?: 0;
 
         $now = Carbon::now();
         CartoonRole
@@ -2076,6 +2019,7 @@ class CartoonRoleController extends Controller
             ->update([
                 'qq_group' => $qq_group,
                 'lover_words' => $lover_words,
+                'manager_id' => $manager_id,
                 'last_edit_at' => $now
             ]);
 
@@ -2084,7 +2028,13 @@ class CartoonRoleController extends Controller
         {
             Redis::HSET($cacheKey, 'qq_group', $qq_group);
             Redis::HSET($cacheKey, 'lover_words', $lover_words);
+            Redis::HSET($cacheKey, 'manager_id', $manager_id);
             Redis::HSET($cacheKey, 'last_edit_at', $now);
+        }
+        if ($manager_id)
+        {
+            $virtualIdolManager = new VirtualIdolManager();
+            $virtualIdolManager->set($idolId, $manager_id, true);
         }
 
         return $this->resNoContent();

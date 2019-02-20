@@ -8,6 +8,7 @@ use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Comment\PostCommentService;
 use App\Api\V1\Services\Counter\PostViewCounter;
 use App\Api\V1\Services\Owner\BangumiManager;
+use App\Api\V1\Services\Owner\VirtualIdolManager;
 use App\Api\V1\Services\Tag\PostTagService;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
@@ -255,6 +256,9 @@ class PostController extends Controller
 
         $viewCounter = new PostViewCounter();
         $post['view_count'] = $viewCounter->add($id);
+
+        $virtualIdolManager = new VirtualIdolManager();
+        $post['is_idol_manager'] = $virtualIdolManager->isAManager($userId);
 
         $postTransformer = new PostTransformer();
         $userTransformer = new UserTransformer();
