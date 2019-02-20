@@ -9,6 +9,7 @@ use App\Models\ImageAlbum;
 use App\Models\PostImages;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class MigrateImages extends Command
 {
@@ -46,6 +47,7 @@ class MigrateImages extends Command
         $bangumis = Bangumi::withTrashed()->get();
         $albumBangumis = [];
         foreach ($bangumis as $bangumi) {
+            Log::debug(sprintf("create album for bangumi %d", $bangumi->id));
             $type = pathinfo($bangumi->banner, PATHINFO_EXTENSION);
 
             $albumBangumis[$bangumi->id] = Image::insertGetId([
@@ -75,6 +77,7 @@ class MigrateImages extends Command
             $images = $images->toArray();
 
             foreach ($images as $image) {
+                Log::debug(sprintf("migrate for image %d", $image['id']));
                 $type = pathinfo($image['url'], PATHINFO_EXTENSION);
                 $lastId = PostImages::insertGetId([
                     'post_id' => 0,
@@ -85,11 +88,15 @@ class MigrateImages extends Command
                     'size' => $image['size'],
                     'width' => $image['width'],
                     'height' => $image['height'],
-                    'type' => $image["image/{$type}"],
+                    'type' => "image/{$type}",
+                    'origin_url' => '',
                 ]);
 
+                $album = Image::find($image['album_id']);
+
+                Log::debug(sprintf("connect image %d and album %d", $image['id'], $album->id));
                 ImageAlbum::insert([
-                    'album_id' => $albumBangumis[$image['bangumi_id']],
+                    'album_id' => $albumBangumis[$album->bangumi_id ?? 0],
                     'image_id' => $lastId,
                     'rank' => microtime(true) * 10000,
                     'created_at' => Carbon::now(),

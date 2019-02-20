@@ -21,6 +21,7 @@ class Kernel extends ConsoleKernel
         Job\Trending::class,
         Job\VideoDown::class,
         Job\VideoUp::class,
+        Commands\MigrateImages::class,
     ];
 
     /**
