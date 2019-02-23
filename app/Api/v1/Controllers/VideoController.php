@@ -296,7 +296,7 @@ class VideoController extends Controller
         }
 
         $virtualCoinService = new VirtualCoinService();
-        $banlance = $virtualCoinService->hasMoneyCount($user);
+        $banlance = $virtualCoinService->hasCoinCount($user);
         $PRICE = 10;
         if ($banlance < $PRICE)
         {

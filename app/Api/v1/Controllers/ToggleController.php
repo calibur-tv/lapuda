@@ -461,7 +461,7 @@ class ToggleController extends Controller
         }
 
         $virtualCoinService = new VirtualCoinService();
-        $balance = $virtualCoinService->hasMoneyCount($user);
+        $balance = $virtualCoinService->hasCoinCount($user);
         if ($balance < 1)
         {
             return $this->resErrRole('团子不足');

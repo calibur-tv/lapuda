@@ -84,7 +84,7 @@ class CartoonRoleController extends Controller
         }
 
         $virtualCoinService = new VirtualCoinService();
-        $banlance = $virtualCoinService->hasMoneyCount($user);
+        $banlance = $virtualCoinService->hasCoinCount($user);
         $amount = $request->get('amount') ?: 1;
         if ($banlance < $amount)
         {
@@ -402,7 +402,7 @@ class CartoonRoleController extends Controller
         }
 
         $virtualCoinService = new VirtualCoinService();
-        $balance = $virtualCoinService->hasMoneyCount($user);
+        $balance = $virtualCoinService->hasCoinCount($user);
 
         $stockPrice = floatval(CartoonRole
             ::where('id', $id)
@@ -1607,7 +1607,7 @@ class CartoonRoleController extends Controller
 
         $user = $this->getAuthUser();
         $virtualCoinService = new VirtualCoinService();
-        $balance = $virtualCoinService->hasMoneyCount($user);
+        $balance = $virtualCoinService->hasCoinCount($user);
         $CREATE_PRICE = 10;
         if ($balance < $CREATE_PRICE)
         {
@@ -1828,7 +1828,7 @@ class CartoonRoleController extends Controller
             return $this->resErrBad("价格已经变成￥{$deal['product_price']}每股了");
         }
         $virtualCoinService = new VirtualCoinService();
-        $pocket = $virtualCoinService->hasMoneyCount($user);
+        $pocket = $virtualCoinService->hasCoinCount($user);
         if ($pocket < $pay_price)
         {
             return $this->resErrBad('没有足够的虚拟币了');
