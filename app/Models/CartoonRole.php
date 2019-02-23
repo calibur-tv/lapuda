@@ -33,8 +33,8 @@ class CartoonRole extends Model
         'max_stock_count',
         'last_edit_at',
         'qq_group',
-        'income_total',
-        'pay_total'
+        'total_income',
+        'total_pay'
     ];
 
     public function getAvatarAttribute($avatar)

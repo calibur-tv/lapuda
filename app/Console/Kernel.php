@@ -26,6 +26,7 @@ class Kernel extends ConsoleKernel
         Job\AutoChangeMarketStock::class,
         Job\DeleteIdolDeal::class,
         Job\AutoRefreshWechatAccessToken::class,
+        Job\ComputeIdolDailyIncome::class,
     ];
 
     /**
@@ -43,12 +44,19 @@ class Kernel extends ConsoleKernel
         $schedule->command('ComputeIdolMarketPrice')->everyFiveMinutes();
         $schedule->command('AutoChangeMarketStock')->everyFiveMinutes();
         $schedule->command('SaveIdolMarketPrice')->dailyAt('00:01');
+        $schedule->command('ComputeIdolDailyIncome')->dailyAt('00:01');
         $schedule->command('DeleteIdolDeal')->dailyAt('03:01');
         $schedule->command('Trending')->hourly();
         $schedule->command('UpdateIdolBoss')->hourly();
         $schedule->command('AutoRefreshWechatAccessToken')->hourly();
-        $schedule->command('VideoUp')->dailyAt('19:00')->weekdays();
-        $schedule->command('VideoDown')->dailyAt('8:00')->weekdays();
+        $schedule
+            ->command('VideoUp')
+            ->dailyAt('19:00')
+            ->weekdays();
+        $schedule
+            ->command('VideoDown')
+            ->dailyAt('8:00')
+            ->weekdays();
     }
 
     /**

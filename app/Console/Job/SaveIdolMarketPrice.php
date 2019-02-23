@@ -8,7 +8,6 @@
 
 namespace App\Console\Job;
 
-use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Models\CartoonRole;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -42,9 +41,6 @@ class SaveIdolMarketPrice extends Command
             ->get()
             ->toArray();
 
-        $cartoonRoleRepository = new CartoonRoleRepository();
-        $timeSeed_1 = date('Y-m-d', strtotime('-1 day'));
-        $timeSeed_2 = date('Y-m-d', strtotime('-2 day'));
         foreach ($list as $item)
         {
             DB
@@ -54,11 +50,6 @@ class SaveIdolMarketPrice extends Command
                     'value' => $item['market_price'],
                     'day' => Carbon::now()->yesterday()
                 ]);
-
-            $cacheKey = $cartoonRoleRepository->idolRealtimeMarketPrice($item['id'], $timeSeed_1);
-            Redis::DEL($cacheKey);
-            $cacheKey = $cartoonRoleRepository->idolRealtimeMarketPrice($item['id'], $timeSeed_2);
-            Redis::DEL($cacheKey);
         }
 
         return true;

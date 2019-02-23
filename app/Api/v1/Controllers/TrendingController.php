@@ -64,7 +64,7 @@ class TrendingController extends Controller
                 'bangumiId' => 'integer',
                 'type' => [
                     'required',
-                    Rule::in(['post', 'image', 'score', 'role', 'question','answer']),
+                    Rule::in(['post', 'image', 'score', 'role', 'question', 'answer']),
                 ],
                 'sort' => [
                     'required',

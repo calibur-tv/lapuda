@@ -304,6 +304,15 @@ class OwnerService extends Repository
         });
     }
 
+    public function workList($userId)
+    {
+        return DB
+            ::table($this->owner_table)
+            ->where('user_id', $userId)
+            ->pluck('modal_id')
+            ->toArray();
+    }
+
     public function deleteLog($userId, $logId)
     {
         $modalId = DB::table($this->log_table)

@@ -353,6 +353,22 @@ $api->version(['v1', 'latest'], function ($api)
             $api->get('/get_idol_deal', 'App\Api\V1\Controllers\CartoonRoleController@getMyIdolDeal')->middleware(['jwt.auth']);
         });
 
+        $api->get('/products', 'App\Api\V1\Controllers\CartoonRoleController@products');
+
+        $api->get('/get_idol_request_list', 'App\Api\V1\Controllers\CartoonRoleController@get_idol_request_list');
+
+        $api->get('/get_mine_product_orders', 'App\Api\V1\Controllers\CartoonRoleController@get_mine_product_orders')->middleware(['jwt.auth']);
+
+        $api->get('/can_use_income', 'App\Api\V1\Controllers\CartoonRoleController@can_use_income')->middleware(['jwt.auth']);
+
+        $api->get('/get_my_product_request_list', 'App\Api\V1\Controllers\CartoonRoleController@get_my_product_request_list')->middleware(['jwt.auth']);
+
+        $api->post('/create_buy_request', 'App\Api\V1\Controllers\CartoonRoleController@create_buy_request')->middleware(['jwt.auth']);
+
+        $api->post('/delete_buy_request', 'App\Api\V1\Controllers\CartoonRoleController@delete_buy_request')->middleware(['jwt.auth']);
+
+        $api->post('/check_product_request', 'App\Api\V1\Controllers\CartoonRoleController@check_product_request')->middleware(['jwt.auth']);
+
         $api->get('/deal_list', 'App\Api\V1\Controllers\CartoonRoleController@getDealList');
 
         $api->get('/my_deal', 'App\Api\V1\Controllers\CartoonRoleController@myDeal')->middleware(['jwt.auth']);

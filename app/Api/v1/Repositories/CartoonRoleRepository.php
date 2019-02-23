@@ -14,6 +14,7 @@ use App\Models\CartoonRoleFans;
 use App\Models\VirtualIdolDeal;
 use App\Models\VirtualIdolDealRecord;
 use App\Models\VirtualIdolOwner;
+use App\Models\VirtualIdolPorduct;
 use App\Models\VirtualIdolPriceDraft;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -110,26 +111,6 @@ class CartoonRoleRepository extends Repository
         return $this->filterIdsBySeenIds($ids, $seenIds, config('website.list_count'), true);
     }
 
-    public function idolStockChartData($idolId)
-    {
-        $data = $this->RedisSort($this->idolRealtimeMarketPrice($idolId), function ()
-        {
-            return [];
-        }, true, true);
-
-        $result = [];
-
-        foreach ($data as $price => $time)
-        {
-            $result[] = [
-                'time' => $time,
-                'value' => $price
-            ];
-        }
-
-        return $result;
-    }
-
     public function idol24HourStockChartData($idolId)
     {
         $data = $this->RedisList($this->idol24HourMarketPrice($idolId), function ()
@@ -149,6 +130,24 @@ class CartoonRoleRepository extends Repository
         }
 
         return $result;
+    }
+
+    public function getIdolProductIds($idolId, $minId, $count = 15)
+    {
+        $ids = $this->RedisSort($this->stock_product_list_cache_key($idolId), function () use ($idolId)
+        {
+            return VirtualIdolPorduct
+                ::where('result', 1)
+                ->when($idolId != 0, function ($query) use ($idolId)
+                {
+                    return $query->where('idol_id', $idolId);
+                })
+                ->orderBy('updated_at', 'DESC')
+                ->pluck('updated_at', 'product_id AS id');
+
+        }, true);
+
+        return $this->filterIdsByMaxId($ids, $minId, $count);
     }
 
     public function lastIdolMarketPriceDraftId($idolId)
@@ -509,13 +508,6 @@ class CartoonRoleRepository extends Repository
         return 'virtual_idol_recent_buy_list';
     }
 
-    // 每日实时股市价格变动
-    public function idolRealtimeMarketPrice($idol_id, $time = null)
-    {
-        $data = $time ? $time : date('Y-m-d');
-        return "virtual_idol_{$idol_id}_{$data}_market_price";
-    }
-
     public function idol24HourMarketPrice($idol_id)
     {
         return "virtual_idol_{$idol_id}_24_hour_market_price";
@@ -565,5 +557,10 @@ class CartoonRoleRepository extends Repository
 
         $job = (new \App\Jobs\Search\Index($type, 'role', $id, $content));
         dispatch($job);
+    }
+
+    public function stock_product_list_cache_key($idol_id)
+    {
+        return "virtual_idol_{$idol_id}_market_product_ids";
     }
 }

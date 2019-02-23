@@ -72,12 +72,24 @@ class VirtualCoinService
             $user = null;
             if ($item['about_user_id'])
             {
-                $userRepository = new UserRepository();
-                $aboutUser = $userRepository->item($item['about_user_id']);
-                $user = [
-                    'nickname' => $aboutUser['nickname'],
-                    'zone' => $aboutUser['zone']
-                ];
+                if ($type === 25)
+                {
+                    $cartoonRoleRepository = new CartoonRoleRepository();
+                    $aboutIdol = $cartoonRoleRepository->item($item['about_user_id']);
+                    $user = [
+                        'name' => $aboutIdol['name'],
+                        'id' => $aboutIdol['id']
+                    ];
+                }
+                else
+                {
+                    $userRepository = new UserRepository();
+                    $aboutUser = $userRepository->item($item['about_user_id'], true);
+                    $user = [
+                        'nickname' => $aboutUser['nickname'],
+                        'zone' => $aboutUser['zone']
+                    ];
+                }
             }
             if ($product_id)
             {
@@ -123,8 +135,8 @@ class VirtualCoinService
             ->sum('amount');
 
         return [
-            'get' => floatval($get),
-            'set' => -floatval($set)
+            'get' => sprintf("%.2f", $get),
+            'set' => -sprintf("%.2f", $set)
         ];
     }
 
@@ -145,6 +157,12 @@ class VirtualCoinService
     {
         $this->addCoin($userId, 1, 2, 0, 0);
         // $this->addMoney($userId, 1, 18, 0, 0);
+    }
+
+    // 偶像经纪人采购用户的内容
+    public function idolProductDeal($userId, $amount, $idolId, $managerId)
+    {
+        $this->addMoney($userId, $amount, 24, $idolId, $managerId);
     }
 
     // 版主活跃送光玉
@@ -218,6 +236,21 @@ class VirtualCoinService
         $this->addMoney($toUserId, $amount, $channelType, $productId, $fromUserId);
 
         return true;
+    }
+
+    // 打赏的时候，分成给偶像
+    public function rewardToIdolProduct($model, $fromUserId, $idolId, $toContentId, $amount)
+    {
+        $channel_type = 0;
+        if ($model === 'post')
+        {
+            $channel_type = 25;
+        }
+        if (!$channel_type)
+        {
+            return false;
+        }
+        return $this->useCoinFirst($fromUserId, $amount, $channel_type, $toContentId, $idolId);
     }
 
     // 移除某个内容的打赏
@@ -538,6 +571,12 @@ class VirtualCoinService
                 break;
             case 23:
                 return new VideoRepository();
+                break;
+            case 24:
+                return new CartoonRoleRepository();
+                break;
+            case 25:
+                return new PostRepository();
                 break;
             default:
                 return null;

@@ -42,6 +42,8 @@ class VirtualCoin extends Model
      * 21 => 承包季度视频
      * 22 => 偶像股份交易
      * 23 => 视频被承包
+     * 24 => 偶像产品交易
+     * 25 => 打赏帖子赞助了偶像
      */
     protected $fillable = [
         'amount',

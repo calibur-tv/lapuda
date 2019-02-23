@@ -2,6 +2,7 @@
 
 namespace App\Api\V1\Controllers;
 
+use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Activity\BangumiActivity;
 use App\Api\V1\Services\Activity\UserActivity;
@@ -259,6 +260,21 @@ class PostController extends Controller
 
         $virtualIdolManager = new VirtualIdolManager();
         $post['is_idol_manager'] = $virtualIdolManager->isAManager($userId);
+
+        $post['idol'] = null;
+        if ($post['idol_id'])
+        {
+            $cartoonRoleRepository = new CartoonRoleRepository();
+            $idol = $cartoonRoleRepository->item($post['idol_id']);
+            if ($idol)
+            {
+                $post['idol'] = [
+                    'id' => $idol['id'],
+                    'name' => $idol['name'],
+                    'avatar' => $idol['avatar']
+                ];
+            }
+        }
 
         $postTransformer = new PostTransformer();
         $userTransformer = new UserTransformer();
