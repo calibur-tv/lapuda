@@ -1848,6 +1848,19 @@ class CartoonRoleController extends Controller
             return $this->resErrBad('这笔交易已经结束了');
         }
 
+        if ($oldOwnerData->stock_count == 0)
+        {
+            VirtualIdolDeal
+                ::where('id', $dealId)
+                ->delete();
+            $cacheKey = $cartoonRoleRepository->idolDealListCacheKey();
+            if (Redis::EXISTS($cacheKey))
+            {
+                Redis::ZREM($cacheKey, $dealId);
+            }
+            return $this->resErrBad('这笔交易已经失效了');
+        }
+
         $rollback = false;
         $addOwnerCount = 0;
         $deleteOldOwner = false;
