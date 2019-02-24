@@ -27,6 +27,7 @@ class Kernel extends ConsoleKernel
         Job\DeleteIdolDeal::class,
         Job\AutoRefreshWechatAccessToken::class,
         Job\ComputeIdolDailyIncome::class,
+        Job\DetectSameUser::class,
     ];
 
     /**
@@ -38,14 +39,15 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('CronComputedActivity')->dailyAt('00:01');
-        $schedule->command('DayStats')->dailyAt('01:01');
-        $schedule->command('ClearSearch')->dailyAt('05:00');
         $schedule->command('CronFreeUser')->everyFiveMinutes();
         $schedule->command('ComputeIdolMarketPrice')->everyFiveMinutes();
         $schedule->command('AutoChangeMarketStock')->everyFiveMinutes();
         $schedule->command('SaveIdolMarketPrice')->dailyAt('00:01');
         $schedule->command('ComputeIdolDailyIncome')->dailyAt('00:01');
-        $schedule->command('DeleteIdolDeal')->dailyAt('03:01');
+        $schedule->command('DayStats')->dailyAt('01:00');
+        $schedule->command('DeleteIdolDeal')->dailyAt('03:00');
+        $schedule->command('DetectSameUser')->dailyAt('04:00');
+        $schedule->command('ClearSearch')->dailyAt('05:00');
         $schedule->command('Trending')->hourly();
         $schedule->command('UpdateIdolBoss')->hourly();
         $schedule->command('AutoRefreshWechatAccessToken')->hourly();

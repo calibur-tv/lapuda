@@ -88,6 +88,39 @@ class UserIpAddress
         return $result;
     }
 
+    public function getSameUserById($userId)
+    {
+        $IPaddress = DB
+            ::table('user_ip')
+            ->where('user_id', $userId)
+            ->pluck('ip_address')
+            ->toArray();
+
+        $result = [$userId];
+        foreach ($IPaddress as $ip)
+        {
+            $userIds = DB
+                ::table('user_ip')
+                ->where('ip_address', $ip)
+                ->whereNotIn('user_id', $result)
+                ->pluck('user_id')
+                ->toArray();
+
+            if (empty($userIds))
+            {
+                continue;
+            }
+            $result = array_merge($result, $userIds);
+
+            foreach ($userIds as $uid)
+            {
+                $result = array_merge($result, $this->getSameUserById($uid));
+            }
+        }
+
+        return $result;
+    }
+
     public function someQuestionIP()
     {
         $repository = new Repository();

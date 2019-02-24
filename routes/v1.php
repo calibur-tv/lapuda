@@ -631,6 +631,8 @@ $api->version(['v1', 'latest'], function ($api)
             {
                 $api->get('/freezeUsers', 'App\Api\V1\Controllers\UserController@freezeUserList');
 
+                $api->get('/mutil_users', 'App\Api\V1\Controllers\UserController@mutilUsers');
+
                 $api->post('/freeze', 'App\Api\V1\Controllers\UserController@freezeUser');
 
                 $api->post('/free', 'App\Api\V1\Controllers\UserController@freeUser');
@@ -689,6 +691,8 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/recover', 'App\Api\V1\Controllers\UserController@recover');
 
                 $api->post('/delete_info', 'App\Api\V1\Controllers\UserController@deleteUserInfo');
+
+                $api->post('/banned_user_cherr', 'App\Api\V1\Controllers\UserController@bannedUserCherr');
             });
 
             $api->group(['prefix' => '/image'], function ($api)

@@ -9,6 +9,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\AnswerRepository;
+use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\Repository;
@@ -978,59 +979,49 @@ class UserController extends Controller
         ]);
     }
 
-    // TODO：查找多重用户，直接超时了，没法用
-    public function matrixUserGroup()
+    // 查出多重用户
+    public function mutilUsers(Request $request)
     {
-        $ipAddressService = new UserIpAddress();
-        $ipList = $ipAddressService->someQuestionIP();
-        $groups = [];
-        foreach ($ipList as $ip)
-        {
-            $groups[] = $ipAddressService->addressUsers($ip);
-        }
+        $curPage = $request->get('cur_page') ?: 0;
+        $toPage = $request->get('to_page') ?: 1;
+        $take = $request->get('take') ?: 10;
 
-        $loop = true;
-        while ($loop)
-        {
-            $needLoop = false;
-            // 遍历所有的分组
-            foreach ($groups as $i => $group)
-            {
-                // 遍历所有的 ip
-                foreach ($group as $ip)
-                {
-                    foreach ($groups as $j => $list)
-                    {
-                        if ($i == $j || empty($list))
-                        {
-                            continue;
-                        }
-                        if (in_array($ip, $list))
-                        {
-                            $groups[$i] = array_merge($groups[$i], $groups[$j]);
-                            $groups[$j] = [];
-                            $needLoop = true;
-                        }
-                    }
-                }
-            }
-            if (!$needLoop)
-            {
-                $loop = false;
-            }
-        }
+        $user = User
+            ::whereNull('banned_to')
+            ->take(($toPage - $curPage) * $take)
+            ->skip($curPage * $take)
+            ->where('migration_state', '>', 1)
+            ->orderBy('migration_state', 'DESC')
+            ->select('id', 'nickname', 'zone')
+            ->toArray();
 
-        $userRepository = new UserRepository();
-        $userTransformer = new UserTransformer();
-        $groups = array_filter($groups);
-        foreach ($groups as $i => $userIds)
-        {
-            $userIds = array_unique($userIds);
-            $users = $userTransformer->list($userRepository->list($userIds));
-            $groups[$i] = $users;
-        }
+        return $this->resOK([
+            'total' => User::whereNull('banned_to')->count(),
+            'list' => $user
+        ]);
+    }
 
-        return $this->resOK($groups);
+    // 禁止用户做团子交易100年
+    public function bannedUserCherr(Request $request)
+    {
+        $review_id = $this->getAuthUserId();
+        if ($review_id != 1)
+        {
+            return $this->resErrRole();
+        }
+        $userId = $request->get('user_id');
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $cartoonRoleRepository->removeUserCheer($userId);
+
+        User
+            ::where('id', $userId)
+            ->update([
+                'banned_to' => Carbon::now()->addDays(100)
+            ]);
+
+        Redis::DEL("user_{$userId}");
+
+        return $this->resNoContent();
     }
 
     // 删除不存在用户的 IP 地址

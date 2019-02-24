@@ -428,6 +428,43 @@ class CartoonRoleRepository extends Repository
         return $result;
     }
 
+    public function removeUserCheer($userId)
+    {
+        $list = VirtualIdolOwner
+            ::where('user_id', $userId)
+            ->get()
+            ->toArray();
+
+        foreach ($list as $item)
+        {
+            $idolId = $item['idol_id'];
+            CartoonRole
+                ::where('id', $idolId)
+                ->increment('market_price', -$item['total_price']);
+
+            CartoonRole
+                ::where('id', $idolId)
+                ->increment('star_count', -$item['stock_count']);
+
+            CartoonRole
+                ::where('id', $idolId)
+                ->increment('fans_count', -1);
+
+            $cacheKey = $this->idolItemCacheKey($idolId);
+            Redis::DEL($cacheKey);
+            $cacheKey = $this->newOwnerIdsCacheKey($idolId);
+            Redis::DEL($cacheKey);
+            $cacheKey = $this->bigOwnerIdsCacheKey($idolId);
+            Redis::DEL($cacheKey);
+        }
+
+        VirtualIdolOwner
+            ::where('user_id', $userId)
+            ->delete();
+
+        return true;
+    }
+
     public function stockBuyerTotalCount()
     {
         return $this->RedisItem($this->stockBuyerTotolCountKey(), function ()
