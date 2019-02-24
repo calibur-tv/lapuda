@@ -88,7 +88,7 @@ class UserIpAddress
         return $result;
     }
 
-    public function getSameUserById($userId)
+    public function getSameUserById($userId, $base = [])
     {
         $IPaddress = DB
             ::table('user_ip')
@@ -96,7 +96,7 @@ class UserIpAddress
             ->pluck('ip_address')
             ->toArray();
 
-        $result = [$userId];
+        $result = array_merge($base, $userId);
         foreach ($IPaddress as $ip)
         {
             $userIds = DB
@@ -114,7 +114,7 @@ class UserIpAddress
 
             foreach ($userIds as $uid)
             {
-                $result = array_merge($result, $this->getSameUserById($uid));
+                $result = array_merge($result, $this->getSameUserById($uid, $result));
             }
         }
 
