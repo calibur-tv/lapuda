@@ -93,8 +93,14 @@ class UserIpAddress
         $IPaddress = DB
             ::table('user_ip')
             ->where('user_id', $userId)
+            ->whereNotIn('user_id', $base)
             ->pluck('ip_address')
             ->toArray();
+
+        if (empty($IPaddress))
+        {
+            return [];
+        }
 
         $result = array_merge($base, [$userId]);
         foreach ($IPaddress as $ip)
@@ -115,7 +121,11 @@ class UserIpAddress
             foreach ($userIds as $uid)
             {
                 $newVal = $this->getSameUserById($uid, $result);
-                $result = array_merge($result, $newVal);
+                if (empty($newVal))
+                {
+                    continue;
+                }
+                $result = array_unique(array_merge($result, $newVal));
             }
         }
 
