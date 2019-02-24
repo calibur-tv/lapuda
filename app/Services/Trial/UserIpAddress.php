@@ -96,7 +96,7 @@ class UserIpAddress
             ->pluck('ip_address')
             ->toArray();
 
-        $result = array_merge($base, $userId);
+        $result = array_merge($base, [$userId]);
         foreach ($IPaddress as $ip)
         {
             $userIds = DB
