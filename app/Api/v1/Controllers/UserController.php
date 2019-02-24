@@ -1010,16 +1010,22 @@ class UserController extends Controller
             return $this->resErrRole();
         }
         $userId = $request->get('user_id');
+        $userIpAddress = new UserIpAddress();
+        $userIds = $userIpAddress->getSameUserById($userId);
         $cartoonRoleRepository = new CartoonRoleRepository();
-        $cartoonRoleRepository->removeUserCheer($userId);
 
-        User
-            ::where('id', $userId)
-            ->update([
-                'banned_to' => Carbon::now()->addDays(100)
-            ]);
+        foreach ($userIds as $uid)
+        {
+            $cartoonRoleRepository->removeUserCheer($uid);
 
-        Redis::DEL("user_{$userId}");
+            User
+                ::where('id', $uid)
+                ->update([
+                    'banned_to' => Carbon::now()->addDays(100)
+                ]);
+
+            Redis::DEL("user_{$uid}");
+        }
 
         return $this->resNoContent();
     }
