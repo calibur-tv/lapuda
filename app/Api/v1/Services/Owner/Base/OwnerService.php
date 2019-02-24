@@ -257,7 +257,8 @@ class OwnerService extends Repository
 
         return array_map(function ($item)
         {
-            return $item->user['id'];
+            $user = json_decode(json_encode($item), true)['user'];
+            return $user['id'];
 
         }, $idsObj['list']);
     }
