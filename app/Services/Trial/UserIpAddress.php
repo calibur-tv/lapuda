@@ -114,7 +114,8 @@ class UserIpAddress
 
             foreach ($userIds as $uid)
             {
-                $result = array_merge($result, $this->getSameUserById($uid, $result));
+                $newVal = $this->getSameUserById($uid, $result);
+                $result = array_merge($result, $newVal);
             }
         }
 
