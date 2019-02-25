@@ -100,6 +100,7 @@ class VideoRepository extends Repository
         {
             $result['src'] = $result['baidu_cloud_src'];
             $result['is_baidu_cloud'] = true;
+            $result['other_site'] = true;
         }
         else if ($result['other_site'])
         {
@@ -121,6 +122,10 @@ class VideoRepository extends Repository
         if (!isset($result['is_released']))
         {
             $result['is_released'] = false;
+        }
+        if (!$result['other_site'])
+        {
+            $result['src'] = '';
         }
 
         return $result;
