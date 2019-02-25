@@ -20,7 +20,9 @@ class Video extends Model
         'resource',
         'count_played',
         'baidu_cloud_src',
-        'baidu_cloud_pwd'
+        'baidu_cloud_pwd',
+        'src_v2',
+        'delete_src'
     ];
 
     protected $casts = [

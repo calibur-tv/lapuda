@@ -45,7 +45,7 @@ class DetectSameUser extends Command
                     $userIds = $userIpAddress->getSameUserById($item->id);
                     User::where('id', $item->id)
                         ->update([
-                            'migration_count' => count($userIds)
+                            'migration_state' => count($userIds)
                         ]);
                 }
             });
