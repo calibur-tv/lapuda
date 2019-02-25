@@ -524,4 +524,31 @@ class VideoController extends Controller
             'total' => Video::count()
         ]);
     }
+
+    public function baiduVideos(Request $request)
+    {
+        $curPage = $request->get('cur_page') ?: 0;
+        $toPage = $request->get('to_page') ?: 1;
+        $take = $request->get('take') ?: 15;
+
+        $list = Video
+            ::orderBy('id', 'DESC')
+            ->where('baidu_cloud_src', '<>', '')
+            ->take(($toPage - $curPage) * $take)
+            ->skip($curPage * $take)
+            ->select('name', 'id', 'bangumi_id', 'baidu_cloud_src', 'baidu_cloud_pwd', 'episode', 'created_at')
+            ->get()
+            ->toArray();
+
+        $bangumiRepository = new BangumiRepository();
+        foreach ($list as $i => $item)
+        {
+            $list[$i]['bangumi'] = $bangumiRepository->item($item['bangumi_id']);
+        }
+
+        return $this->resOK([
+            'list' => $list,
+            'total' => Video::where('baidu_cloud_src', '<>', '')->count()
+        ]);
+    }
 }

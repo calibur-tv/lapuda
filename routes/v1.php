@@ -591,6 +591,8 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->get('/trending', 'App\Api\V1\Controllers\VideoController@playTrending');
 
+            $api->get('/baidu_list', 'App\Api\V1\Controllers\VideoController@baiduVideos');
+
             $api->post('/edit', 'App\Api\V1\Controllers\VideoController@edit');
 
             $api->post('/save', 'App\Api\V1\Controllers\VideoController@save');
