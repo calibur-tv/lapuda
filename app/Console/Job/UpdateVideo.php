@@ -11,7 +11,6 @@ namespace App\Console\Job;
 
 use App\Models\Video;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 
 class UpdateVideo extends Command
 {
