@@ -49,7 +49,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('DeleteIdolDeal')->dailyAt('03:00');
         $schedule->command('DetectSameUser')->dailyAt('04:00');
         $schedule->command('ClearSearch')->dailyAt('05:00');
-        $schedule->command('UpdateVideo')->dailyAt('08:20');
+        $schedule->command('UpdateVideo')->everyFiveMinutes();
         $schedule->command('Trending')->hourly();
         $schedule->command('UpdateIdolBoss')->hourly();
         $schedule->command('AutoRefreshWechatAccessToken')->hourly();
