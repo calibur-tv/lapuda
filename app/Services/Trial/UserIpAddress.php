@@ -202,6 +202,19 @@ class UserIpAddress
         Redis::DEL('blocked_user_ids');
     }
 
+    public function blockUserById($userId)
+    {
+        DB
+            ::table('user_ip')
+            ->where('user_id', $userId)
+            ->update([
+                'blocked' => 1
+            ]);
+
+        Redis::DEL('blocked_user_ips');
+        Redis::DEL('blocked_user_ids');
+    }
+
     public function recoverUser($ipAddress)
     {
         $userId = DB

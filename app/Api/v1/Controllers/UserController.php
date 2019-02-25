@@ -1021,8 +1021,10 @@ class UserController extends Controller
             User
                 ::where('id', $uid)
                 ->update([
-                    'banned_to' => Carbon::now()->addDays(100)
+                    'banned_to' => Carbon::now()->addDays(36500)
                 ]);
+
+            $userIpAddress->blockUserById($uid);
 
             Redis::DEL("user_{$uid}");
         }
