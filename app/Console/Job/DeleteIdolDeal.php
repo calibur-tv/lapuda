@@ -47,7 +47,10 @@ class DeleteIdolDeal extends Command
 
         foreach ($deals as $item)
         {
-            if ($item['last_count'] == $item['product_count'])
+            if (
+                $item['last_count'] == $item['product_count'] ||
+                $this->calculate($item['product_price'] * $item['last_count']) < 0.01
+            )
             {
                 VirtualIdolDeal
                     ::where('id', $item['id'])
@@ -58,5 +61,20 @@ class DeleteIdolDeal extends Command
         }
 
         return true;
+    }
+
+    protected function calculate($num, $precision = 2)
+    {
+        $pow = pow(10, $precision);
+        if (
+            (floor($num * $pow * 10) % 5 == 0) &&
+            (floor($num * $pow * 10) == $num * $pow * 10) &&
+            (floor($num * $pow) % 2 == 0)
+        )
+        {
+            return floor($num * $pow) / $pow;
+        } else {
+            return round($num, $precision);
+        }
     }
 }
