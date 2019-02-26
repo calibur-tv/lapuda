@@ -84,7 +84,8 @@ class VideoRepository extends Repository
                 'is_released' => $isReleased,
                 'bangumi_season_id' => $video['bangumi_season_id'],
                 'baidu_cloud_src' => $video['baidu_cloud_src'],
-                'baidu_cloud_pwd' => $video['baidu_cloud_pwd']
+                'baidu_cloud_pwd' => $video['baidu_cloud_pwd'],
+                'self_src' => $video['src_v2']
             ];
         }, 'h');
 

@@ -3,8 +3,6 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
-use App\Models\Video;
-use App\Services\Qiniu\Http\Client;
 use Illuminate\Http\Request;
 use App\Services\OpenSearch\Search;
 use Mews\Purifier\Facades\Purifier;
@@ -67,15 +65,5 @@ class SearchController extends Controller
         $bangumiRepository = new BangumiRepository();
 
         return $this->resOK($bangumiRepository->searchAll());
-    }
-
-    public function test()
-    {
-        $list = Video
-            ::where('delete_src', '<>', '')
-            ->pluck('delete_src')
-            ->toArray();
-
-        return $this->resOK($list);
     }
 }

@@ -21,8 +21,7 @@ class Video extends Model
         'count_played',
         'baidu_cloud_src',
         'baidu_cloud_pwd',
-        'src_v2',
-        'delete_src'
+        'src_v2'
     ];
 
     protected $casts = [
