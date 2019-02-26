@@ -38,7 +38,7 @@ class DeleteIdolDeal extends Command
     public function handle()
     {
         $deals = VirtualIdolDeal
-            ::where('created_at', '<', Carbon::now()->addDays(-7))
+            ::where('updated_at', '<', Carbon::now()->addDays(-7))
             ->get()
             ->toArray();
 
