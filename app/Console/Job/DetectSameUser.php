@@ -37,7 +37,7 @@ class DetectSameUser extends Command
         $userIpAddress = new UserIpAddress();
         User::orderBy('id', 'ASC')
             ->select('id')
-            ->where('blocked', 0)
+            ->whereNull('banned_to')
             ->chunk(100, function($list) use ($userIpAddress)
             {
                 foreach ($list as $item)

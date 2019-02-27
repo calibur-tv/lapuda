@@ -987,7 +987,7 @@ class UserController extends Controller
         $take = $request->get('take') ?: 10;
 
         $user = User
-            ::where('blocked', 0)
+            ::whereNull('banned_to')
             ->take(($toPage - $curPage) * $take)
             ->skip($curPage * $take)
             ->where('migration_state', '>', 1)
@@ -1089,6 +1089,10 @@ class UserController extends Controller
                 {
                     $userIpAddress->blockUserByIp($ip);
                 }
+                User::where('id', $uid)
+                    ->update([
+                        'banned_to' => Carbon::now()->addDays(36500)
+                    ]);
             }
         }
         else
@@ -1113,6 +1117,10 @@ class UserController extends Controller
             {
                 $userIpAddress->recoverUser($ip);
             }
+            User::where('id', $userId)
+                ->update([
+                    'banned_to' => null
+                ]);
         }
         else
         {
