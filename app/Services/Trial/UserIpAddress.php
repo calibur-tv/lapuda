@@ -41,6 +41,15 @@ class UserIpAddress
             ->toArray();
     }
 
+    public function getUserIpById($userId)
+    {
+        return DB
+            ::table('user_ip')
+            ->where('user_id', $userId)
+            ->pluck('ip_address')
+            ->toArray();
+    }
+
     public function addressUsers($ipAddress)
     {
         return DB

@@ -987,7 +987,7 @@ class UserController extends Controller
         $take = $request->get('take') ?: 10;
 
         $user = User
-            ::whereNull('banned_to')
+            ::where('blocked', 0)
             ->take(($toPage - $curPage) * $take)
             ->skip($curPage * $take)
             ->where('migration_state', '>', 1)
@@ -1083,7 +1083,7 @@ class UserController extends Controller
             $userIds = $userIpAddress->getSameUserById($userId);
             foreach ($userIds as $uid)
             {
-                $ipList = $userIpAddress->userIps($uid);
+                $ipList = $userIpAddress->getUserIpById($uid);
                 $cartoonRoleRepository->removeUserCheer($uid);
                 foreach ($ipList as $ip)
                 {
@@ -1108,7 +1108,7 @@ class UserController extends Controller
 
         if ($userId)
         {
-            $ipList = $userIpAddress->userIps($userId);
+            $ipList = $userIpAddress->getUserIpById($userId);
             foreach ($ipList as $ip)
             {
                 $userIpAddress->recoverUser($ip);
@@ -1415,7 +1415,7 @@ class UserController extends Controller
         $userIds = $userIpAddress->getSameUserById($userId);
         foreach ($userIds as $uid)
         {
-            $ipList = $userIpAddress->userIps($uid);
+            $ipList = $userIpAddress->getUserIpById($uid);
             foreach ($ipList as $ip)
             {
                 $userIpAddress->recoverUser($ip);
