@@ -992,7 +992,8 @@ class UserController extends Controller
             ->skip($curPage * $take)
             ->where('migration_state', '>', 1)
             ->orderBy('migration_state', 'DESC')
-            ->select('id', 'nickname', 'zone')
+            ->select('id', 'nickname', 'zone', 'migration_state')
+            ->get()
             ->toArray();
 
         return $this->resOK([
@@ -1001,7 +1002,7 @@ class UserController extends Controller
         ]);
     }
 
-    // 禁止用户做团子交易1周
+    // 禁止用户做团子交易1周，并撤销应援
     public function bannedUserCherr(Request $request)
     {
         $review_id = $this->getAuthUserId();
@@ -1073,9 +1074,27 @@ class UserController extends Controller
     public function blockUserByIp(Request $request)
     {
         $ipAddress = $request->get('ip_address');
-
+        $userId = $request->get('user_id');
         $userIpAddress = new UserIpAddress();
-        $userIpAddress->blockUserByIp($ipAddress);
+
+        if ($userId)
+        {
+            $cartoonRoleRepository = new CartoonRoleRepository();
+            $userIds = $userIpAddress->getSameUserById($userId);
+            foreach ($userIds as $uid)
+            {
+                $ipList = $userIpAddress->userIps($uid);
+                $cartoonRoleRepository->removeUserCheer($uid);
+                foreach ($ipList as $ip)
+                {
+                    $userIpAddress->blockUserByIp($ip);
+                }
+            }
+        }
+        else
+        {
+            $userIpAddress->blockUserByIp($ipAddress);
+        }
 
         return $this->resNoContent();
     }
@@ -1287,15 +1306,6 @@ class UserController extends Controller
     public function ban(Request $request)
     {
         $userId = $request->get('id');
-        DB::table('users')
-            ->where('id', $userId)
-            ->update([
-                'state' => 0,
-                'deleted_at' => Carbon::now()
-            ]);
-
-        $job = (new \App\Jobs\Search\Index('D', 'user', $userId));
-        dispatch($job);
 
         $userIpAddress = new UserIpAddress();
         $userIds = $userIpAddress->getSameUserById($userId);
@@ -1306,9 +1316,19 @@ class UserController extends Controller
         {
             $cartoonRoleRepository->removeUserCheer($uid);
             $userIpAddress->blockUserById($uid);
-        }
 
-        Redis::DEL('user_' . $userId);
+            DB::table('users')
+                ->where('id', $uid)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => Carbon::now()
+                ]);
+
+            Redis::DEL('user_' . $uid);
+
+            $job = (new \App\Jobs\Search\Index('D', 'user', $uid));
+            dispatch($job);
+        }
 
         return $this->resNoContent();
     }
@@ -1356,11 +1376,11 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
-    // 被禁言的用户列表
+    // 被删除的用户列表
     public function freezeUserList()
     {
         $list = User
-            ::whereNotNull('banned_to')
+            ::onlyTrashed()
             ->get();
 
         return $this->resOK($list);
@@ -1387,10 +1407,20 @@ class UserController extends Controller
     {
         $userId = $request->get('id');
 
-        User::where('id', $userId)
-            ->update([
-                'banned_to' => null
-            ]);
+        User::onlyTrashed()
+            ->where('id', $userId)
+            ->restore();
+
+        $userIpAddress = new UserIpAddress();
+        $userIds = $userIpAddress->getSameUserById($userId);
+        foreach ($userIds as $uid)
+        {
+            $ipList = $userIpAddress->userIps($uid);
+            foreach ($ipList as $ip)
+            {
+                $userIpAddress->recoverUser($ip);
+            }
+        }
 
         Redis::DEL('user_'. $userId);
 

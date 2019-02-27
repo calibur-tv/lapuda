@@ -607,8 +607,6 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/edit', 'App\Api\V1\Controllers\CartoonRoleController@edit');
 
             $api->post('/create', 'App\Api\V1\Controllers\CartoonRoleController@create');
-
-            $api->post('/remove_star', 'App\Api\V1\Controllers\CartoonRoleController@removeStarByIp');
         });
 
         $api->group(['prefix' => '/user'], function ($api)

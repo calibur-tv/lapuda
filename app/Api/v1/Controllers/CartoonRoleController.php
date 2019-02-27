@@ -2893,51 +2893,6 @@ class CartoonRoleController extends Controller
         return $this->resNoContent();
     }
 
-    // 后台根据用户 IP 来移除应援
-    public function removeStarByIp(Request $request)
-    {
-        $userId = $this->getAuthUserId();
-        if ($userId !== 1)
-        {
-            return $this->resErrRole();
-        }
-
-        $ip = $request->get('ip');
-        $userIpAddress = new UserIpAddress();
-
-        $userIds = $userIpAddress->addressUsers($ip);
-        if (!$userIds)
-        {
-            return $this->resNoContent();
-        }
-
-        $cartoonRoleIds = CartoonRoleFans
-            ::whereIn('role_id', $userIds)
-            ->pluck('role_id');
-        $virtualCoinService = new VirtualCoinService();
-
-        foreach ($userIds as $userId)
-        {
-            CartoonRoleFans
-                ::where('user_id', $userId)
-                ->delete();
-
-            $virtualCoinService->undoUserCheer($userId);
-        }
-
-        $cartoonRoleFansCounter = new CartoonRoleFansCounter();
-        $cartoonRoleStarCounter = new CartoonRoleStarCounter();
-        foreach ($cartoonRoleIds as $roleId)
-        {
-            $cartoonRoleFansCounter->deleteCache($roleId);
-            $cartoonRoleStarCounter->deleteCache($roleId);
-        }
-        Redis::DEL('cartoon_role_star_dalao_user_ids');
-        Redis::DEL('cartoon_role_star_newbie_users');
-
-        return $this->resNoContent();
-    }
-
     // 四舍六入算法
     protected function calculate($num, $precision = 2)
     {
