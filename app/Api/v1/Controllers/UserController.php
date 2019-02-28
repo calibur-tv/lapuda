@@ -1419,6 +1419,14 @@ class UserController extends Controller
             ->where('id', $userId)
             ->restore();
 
+        DB
+            ::table('users')
+            ->where('id', $userId)
+            ->update([
+                'deleted_at' => null,
+                'banned_to' => null
+            ]);
+
         $userIpAddress = new UserIpAddress();
         $userIds = $userIpAddress->getSameUserById($userId);
         foreach ($userIds as $uid)

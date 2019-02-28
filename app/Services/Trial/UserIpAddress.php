@@ -243,8 +243,7 @@ class UserIpAddress
                 ::table('user_ip')
                 ->where('user_id', $userId)
                 ->update([
-                    'blocked' => 0,
-                    'banned_to' => null
+                    'blocked' => 0
                 ]);
         }
         else
