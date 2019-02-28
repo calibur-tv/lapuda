@@ -428,7 +428,7 @@ class BangumiController extends Controller
 
         $bangumi = Bangumi::withTrashed()->where('id', $bangumiId)->first();
         $arr = [
-            'name' => $request->get('name'),
+            // 'name' => $request->get('name'),
             'avatar' => $request->get('avatar'),
             'banner' => $request->get('banner'),
             'summary' => $request->get('summary'),
