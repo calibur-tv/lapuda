@@ -2166,6 +2166,7 @@ class CartoonRoleController extends Controller
 
         $has_star = VirtualIdolOwner
             ::where('idol_id', $id)
+            ->where('user_id', $userId)
             ->pluck('stock_count')
             ->first();
 

@@ -69,6 +69,17 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/hots', 'App\Api\V1\Controllers\BangumiController@hotBangumis');
 
+        $api->group(['prefix' => '/manager', 'middleware' => ['jwt.auth']], function ($api)
+        {
+            $api->get('/get_info', 'App\Api\V1\Controllers\BangumiController@managerGetInfo');
+
+            $api->post('/edit_info', 'App\Api\V1\Controllers\BangumiController@managerEditInfo');
+
+            $api->post('/create_season', 'App\Api\V1\Controllers\BangumiController@managerCreateSeason');
+
+            $api->post('/edit_season', 'App\Api\V1\Controllers\BangumiController@managerEditSeason');
+        });
+
         $api->group(['prefix' => '/{id}'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\BangumiController@show');
