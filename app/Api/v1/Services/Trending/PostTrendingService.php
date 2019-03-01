@@ -136,7 +136,7 @@ class PostTrendingService extends TrendingService
                 $this->SortAdd($this->trendingIdsCacheKey('hot', 0), $id);
             }
         }
-        $this->ListInsertBefore($this->trendingFlowUsersKey(), $id);
+        $this->SortAdd($this->trendingFlowUsersKey(), $id);
     }
 
     public function update($id, $addToHomepage = true)
