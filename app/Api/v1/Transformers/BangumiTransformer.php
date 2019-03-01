@@ -61,7 +61,8 @@ class BangumiTransformer extends Transformer
                 'manager_users' => $bangumi['manager_users'],
                 'has_video' => (boolean)$bangumi['has_video'],
                 'has_cartoon' => (boolean)$bangumi['has_cartoon'],
-                'power' => $bangumi['power']
+                'power' => $bangumi['power'],
+                'qq_group' => isset($bangumi['qq_group']) ? $bangumi['qq_group'] : ''
             ];
         });
     }

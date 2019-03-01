@@ -436,7 +436,8 @@ class BangumiController extends Controller
                 'search' => $request->get('alias')
             ]) : 'null',
             'has_cartoon' => $request->get('has_cartoon'),
-            'has_video' => $request->get('has_video')
+            'has_video' => $request->get('has_video'),
+            'qq_group' => $request->get('qq_group')
         ];
 
         $result = $bangumi->update($arr);

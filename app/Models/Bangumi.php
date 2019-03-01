@@ -30,6 +30,7 @@ class Bangumi extends Model
         'has_cartoon',
         'has_video',
         'has_season',
+        'qq_group',
         'cartoon' // 漫画的 ids
     ];
 
