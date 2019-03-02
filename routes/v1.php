@@ -73,6 +73,12 @@ $api->version(['v1', 'latest'], function ($api)
         {
             $api->get('/get_info', 'App\Api\V1\Controllers\BangumiController@managerGetInfo');
 
+            $api->get('/list', 'App\Api\V1\Controllers\BangumiController@getManagerList');
+
+            $api->post('/set_manager', 'App\Api\V1\Controllers\BangumiController@setManager');
+
+            $api->post('/remove_manager', 'App\Api\V1\Controllers\BangumiController@removeManager');
+
             $api->post('/edit_info', 'App\Api\V1\Controllers\BangumiController@managerEditInfo');
 
             $api->post('/create_season', 'App\Api\V1\Controllers\BangumiController@managerCreateSeason');

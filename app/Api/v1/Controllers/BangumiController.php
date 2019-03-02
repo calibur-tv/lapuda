@@ -545,6 +545,16 @@ class BangumiController extends Controller
         return $this->resNoContent();
     }
 
+    // 获取番剧管理员列表
+    public function getManagerList(Request $request)
+    {
+        $id = $request->get('id');
+        $bangumiManager = new BangumiManager();
+        $list = $bangumiManager->users($id);
+
+        return $this->resOK($list);
+    }
+
     /**
      * 吧主编辑番剧信息
      *
@@ -849,8 +859,13 @@ class BangumiController extends Controller
     {
         $userId = $request->get('user_id');
         $bangumiId = $request->get('bangumi_id');
-
+        $currentUser = $this->getAuthUser();
         $bangumiManager = new BangumiManager();
+        if (!$currentUser->is_admin && !$bangumiManager->isLeader($bangumiId, $userId))
+        {
+            return $this->resErrRole();
+        }
+
         $result = $bangumiManager->set($bangumiId, $userId);
 
         if (!$result)
@@ -866,8 +881,12 @@ class BangumiController extends Controller
     {
         $userId = $request->get('user_id');
         $bangumiId = $request->get('bangumi_id');
-
+        $currentUser = $this->getAuthUser();
         $bangumiManager = new BangumiManager();
+        if (!$currentUser->is_admin && !$bangumiManager->isLeader($bangumiId, $userId))
+        {
+            return $this->resErrRole();
+        }
         $result = $bangumiManager->remove($bangumiId, $userId);
 
         if (!$result)
