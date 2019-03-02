@@ -28,6 +28,10 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/login', 'App\Api\V1\Controllers\DoorController@login')->middleware(['geetest']);
 
+        $api->post('/wechat_mini_app_login', 'App\Api\V1\Controllers\DoorController@wechatMiniAppLogin');
+
+        $api->post('/wechat_mini_app_get_token', 'App\Api\V1\Controllers\DoorController@wechatMiniAppToken');
+
         $api->post('/refresh', 'App\Api\V1\Controllers\DoorController@refreshUser')->middleware(['jwt.refresh']);
 
         $api->post('/refresh_token', 'App\Api\V1\Controllers\DoorController@refreshJwtToken')->middleware(['jwt.refresh']);

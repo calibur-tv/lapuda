@@ -28,5 +28,9 @@ return [
         'client_id' => env('WECHAT_APP_OWNER_ID'),
         'client_secret' => env('WECHAT_APP_OWNER_SECRET'),
         'redirect' => 'https://api.calibur.tv/callback/auth/weixin'
+    ],
+    'wechat_mini_app' => [
+        'app_id' => env('WECHAT_MINI_APP_ID'),
+        'app_secret' => env('WECHAT_MINI_APP_SECRET')
     ]
 ];

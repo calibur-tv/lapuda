@@ -15,6 +15,7 @@ use App\Services\Sms\Message;
 use App\Services\Socialite\AccessToken;
 use App\Services\Socialite\SocialiteManager;
 use App\Services\Trial\UserIpAddress;
+use App\Services\WXBizDataCrypt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +24,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Overtrue\LaravelPinyin\Facades\Pinyin as Overtrue;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Services\Qiniu\Http\Client;
 
 /**
  * @Resource("用户认证相关接口")
@@ -667,6 +669,112 @@ class DoorController extends Controller
     public function changePhone()
     {
 
+    }
+
+    // 微信小程序注册用户或获取当前用户的 token
+    public function wechatMiniAppLogin(Request $request)
+    {
+        $user = $request->get('user');
+        $encryptedData = $request->get('encrypted_data');
+        $iv = $request->get('iv');
+        $sessionKey = $request->get('session_key');
+        $appId = config('services.wechat_mini_app.app_id');
+
+        $tool = new WXBizDataCrypt($appId, $sessionKey);
+        $code = $tool->decryptData($encryptedData, $iv, $data);
+
+        if ($code)
+        {
+            return $this->resErrServiceUnavailable();
+        }
+
+        $data = json_decode($data, true);
+        $uniqueId = $data['unionId'];
+        $isNewUser = $this->accessIsNew('wechat_unique_id', $uniqueId);
+        if ($isNewUser)
+        {
+            $nickname = $this->getNickname($user['nickName']);
+            $zone = $this->createUserZone($nickname);
+            $data = [
+                'nickname' => $nickname,
+                'zone' => $zone,
+                'wechat_open_id' => $data['openId'],
+                'wechat_unique_id' => $uniqueId,
+                'password' => bcrypt('calibur')
+            ];
+
+            try
+            {
+                $user = User::create($data);
+                $userRepository = new UserRepository();
+                $userRepository->migrateSearchIndex('C', $user->id);
+            }
+            catch (\Exception $e)
+            {
+                app('sentry')->captureException($e);
+
+                return $this->resErrServiceUnavailable('请修改微信昵称后重试');
+            }
+        }
+        else
+        {
+            $user = User
+                ::where('wechat_unique_id', $uniqueId)
+                ->first();
+
+            if (is_null($user))
+            {
+                return $this->resErrNotFound('这个用户已经消失了');
+            }
+        }
+
+        return $this->resOK($this->responseUser($user));
+    }
+
+    // 微信小程序获取用户的 session_key 或获取当前用户的 token
+    public function wechatMiniAppToken(Request $request)
+    {
+        $code = $request->get('code');
+        if (!$code)
+        {
+            return $this->resErrBad();
+        }
+
+        $client = new Client();
+        $appId = config('services.wechat_mini_app.app_id');
+        $appSecret = config('services.wechat_mini_app.app_secret');
+        $resp = $client->get(
+            "https://api.weixin.qq.com/sns/jscode2session?appid={$appId}&secret={$appSecret}&js_code={$code}&grant_type=authorization_code",
+            [
+                'Accept' => 'application/json'
+            ]
+        );
+        $body = json_decode($resp->body, true);
+        $uniqueId = isset($body['unionid']) ? $body['unionid'] : '';
+        if (!$uniqueId)
+        {
+            return $this->resOK([
+                'type' => 'key',
+                'data' => $body['session_key']
+            ]);
+        }
+
+        $user = User
+            ::where('wechat_unique_id', $uniqueId)
+            ->first();
+
+        if (is_null($user))
+        {
+            return $this->resOK([
+                'type' => 'key',
+                'data' => $body['session_key']
+            ]);
+        }
+
+        return $this->resOK([
+            'type' => 'token',
+            'data' => $this->responseUser($user)
+        ]);
     }
 
     /**

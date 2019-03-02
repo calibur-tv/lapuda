@@ -26,7 +26,6 @@ use App\Models\Video;
 use Carbon\Carbon;
 use App\Services\Qiniu\Http\Client;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 
 class UserRepository extends Repository
 {
