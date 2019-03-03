@@ -555,6 +555,34 @@ class BangumiController extends Controller
         return $this->resOK($list);
     }
 
+    // 番剧管理员更新视频
+    public function managerUpdateVideos(Request $request)
+    {
+        // TODO 如果最新的 release 一集被删了，可能会导致新番放送页面出问题（去掉新番放送功能？）
+        $seasons = $request->get('seasons');
+        $bangumiId = $request->get('bangumi_id');
+        $userId = $this->getAuthUserId();
+        $bangumiManager = new BangumiManager();
+        if (!$bangumiManager->isOwner($bangumiId, $userId))
+        {
+            return $this->resErrRole();
+        }
+
+        foreach ($seasons as $season)
+        {
+            BangumiSeason
+                ::where('id', $season['season_id'])
+                ->update([
+                    'videos' => $season['videos']
+                ]);
+        }
+
+        Redis::DEL("bangumi_season:bangumi:{$bangumiId}");
+        Redis::DEL("bangumi_{$bangumiId}_videos");
+
+        return $this->resNoContent();
+    }
+
     /**
      * 吧主编辑番剧信息
      *

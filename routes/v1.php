@@ -88,6 +88,8 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/create_season', 'App\Api\V1\Controllers\BangumiController@managerCreateSeason');
 
             $api->post('/edit_season', 'App\Api\V1\Controllers\BangumiController@managerEditSeason');
+
+            $api->post('/update_videos', 'App\Api\V1\Controllers\BangumiController@managerUpdateVideos');
         });
 
         $api->group(['prefix' => '/{id}'], function ($api)
