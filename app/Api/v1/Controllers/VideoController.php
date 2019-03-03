@@ -146,7 +146,7 @@ class VideoController extends Controller
         }
         if (
             !$bangumiManager->isALeader($userId) &&             // 不是一个leader，临时，之后删除
-            !$bangumiManager->isLeader($bangumi_id, $userId) && // 不是当前番剧的版主
+            !$bangumiManager->isOwner($bangumi_id, $userId) && // 不是当前番剧的版主
             !($currentUser->is_admin && !$baidu_cloud_src) &&   // 不（是管理员并且链接为空）
             $video['user_id'] != $userId                        // 不是当前的UP主
         )
