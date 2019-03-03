@@ -393,8 +393,10 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/check_product_request', 'App\Api\V1\Controllers\CartoonRoleController@check_product_request')->middleware(['jwt.auth']);
 
         $api->get('/deal_list', 'App\Api\V1\Controllers\CartoonRoleController@getDealList');
+        $api->post('/deal_list', 'App\Api\V1\Controllers\CartoonRoleController@getDealList');
 
         $api->get('/my_deal', 'App\Api\V1\Controllers\CartoonRoleController@myDeal')->middleware(['jwt.auth']);
+        $api->post('/my_deal', 'App\Api\V1\Controllers\CartoonRoleController@myDeal')->middleware(['jwt.auth']);
 
         $api->get('/stock_meta', 'App\Api\V1\Controllers\CartoonRoleController@stockMeta');
 
@@ -423,6 +425,7 @@ $api->version(['v1', 'latest'], function ($api)
         $api->group(['prefix' => '/list'], function ($api)
         {
             $api->get('/idols', 'App\Api\V1\Controllers\CartoonRoleController@getIdolList');
+            $api->post('/idols', 'App\Api\V1\Controllers\CartoonRoleController@getIdolList');
 
             $api->get('/today', 'App\Api\V1\Controllers\CartoonRoleController@todayActivity');
 
