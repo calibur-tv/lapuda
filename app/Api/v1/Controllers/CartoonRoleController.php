@@ -50,6 +50,13 @@ use Mews\Purifier\Facades\Purifier;
  */
 class CartoonRoleController extends Controller
 {
+    public function test()
+    {
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $result = $cartoonRoleRepository->idolSomeDayStockChartData(146, 7);
+
+        return $this->resOK($result);
+    }
     /**
      * 给偶像应援
      *

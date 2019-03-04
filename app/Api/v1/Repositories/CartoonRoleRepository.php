@@ -16,6 +16,7 @@ use App\Models\VirtualIdolDealRecord;
 use App\Models\VirtualIdolOwner;
 use App\Models\VirtualIdolPorduct;
 use App\Models\VirtualIdolPriceDraft;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
@@ -130,6 +131,30 @@ class CartoonRoleRepository extends Repository
         }
 
         return $result;
+    }
+
+    public function idolSomeDayStockChartData($idolId, $days)
+    {
+        return $this->Cache("idol_{$days}_days_stock_chart_data", function () use ($idolId, $days)
+        {
+            $list = DB
+                ::table('virtual_idol_day_activity')
+                ->where('model_id', $idolId)
+                ->where('days', '>=', Carbon::now()->addDays(-$days))
+                ->pluck('day', 'value')
+                ->toArray();
+
+            $result = [];
+            foreach ($list as $item)
+            {
+                $result[] = [
+                    'time' => strtotime($item['day']),
+                    'value' => $item['value']
+                ];
+            }
+
+            return $result;
+        });
     }
 
     public function getIdolProductIds($idolId, $minId, $count = 15)
