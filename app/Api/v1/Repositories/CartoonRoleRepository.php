@@ -135,7 +135,7 @@ class CartoonRoleRepository extends Repository
 
     public function idolSomeDayStockChartData($idolId, $days)
     {
-        return $this->Cache("idol_{$days}_days_stock_chart_trend", function () use ($idolId, $days)
+        return $this->Cache("idol_{$idolId}_days_{$days}_stock_chart_trend", function () use ($idolId, $days)
         {
             $list = DB
                 ::table('virtual_idol_day_activity')
