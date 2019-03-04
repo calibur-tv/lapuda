@@ -140,7 +140,7 @@ class CartoonRoleRepository extends Repository
             $list = DB
                 ::table('virtual_idol_day_activity')
                 ->where('model_id', $idolId)
-                ->where('days', '>=', Carbon::now()->addDays(-$days))
+                ->where('day', '>=', Carbon::now()->addDays(-$days))
                 ->pluck('day', 'value')
                 ->toArray();
 
