@@ -50,13 +50,6 @@ use Mews\Purifier\Facades\Purifier;
  */
 class CartoonRoleController extends Controller
 {
-    public function test()
-    {
-        $cartoonRoleRepository = new CartoonRoleRepository();
-        $result = $cartoonRoleRepository->idolSomeDayStockChartData(146, 7);
-
-        return $this->resOK($result);
-    }
     /**
      * 给偶像应援
      *
@@ -2596,7 +2589,7 @@ class CartoonRoleController extends Controller
 
         foreach ($list as $i => $item)
         {
-            $list[$i]['market_trend'] = $cartoonRoleRepository->idol24HourStockChartData($item['id']);
+            $list[$i]['market_trend'] = $cartoonRoleRepository->idolSomeDayStockChartData($item['id'], 7);
 
             $boss = null;
             if ($item['boss_id'])
