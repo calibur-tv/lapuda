@@ -142,15 +142,14 @@ class CartoonRoleRepository extends Repository
                 ->where('model_id', $idolId)
                 ->where('day', '>=', Carbon::now()->addDays(-$days))
                 ->select('day', 'value')
-                ->get()
-                ->toArray();
+                ->get();
 
             $result = [];
             foreach ($list as $item)
             {
                 $result[] = [
-                    'time' => strtotime($item['day']),
-                    'value' => $item['value']
+                    'time' => strtotime($item->day),
+                    'value' => $item->value
                 ];
             }
 
