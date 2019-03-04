@@ -135,12 +135,13 @@ class CartoonRoleRepository extends Repository
 
     public function idolSomeDayStockChartData($idolId, $days)
     {
-        return $this->Cache("idol_{$days}_days_stock_chart_data", function () use ($idolId, $days)
+        return $this->Cache("idol_{$days}_days_stock_chart_trend", function () use ($idolId, $days)
         {
             $list = DB
                 ::table('virtual_idol_day_activity')
                 ->where('model_id', $idolId)
                 ->where('day', '>=', Carbon::now()->addDays(-$days))
+                ->orderBy('id', 'ASC')
                 ->select('day', 'value')
                 ->get();
 
