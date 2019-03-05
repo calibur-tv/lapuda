@@ -2274,7 +2274,7 @@ class CartoonRoleController extends Controller
         }
         $manager_id = $request->get('manager_id') ?: 0;
         $virtualIdolManager = new VirtualIdolManager();
-        if ($idol['manager_id'] != $manager_id)
+        if ($manager_id && $idol['manager_id'] != $manager_id)
         {
             if ($virtualIdolManager->isAManager($manager_id))
             {
@@ -2302,7 +2302,14 @@ class CartoonRoleController extends Controller
         }
         if ($idol['manager_id'] != $manager_id)
         {
-            $virtualIdolManager->set($idolId, $manager_id, true);
+            if ($idol['manager_id'])
+            {
+                $virtualIdolManager->remove($idolId, $idol['manager_id']);
+            }
+            if ($manager_id)
+            {
+                $virtualIdolManager->set($idolId, $manager_id, true);
+            }
         }
 
         return $this->resNoContent();
