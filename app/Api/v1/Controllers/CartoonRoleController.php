@@ -350,6 +350,9 @@ class CartoonRoleController extends Controller
                 $role['market_price_draft_voted'] = $idolVoteService->check($userId, $draftId);
             }
         }
+        $cacheKey = $cartoonRoleRepository->marketIdolListCacheKey('market_price');
+        $trending = Redis::ZREVRANK($cacheKey, $id);
+        $role['trending'] = is_null($trending) ? 0 : $trending + 1;
 
         $searchService = new Search();
         if ($searchService->checkNeedMigrate('role', $id))
