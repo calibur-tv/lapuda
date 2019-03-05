@@ -540,7 +540,7 @@ class UserController extends Controller
         $userTransformer = new UserTransformer();
 
         return $this->resOK([
-            'list' => $userTransformer->list($users),
+            'list' => $userTransformer->invites($users),
             'noMore' => $idsObj['noMore'],
             'total' => $idsObj['total']
         ]);
