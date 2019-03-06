@@ -397,10 +397,8 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/deal_list', 'App\Api\V1\Controllers\CartoonRoleController@getDealList');
 
         $api->get('/my_deal', 'App\Api\V1\Controllers\CartoonRoleController@myDeal')->middleware(['jwt.auth']);
-        $api->post('/my_deal', 'App\Api\V1\Controllers\CartoonRoleController@myDeal')->middleware(['jwt.auth']);
 
         $api->get('/get_user_deal_list', 'App\Api\V1\Controllers\CartoonRoleController@getUserDealList');
-        $api->post('/get_user_deal_list', 'App\Api\V1\Controllers\CartoonRoleController@getUserDealList');
 
         $api->get('/stock_meta', 'App\Api\V1\Controllers\CartoonRoleController@stockMeta');
 
