@@ -897,6 +897,46 @@ class CartoonRoleController extends Controller
         ]);
     }
 
+    // 获取用户的交易列表
+    public function getUserDealList(Request $request)
+    {
+        $userId = $request->get('user_id');
+        $take = $request->get('take') ?: 10;
+        $page = $request->get('page') ?: 0;
+
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $idsObj = $cartoonRoleRepository->userDealList($userId, $page, $take);
+
+        if (empty($idsObj['ids']))
+        {
+            return $this->resOK([
+                'list' => [],
+                'noMore' => true,
+                'total' => 0
+            ]);
+        }
+
+        $result = [];
+        foreach ($idsObj['ids'] as $id)
+        {
+            $deal = $cartoonRoleRepository->dealItem($id, true);
+            $idol = $cartoonRoleRepository->item($deal['idol_id']);
+            if (is_null($idol))
+            {
+                continue;
+            }
+            $deal['idol'] = $idol;
+            $result[] = $deal;
+        }
+        $cartoonRoleTransformer = new CartoonRoleTransformer();
+
+        return $this->resOK([
+            'list' => $cartoonRoleTransformer->mineDealList($result),
+            'noMore' => $idsObj['noMore'],
+            'total' => $idsObj['total']
+        ]);
+    }
+
     // 获取市场上的商品
     public function products(Request $request)
     {
@@ -1769,6 +1809,11 @@ class CartoonRoleController extends Controller
         {
             Redis::ZADD($cacheKey, strtotime('now'), $deal->id);
         }
+        $cacheKey = $cartoonRoleRepository->user_deal_list_cache_key($userId);
+        if (Redis::EXISTS($cacheKey))
+        {
+            Redis::ZADD($cacheKey, strtotime('now'), $deal->id);
+        }
 
         return $this->resCreated($deal->id);
     }
@@ -1791,6 +1836,11 @@ class CartoonRoleController extends Controller
 
         Redis::DEL($cartoonRoleRepository->idolDealItemCacheKey($dealId));
         $cacheKey = $cartoonRoleRepository->idolDealListCacheKey();
+        if (Redis::EXISTS($cacheKey))
+        {
+            Redis::ZREM($cacheKey, $dealId);
+        }
+        $cacheKey = $cartoonRoleRepository->user_deal_list_cache_key($userId);
         if (Redis::EXISTS($cacheKey))
         {
             Redis::ZREM($cacheKey, $dealId);
@@ -2041,6 +2091,19 @@ class CartoonRoleController extends Controller
             }
             // 修改交易大厅列表
             $cacheKey = $cartoonRoleRepository->idolDealListCacheKey();
+            if (Redis::EXISTS($cacheKey))
+            {
+                if ($deleteDeal)
+                {
+                    Redis::ZREM($cacheKey, $dealId);
+                }
+                else
+                {
+                    Redis::ZADD($cacheKey, $currentTime, $dealId);
+                }
+            }
+            // 修改用户交易列表列表
+            $cacheKey = $cartoonRoleRepository->user_deal_list_cache_key($deal['user_id']);
             if (Redis::EXISTS($cacheKey))
             {
                 if ($deleteDeal)

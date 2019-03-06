@@ -57,6 +57,9 @@ class DeleteIdolDeal extends Command
                     ->delete();
 
                 Redis::ZREM($cacheKey, $item['id']);
+
+                $userCacheKey = $cartoonRoleRepository->user_deal_list_cache_key($item['user_id']);
+                Redis::ZREM($userCacheKey, $item['id']);
             }
         }
 

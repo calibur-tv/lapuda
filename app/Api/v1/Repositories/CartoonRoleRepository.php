@@ -82,6 +82,19 @@ class CartoonRoleRepository extends Repository
         return is_null($count) ? 0 : intval($count);
     }
 
+    public function userDealList($userId, $page, $take)
+    {
+        $list = $this->RedisSort($this->user_deal_list_cache_key($userId), function () use ($userId)
+        {
+            return VirtualIdolDeal
+                ::where('user_id', $userId)
+                ->orderBy('id', 'DESC')
+                ->pluck('updated_at', 'id');
+        }, true);
+
+        return $this->filterIdsByPage($list, $page, $take);
+    }
+
     public function newFansIds($roleId, $minId, $count = null)
     {
         $take = $count ?: config('website.list_count');
@@ -625,5 +638,10 @@ class CartoonRoleRepository extends Repository
     public function stock_product_list_cache_key($idol_id)
     {
         return "virtual_idol_{$idol_id}_market_product_ids";
+    }
+
+    public function user_deal_list_cache_key($userId)
+    {
+        return "virtual_idol_deal_list_user_${userId}";
     }
 }
