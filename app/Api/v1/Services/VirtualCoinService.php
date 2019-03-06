@@ -53,7 +53,7 @@ class VirtualCoinService
                 ->orderBy('created_at', 'DESC')
                 ->pluck('id')
                 ->toArray();
-        });
+        }, 0, -1, 'm');
         $idsObj = $repository->filterIdsByPage($ids, $page, $count);
         $records = VirtualCoin
             ::whereIn('id', $idsObj['ids'])
