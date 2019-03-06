@@ -366,6 +366,7 @@ $api->version(['v1', 'latest'], function ($api)
             $api->get('/fans', 'App\Api\V1\Controllers\CartoonRoleController@fans');
 
             $api->get('/owners', 'App\Api\V1\Controllers\CartoonRoleController@owners');
+            $api->post('/owners', 'App\Api\V1\Controllers\CartoonRoleController@owners');
 
             $api->post('/star', 'App\Api\V1\Controllers\CartoonRoleController@star')->middleware(['jwt.auth']);
 
