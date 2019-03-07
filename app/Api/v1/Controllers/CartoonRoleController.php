@@ -14,12 +14,10 @@ use App\Api\V1\Services\Counter\CartoonRoleFansCounter;
 use App\Api\V1\Services\Counter\CartoonRoleStarCounter;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Owner\VirtualIdolManager;
-use App\Api\V1\Services\Tag\Base\UserBadgeService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Services\Toggle\Post\PostRewardService;
 use App\Api\V1\Services\Trending\CartoonRoleTrendingService;
-use App\Api\V1\Services\UserLevel;
 use App\Api\V1\Services\VirtualCoinService;
 use App\Api\V1\Services\Vote\IdolVoteService;
 use App\Api\V1\Transformers\CartoonRoleTransformer;
@@ -372,6 +370,70 @@ class CartoonRoleController extends Controller
                 'image' => "{$role['avatar']}-share120jpg"
             ]
         ]);
+    }
+
+    // 交易详情
+    public function dealShow($id)
+    {
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $deal = $cartoonRoleRepository->dealItem($id);
+        if (is_null($deal))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $userRepository = new UserRepository();
+        $user = $userRepository->item($deal['user_id']);
+        if (is_null($user))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $idol = $cartoonRoleRepository->item($deal['idol_id']);
+        if (is_null($idol))
+        {
+            return $this->resErrNotFound();
+        }
+
+        $cartoonRoleTransformer = new CartoonRoleTransformer();
+
+        return $this->resOK($cartoonRoleTransformer->dealShow([
+            'deal' => $deal,
+            'user' => $user,
+            'idol' => $idol
+        ]));
+    }
+
+    public function getDealExchangeRecord(Request $request)
+    {
+        $dealId = $request->get('deal_id');
+        $page = $request->get('page') ?: 0;
+        $take = $request->get('take') ?: 20;
+
+        $deals = VirtualIdolDealRecord
+            ::where('deal_id', $dealId)
+            ->orderBy('id', 'DESC')
+            ->skip($page * $take)
+            ->take($take)
+            ->get()
+            ->toArray();
+
+        $userRepository = new UserRepository();
+        foreach ($deals as $i => $deal)
+        {
+            $user = $userRepository->item($deal['from_user_id']);
+            if (is_null($user))
+            {
+                continue;
+            }
+            $deals['user'] = [
+                'zone' => $user['zone'],
+                'nickname' => $user['nickname'],
+                'avatar' => $user['avatar']
+            ];
+        }
+
+        return $this->resOK($deals);
     }
 
     // 入股
@@ -2207,18 +2269,6 @@ class CartoonRoleController extends Controller
 
         DB::commit();
         return $this->resOK('交易成功');
-    }
-
-    // 获取用户可交易的股份
-    public function getCurrentDeal($id)
-    {
-        $userId = $this->getAuthUserId();
-        $deal = VirtualIdolDeal
-            ::where('user_id', $userId)
-            ->where('idol_id', $id)
-            ->first();
-
-        return $this->resOK($deal);
     }
 
     // 获取我发起的交易列表

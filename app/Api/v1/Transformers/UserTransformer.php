@@ -77,6 +77,10 @@ class UserTransformer extends Transformer
                     'coin_count' => (int)$user['virtual_coin'],
                     'light_count' => (int)$user['money_coin'],
                 ],
+                'balance' => [
+                    'coin_count' => sprintf("%.2f", $user['virtual_coin']),
+                    'light_count' => sprintf("%.2f", $user['money_coin']),
+                ],
                 'pocket' => floatval($user['virtual_coin']),
                 'faker' => (boolean)$user['faker'],
                 'is_admin' => (boolean)$user['is_admin'],

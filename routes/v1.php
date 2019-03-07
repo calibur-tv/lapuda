@@ -361,6 +361,8 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->get('/stock_show', 'App\Api\V1\Controllers\CartoonRoleController@stockShow');
 
+            $api->get('/deal_show', 'App\Api\V1\Controllers\CartoonRoleController@dealShow');
+
             $api->get('/stock_chart', 'App\Api\V1\Controllers\CartoonRoleController@stochChart');
 
             $api->get('/fans', 'App\Api\V1\Controllers\CartoonRoleController@fans');
@@ -371,8 +373,6 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/star', 'App\Api\V1\Controllers\CartoonRoleController@star')->middleware(['jwt.auth']);
 
             $api->post('/buy_stock', 'App\Api\V1\Controllers\CartoonRoleController@buyStock')->middleware(['jwt.auth']);
-
-            $api->get('/get_deal', 'App\Api\V1\Controllers\CartoonRoleController@getCurrentDeal')->middleware(['jwt.auth']);
 
             $api->get('/get_idol_deal', 'App\Api\V1\Controllers\CartoonRoleController@getMyIdolDeal')->middleware(['jwt.auth']);
         });
@@ -405,6 +405,8 @@ $api->version(['v1', 'latest'], function ($api)
         $api->get('/recent_buy', 'App\Api\V1\Controllers\CartoonRoleController@recentBuyList');
 
         $api->get('/recent_deal', 'App\Api\V1\Controllers\CartoonRoleController@recentDealList');
+
+        $api->get('/deal_exchange_record', 'App\Api\V1\Controllers\CartoonRoleController@getDealExchangeRecord');
 
         $api->get('/market_price_draft_list', 'App\Api\V1\Controllers\CartoonRoleController@getIdolMarketPriceDraftList');
 

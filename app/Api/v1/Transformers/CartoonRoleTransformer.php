@@ -109,6 +109,46 @@ class CartoonRoleTransformer extends Transformer
         });
     }
 
+    public function dealShow($data)
+    {
+        return $this->transformer($data, function ($info)
+        {
+            return [
+                'deal' => $this->transformer($info['deal'], function ($deal){
+                   return [
+                       'id' => (int)$deal['id'],
+                       'product_count' => sprintf("%.2f", $deal['product_count']),
+                       'product_price' => sprintf("%.2f", $deal['product_price']),
+                       'last_count' => sprintf("%.2f", $deal['last_count']),
+                       'created_at' => $deal['created_at']
+                   ];
+                }),
+                'idol' => $this->transformer($info['idol'], function ($idol)
+                {
+                    return [
+                        'id' => (int)$idol['id'],
+                        'avatar' => $idol['avatar'],
+                        'name' => $idol['name'],
+                        'market_price' => sprintf("%.2f", $idol['market_price']),
+                        'stock_price' => sprintf("%.2f", $idol['stock_price']),
+                        'star_count' => sprintf("%.2f", $idol['star_count']),
+                        'is_locked' => floatval($idol['max_stock_count']) && floatval($idol['max_stock_count']) <= floatval($idol['star_count']),
+                        'fans_count' => intval($idol['fans_count']),
+                    ];
+                }),
+                'user' => $this->transformer($info['user'], function ($user)
+                {
+                    return [
+                        'id' => (int)$user['id'],
+                        'avatar' => $user['avatar'],
+                        'nickname' => $user['nickname'],
+                        'zone' => $user['zone']
+                    ];
+                })
+            ];
+        });
+    }
+
     public function dealList($list)
     {
         return $this->collection($list, function ($info)
