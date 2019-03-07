@@ -154,7 +154,7 @@ class TrendingService extends Repository
 
     public function getUserIds($page, $take)
     {
-        $ids = $this->RedisSort($this->trendingFlowUsersKey_v2(), function ()
+        $ids = $this->RedisSort($this->trendingFlowUsersKey(), function ()
         {
             return $this->computeUserIds();
         }, true);
@@ -185,7 +185,7 @@ class TrendingService extends Repository
             // $this->SortAdd($this->trendingIdsCacheKey('active', 0), $id);
             $this->SortAdd($this->trendingIdsCacheKey('hot', 0), $id);
         }
-        $this->SortAdd($this->trendingFlowUsersKey_v2(), $id);
+        $this->SortAdd($this->trendingFlowUsersKey(), $id);
     }
 
     public function update($id)
@@ -232,7 +232,7 @@ class TrendingService extends Repository
 //        $this->ListRemove($this->trendingIdsCacheKey('news', 0), $id);
 //        $this->SortRemove($this->trendingIdsCacheKey('active', 0), $id);
         $this->SortRemove($this->trendingIdsCacheKey('hot', 0), $id);
-        $this->SortRemove($this->trendingFlowUsersKey_v2(), $id);
+        $this->SortRemove($this->trendingFlowUsersKey(), $id);
     }
 
     public function deleteIndex($id)
@@ -266,11 +266,6 @@ class TrendingService extends Repository
     }
 
     protected function trendingFlowUsersKey()
-    {
-        return 'trending_' . $this->table . '_user_' . $this->userId . '_created_ids';
-    }
-
-    protected function trendingFlowUsersKey_v2()
     {
         return 'trending_' . $this->table . '_user_' . $this->userId . '_newest_ids';
     }
