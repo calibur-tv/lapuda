@@ -1933,6 +1933,10 @@ class CartoonRoleController extends Controller
         }
         $buy_count = $request->get('buy_count');
         $pay_price = $request->get('pay_price');
+        if (!floatval($pay_price))
+        {
+            return $this->resErrBad();
+        }
         if ($buy_count > $deal['last_count'])
         {
             return $this->resErrBad("只剩下{$deal['last_count']}份了");
