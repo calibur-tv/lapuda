@@ -426,7 +426,7 @@ class CartoonRoleController extends Controller
             {
                 continue;
             }
-            $deals['user'] = [
+            $deals[$i]['user'] = [
                 'zone' => $user['zone'],
                 'nickname' => $user['nickname'],
                 'avatar' => $user['avatar']
