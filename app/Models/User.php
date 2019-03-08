@@ -23,20 +23,17 @@ class User extends Authenticatable
         'birthday',
         'birth_secret',
         'sex_secret',
-        'coin_count',
         'state', // 0 正常，1 待审
         'password_change_at', // 密码最后修改时间
+        'last_notice_read_id',
         'remember_token',
         'phone',
         'is_admin',
         'faker',
         'qq_open_id',
         'qq_unique_id',
-        'last_notice_read_id',
         'wechat_unique_id',
         'wechat_open_id',
-        'light_count',
-        'coin_count_v2',
         'exp',
         'virtual_coin', // 团子
         'money_coin' // 光玉
