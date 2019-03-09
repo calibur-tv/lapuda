@@ -183,6 +183,14 @@ class CommentController extends Controller
         dispatch($job);
 
         $dontUpdateTrending = $type === 'role' || ($type === 'image' && $parent['is_cartoon']);
+        if (
+            $type === 'post' &&
+            $parent['created_at'] < strtotime('1 month ago') &&
+            $parent['user_id'] != $userId
+        )
+        {
+            $dontUpdateTrending = true;
+        }
 
         if (!$dontUpdateTrending)
         {
