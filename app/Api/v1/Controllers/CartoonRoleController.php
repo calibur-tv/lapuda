@@ -404,6 +404,7 @@ class CartoonRoleController extends Controller
         ]));
     }
 
+    // 交易的买卖记录
     public function getDealExchangeRecord(Request $request)
     {
         $dealId = $request->get('deal_id');
@@ -1413,6 +1414,54 @@ class CartoonRoleController extends Controller
         return $this->resNoContent();
     }
 
+    // 经纪人单方面解约
+    public function over_buy_request(Request $request)
+    {
+        $userId = $this->getAuthUserId();
+        $orderId = $request->get('order_id');
+        $order = VirtualIdolPorduct
+            ::where('id', $orderId)
+            ->first();
+
+        if (is_null($order))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if ($order->buyer_id != $userId)
+        {
+            return $this->resErrRole();
+        }
+
+        VirtualIdolPorduct
+            ::where('id', $orderId)
+            ->update([
+                'result' => 6
+            ]);
+
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $cacheKey = $cartoonRoleRepository->stock_product_list_cache_key(0);
+        if (Redis::EXISTS($cacheKey))
+        {
+            Redis::ZREM($cacheKey, $orderId);
+        }
+        $cacheKey = $cartoonRoleRepository->stock_product_list_cache_key($order->idol_id);
+        if (Redis::EXISTS($cacheKey))
+        {
+            Redis::ZREM($cacheKey, $orderId);
+        }
+
+        $postId = $order->product_id;
+        Post::where('id', $postId)
+            ->update([
+                'idol_id' => $postId
+            ]);
+
+        Redis::DEL("post_{$postId}");
+
+        return $this->resNoContent();
+    }
+
     // 创建一个采购订单，如果已有了，就更新
     public function create_buy_request(Request $request)
     {
@@ -1480,15 +1529,19 @@ class CartoonRoleController extends Controller
             return $this->resErrBad('不能采购自己的内容');
         }
 
-        $orderId = VirtualIdolPorduct
+        $oldOrder = VirtualIdolPorduct
             ::where('idol_id', $idolId)
             ->where('product_id', $product_id)
             ->where('product_type', $product_type)
-            ->pluck('id')
             ->first();
 
-        if ($orderId)
+        if ($oldOrder)
         {
+            $orderId = $oldOrder->id;
+            if (in_array($oldOrder->result, [1, 4, 6]))
+            {
+                return $this->resErrBad('不能重复交易');
+            }
             // 更新
             VirtualIdolPorduct
                 ::where('id', $orderId)

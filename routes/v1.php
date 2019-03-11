@@ -391,6 +391,8 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/delete_buy_request', 'App\Api\V1\Controllers\CartoonRoleController@delete_buy_request')->middleware(['jwt.auth']);
 
+        $api->post('/over_buy_request', 'App\Api\V1\Controllers\CartoonRoleController@over_buy_request')->middleware(['jwt.auth']);
+
         $api->post('/check_product_request', 'App\Api\V1\Controllers\CartoonRoleController@check_product_request')->middleware(['jwt.auth']);
 
         $api->get('/deal_list', 'App\Api\V1\Controllers\CartoonRoleController@getDealList');
