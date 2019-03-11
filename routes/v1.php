@@ -27,6 +27,7 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/bind_phone', 'App\Api\V1\Controllers\DoorController@bindPhone');
 
         $api->post('/login', 'App\Api\V1\Controllers\DoorController@login')->middleware(['geetest']);
+        $api->put('/login', 'App\Api\V1\Controllers\DoorController@login')->middleware(['geetest']);
 
         $api->post('/wechat_mini_app_login', 'App\Api\V1\Controllers\DoorController@wechatMiniAppLogin');
 
