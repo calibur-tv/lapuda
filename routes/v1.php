@@ -396,6 +396,8 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->post('/check_product_request', 'App\Api\V1\Controllers\CartoonRoleController@check_product_request')->middleware(['jwt.auth']);
 
+        $api->get('/get_idol_days_chart', 'App\Api\V1\Controllers\CartoonRoleController@idolSomeDayStockChartData');
+
         $api->get('/deal_list', 'App\Api\V1\Controllers\CartoonRoleController@getDealList');
         $api->post('/deal_list', 'App\Api\V1\Controllers\CartoonRoleController@getDealList');
 

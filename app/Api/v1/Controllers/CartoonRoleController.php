@@ -2328,6 +2328,18 @@ class CartoonRoleController extends Controller
         return $this->resOK('交易成功');
     }
 
+    // 偶像 N 天之内的线图数据
+    public function idolSomeDayStockChartData(Request $request)
+    {
+        $idolId = $request->get('idol_id');
+        $days = $request->get('days');
+
+        $cartoonRoleRepository = new CartoonRoleRepository();
+        $data = $cartoonRoleRepository->idolSomeDayStockChartData($idolId, $days);
+
+        return $this->resOK($data);
+    }
+
     // 获取我发起的交易列表
     public function getMyIdolDeal($id)
     {
