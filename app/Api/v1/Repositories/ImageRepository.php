@@ -21,7 +21,6 @@ use App\Models\Image;
 use App\Services\BaiduSearch\BaiduPush;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
 class ImageRepository extends Repository
@@ -254,10 +253,6 @@ class ImageRepository extends Repository
 
     public function checkHasPartCartoon($bangumiId, $part)
     {
-        Log::info('chech_has_part_cartoon', [
-            'bangumi_id' => $bangumiId,
-            'part' => $part
-        ]);
         return (int)Image::where('is_cartoon', 1)
             ->where('bangumi_id', $bangumiId)
             ->where('part', $part)
