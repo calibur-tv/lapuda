@@ -54,7 +54,7 @@
             "php artisan config:cache",
             "php artisan route:cache",
             "php artisan api:cache",
-            "php artisan queue:restart"
+            "source ~/.bashrc && php artisan queue:restart"
         ],
         "post-update-cmd": [
             "Illuminate\\Foundation\\ComposerScripts::postUpdate",
