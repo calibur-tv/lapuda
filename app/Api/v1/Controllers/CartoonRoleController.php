@@ -2335,7 +2335,14 @@ class CartoonRoleController extends Controller
         $days = $request->get('days');
 
         $cartoonRoleRepository = new CartoonRoleRepository();
-        $data = $cartoonRoleRepository->idolSomeDayStockChartData($idolId, $days);
+        if ($days == 1)
+        {
+            $data = $cartoonRoleRepository->idol24HourStockChartData($idolId);
+        }
+        else
+        {
+            $data = $cartoonRoleRepository->idolSomeDayStockChartData($idolId, $days);
+        }
 
         return $this->resOK($data);
     }
