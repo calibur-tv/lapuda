@@ -314,6 +314,53 @@ class VideoController extends Controller
         return $this->resOK($PRICE);
     }
 
+    // 通过 qshell 抓取网络视频资源
+    public function fetchVideoSrc(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer|min:1',
+            'src' => 'required|URL'
+        ]);
+
+        if ($validator->fails())
+        {
+            return $this->resErrParams($validator);
+        }
+
+        $user = $this->getAuthUser();
+        $userId = $user->id;
+        if ($userId !== 1)
+        {
+            return $this->resErrRole('该功能暂未开放');
+        }
+        $videoId = $request->get('id');
+        $src = $request->get('src');
+
+        $videoRepository = new VideoRepository();
+        $video = $videoRepository->item($videoId);
+        if (is_null($video))
+        {
+            return $this->resErrNotFound();
+        }
+
+        if (!$user->is_admin)
+        {
+            $bangumiManager = new BangumiManager();
+            if (!$bangumiManager->isALeader($userId))
+            {
+                return $this->resErrRole();
+            }
+        }
+
+        $job = (new \App\Jobs\Qiniu\FetchRemoteVideo(
+            $video,
+            $src
+        ));
+        dispatch($job);
+
+        return $this->resNoContent();
+    }
+
     /**
      * 记录视频播放信息
      *
