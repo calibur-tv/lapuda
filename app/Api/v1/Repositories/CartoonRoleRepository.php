@@ -138,7 +138,7 @@ class CartoonRoleRepository extends Repository
         {
             $arr = explode('-', $item);
             $result[] = [
-                'time' => $arr[0],
+                'time' => intval($arr[0]),
                 'value' => $arr[1]
             ];
         }
