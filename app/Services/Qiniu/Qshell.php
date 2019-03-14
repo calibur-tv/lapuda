@@ -23,7 +23,7 @@ class Qshell
 
         foreach ($commends as $script)
         {
-            shell_exec($script);
+            exec($script);
         }
 
         return $target;
@@ -56,7 +56,7 @@ class Qshell
 
         foreach ($commends as $script)
         {
-            shell_exec($script);
+            exec($script);
         }
 
         return $target;
