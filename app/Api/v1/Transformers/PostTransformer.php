@@ -189,7 +189,7 @@ class PostTransformer extends Transformer
         });
     }
 
-    protected function baseFlow($item)
+    public function baseFlow($item)
     {
         return $this->transformer($item, function ($item)
         {

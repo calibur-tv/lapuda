@@ -173,7 +173,7 @@ class UserRepository extends Repository
             return [
                 'list' => [],
                 'noMore' => true,
-                'total' => 0
+                'total' => $idsObj['total']
             ];
         }
 

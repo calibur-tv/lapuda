@@ -448,6 +448,8 @@ $api->version(['v1', 'latest'], function ($api)
     {
         $api->get('/list', 'App\Api\V1\Controllers\TrendingController@flowlist');
 
+        $api->get('/mixin', 'App\Api\V1\Controllers\TrendingController@mixinFlow');
+
         $api->post('/list', 'App\Api\V1\Controllers\TrendingController@flowlist');
 
         $api->get('/meta', 'App\Api\V1\Controllers\TrendingController@meta');

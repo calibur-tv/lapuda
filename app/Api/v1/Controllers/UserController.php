@@ -532,7 +532,7 @@ class UserController extends Controller
             return $this->resOK([
                 'list' => [],
                 'noMore' => true,
-                'total' => 0
+                'total' => $idsObj['total']
             ]);
         }
 

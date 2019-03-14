@@ -975,7 +975,7 @@ class CartoonRoleController extends Controller
             return $this->resOK([
                 'list' => [],
                 'noMore' => true,
-                'total' => 0
+                'total' => $idsObj['total']
             ]);
         }
 
@@ -1012,7 +1012,7 @@ class CartoonRoleController extends Controller
         {
             return $this->resOK([
                 'list' => [],
-                'total' => 0,
+                'total' => $idsObj['total'],
                 'noMore' => true
             ]);
         }
@@ -2692,7 +2692,7 @@ class CartoonRoleController extends Controller
             return $this->resOK([
                 'list' => [],
                 'noMore' => true,
-                'total' => 0
+                'total' => $idsObj['total']
             ]);
         }
 
