@@ -18,7 +18,7 @@ class Qshell
         $str = $this->str_rand();
         $target = $fileName ? $fileName : "user/qshell/upload/video/{$now}-{$str}.mp4";
         $commends = [
-            "/var/www/api/storage/qshell sync {$srcResUrl} clannader -k {$target}"
+            "qshell sync {$srcResUrl} video -k {$target}"
         ];
 
         foreach ($commends as $script)
@@ -46,7 +46,7 @@ class Qshell
         }
         $target = $fileName ? $fileName : "user/qshell/upload/image/{$now}-{$str}{$tail}";
         $commends = [
-            "/var/www/api/storage/qshell fetch {$srcResUrl} clannader -k {$target}"
+            "qshell fetch {$srcResUrl} clannader -k {$target}"
         ];
 
         if (config('app.env') !== 'production')
