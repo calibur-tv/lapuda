@@ -203,6 +203,7 @@ class BangumiSeasonController extends Controller
 
         Redis::DEL('bangumi_season:bangumi:'.$bangumiId);
         Redis::DEL("bangumi_{$bangumiId}_videos");
+        Redis::DEL('bangumi_release_list');
 
         return $this->resNoContent();
     }
