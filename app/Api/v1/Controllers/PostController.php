@@ -17,6 +17,7 @@ use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Services\Toggle\Post\PostRewardService;
 use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Services\UserLevel;
+use App\Api\V1\Transformers\BangumiTransformer;
 use App\Api\V1\Transformers\PostTransformer;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Api\V1\Repositories\BangumiRepository;
@@ -37,6 +38,163 @@ use Mews\Purifier\Facades\Purifier;
  */
 class PostController extends Controller
 {
+    /**
+     * @param Request $request
+     */
+    public function show_cache(Request $request, $id)
+    {
+        $postRepository = new PostRepository();
+        $post = $postRepository->item($id, true);
+        if (is_null($post))
+        {
+            return $this->resErrNotFound('不存在的帖子');
+        }
+
+        if ($post['deleted_at'] && !$request->get('showDelete'))
+        {
+            if ($post['state'])
+            {
+                return $this->resErrLocked();
+            }
+
+            return $this->resErrNotFound();
+        }
+
+        $userRepository = new UserRepository();
+        $author = $userRepository->item($post['user_id']);
+        if (is_null($author))
+        {
+            return $this->resErrNotFound('不存在的用户');
+        }
+
+        $bangumiRepository = new BangumiRepository();
+        $bangumi = $bangumiRepository->item($post['bangumi_id']);
+        if (is_null($bangumi))
+        {
+            return $this->resErrNotFound('不存在的番剧');
+        }
+
+        $viewCounter = new PostViewCounter();
+        $post['view_count'] = $viewCounter->get($id);
+
+        $idol = null;
+        if ($post['idol_id'])
+        {
+            $cartoonRoleRepository = new CartoonRoleRepository();
+            $idol = $cartoonRoleRepository->item($post['idol_id']);
+            if ($idol)
+            {
+                $idol = [
+                    'id' => $idol['id'],
+                    'name' => $idol['name'],
+                    'avatar' => $idol['avatar']
+                ];
+            }
+        }
+
+        $postTransformer = new PostTransformer();
+        $userTransformer = new UserTransformer();
+        $bangumiTransformer = new BangumiTransformer();
+
+        return $this->resOK([
+            'post' => $postTransformer->show_cache($post),
+            'user' => $userTransformer->item($author),
+            'idol' => $idol,
+            'bangumi' => $bangumiTransformer->meta($bangumi),
+            'share_data' => [
+                'title' => $post['title'] ?: '来自calibur分享的帖子~',
+                'desc' => $post['desc'] ?: '[图片]',
+                'link' => $this->cacheShareLink('post', $id),
+                'image' => (count($post['images']) ? $post['images'][0]['url'] : $bangumi['avatar']) . '-share120jpg'
+            ]
+        ]);
+    }
+
+    /**
+     * @param Request $request
+     * @param $id
+     */
+    public function show_meta(Request $request, $id)
+    {
+        $postRepository = new PostRepository();
+        $post = $postRepository->item($id, true);
+        if (is_null($post))
+        {
+            return $this->resErrNotFound('不存在的帖子');
+        }
+
+        $userId = $this->getAuthUserId();
+        $postCommentService = new PostCommentService();
+        $commented = $postCommentService->checkCommented($userId, $id);
+        $comment_count = $postCommentService->getCommentCount($id);
+
+        if ($post['is_creator'])
+        {
+            $postRewardService = new PostRewardService();
+            $rewarded = $postRewardService->check($userId, $id);
+            $reward_users = $postRewardService->users($id);
+        }
+        else
+        {
+            $rewarded = false;
+            $reward_users = [
+                'list' => [],
+                'total' => 0,
+                'noMore' => true
+            ];
+        }
+
+        $postLikeService = new PostLikeService();
+        $postMarkService = new PostMarkService();
+        $marked = $postMarkService->check($userId, $id);
+        $mark_users = $postMarkService->users($id);
+        $liked = $postLikeService->check($userId, $id);
+        $like_users = $postLikeService->users($id);
+
+        $viewCounter = new PostViewCounter();
+        $view_count = (int)$viewCounter->add($id);
+
+        $virtualIdolManager = new VirtualIdolManager();
+        $is_idol_manager = $virtualIdolManager->isAManager($userId);
+
+        return [
+            'state' => $post['state'],
+            'deleted_at' => $post['deleted_at'],
+            'commented' => $commented,
+            'comment_count' => $comment_count,
+            'rewarded' => $rewarded,
+            'reward_users' => $reward_users,
+            'marked' => $marked,
+            'mark_users' => $mark_users,
+            'liked' => $liked,
+            'like_users' => $like_users,
+            'view_count' => $view_count,
+            'is_idol_manager' => $is_idol_manager
+        ];
+    }
+
+    /**
+     * @param Request $request
+     * @param $id
+     */
+    public function get_preview_images(Request $request, $id)
+    {
+        $postRepository = new PostRepository();
+        $post = $postRepository->item($id);
+        if (is_null($post))
+        {
+            return $this->resOK([]);
+        }
+
+        $preview_images = $postRepository->previewImages(
+            $id,
+            $post['user_id'],
+            intval($request->get('only')) ?: 0
+        );
+
+        return $this->resOK($preview_images);
+    }
+
     /**
      * 发帖时可选的所有标签
      *

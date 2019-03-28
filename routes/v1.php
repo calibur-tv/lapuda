@@ -256,6 +256,12 @@ $api->version(['v1', 'latest'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\PostController@show')->middleware(['showDelete']);
 
+            $api->get('/show_cache', 'App\Api\V1\Controllers\PostController@show_cache')->middleware(['showDelete']);
+
+            $api->get('/show_meta', 'App\Api\V1\Controllers\PostController@show_meta');
+
+            $api->get('/get_preview_images', 'App\Api\V1\Controllers\PostController@get_preview_images');
+
             $api->post('/deletePost', 'App\Api\V1\Controllers\PostController@deletePost')->middleware(['jwt.auth']);
         });
 

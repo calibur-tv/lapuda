@@ -169,4 +169,14 @@ class BangumiTransformer extends Transformer
             'summary' => $bangumi['summary']
         ];
     }
+
+    public function meta($bangumi)
+    {
+        return [
+            'id' => (int)$bangumi['id'],
+            'name' => $bangumi['name'],
+            'avatar' => $bangumi['avatar'],
+            'summary' => $bangumi['summary']
+        ];
+    }
 }

@@ -1025,6 +1025,7 @@ class CartoonRoleController extends Controller
         else
         {
             $list = $postRepository->bangumiFlow($idsObj['ids']);
+            $result = [];
             foreach ($list as $i => $post)
             {
                 $role = $cartoonRoleRepository->item($post['idol_id']);
@@ -1032,8 +1033,10 @@ class CartoonRoleController extends Controller
                 {
                     continue;
                 }
-                $list[$i]['idol'] = $role;
+                $post['idol'] = $role;
+                $result[] = $post;
             }
+            $list = $result;
         }
         $postTransformer = new PostTransformer();
         $postLikeService = new PostLikeService();

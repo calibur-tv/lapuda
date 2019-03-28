@@ -12,6 +12,26 @@ namespace App\Api\V1\Transformers;
 
 class PostTransformer extends Transformer
 {
+    public function show_cache($data)
+    {
+        return $this->transformer($data, function ($post)
+        {
+            return [
+                'id' => (int)$post['id'],
+                'title' => $post['title'] ?: '标题什么的不重要~',
+                'desc' => $post['desc'],
+                'content' => $post['content'],
+                'images' => $post['images'],
+                'view_count' => (int)$post['view_count'],
+                'tags' => isset($post['tags']) ? $post['tags'] : [],
+                'is_creator' => (boolean)$post['is_creator'],
+                'created_at' => $post['created_at'],
+                'updated_at' => $post['updated_at'],
+                'deleted_at' => $post['deleted_at']
+            ];
+        });
+    }
+
     public function show($post)
     {
         return $this->transformer($post, function ($post)

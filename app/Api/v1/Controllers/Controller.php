@@ -181,4 +181,9 @@ class Controller extends BaseController
 
         return $link;
     }
+
+    protected function cacheShareLink($model, $id)
+    {
+        return "https://m.calibur.tv/{$model}/{$id}";
+    }
 }
