@@ -874,6 +874,7 @@ class BangumiController extends Controller
 
             Redis::DEL('bangumi_'.$bangumiId);
             Redis::DEL('bangumi_'.$bangumiId.'_videos');
+            Redis::DEL('bangumi_release_list');
 
             $bangumiRepository = new BangumiRepository();
             $bangumiRepository->migrateSearchIndex('U', $bangumiId);
