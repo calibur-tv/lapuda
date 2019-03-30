@@ -855,7 +855,8 @@ class BangumiController extends Controller
             ]) : 'null',
             'has_cartoon' => $request->get('has_cartoon'),
             'has_video' => $request->get('has_video'),
-            'has_score' => $request->get('has_score')
+            'has_score' => $request->get('has_score'),
+            'type' => $request->get('type')
         ];
 
         $result = $bangumi->update($arr);

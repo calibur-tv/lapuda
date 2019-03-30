@@ -46,7 +46,8 @@ class BangumiRepository extends Repository
         {
             $begin = mktime(0, 0, 0, 1, 1, $year);
             $end = mktime(0, 0, 0, 1, 1, $year + 1);
-            $ids = Bangumi::whereRaw('published_at >= ? and published_at < ?', [$begin, $end])
+            $ids = Bangumi
+                ::whereRaw('published_at >= ? and published_at < ? and type', [$begin, $end, 0])
                 ->latest('published_at')
                 ->pluck('id');
 
