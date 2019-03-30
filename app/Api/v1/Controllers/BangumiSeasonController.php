@@ -13,6 +13,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 
+/**
+ * @Resource("番剧季度相关接口")
+ */
 class BangumiSeasonController extends Controller
 {
     /**
