@@ -461,6 +461,8 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/list', 'App\Api\V1\Controllers\TrendingController@flowlist');
 
         $api->get('/meta', 'App\Api\V1\Controllers\TrendingController@meta');
+
+        $api->get('/recommended', 'App\Api\V1\Controllers\TrendingController@recommended');
     });
 
     $api->group(['prefix' => '/toggle'], function ($api)
@@ -497,6 +499,13 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/view', 'App\Api\V1\Controllers\CmController@cmView');
 
             $api->post('/click', 'App\Api\V1\Controllers\CmController@cmClick');
+        });
+
+        $api->group(['prefix' => '/recommended'], function ($api)
+        {
+            $api->post('/set', 'App\Api\V1\Controllers\CmController@setRecommendedBangumi');
+
+            $api->post('/del', 'App\Api\V1\Controllers\CmController@delRecommendedBangumi');
         });
     });
 

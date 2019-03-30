@@ -6,6 +6,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\QuestionRepository;
+use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Comment\ImageCommentService;
@@ -18,6 +19,7 @@ use App\Api\V1\Services\Counter\Stats\TotalImageCount;
 use App\Api\V1\Services\Counter\Stats\TotalPostCount;
 use App\Api\V1\Services\Counter\Stats\TotalQuestionCount;
 use App\Api\V1\Services\Counter\Stats\TotalScoreCount;
+use App\Api\V1\Services\Tag\IndexTagService;
 use App\Api\V1\Services\Toggle\Image\ImageLikeService;
 use App\Api\V1\Services\Toggle\Image\ImageMarkService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
@@ -306,6 +308,54 @@ class TrendingController extends Controller
             'collection' => $collectionCount->get(),
             'total' => $totalCount->get()
         ]);
+    }
+
+    // 推荐板块
+    public function recommended(Request $request)
+    {
+        $repository = new Repository();
+        $isAdmin = $request->get('is_admin') ?: '0';
+        $result = $repository->Cache("index-recommended-bangumis-{$isAdmin}", function () use ($isAdmin)
+        {
+            $indexTag = new IndexTagService();
+            $bangumiRepository = new BangumiRepository();
+            $allTag = $indexTag->all();
+            $result = [];
+            foreach ($allTag as $tag)
+            {
+                $item['tag'] = $tag;
+                $bangumis = [];
+                $bangumiIds = $indexTag->tagModals($tag->id);
+                foreach ($bangumiIds as $bid)
+                {
+                    $bangumi = $bangumiRepository->item($bid);
+                    if (is_null($bangumi))
+                    {
+                        continue;
+                    }
+                    $bangumis[] = [
+                        'id' => $bangumi['id'],
+                        'name' => $bangumi['name'],
+                        'avatar' => $bangumi['avatar']
+                    ];
+                }
+                $item['bangumis'] = $bangumis;
+
+                $result[] = $item;
+            }
+
+            if ($isAdmin === '0')
+            {
+                return array_filter($result, function ($item)
+                {
+                    return count($item['bangumis']);
+                });
+            }
+
+            return $result;
+        });
+
+        return $this->resOK($result);
     }
 
     protected function getTrendingServiceByType($type, $bangumiId = 0, $userId = 0)

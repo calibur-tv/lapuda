@@ -76,13 +76,14 @@ class TagService extends Repository
             return '这个标签已被移除了';
         }
 
-        if ($this->max_count && $this->max_count - count($this->getModalTagIds($modelId)) <= 1)
+        if ($this->max_count && $this->max_count <= count($this->getModalTagIds($modelId)))
         {
             return '最多允许设置' . $this->max_count . '个标签';
         }
 
-        DB::table($this->relation_table)
-            ->inset([
+        DB
+            ::table($this->relation_table)
+            ->insert([
                 'model_id' => $modelId,
                 'tag_id' => $tagId
             ]);
@@ -208,6 +209,16 @@ class TagService extends Repository
         return true;
     }
 
+    public function tagModals($tagId)
+    {
+        return DB
+            ::table($this->relation_table)
+            ->where('tag_id', $tagId)
+            ->pluck('model_id')
+            ->toArray();
+    }
+
+
     protected function valid($tagId)
     {
         return (boolean)DB::table($this->tag_table)
@@ -229,7 +240,8 @@ class TagService extends Repository
             return [];
         }
 
-        return DB::table($this->relation_table)
+        return DB
+            ::table($this->relation_table)
             ->where('model_id', $modelId)
             ->pluck('tag_id')
             ->toArray();

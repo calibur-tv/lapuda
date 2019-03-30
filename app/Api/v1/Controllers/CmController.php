@@ -5,9 +5,11 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\Repository;
 use App\Api\V1\Services\Counter\CmLoopClickCounter;
 use App\Api\V1\Services\Counter\CmLoopViewCounter;
+use App\Api\V1\Services\Tag\IndexTagService;
 use App\Models\Looper;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redis;
 
 /**
  * @Resource("营销相关接口")
@@ -85,5 +87,44 @@ class CmController extends Controller
         $cmLoopClickCounter->add($id);
 
         return $this->resNoContent();
+    }
+
+
+    // 设置首页推荐
+    public function setRecommendedBangumi(Request $request)
+    {
+        $tag_id = $request->get('tag_id');
+        $bangumi_id = $request->get('bangumi_id');
+
+        $indexTag = new IndexTagService();
+        $result = $indexTag->append($bangumi_id, $tag_id);
+
+        if (true === $result)
+        {
+            Redis::DEL('index-recommended-bangumis-0');
+            Redis::DEL('index-recommended-bangumis-1');
+            return $this->resNoContent();
+        }
+
+        return $this->resErrBad($result);
+    }
+
+    // 去除首页推荐
+    public function delRecommendedBangumi(Request $request)
+    {
+        $tag_id = $request->get('tag_id');
+        $bangumi_id = $request->get('bangumi_id');
+
+        $indexTag = new IndexTagService();
+        $result = $indexTag->remove($bangumi_id, $tag_id);
+
+        if (true === $result)
+        {
+            Redis::DEL('index-recommended-bangumis-0');
+            Redis::DEL('index-recommended-bangumis-1');
+            return $this->resNoContent();
+        }
+
+        return $this->resErrBad();
     }
 }
