@@ -618,15 +618,30 @@ class ImageController extends Controller
      *      @Response(200, body={"code": 0, "data": "相册数组"})
      * })
      */
-    public function userAlbums()
+    public function userAlbums(Request $request)
     {
         $userId = $this->getAuthUserId();
+        $bangumiId = $request->get('bangumi_id') ?: 0;
+        $isCartoon = $request->get('is_cartoon') ?: false;
 
-        $albumIds = Image::where('user_id', $userId)
-            ->where('is_album', 1)
-            ->where('state', 0)
-            ->pluck('id')
-            ->toArray();
+        if ($bangumiId && $isCartoon)
+        {
+            $albumIds = Image::where('user_id', $userId)
+                ->where('is_album', 1)
+                ->where('is_cartoon', 1)
+                ->where('bangumi_id', $bangumiId)
+                ->where('state', 0)
+                ->pluck('id')
+                ->toArray();
+        }
+        else
+        {
+            $albumIds = Image::where('user_id', $userId)
+                ->where('is_album', 1)
+                ->where('state', 0)
+                ->pluck('id')
+                ->toArray();
+        }
 
         if (empty($albumIds))
         {
@@ -779,7 +794,7 @@ class ImageController extends Controller
         $shareData = [
             'title' => $image['name'] ?: '来自calibur分享的相册~',
             'desc' => "《{$bangumi['name']}》",
-            'link' => "https://m.calibur.tv/pin/{$image['id']}",
+            'link' => $this->createShareLink('pin', $id, $userId),
             'image' => $image['url'] . '-share120jpg'
         ];
         $image['share_data'] = $shareData;

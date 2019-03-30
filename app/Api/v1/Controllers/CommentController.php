@@ -105,6 +105,10 @@ class CommentController extends Controller
 
         $type = $request->get('type');
         $id = $request->get('id');
+        if ($type !== 'post')
+        {
+            $images = [];
+        }
 
         $commentService = $this->getCommentServiceByType($type);
         if (is_null($commentService))
@@ -179,6 +183,14 @@ class CommentController extends Controller
         dispatch($job);
 
         $dontUpdateTrending = $type === 'role' || ($type === 'image' && $parent['is_cartoon']);
+        if (
+            $type === 'post' &&
+            $parent['created_at'] < strtotime('1 month ago') &&
+            $parent['user_id'] != $userId
+        )
+        {
+            $dontUpdateTrending = true;
+        }
 
         if (!$dontUpdateTrending)
         {
@@ -636,7 +648,11 @@ class CommentController extends Controller
             $repository = $this->getRepositoryByType($type);
             $parent = $repository->item($comment['modal_id']);
             // 不是主题的作者
-            if ($parent['user_id'] != $userId)
+            if ($type === 'role')
+            {
+                $isMaster = false;
+            }
+            else if ($parent['user_id'] != $userId)
             {
                 return $this->resErrRole();
             }

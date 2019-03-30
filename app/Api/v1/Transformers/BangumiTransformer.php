@@ -55,12 +55,14 @@ class BangumiTransformer extends Transformer
                 'followed' => $bangumi['followed'],
                 'scored' => $bangumi['scored'],
                 'is_master' => $bangumi['is_master'],
+                'is_leader' => $bangumi['is_leader'],
                 'tags' => $bangumi['tags'],
                 'follow_users' => $bangumi['follow_users'],
                 'manager_users' => $bangumi['manager_users'],
                 'has_video' => (boolean)$bangumi['has_video'],
                 'has_cartoon' => (boolean)$bangumi['has_cartoon'],
-                'power' => $bangumi['power']
+                'power' => $bangumi['power'],
+                'qq_group' => $bangumi['qq_group']
             ];
         });
     }
@@ -159,6 +161,16 @@ class BangumiTransformer extends Transformer
     }
 
     public function search($bangumi)
+    {
+        return [
+            'id' => (int)$bangumi['id'],
+            'name' => $bangumi['name'],
+            'avatar' => $bangumi['avatar'],
+            'summary' => $bangumi['summary']
+        ];
+    }
+
+    public function meta($bangumi)
     {
         return [
             'id' => (int)$bangumi['id'],

@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 
+/**
+ * @Resource("友情链接相关接口")
+ */
 class FriendLinkController extends Controller
 {
     public function list()

@@ -76,6 +76,10 @@ class OwnerService extends Repository
 
     public function isAManager($userId)
     {
+        if (!$userId)
+        {
+            return false;
+        }
         return (boolean)DB
             ::table($this->owner_table)
             ->where('user_id', $userId)
@@ -84,6 +88,10 @@ class OwnerService extends Repository
 
     public function isALeader($userId)
     {
+        if (!$userId)
+        {
+            return false;
+        }
         return (boolean)DB
             ::table($this->owner_table)
             ->where('user_id', $userId)
@@ -249,7 +257,8 @@ class OwnerService extends Repository
 
         return array_map(function ($item)
         {
-            return $item->user['id'];
+            $user = json_decode(json_encode($item), true)['user'];
+            return $user['id'];
 
         }, $idsObj['list']);
     }
@@ -294,6 +303,15 @@ class OwnerService extends Repository
                 ->get()
                 ->toArray();
         });
+    }
+
+    public function workList($userId)
+    {
+        return DB
+            ::table($this->owner_table)
+            ->where('user_id', $userId)
+            ->pluck('modal_id')
+            ->toArray();
     }
 
     public function deleteLog($userId, $logId)

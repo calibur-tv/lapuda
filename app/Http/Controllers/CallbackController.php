@@ -9,6 +9,7 @@
 namespace App\Http\Controllers;
 
 use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\VirtualCoinService;
 use App\Models\User;
 use App\Models\UserZone;
 use App\Models\Video;
@@ -203,7 +204,8 @@ class CallbackController extends Controller
         }
 
         $openId = $user['id'];
-        $isNewUser = $this->isNewUser('qq_open_id', $openId);
+        $uniqueId = $user['unionid'];
+        $isNewUser = $this->isNewUser('qq_unique_id', $uniqueId);
 
         if ($from === 'bind')
         {
@@ -227,7 +229,8 @@ class CallbackController extends Controller
             User
                 ::where('id', $userId)
                 ->update([
-                   'qq_open_id' => $openId
+                    'qq_open_id' => $openId,
+                    'qq_unique_id' => $uniqueId
                 ]);
 
             Redis::DEL('user_' . $userId);
@@ -244,14 +247,28 @@ class CallbackController extends Controller
                 'nickname' => $nickname,
                 'zone' => $zone,
                 'qq_open_id' => $openId,
+                'qq_unique_id' => $uniqueId,
                 'password' => bcrypt('calibur')
             ];
 
             try
             {
                 $user = User::create($data);
+                $newUserId = $user->id;
                 $userRepository = new UserRepository();
-                $userRepository->migrateSearchIndex('C', $user->id);
+                $userRepository->migrateSearchIndex('C', $newUserId);
+
+                $invite = $request->get('invite');
+                if ($invite)
+                {
+                    $invoter = $userRepository->item($invite);
+                    if ($invoter)
+                    {
+                        $virtualCoinService = new VirtualCoinService();
+                        $virtualCoinService->inviteUser($invite, $newUserId);
+                        $virtualCoinService->invitedNewbieCoinGift($invite, $newUserId);
+                    }
+                }
             }
             catch (\Exception $e)
             {
@@ -264,8 +281,13 @@ class CallbackController extends Controller
         {
             // signIn
             $user = User
-                ::where('qq_open_id', $openId)
+                ::where('qq_unique_id', $uniqueId)
                 ->first();
+
+            if (is_null($user))
+            {
+                return redirect('https://www.calibur.tv/callback/auth-error?message=' . '这个用户消失了');
+            }
         }
 
         $userId = $user->id;
@@ -353,8 +375,21 @@ class CallbackController extends Controller
             try
             {
                 $user = User::create($data);
+                $newUserId = $user->id;
                 $userRepository = new UserRepository();
-                $userRepository->migrateSearchIndex('C', $user->id);
+                $userRepository->migrateSearchIndex('C', $newUserId);
+
+                $invite = $request->get('invite');
+                if ($invite)
+                {
+                    $invoter = $userRepository->item($invite);
+                    if ($invoter)
+                    {
+                        $virtualCoinService = new VirtualCoinService();
+                        $virtualCoinService->inviteUser($invite, $newUserId);
+                        $virtualCoinService->invitedNewbieCoinGift($invite, $newUserId);
+                    }
+                }
             }
             catch (\Exception $e)
             {
@@ -456,8 +491,21 @@ class CallbackController extends Controller
             try
             {
                 $user = User::create($data);
+                $newUserId = $user->id;
                 $userRepository = new UserRepository();
-                $userRepository->migrateSearchIndex('C', $user->id);
+                $userRepository->migrateSearchIndex('C', $newUserId);
+
+                $invite = $request->get('invite');
+                if ($invite)
+                {
+                    $invoter = $userRepository->item($invite);
+                    if ($invoter)
+                    {
+                        $virtualCoinService = new VirtualCoinService();
+                        $virtualCoinService->inviteUser($invite, $newUserId);
+                        $virtualCoinService->invitedNewbieCoinGift($invite, $newUserId);
+                    }
+                }
             }
             catch (\Exception $e)
             {

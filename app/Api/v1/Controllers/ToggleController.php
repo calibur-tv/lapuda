@@ -10,6 +10,7 @@ namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\AnswerRepository;
 use App\Api\V1\Repositories\BangumiRepository;
+use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\QuestionRepository;
@@ -17,7 +18,6 @@ use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Activity\BangumiActivity;
-use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Owner\QuestionLog;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiFollowService;
@@ -37,10 +37,14 @@ use App\Api\V1\Services\Toggle\Score\ScoreRewardService;
 use App\Api\V1\Services\Toggle\Video\VideoMarkService;
 use App\Api\V1\Services\Toggle\Video\VideoRewardService;
 use App\Api\V1\Services\UserLevel;
+use App\Api\V1\Services\VirtualCoinService;
 use App\Api\V1\Services\Vote\AnswerVoteService;
-use App\Models\User;
+use App\Models\CartoonRole;
+use App\Models\VirtualIdolPorduct;
 use App\Services\Trial\UserIpAddress;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 /**
  * @Resource("用户社交点击相关接口")
@@ -456,9 +460,9 @@ class ToggleController extends Controller
             return $this->resErrBad();
         }
 
-        $lightCoinService = new LightCoinService();
-        $banlance = $lightCoinService->hasMoneyCount($user);
-        if (!$banlance)
+        $virtualCoinService = new VirtualCoinService();
+        $balance = $virtualCoinService->hasCoinCount($user);
+        if ($balance < 1)
         {
             return $this->resErrRole('团子不足');
         }
@@ -492,18 +496,58 @@ class ToggleController extends Controller
             return $this->resErrRole('已打赏过的内容');
         }
 
-        $result = $lightCoinService->rewardUserContent([
-            'from_user_id' => $userId,
-            'to_user_id' => $item['user_id'],
-            'content_id' => $item['id'],
-            'content_type' => $type
-        ]);
-        if (!$result)
+        DB::beginTransaction();
+        try
         {
+            $amount = 1;
+            if ($type === 'post' && $item['idol_id'])
+            {
+                $radio = VirtualIdolPorduct
+                    ::where('result', 1)
+                    ->where('product_type', 0)
+                    ->where('product_id', $id)
+                    ->pluck('income_ratio')
+                    ->first();
+
+                if (is_null($radio))
+                {
+                    return $this->resErrServiceUnavailable('系统升级中');
+                }
+                $rateAmount = 0.01 * $radio;
+                $amount = 1 - $rateAmount;
+                $result = $virtualCoinService->rewardToIdolProduct($type, $userId, $item['idol_id'], $id, $rateAmount);
+                if (!$result)
+                {
+                    return $this->resErrServiceUnavailable('系统升级中');
+                }
+
+                CartoonRole
+                    ::where('id', $item['idol_id'])
+                    ->increment('total_income', $rateAmount);
+
+                $cartoonRoleRepository = new CartoonRoleRepository();
+                $cacheKey = $cartoonRoleRepository->idolItemCacheKey($item['idol_id']);
+                if (Redis::EXISTS($cacheKey))
+                {
+                    Redis::HINCRBYFLOAT($cacheKey, 'total_income', $rateAmount);
+                }
+            }
+            $result = $virtualCoinService->rewardUserContent($type, $userId, $item['user_id'], $item['id'], $amount);
+            if (!$result)
+            {
+                return $this->resErrServiceUnavailable('系统升级中');
+            }
+
+            $rewardService->toggle($userId, $id);
+
+            DB::commit();
+        }
+        catch (\Exception $e)
+        {
+            DB::rollBack();
             return $this->resErrServiceUnavailable('系统升级中');
         }
 
-        $rewardService->toggle($userId, $id);
         $userLevel = new UserLevel();
         $job = (new \App\Jobs\Notification\Create(
             $type . '-reward',
@@ -758,6 +802,22 @@ class ToggleController extends Controller
             default:
                 return null;
                 break;
+        }
+    }
+
+    // 四舍六入算法
+    protected function calculate($num, $precision = 2)
+    {
+        $pow = pow(10, $precision);
+        if (
+            (floor($num * $pow * 10) % 5 == 0) &&
+            (floor($num * $pow * 10) == $num * $pow * 10) &&
+            (floor($num * $pow) % 2 == 0)
+        )
+        {
+            return floor($num * $pow) / $pow;
+        } else {
+            return round($num, $precision);
         }
     }
 }

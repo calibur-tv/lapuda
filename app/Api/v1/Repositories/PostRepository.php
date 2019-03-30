@@ -10,14 +10,17 @@ namespace App\Api\V1\Repositories;
 
 
 use App\Api\V1\Services\Comment\PostCommentService;
+use App\Api\V1\Services\Owner\BangumiManager;
 use App\Api\V1\Services\Tag\PostTagService;
 use App\Api\V1\Services\Toggle\Post\PostLikeService;
 use App\Api\V1\Services\Toggle\Post\PostMarkService;
 use App\Api\V1\Services\Toggle\Post\PostRewardService;
 use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Services\UserLevel;
+use App\Models\Image;
 use App\Models\Post;
 use App\Models\PostImages;
+use App\Models\Score;
 use App\Services\BaiduSearch\BaiduPush;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -154,13 +157,15 @@ class PostRepository extends Repository
         }
 
         $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
+        $bangumiManager = new BangumiManager();
+        $addTohomepage = $bangumiManager->isAManager($post['user_id']);
         if ($publish)
         {
-            $postTrendingService->create($id, false);
+            $postTrendingService->create($id, true, $addTohomepage);
         }
         else
         {
-            $postTrendingService->update($id, false);
+            $postTrendingService->update($id, $addTohomepage);
         }
 
         $baiduPush = new BaiduPush();
@@ -231,10 +236,12 @@ class PostRepository extends Repository
 
         $isDeleted = $post['deleted_at'];
         $postTrendingService = new PostTrendingService($post['bangumi_id'], $post['user_id']);
+        $bangumiManager = new BangumiManager();
+        $addTohomepage = $bangumiManager->isAManager($post['user_id']);
 
         if ($isDeleted)
         {
-            $postTrendingService->create($id, 1 == $post['flow_status']);
+            $postTrendingService->create($id, true, $addTohomepage);
 
             $this->migrateSearchIndex('C', $id, false);
         }
@@ -250,7 +257,7 @@ class PostRepository extends Repository
         {
             if (!$isDeleted)
             {
-                $postTrendingService->update($id, 1 == $post['flow_status']);
+                $postTrendingService->update($id, $addTohomepage);
             }
             Redis::DEL($this->itemCacheKey($id));
         }
@@ -285,5 +292,78 @@ class PostRepository extends Repository
             ->take($limit)
             ->pluck('id')
             ->toArray();
+    }
+
+    public function mixinFlowIds($seenIds, $take, $bangumiId = 0)
+    {
+        $ids = $this->RedisSort($this->mixinFlowIdsCacheKey($bangumiId), function () use ($bangumiId)
+        {
+            $begin = Carbon::now()->addDays(-30);
+            $post = Post
+                ::where('state', 0)
+                ->where('updated_at', '>', $begin)
+                ->when($bangumiId, function ($query) use ($bangumiId)
+                {
+                    return $query
+                        ->where('bangumi_id', $bangumiId)
+                        ->whereNull('top_at');
+                })
+                ->orderBy('updated_at', 'desc')
+                ->pluck('updated_at', 'id');
+
+            $image = Image
+                ::where('state', 0)
+                ->where('updated_at', '>', $begin)
+                ->when($bangumiId, function ($query) use ($bangumiId)
+                {
+                    return $query->where('bangumi_id', $bangumiId);
+                })
+                ->where('is_album', 0)
+                ->orWhere($bangumiId ? [
+                    ['image_ids', '<>', null],
+                    ['is_cartoon', 0],
+                    ['bangumi_id', $bangumiId]
+                ] : [
+                    ['image_ids', '<>', null],
+                    ['is_cartoon', 0]
+                ])
+                ->orderBy('updated_at', 'desc')
+                ->pluck('updated_at', 'id');
+
+            $score = Score
+                ::where('state', 0)
+                ->when($bangumiId, function ($query) use ($bangumiId)
+                {
+                    return $query->where('bangumi_id', $bangumiId);
+                })
+                ->whereNotNull('published_at')
+                ->orderBy('updated_at', 'desc')
+                ->pluck('updated_at', 'id');
+
+            $result = [];
+            foreach ($post as $id => $time)
+            {
+                $result["p-{$id}"] = $time;
+            }
+
+            foreach ($image as $id => $time)
+            {
+                $result["i-{$id}"] = $time;
+            }
+
+            foreach ($score as $id => $time)
+            {
+                $result["s-{$id}"] = $time;
+            }
+
+            return $result;
+        }, true);
+
+        return $this->filterIdsBySeenIds($ids, $seenIds, $take);
+    }
+
+    public function mixinFlowIdsCacheKey($bangumi_id = 0)
+    {
+        return "mixin_flow_list_bangumi_{$bangumi_id}_ids";
     }
 }

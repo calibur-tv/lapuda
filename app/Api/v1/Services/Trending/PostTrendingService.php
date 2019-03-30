@@ -136,7 +136,7 @@ class PostTrendingService extends TrendingService
                 $this->SortAdd($this->trendingIdsCacheKey('hot', 0), $id);
             }
         }
-        $this->ListInsertBefore($this->trendingFlowUsersKey(), $id);
+        $this->SortAdd($this->trendingFlowUsersKey(), $id);
     }
 
     public function update($id, $addToHomepage = true)
@@ -166,7 +166,7 @@ class PostTrendingService extends TrendingService
         return Post
             ::where('user_id', $this->userId)
             ->orderBy('created_at', 'desc')
-            ->pluck('id');
+            ->pluck('created_at', 'id');
     }
 
     public function checkCanUpdateBangumiIds($id)

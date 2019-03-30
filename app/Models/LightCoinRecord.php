@@ -34,15 +34,22 @@ class LightCoinRecord extends Model
      * 9 => 应援偶像
      * 10 => 提现
      * 11 => 发表的内容被删除导致光玉被冻结
-     * 12 => 账号被封禁然后撤销应援
+     * 12 => 账户被封禁
+     * 13 => 给用户赠送团子
+     * 14 => 给用户赠送光玉
+     * 15 => 活跃用户送光玉
+     * 16 => 活跃吧主送光玉
+     * 17 => 被别人邀请送团子
+     * 18 => 承包季度视频
+     * 19 => 撤销应援
      */
     protected $fillable = [
-        'coin_id',          // 货币的id
-        'order_id',         // 订单的id
-        'from_user_id',     // 消费者id
-        'to_user_id',       // 收费者id
-        'to_product_id',    // 产品id
-        'to_product_type',  // 产品的类型
-        'order_amount'      // 订单的金额
+        'coin_id', // 货币的id
+        'order_id', // 订单的id
+        'from_user_id', // 消费者id
+        'to_user_id', // 收费者id
+        'to_product_id', // 产品id
+        'to_product_type', // 产品的类型
+        'order_amount' // 订单的金额
     ];
 }

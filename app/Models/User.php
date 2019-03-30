@@ -23,19 +23,20 @@ class User extends Authenticatable
         'birthday',
         'birth_secret',
         'sex_secret',
-        'coin_count',
         'state', // 0 正常，1 待审
         'password_change_at', // 密码最后修改时间
+        'last_notice_read_id',
         'remember_token',
         'phone',
         'is_admin',
         'faker',
         'qq_open_id',
-        'last_notice_read_id',
+        'qq_unique_id',
         'wechat_unique_id',
         'wechat_open_id',
-        'light_count',
-        'coin_count_v2'
+        'exp',
+        'virtual_coin', // 团子
+        'money_coin' // 光玉
     ];
 
     protected $hidden = ['password'];
@@ -54,9 +55,14 @@ class User extends Authenticatable
         );
     }
 
+    public function getNicknameAttribute($name)
+    {
+        return $name ? trim($name) : '空白';
+    }
+
     public function getSignatureAttribute($text)
     {
-        return $text ? $text : '这个人还很神秘...';
+        return $text ? trim($text) : '这个人还很神秘...';
     }
 
     public function getBannerAttribute($banner)

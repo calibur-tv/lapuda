@@ -41,13 +41,23 @@ class UserIpAddress
             ->toArray();
     }
 
+    public function getUserIpById($userId)
+    {
+        return DB
+            ::table('user_ip')
+            ->where('user_id', $userId)
+            ->pluck('ip_address')
+            ->toArray();
+    }
+
     public function addressUsers($ipAddress)
     {
         return DB
             ::table('user_ip')
             ->where('ip_address', $ipAddress)
             ->distinct()
-            ->pluck('user_id');
+            ->pluck('user_id')
+            ->toArray();
     }
 
     public function matrixUserIp($page = 0, $count = 15)
@@ -62,16 +72,13 @@ class UserIpAddress
                 ->select(DB::raw('count(distinct user_id) as count, ip_address'))
                 ->orderBy('count', 'DESC')
                 ->groupBy('ip_address')
+                ->havingRaw('COUNT(count) > 1')
                 ->pluck('count', 'ip_address')
                 ->toArray();
 
             $result = [];
             foreach ($data as $key => $val)
             {
-                if (intval($val) < 2)
-                {
-                    continue;
-                }
                 $result[preg_replace('/\./', '-', $key)] = $val;
             }
 
@@ -88,6 +95,81 @@ class UserIpAddress
         $result['ids'] = $ids;
 
         return $result;
+    }
+
+    public function getSameUserById($userId, $base = [])
+    {
+        $IPaddress = DB
+            ::table('user_ip')
+            ->where('user_id', $userId)
+            ->whereNotIn('user_id', $base)
+            ->pluck('ip_address')
+            ->toArray();
+
+        if (empty($IPaddress))
+        {
+            return [];
+        }
+
+        $result = array_merge($base, [$userId]);
+        foreach ($IPaddress as $ip)
+        {
+            $userIds = DB
+                ::table('user_ip')
+                ->where('ip_address', $ip)
+                ->whereNotIn('user_id', $result)
+                ->pluck('user_id')
+                ->toArray();
+
+            if (empty($userIds))
+            {
+                continue;
+            }
+            $result = array_merge($result, $userIds);
+
+            foreach ($userIds as $uid)
+            {
+                $newVal = $this->getSameUserById($uid, $result);
+                if (empty($newVal))
+                {
+                    continue;
+                }
+                $result = array_unique(array_merge($result, $newVal));
+            }
+        }
+
+        return $result;
+    }
+
+    public function someQuestionIP()
+    {
+        $repository = new Repository();
+
+        return $repository->RedisList('have-some-question-ip', function ()
+        {
+            $haveManyUserIp = DB
+                ::table('user_ip')
+                ->where('ip_address', '<>', '')
+                ->select(DB::raw('count(distinct user_id) as count, ip_address'))
+                ->orderBy('count', 'DESC')
+                ->groupBy('ip_address')
+                ->havingRaw('COUNT(count) > 1')
+                ->pluck('ip_address')
+                ->toArray();
+
+            $haveManyIpUserIp = DB
+                ::table('user_ip')
+                ->where('ip_address', '<>', '')
+                ->select(DB::raw('count(distinct ip_address) as count, ip_address'))
+                ->orderBy('count', 'DESC')
+                ->groupBy('user_id')
+                ->havingRaw('COUNT(count) > 1')
+                ->pluck('ip_address')
+                ->toArray();
+
+
+            return array_unique(array_merge($haveManyUserIp, $haveManyIpUserIp));
+        }, 0, -1, 'm');
     }
 
     public function blockedList()
@@ -124,6 +206,19 @@ class UserIpAddress
                     'blocked' => 1
                 ]);
         }
+
+        Redis::DEL('blocked_user_ips');
+        Redis::DEL('blocked_user_ids');
+    }
+
+    public function blockUserById($userId)
+    {
+        DB
+            ::table('user_ip')
+            ->where('user_id', $userId)
+            ->update([
+                'blocked' => 1
+            ]);
 
         Redis::DEL('blocked_user_ips');
         Redis::DEL('blocked_user_ids');

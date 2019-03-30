@@ -14,6 +14,9 @@ use App\Models\Looper;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
+/**
+ * @Resource("轮播相关接口")
+ */
 class LooperController extends Controller
 {
     // 显示所有的轮播

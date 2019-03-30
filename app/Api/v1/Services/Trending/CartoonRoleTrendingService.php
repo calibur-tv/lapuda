@@ -83,7 +83,7 @@ class CartoonRoleTrendingService extends TrendingService
         return CartoonRoleFans
             ::where('user_id', $this->userId)
             ->orderBy('updated_at', 'DESC')
-            ->pluck('role_id');
+            ->pluck('updated_at', 'role_id');
     }
 
     public function users($page, $take)
@@ -123,9 +123,9 @@ class CartoonRoleTrendingService extends TrendingService
 
     public function getListByIds($ids, $flowType)
     {
-        $store = new CartoonRoleRepository();
+        $cartoonRoleRepository = new CartoonRoleRepository();
         $userRepository = new UserRepository();
-        $list = $store->userFlow($ids);
+        $list = $cartoonRoleRepository->userFlow($ids);
         if (empty($list))
         {
             return [];
@@ -133,7 +133,7 @@ class CartoonRoleTrendingService extends TrendingService
 
         foreach ($list as $i => $role)
         {
-            $hasLover = intval($role['loverId']);
+            $hasLover = false;
             $user = $hasLover ? $userRepository->item($role['loverId']) : null;
 
             if ($hasLover)

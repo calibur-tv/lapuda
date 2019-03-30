@@ -275,7 +275,7 @@ class Repository
         return [
             'ids' => $result,
             'total' => $total,
-            'noMore' => count($result) < $take
+            'noMore' => empty($seenIds) ? $total <= $take : count($result) < $take
         ];
     }
 

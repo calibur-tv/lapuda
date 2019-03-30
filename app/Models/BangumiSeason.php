@@ -14,8 +14,8 @@ class BangumiSeason extends Model
         'rank',
         'summary',
         'avatar',
-        'videos',           // 存储用逗号分隔的 video_id
-        'published_at',     // 改成时间格式
+        'videos', // 存储用逗号分隔的 video_id
+        'published_at', // 改成时间格式
         'other_site_video',
         'released_at',
         'released_time',

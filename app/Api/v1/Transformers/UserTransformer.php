@@ -74,9 +74,14 @@ class UserTransformer extends Transformer
                 'coin' => (int)$user['coin_count_v2'] + (int)$user['light_count'],
                 'coin_from_sign' => 0,
                 'banlance' => [
-                    'coin_count' => (int)$user['coin_count_v2'],
-                    'light_count' => (int)$user['light_count'],
+                    'coin_count' => (int)$user['virtual_coin'],
+                    'light_count' => (int)$user['money_coin'],
                 ],
+                'balance' => [
+                    'coin_count' => sprintf("%.2f", $user['virtual_coin']),
+                    'light_count' => sprintf("%.2f", $user['money_coin']),
+                ],
+                'pocket' => floatval($user['virtual_coin']),
                 'faker' => (boolean)$user['faker'],
                 'is_admin' => (boolean)$user['is_admin'],
                 'notification' => $user['notification'],
@@ -121,8 +126,8 @@ class UserTransformer extends Transformer
                 'banned_to' => $user['banned_to'],
                 'badge' => $user['badge'],
                 'banlance' => [
-                    'coin_count' => $user['coin_count_v2'],
-                    'light_count' => $user['light_count']
+                    'coin_count' => sprintf("%.2f", $user['virtual_coin']),
+                    'light_count' => sprintf("%.2f", $user['money_coin'])
                 ]
             ];
         });
@@ -137,6 +142,20 @@ class UserTransformer extends Transformer
                 'zone' => $user['zone'],
                 'avatar' => $user['avatar'],
                 'nickname' => $user['nickname']
+            ];
+        });
+    }
+
+    public function invites($users)
+    {
+        return $this->collection($users, function ($user)
+        {
+            return [
+                'id' => (int)$user['id'],
+                'zone' => $user['zone'],
+                'avatar' => $user['avatar'],
+                'nickname' => $user['nickname'],
+                'created_at' => $user['created_at']
             ];
         });
     }

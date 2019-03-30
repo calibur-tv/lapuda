@@ -3,7 +3,7 @@
 namespace App\Jobs\User;
 
 use App\Api\V1\Repositories\UserRepository;
-use App\Api\V1\Services\LightCoinService;
+use App\Api\V1\Services\VirtualCoinService;
 use App\Models\User;
 use App\Services\Sms\Message;
 use Illuminate\Bus\Queueable;
@@ -44,23 +44,23 @@ class InviteUser implements ShouldQueue
 
         if (
             $inviter &&
-            $inviter->phone &&
+            // $inviter->phone &&
             // preg_match('/^(13[0-9]|15[012356789]|166|17[3678]|18[0-9]|14[57])[0-9]{8}$/', $inviter->phone) &&
             !intval($inviter->faker)
         )
         {
-            $lightCoinService = new LightCoinService();
-            $result = $lightCoinService->inviteUser($inviter->id, $this->inviteUserId);
-            if (!$result)
-            {
-                return;
-            }
+            $virtualCoinService = new VirtualCoinService();
+            $virtualCoinService->inviteUser($inviter->id, $this->inviteUserId);
+            $virtualCoinService->invitedNewbieCoinGift($inviter->id, $this->inviteUserId);
 
             $userRepository = new UserRepository();
             $newUser = $userRepository->item($this->inviteUserId);
 
-            $sms = new Message();
-            $sms->inviteUser($inviter->phone, $inviter->nickname, $newUser['nickname']);
+            if ($inviter->phone)
+            {
+                $sms = new Message();
+                $sms->inviteUser($inviter->phone, $inviter->nickname, $newUser['nickname']);
+            }
         }
     }
 }

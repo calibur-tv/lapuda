@@ -43,7 +43,7 @@ class CronAvthumb extends Command
 
         foreach ($ids as $id)
         {
-            $job = (new \App\Jobs\Pfop\Avthumb($id));
+            $job = (new \App\Jobs\Qiniu\Avthumb($id));
             dispatch($job);
         }
 

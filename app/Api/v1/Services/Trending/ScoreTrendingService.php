@@ -110,9 +110,9 @@ class ScoreTrendingService extends TrendingService
     {
         return Score
             ::where('user_id', $this->userId)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('published_at', 'desc')
             ->whereNotNull('published_at')
-            ->pluck('id');
+            ->pluck('published_at', 'id');
     }
 
     public function getListByIds($ids, $flowType)

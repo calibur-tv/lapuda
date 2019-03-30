@@ -5,6 +5,7 @@ namespace App\Api\V1\Controllers;
 use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\v1\Repositories\BangumiSeasonRepository;
 use App\Api\V1\Repositories\VideoRepository;
+use App\Api\V1\Services\VirtualCoinService;
 use App\Api\V1\Transformers\BangumiTransformer;
 use App\Models\BangumiSeason;
 use Carbon\Carbon;
@@ -12,6 +13,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 
+/**
+ * @Resource("番剧季度相关接口")
+ */
 class BangumiSeasonController extends Controller
 {
     /**
@@ -98,7 +102,18 @@ class BangumiSeasonController extends Controller
             return $this->resErrNotFound('没有找到番剧');
         }
 
+        $bangumiSeasonRepository = new BangumiSeasonRepository();
         $result = $bangumiRepository->videos($id);
+        $season = $bangumiSeasonRepository->listByBangumiId($id);
+        $resultSeason = [];
+        foreach ($season as $item)
+        {
+            $resultSeason[] = [
+                'id' => $item['id'],
+                'name' => $item['name']
+            ];
+        }
+        $result['season'] = $resultSeason;
 
         return $this->resOK($result);
     }
@@ -191,6 +206,7 @@ class BangumiSeasonController extends Controller
 
         Redis::DEL('bangumi_season:bangumi:'.$bangumiId);
         Redis::DEL("bangumi_{$bangumiId}_videos");
+        Redis::DEL('bangumi_release_list');
 
         return $this->resNoContent();
     }

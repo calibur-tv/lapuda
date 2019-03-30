@@ -59,11 +59,6 @@ class Active implements ShouldQueue
         $repository = $this->getRepositoryByType();
         $item = $repository->item($this->id);
 
-        if (strtotime($item['created_at']) < strtotime('3 month ago'))
-        {
-            return;
-        }
-
         if ($this->type === 'image' && $item['is_cartoon'])
         {
             return;

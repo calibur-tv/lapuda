@@ -41,7 +41,7 @@ class QQProvider extends AbstractProvider implements ProviderInterface
      *
      * @var bool
      */
-    protected $withUnionId = false;
+    protected $withUnionId = true;
 
     /**
      * User unionid.

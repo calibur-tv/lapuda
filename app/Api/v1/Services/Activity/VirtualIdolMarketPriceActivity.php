@@ -9,10 +9,10 @@
 namespace App\Api\V1\Services\Activity;
 
 
-class CartoonRoleActivity extends Activity
+class VirtualIdolMarketPriceActivity extends Activity
 {
     public function __construct()
     {
-        parent::__construct('role_day_activity');
+        parent::__construct('virtual_idol_day_activity');
     }
 }

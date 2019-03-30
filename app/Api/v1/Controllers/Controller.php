@@ -167,4 +167,23 @@ class Controller extends BaseController
             'noMore' => $total - ($page + 1) * $take <= 0
         ];
     }
+
+    protected function createShareLink($model, $id, $currentUserId = 0)
+    {
+        $link = "https://m.calibur.tv/{$model}/{$id}";
+
+        if ($currentUserId)
+        {
+            $time = time() + 3600; // 1小时内有效
+            $key = md5($currentUserId . '-the-world-' . $time);
+            $link = "{$link}?uid={$currentUserId}&time={$time}&key={$key}";
+        }
+
+        return $link;
+    }
+
+    protected function cacheShareLink($model, $id)
+    {
+        return "https://m.calibur.tv/{$model}/{$id}";
+    }
 }

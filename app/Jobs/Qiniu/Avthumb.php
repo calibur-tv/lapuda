@@ -6,7 +6,7 @@
  * Time: 下午9:25
  */
 
-namespace App\Jobs\Pfop;
+namespace App\Jobs\Qiniu;
 
 use App\Models\Video;
 use App\Services\Qiniu\Config;

@@ -21,8 +21,8 @@ class CartoonRoleStarCounter extends RelationCounterService
 
     public function migration($id)
     {
-        return (int)CartoonRoleFans
+        return floatval(CartoonRoleFans
             ::where('role_id', $id)
-            ->sum('star_count');
+            ->sum('star_count'));
     }
 }

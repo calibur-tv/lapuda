@@ -6,14 +6,16 @@ use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Role;
 use App\Api\V1\Services\UserLevel;
+use App\Api\V1\Services\VirtualCoinService;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\User;
 use App\Models\UserZone;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Services\Sms\Message;
-use App\Api\V1\Repositories\Repository;
+use App\Services\Socialite\AccessToken;
 use App\Services\Socialite\SocialiteManager;
 use App\Services\Trial\UserIpAddress;
+use App\Services\WXBizDataCrypt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +24,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Overtrue\LaravelPinyin\Facades\Pinyin as Overtrue;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Services\Qiniu\Http\Client;
 
 /**
  * @Resource("用户认证相关接口")
@@ -30,9 +33,15 @@ class DoorController extends Controller
 {
     public function pageData(Request $request)
     {
-        $repository = new Repository();
+        $userRepository = new UserRepository();
+        $refer = $request->get('refer');
 
-        $friendLinks = $repository->Cache('friend_sites', function ()
+        if ($refer === 'h5')
+        {
+            return $this->resOK($userRepository->getWechatJsSDKConfig($request->get('url')));
+        }
+
+        $friendLinks = $userRepository->Cache('friend_sites', function ()
         {
             return DB
                 ::table('friend_sites')
@@ -41,7 +50,6 @@ class DoorController extends Controller
         });
 
         return $this->resOK([
-            'wechat_app_id' => config('tencent.wechat.app_id'),
             "page_banner" => "https://image.calibur.tv/banner/3.png",
             "friend_links" => $friendLinks
         ]);
@@ -235,6 +243,11 @@ class DoorController extends Controller
             $job = (new \App\Jobs\User\InviteUser($userId, $inviteCode));
             dispatch($job);
         }
+        else
+        {
+            $virtualCoinService = new VirtualCoinService();
+            $virtualCoinService->coinGift($userId, 1);
+        }
 
         $userRepository = new UserRepository();
         $userRepository->migrateSearchIndex('C', $userId);
@@ -320,7 +333,7 @@ class DoorController extends Controller
      *
      * @Parameters({
      *      @Parameter("from", description="如果是登录，就是 sign，如果是绑定，就是 bind", type="string", required=true),
-     *      @Parameter("code", description="登录授权的 access_code", type="string", required=true)
+     *      @Parameter("access_token", description="登录授权的 access_code", type="string", required=true)
      * })
      *
      * @Transaction({
@@ -334,7 +347,7 @@ class DoorController extends Controller
     public function qqAuthRedirect(Request $request)
     {
         $from = $request->get('from') === 'bind' ? 'bind' : 'sign';
-        $code = $request->get('code');
+        $code = $request->get('access_token');
         if (!$code)
         {
             return $this->resErrBad('请求参数错误');
@@ -343,10 +356,13 @@ class DoorController extends Controller
         try
         {
             $socialite = new SocialiteManager(config('services', []));
+            $accessToken = new AccessToken([
+                'access_token' => $code
+            ]);
 
             $user = $socialite
                 ->driver('qq')
-                ->user();
+                ->user($accessToken);
         }
         catch (\Exception $e)
         {
@@ -356,7 +372,8 @@ class DoorController extends Controller
         }
 
         $openId = $user['id'];
-        $isNewUser = $this->accessIsNew('qq_open_id', $openId);
+        $uniqueId = $user['unionid'];
+        $isNewUser = $this->accessIsNew('qq_unique_id', $uniqueId);
 
         if ($from === 'bind')
         {
@@ -380,7 +397,8 @@ class DoorController extends Controller
             User
                 ::where('id', $userId)
                 ->update([
-                    'qq_open_id' => $openId
+                    'qq_open_id' => $openId,
+                    'qq_unique_id' => $uniqueId
                 ]);
 
             Redis::DEL('user_' . $userId);
@@ -397,6 +415,7 @@ class DoorController extends Controller
                 'nickname' => $nickname,
                 'zone' => $zone,
                 'qq_open_id' => $openId,
+                'qq_unique_id' => $uniqueId,
                 'password' => bcrypt('calibur')
             ];
 
@@ -417,8 +436,13 @@ class DoorController extends Controller
         {
             // signIn
             $user = User
-                ::where('qq_open_id', $openId)
+                ::where('qq_unique_id', $uniqueId)
                 ->first();
+
+            if (is_null($user))
+            {
+                return $this->resErrRole('该账号不存在了');
+            }
         }
 
         $userId = $user->id;
@@ -438,7 +462,7 @@ class DoorController extends Controller
      *
      * @Parameters({
      *      @Parameter("from", description="如果是登录，就是 sign，如果是绑定，就是 bind", type="string", required=true),
-     *      @Parameter("code", description="登录授权的 access_code", type="string", required=true)
+     *      @Parameter("access_token", description="登录授权的 access_code", type="string", required=true)
      * })
      *
      * @Transaction({
@@ -452,8 +476,9 @@ class DoorController extends Controller
     public function wechatAuthRedirect(Request $request)
     {
         $from = $request->get('from') === 'bind' ? 'bind' : 'sign';
-        $code = $request->get('code');
-        if (!$code)
+        $code = $request->get('access_token');
+        $open_id = $request->get('openid');
+        if (!$code || !$open_id)
         {
             return $this->resErrBad();
         }
@@ -461,10 +486,14 @@ class DoorController extends Controller
         try
         {
             $socialite = new SocialiteManager(config('services', []));
+            $accessToken = new AccessToken([
+                'access_token' => $code,
+                'openid' => $open_id
+            ]);
 
             $user = $socialite
                 ->driver('weixin')
-                ->user();
+                ->user($accessToken);
         }
         catch (\Exception $e)
         {
@@ -540,6 +569,11 @@ class DoorController extends Controller
             $user = User
                 ::where('wechat_unique_id', $uniqueId)
                 ->first();
+
+            if (is_null($user))
+            {
+                return $this->resErrRole('该账号不存在了');
+            }
         }
 
         $userId = $user->id;
@@ -637,6 +671,112 @@ class DoorController extends Controller
 
     }
 
+    // 微信小程序注册用户或获取当前用户的 token
+    public function wechatMiniAppLogin(Request $request)
+    {
+        $user = $request->get('user');
+        $encryptedData = $request->get('encrypted_data');
+        $iv = $request->get('iv');
+        $sessionKey = $request->get('session_key');
+        $appId = config('services.wechat_mini_app.app_id');
+
+        $tool = new WXBizDataCrypt($appId, $sessionKey);
+        $code = $tool->decryptData($encryptedData, $iv, $data);
+
+        if ($code)
+        {
+            return $this->resErrServiceUnavailable();
+        }
+
+        $data = json_decode($data, true);
+        $uniqueId = $data['unionId'];
+        $isNewUser = $this->accessIsNew('wechat_unique_id', $uniqueId);
+        if ($isNewUser)
+        {
+            $nickname = $this->getNickname($user['nickName']);
+            $zone = $this->createUserZone($nickname);
+            $data = [
+                'nickname' => $nickname,
+                'zone' => $zone,
+                'wechat_open_id' => $data['openId'],
+                'wechat_unique_id' => $uniqueId,
+                'password' => bcrypt('calibur')
+            ];
+
+            try
+            {
+                $user = User::create($data);
+                $userRepository = new UserRepository();
+                $userRepository->migrateSearchIndex('C', $user->id);
+            }
+            catch (\Exception $e)
+            {
+                app('sentry')->captureException($e);
+
+                return $this->resErrServiceUnavailable('请修改微信昵称后重试');
+            }
+        }
+        else
+        {
+            $user = User
+                ::where('wechat_unique_id', $uniqueId)
+                ->first();
+
+            if (is_null($user))
+            {
+                return $this->resErrNotFound('这个用户已经消失了');
+            }
+        }
+
+        return $this->resOK($this->responseUser($user));
+    }
+
+    // 微信小程序获取用户的 session_key 或获取当前用户的 token
+    public function wechatMiniAppToken(Request $request)
+    {
+        $code = $request->get('code');
+        if (!$code)
+        {
+            return $this->resErrBad();
+        }
+
+        $client = new Client();
+        $appId = config('services.wechat_mini_app.app_id');
+        $appSecret = config('services.wechat_mini_app.app_secret');
+        $resp = $client->get(
+            "https://api.weixin.qq.com/sns/jscode2session?appid={$appId}&secret={$appSecret}&js_code={$code}&grant_type=authorization_code",
+            [
+                'Accept' => 'application/json'
+            ]
+        );
+        $body = json_decode($resp->body, true);
+        $uniqueId = isset($body['unionid']) ? $body['unionid'] : '';
+        if (!$uniqueId)
+        {
+            return $this->resOK([
+                'type' => 'key',
+                'data' => $body['session_key']
+            ]);
+        }
+
+        $user = User
+            ::where('wechat_unique_id', $uniqueId)
+            ->first();
+
+        if (is_null($user))
+        {
+            return $this->resOK([
+                'type' => 'key',
+                'data' => $body['session_key']
+            ]);
+        }
+
+        return $this->resOK([
+            'type' => 'token',
+            'data' => $this->responseUser($user)
+        ]);
+    }
+
     /**
      * 网站获取用户信息
      *
@@ -672,8 +812,8 @@ class DoorController extends Controller
         $user['exp'] = $userLevel->computeExpObject($user['exp']);
         $user['power'] = $userActivityService->get($userId);
         $user['providers'] = [
-            'bind_qq' => !!$user['qq_open_id'],
-            'bind_wechat' => !!$user['wechat_open_id'],
+            'bind_qq' => !!$user['qq_unique_id'],
+            'bind_wechat' => !!$user['wechat_unique_id'],
             'bind_phone' => !!$user['phone']
         ];
         if ($user['is_admin'])
@@ -753,8 +893,8 @@ class DoorController extends Controller
         $user['exp'] = $userLevel->computeExpObject($user['exp']);
         $user['power'] = $userActivityService->get($userId);
         $user['providers'] = [
-            'bind_qq' => !!$user['qq_open_id'],
-            'bind_wechat' => !!$user['wechat_open_id'],
+            'bind_qq' => !!$user['qq_unique_id'],
+            'bind_wechat' => !!$user['wechat_unique_id'],
             'bind_phone' => !!$user['phone']
         ];
         if ($user['is_admin'])
@@ -901,5 +1041,12 @@ class DoorController extends Controller
 
         Redis::DEL($key);
         return intval($value) === intval($token);
+    }
+
+    protected function getNickname($nickname)
+    {
+        preg_match_all('/([a-zA-Z]+|[0-9]+|[\x{4e00}-\x{9fa5}]+)*/u', $nickname, $matches);
+
+        return implode('', $matches[0]) ?: 'zero';
     }
 }

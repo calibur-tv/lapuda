@@ -9,6 +9,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\AnswerRepository;
+use App\Api\V1\Repositories\CartoonRoleRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\Repository;
@@ -16,7 +17,6 @@ use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\VideoRepository;
 use App\Api\V1\Services\Activity\UserActivity;
 use App\Api\V1\Services\Counter\Stats\TotalUserCount;
-use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\Role;
 use App\Api\V1\Services\Tag\Base\UserBadgeService;
 use App\Api\V1\Services\Toggle\Image\ImageMarkService;
@@ -25,6 +25,7 @@ use App\Api\V1\Services\Toggle\Question\AnswerMarkService;
 use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
 use App\Api\V1\Services\Toggle\Video\VideoMarkService;
 use App\Api\V1\Services\UserLevel;
+use App\Api\V1\Services\VirtualCoinService;
 use App\Api\V1\Transformers\UserTransformer;
 use App\Models\Feedback;
 use App\Models\LightCoinRecord;
@@ -33,6 +34,7 @@ use App\Models\SystemNotice;
 use App\Models\User;
 use App\Api\V1\Repositories\UserRepository;
 use App\Models\UserSign;
+use App\Models\VirtualCoin;
 use App\Services\OpenSearch\Search;
 use App\Services\Trial\UserIpAddress;
 use Carbon\Carbon;
@@ -69,12 +71,8 @@ class UserController extends Controller
             return $this->resErrRole('已签到');
         }
 
-        $lightCoinService = new LightCoinService();
-        $result = $lightCoinService->daySign($userId);
-        if (!$result)
-        {
-            return $this->resErrServiceUnavailable('系统维护中');
-        }
+        $virtualCoinService = new VirtualCoinService();
+        $virtualCoinService->daySign($userId);
 
         UserSign::create([
             'user_id' => $userId
@@ -128,6 +126,7 @@ class UserController extends Controller
             return $this->resErrNotFound('该用户不存在');
         }
 
+        $visitUserId = $this->getAuthUserId();
         $searchService = new Search();
         if ($searchService->checkNeedMigrate('user', $userId))
         {
@@ -145,7 +144,7 @@ class UserController extends Controller
         $user['share_data'] = [
             'title' => $user['nickname'],
             'desc' => $user['signature'],
-            'link' => "https://m.calibur.tv/user/{$zone}",
+            'link' => $this->createShareLink('user', $zone, $visitUserId),
             'image' => "{$user['avatar']}-share120jpg"
         ];
 
@@ -507,6 +506,46 @@ class UserController extends Controller
         return $this->resOK($result);
     }
 
+    // 用户邀请的人
+    public function userInviteUsers(Request $request)
+    {
+        $userId = $request->get('id');
+        $page = $request->get('page') ?: 0;
+        $take = $request->get('take') ?: 15;
+
+        $userRepository = new UserRepository();
+        $userIds = $userRepository->RedisList("user_{$userId}_invite_users", function () use ($userId)
+        {
+            return VirtualCoin
+                ::where('channel_type', 1)
+                ->where('user_id', $userId)
+                ->orderBy('created_at', 'DESC')
+                ->pluck('about_user_id')
+                ->toArray();
+
+        }, 0, -1, 'm');
+
+        $idsObj = $userRepository->filterIdsByPage($userIds, $page, $take);
+
+        if (empty($idsObj['ids']))
+        {
+            return $this->resOK([
+                'list' => [],
+                'noMore' => true,
+                'total' => $idsObj['total']
+            ]);
+        }
+
+        $users = $userRepository->list($idsObj['ids']);
+        $userTransformer = new UserTransformer();
+
+        return $this->resOK([
+            'list' => $userTransformer->invites($users),
+            'noMore' => $idsObj['noMore'],
+            'total' => $idsObj['total']
+        ]);
+    }
+
     /**
      * 用户未读消息个数
      *
@@ -633,12 +672,12 @@ class UserController extends Controller
     }
 
     /**
-     * 用户交易记录列表
+     * 用户的虚拟币记录列表
      *
      * @Get("/user/transactions")
      *
      * @Transaction({
-     *      @Request({"min_id": "看过的最小id", "default": 0, "required": true}),
+     *      @Request({"page": "页码", "default": 0, "required": true}),
      *      @Request(headers={"Authorization": "Bearer JWT-Token"}),
      *      @Response(200, body={"code": 0, "data": "消息列表"}),
      *      @Response(401, body={"code": 40104, "message": "未登录的用户"})
@@ -649,13 +688,18 @@ class UserController extends Controller
         $take = $request->get('take') ?: 20;
         $page = $request->get('page') ?: 0;
         $userId = $this->getAuthUserId();
-        $lightCoinService = new LightCoinService();
-        $result = $lightCoinService->getUserRecord($userId, $page, $take);
+
+        $virtualCoinService = new VirtualCoinService();
+        $result = $virtualCoinService->getUserRecord($userId, $page, $take);
+        if ($page == 0)
+        {
+            $result['balance'] = $virtualCoinService->getUserBalance($userId);
+        }
 
         return $this->resOK($result);
     }
 
-    // 用户邀请注册的列表
+    // 给后台用的，分析用户邀请的人都是什么样
     public function userInviteList(Request $request)
     {
         $id = $request->get('id');
@@ -693,6 +737,31 @@ class UserController extends Controller
         }
 
         return $this->resOK($users);
+    }
+
+    // 后台给用户送团子
+    public function giveUserMoney(Request $request)
+    {
+        $currentUserId = $this->getAuthUserId();
+        if ($currentUserId != 1)
+        {
+            return $this->resErrRole();
+        }
+        $userId = $request->get('id');
+        $amount = $request->get('amount');
+        $state = $request->get('state');
+
+        $virtualCoinService = new VirtualCoinService();
+        if ($state == 0)
+        {
+            $virtualCoinService->coinGift($userId, $amount);
+        }
+        else if ($state == 1)
+        {
+            $virtualCoinService->lightGift($userId, $amount);
+        }
+
+        return $this->resOK();
     }
 
     // 获取推荐用户
@@ -811,6 +880,7 @@ class UserController extends Controller
         $userRepository = new UserRepository();
         $userLevel = new UserLevel();
         $userActivityService = new UserActivity();
+        $virtualCoinService = new VirtualCoinService();
 
         if ($type === 'ip_address')
         {
@@ -820,6 +890,7 @@ class UserController extends Controller
             {
                 $users[$i]['level'] = $userLevel->convertExpToLevel($user['exp']);
                 $users[$i]['power'] = $userActivityService->get($user['id']);
+                $users[$i]['banlacen'] = $virtualCoinService->getUserBalance($user['id']);
             }
             return $this->resOK($users);
         }
@@ -841,26 +912,31 @@ class UserController extends Controller
             return $this->resErrNotFound();
         }
 
-        $user = $userRepository->item($userId, true);
+        $user = User
+            ::where('id', $userId)
+            ->first();
         if (is_null($user))
         {
             return $this->resOK(null);
         }
+        $user = $user->toArray();
         $banlance = User
             ::where('id', $userId)
-            ->select('coin_count_v2', 'light_count')
+            ->select('virtual_coin', 'money_coin')
             ->first();
 
-        $user['coin_count'] = $banlance->coin_count_v2;
-        $user['light_count'] = $banlance->light_count;
-        $user['coin_from_sign'] = 0;
+        $user['coin_count'] = $banlance->virtual_coin;
+        $user['coin_count_v2'] = $banlance->virtual_coin;
+        $user['light_count'] = $banlance->money_coin;
         $user['ip_address'] = $userIpAddress->userIps($userId);
         $user['level'] = $userLevel->convertExpToLevel($user['exp']);
         $user['power'] = $userActivityService->get($userId);
         $user['invite_count'] = LightCoinRecord
             ::where('to_product_type', 1)
             ->where('to_user_id', $userId)
+            ->groupBy('order_id')
             ->count();
+        $user['banlacen'] = $virtualCoinService->getUserBalance($user['id']);
 
         return $this->resOK($user);
     }
@@ -876,7 +952,7 @@ class UserController extends Controller
         return $this->resOK($users);
     }
 
-    // 获取一个ip登录N个号的用户列表
+    // 1个 IP 有多个用户的列表
     public function matrixUsers(Request $request)
     {
         $curPage = $request->get('cur_page') ?: 0;
@@ -901,6 +977,60 @@ class UserController extends Controller
             'total' => $ipObj['total'],
             'noMore' => $ipObj['noMore']
         ]);
+    }
+
+    // 查出多重用户
+    public function mutilUsers(Request $request)
+    {
+        $curPage = $request->get('cur_page') ?: 0;
+        $toPage = $request->get('to_page') ?: 1;
+        $take = $request->get('take') ?: 10;
+
+        $user = User
+            ::whereNull('banned_to')
+            ->take(($toPage - $curPage) * $take)
+            ->skip($curPage * $take)
+            ->where('migration_state', '>', 1)
+            ->orderBy('migration_state', 'DESC')
+            ->select('id', 'nickname', 'zone', 'migration_state')
+            ->get()
+            ->toArray();
+
+        return $this->resOK([
+            'total' => User::whereNull('banned_to')->count(),
+            'list' => $user
+        ]);
+    }
+
+    // 禁止用户做团子交易1周，并撤销应援
+    public function bannedUserCherr(Request $request)
+    {
+        $review_id = $this->getAuthUserId();
+        if ($review_id != 1)
+        {
+            return $this->resErrRole();
+        }
+        $userId = $request->get('user_id');
+        $userIpAddress = new UserIpAddress();
+        $userIds = $userIpAddress->getSameUserById($userId);
+        $cartoonRoleRepository = new CartoonRoleRepository();
+
+        foreach ($userIds as $uid)
+        {
+            $cartoonRoleRepository->removeUserCheer($uid);
+
+            User
+                ::where('id', $uid)
+                ->update([
+                    'banned_to' => Carbon::now()->addDays(7)
+                ]);
+
+            $userIpAddress->blockUserById($uid);
+
+            Redis::DEL("user_{$uid}");
+        }
+
+        return $this->resNoContent();
     }
 
     // 删除不存在用户的 IP 地址
@@ -944,9 +1074,31 @@ class UserController extends Controller
     public function blockUserByIp(Request $request)
     {
         $ipAddress = $request->get('ip_address');
-
+        $userId = $request->get('user_id');
         $userIpAddress = new UserIpAddress();
-        $userIpAddress->blockUserByIp($ipAddress);
+
+        if ($userId)
+        {
+            $cartoonRoleRepository = new CartoonRoleRepository();
+            $userIds = $userIpAddress->getSameUserById($userId);
+            foreach ($userIds as $uid)
+            {
+                $ipList = $userIpAddress->getUserIpById($uid);
+                $cartoonRoleRepository->removeUserCheer($uid);
+                foreach ($ipList as $ip)
+                {
+                    $userIpAddress->blockUserByIp($ip);
+                }
+                User::where('id', $uid)
+                    ->update([
+                        'banned_to' => Carbon::now()->addDays(36500)
+                    ]);
+            }
+        }
+        else
+        {
+            $userIpAddress->blockUserByIp($ipAddress);
+        }
 
         return $this->resNoContent();
     }
@@ -955,9 +1107,25 @@ class UserController extends Controller
     public function recoverUserIp(Request $request)
     {
         $ipAddress = $request->get('ip_address');
-
+        $userId = $request->get('user_id');
         $userIpAddress = new UserIpAddress();
-        $userIpAddress->recoverUser($ipAddress);
+
+        if ($userId)
+        {
+            $ipList = $userIpAddress->getUserIpById($userId);
+            foreach ($ipList as $ip)
+            {
+                $userIpAddress->recoverUser($ip);
+            }
+            User::where('id', $userId)
+                ->update([
+                    'banned_to' => null
+                ]);
+        }
+        else
+        {
+            $userIpAddress->recoverUser($ipAddress);
+        }
 
         return $this->resNoContent();
     }
@@ -1101,8 +1269,8 @@ class UserController extends Controller
         $toPage = $request->get('to_page') ?: 1;
         $take = $request->get('take') ?: 10;
         $userId = $request->get('id');
-        $lightCoinService = new LightCoinService();
-        $result = $lightCoinService->getUserRecord($userId, $curPage, ($toPage - $curPage) * $take);
+        $virtualCoinService = new VirtualCoinService();
+        $result = $virtualCoinService->getUserRecord($userId, $curPage, ($toPage - $curPage) * $take);
 
         return $this->resOK($result);
     }
@@ -1118,11 +1286,11 @@ class UserController extends Controller
 
         $userId = $request->get('id');
         $money = $request->get('money');
-        $lightCoinService = new LightCoinService();
-        $result = $lightCoinService->withdraw($userId, $money);
+        $virtualCoinService = new VirtualCoinService();
+        $result = $virtualCoinService->withdraw($userId, $money);
         if (!$result)
         {
-            $lightCoinService->resErrServiceUnavailable('提现失败');
+            return $this->resErrServiceUnavailable('提现失败');
         }
 
         Redis::DEL('user_' . $userId);
@@ -1146,17 +1314,29 @@ class UserController extends Controller
     public function ban(Request $request)
     {
         $userId = $request->get('id');
-        DB::table('users')
-            ->where('id', $userId)
-            ->update([
-                'state' => 0,
-                'deleted_at' => Carbon::now()
-            ]);
 
-        $job = (new \App\Jobs\Search\Index('D', 'user', $userId));
-        dispatch($job);
+        $userIpAddress = new UserIpAddress();
+        $userIds = $userIpAddress->getSameUserById($userId);
 
-        Redis::DEL('user_' . $userId);
+        $cartoonRoleRepository = new CartoonRoleRepository();
+
+        foreach ($userIds as $uid)
+        {
+            $cartoonRoleRepository->removeUserCheer($uid);
+            $userIpAddress->blockUserById($uid);
+
+            DB::table('users')
+                ->where('id', $uid)
+                ->update([
+                    'state' => 0,
+                    'deleted_at' => Carbon::now()
+                ]);
+
+            Redis::DEL('user_' . $uid);
+
+            $job = (new \App\Jobs\Search\Index('D', 'user', $uid));
+            dispatch($job);
+        }
 
         return $this->resNoContent();
     }
@@ -1204,11 +1384,11 @@ class UserController extends Controller
         return $this->resNoContent();
     }
 
-    // 被禁言的用户列表
+    // 被删除的用户列表
     public function freezeUserList()
     {
         $list = User
-            ::whereNotNull('banned_to')
+            ::onlyTrashed()
             ->get();
 
         return $this->resOK($list);
@@ -1235,10 +1415,28 @@ class UserController extends Controller
     {
         $userId = $request->get('id');
 
-        User::where('id', $userId)
+        User::onlyTrashed()
+            ->where('id', $userId)
+            ->restore();
+
+        DB
+            ::table('users')
+            ->where('id', $userId)
             ->update([
+                'deleted_at' => null,
                 'banned_to' => null
             ]);
+
+        $userIpAddress = new UserIpAddress();
+        $userIds = $userIpAddress->getSameUserById($userId);
+        foreach ($userIds as $uid)
+        {
+            $ipList = $userIpAddress->getUserIpById($uid);
+            foreach ($ipList as $ip)
+            {
+                $userIpAddress->recoverUser($ip);
+            }
+        }
 
         Redis::DEL('user_'. $userId);
 

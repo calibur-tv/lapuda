@@ -1,13 +1,14 @@
 <?php
 
 namespace App\Api\V1\Services\Toggle\Base;
+
 use App\Api\V1\Repositories\AnswerRepository;
 use App\Api\V1\Repositories\ImageRepository;
 use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\ScoreRepository;
-use App\Api\V1\Services\LightCoinService;
 use App\Api\V1\Services\Toggle\ToggleService;
 use App\Api\V1\Services\Toggle\Video\VideoRewardService;
+use App\Api\V1\Services\VirtualCoinService;
 
 /**
  * Created by PhpStorm.
@@ -45,13 +46,8 @@ class RewardService extends ToggleService
             return;
         }
 
-        $lightCoinService = new LightCoinService();
-        $lightCoinService->deleteUserContent([
-            'user_id' => $item['user_id'],
-            'amount' => $count,
-            'content_id' => $id,
-            'content_type' => $this->convertNumberTypeToString()
-        ]);
+        $virtualCoinService = new VirtualCoinService();
+        $virtualCoinService->deleteUserContent($this->convertNumberTypeToString(), $item['user_id'], $item['id'], $count);
     }
 
     protected function getRepositoryByType()

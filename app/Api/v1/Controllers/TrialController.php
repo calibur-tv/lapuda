@@ -24,6 +24,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
+/**
+ * @Resource("审核相关接口")
+ */
 class TrialController extends Controller
 {
     // TODO：counter-cache

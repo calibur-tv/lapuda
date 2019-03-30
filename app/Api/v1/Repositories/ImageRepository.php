@@ -22,7 +22,6 @@ use App\Services\BaiduSearch\BaiduPush;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
-use Mews\Purifier\Facades\Purifier;
 
 class ImageRepository extends Repository
 {

@@ -39,7 +39,7 @@ class BanPickService extends Repository
             // 第一次点了赞同 -> 赞
             $this->firstVoteIt($userId, $modalId, $this->score);
 
-            $this->ListInsertBefore($this->newsCacheListKey($modalId), $userId);
+            $this->ListInsertBefore($this->agreeUsersIdCacheKey($modalId), $userId);
 
             $result = $this->score;
         }
@@ -50,7 +50,7 @@ class BanPickService extends Repository
             {
                 DB::table($this->table)->delete($voteId);
 
-                $this->ListRemove($this->newsCacheListKey($modalId), $userId);
+                $this->ListRemove($this->agreeUsersIdCacheKey($modalId), $userId);
 
                 $banPickShowCounter = new BanPickShowCounter($this->table);
                 $banPickShowCounter->add($modalId, -$this->score);
@@ -69,7 +69,8 @@ class BanPickService extends Repository
                         'created_at' => Carbon::now()
                     ]);
 
-                $this->ListInsertBefore($this->newsCacheListKey($modalId), $userId);
+                $this->ListInsertBefore($this->agreeUsersIdCacheKey($modalId), $userId);
+                $this->ListRemove($this->bannedUsersIdCacheKey($modalId), $userId);
 
                 $banPickShowCounter = new BanPickShowCounter($this->table);
                 $banPickShowCounter->add($modalId, $this->score);
@@ -91,6 +92,9 @@ class BanPickService extends Repository
         if (!$voteId) // 第一次点了反对 -> 反对
         {
             $this->firstVoteIt($userId, $modalId, -$this->score);
+
+            $this->ListInsertBefore($this->bannedUsersIdCacheKey($modalId), $userId);
+
             $result = -$this->score;
         }
         else // 投过票了
@@ -100,6 +104,8 @@ class BanPickService extends Repository
             if ($votedScore < 0) // 连续点了两次反对 -> 取消反对
             {
                 DB::table($this->table)->delete($voteId);
+
+                $this->ListRemove($this->bannedUsersIdCacheKey($modalId), $userId);
 
                 $banPickReallyCounter = new BanPickReallyCounter($this->table);
                 $banPickReallyCounter->add($modalId, $this->score);
@@ -115,7 +121,8 @@ class BanPickService extends Repository
                         'created_at' => Carbon::now()
                     ]);
 
-                $this->ListRemove($this->newsCacheListKey($modalId), $userId);
+                $this->ListInsertBefore($this->bannedUsersIdCacheKey($modalId), $userId);
+                $this->ListRemove($this->agreeUsersIdCacheKey($modalId), $userId);
 
                 $banPickShowCounter = new BanPickShowCounter($this->table);
                 $banPickShowCounter->add($modalId, -$this->score);
@@ -200,17 +207,28 @@ class BanPickService extends Repository
         return $banPickShowCount->batchGet($list, $key);
     }
 
-    public function votedUserIds($modalId, $page = 0, $count = 10)
+    public function agreeUsersId($modalId)
     {
-        $ids = $this->RedisList($this->hotsCacheListKey($modalId), function () use ($modalId)
+        return $this->RedisList($this->agreeUsersIdCacheKey($modalId), function () use ($modalId)
         {
             return DB::table($this->table)
                 ->where('modal_id', $modalId)
+                ->where('score', '>', 0)
                 ->orderBy('created_at', 'desc')
-                ->pluck('id');
+                ->pluck('user_id');
         });
+    }
 
-        return $this->filterIdsByPage($ids, $page, $count);
+    public function bannedUsersId($modalId)
+    {
+        return $this->RedisList($this->bannedUsersIdCacheKey($modalId), function () use ($modalId)
+        {
+            return DB::table($this->table)
+                ->where('modal_id', $modalId)
+                ->where('score', '<', 0)
+                ->orderBy('created_at', 'desc')
+                ->pluck('user_id');
+        });
     }
 
     protected function firstVoteIt($userId, $modalId, $score)
@@ -243,9 +261,14 @@ class BanPickService extends Repository
             ->first();
     }
 
-    protected function newsCacheListKey($modalId)
+    protected function agreeUsersIdCacheKey($modalId)
     {
-        return $this->table . '_' . $modalId . 'new_user_ids';
+        return $this->table . '_' . $modalId . '_agree_user_ids';
+    }
+
+    protected function bannedUsersIdCacheKey($modalId)
+    {
+        return $this->table . '_' . $modalId . '_banned_user_ids';
     }
 
     protected function getVotedId($userId, $modalId)

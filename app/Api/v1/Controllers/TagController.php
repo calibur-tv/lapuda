@@ -12,6 +12,9 @@ use App\Api\V1\Services\Tag\BangumiTagService;
 use App\Api\V1\Services\Tag\PostTagService;
 use Illuminate\Http\Request;
 
+/**
+ * @Resource("标签相关接口")
+ */
 class TagController extends Controller
 {
     // 后台获取所有的 tag

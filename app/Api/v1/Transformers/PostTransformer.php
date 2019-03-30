@@ -12,6 +12,26 @@ namespace App\Api\V1\Transformers;
 
 class PostTransformer extends Transformer
 {
+    public function show_cache($data)
+    {
+        return $this->transformer($data, function ($post)
+        {
+            return [
+                'id' => (int)$post['id'],
+                'title' => $post['title'] ?: '标题什么的不重要~',
+                'desc' => $post['desc'],
+                'content' => $post['content'],
+                'images' => $post['images'],
+                'view_count' => (int)$post['view_count'],
+                'tags' => isset($post['tags']) ? $post['tags'] : [],
+                'is_creator' => (boolean)$post['is_creator'],
+                'created_at' => $post['created_at'],
+                'updated_at' => $post['updated_at'],
+                'deleted_at' => $post['deleted_at']
+            ];
+        });
+    }
+
     public function show($post)
     {
         return $this->transformer($post, function ($post)
@@ -36,6 +56,8 @@ class PostTransformer extends Transformer
                 'is_nice' => (boolean)$post['is_nice'],
                 'is_top' => (boolean)$post['top_at'],
                 'is_creator' => (boolean)$post['is_creator'],
+                'is_idol_manager' => $post['is_idol_manager'],
+                'idol' => $post['idol'],
                 'created_at' => $post['created_at'],
                 'updated_at' => $post['updated_at'],
                 'deleted_at' => $post['deleted_at']
@@ -129,6 +151,35 @@ class PostTransformer extends Transformer
         });
     }
 
+    public function idolFlow($list)
+    {
+        return $this->collection($list, function ($item)
+        {
+            return array_merge(
+                $this->baseFlow($item),
+                [
+                    'idol' => $this->transformer($item['idol'], function ($idol)
+                    {
+                        return [
+                            'id' => (int)$idol['id'],
+                            'name' => $idol['name'],
+                            'avatar' => $idol['avatar']
+                        ];
+                    }),
+                    'user' => $this->transformer($item['user'], function ($user)
+                    {
+                        return [
+                            'id' => (int)$user['id'],
+                            'nickname' => $user['nickname'],
+                            'avatar' => $user['avatar'],
+                            'zone' => $user['zone']
+                        ];
+                    })
+                ]
+            );
+        });
+    }
+
     public function trendingFlow($list)
     {
         return $this->collection($list, function ($item)
@@ -158,7 +209,7 @@ class PostTransformer extends Transformer
         });
     }
 
-    protected function baseFlow($item)
+    public function baseFlow($item)
     {
         return $this->transformer($item, function ($item)
         {

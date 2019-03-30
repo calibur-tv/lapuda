@@ -12,6 +12,7 @@ use App\Api\V1\Repositories\BangumiRepository;
 use App\Api\V1\Repositories\ScoreRepository;
 use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Counter\ScoreViewCounter;
+use App\Api\V1\Services\Owner\VirtualIdolManager;
 use App\Api\V1\Services\Toggle\Bangumi\BangumiScoreService;
 use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
 use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
@@ -120,7 +121,7 @@ class ScoreController extends Controller
         $shareData = [
             'title' => $score['title'],
             'desc' => $score['intro'],
-            'link' => "https://m.calibur.tv/review/{$id}",
+            'link' => $this->createShareLink('review', $id, $userId),
             'image' => ($score['banner'] ? $score['banner']['url'] : $bangumi['avatar']) . '-share120jpg'
         ];
         $score['share_data'] = $shareData;

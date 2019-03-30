@@ -9,8 +9,6 @@ $api = app('Dingo\Api\Routing\Router');
 
 $api->version(['v1', 'latest'], function ($api)
 {
-    $api->get('/migrate', 'App\Api\V1\Controllers\BangumiSeasonController@videoControl');
-
     $api->group(['prefix' => '/search'], function ($api)
     {
         $api->get('/new', 'App\Api\V1\Controllers\SearchController@search');
@@ -29,6 +27,11 @@ $api->version(['v1', 'latest'], function ($api)
         $api->post('/bind_phone', 'App\Api\V1\Controllers\DoorController@bindPhone');
 
         $api->post('/login', 'App\Api\V1\Controllers\DoorController@login')->middleware(['geetest']);
+        $api->put('/login', 'App\Api\V1\Controllers\DoorController@login')->middleware(['geetest']);
+
+        $api->post('/wechat_mini_app_login', 'App\Api\V1\Controllers\DoorController@wechatMiniAppLogin');
+
+        $api->post('/wechat_mini_app_get_token', 'App\Api\V1\Controllers\DoorController@wechatMiniAppToken');
 
         $api->post('/refresh', 'App\Api\V1\Controllers\DoorController@refreshUser')->middleware(['jwt.refresh']);
 
@@ -71,6 +74,25 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/hots', 'App\Api\V1\Controllers\BangumiController@hotBangumis');
 
+        $api->group(['prefix' => '/manager', 'middleware' => ['jwt.auth']], function ($api)
+        {
+            $api->get('/get_info', 'App\Api\V1\Controllers\BangumiController@managerGetInfo');
+
+            $api->get('/list', 'App\Api\V1\Controllers\BangumiController@getManagerList');
+
+            $api->post('/set_manager', 'App\Api\V1\Controllers\BangumiController@setManager');
+
+            $api->post('/remove_manager', 'App\Api\V1\Controllers\BangumiController@removeManager');
+
+            $api->post('/edit_info', 'App\Api\V1\Controllers\BangumiController@managerEditInfo');
+
+            $api->post('/create_season', 'App\Api\V1\Controllers\BangumiController@managerCreateSeason');
+
+            $api->post('/edit_season', 'App\Api\V1\Controllers\BangumiController@managerEditSeason');
+
+            $api->post('/update_videos', 'App\Api\V1\Controllers\BangumiController@managerUpdateVideos');
+        });
+
         $api->group(['prefix' => '/{id}'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\BangumiController@show');
@@ -90,9 +112,17 @@ $api->version(['v1', 'latest'], function ($api)
         $api->group(['prefix' => '/{id}'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\VideoController@show');
+
+            $api->post('/update', 'App\Api\V1\Controllers\VideoController@update')->middleware(['jwt.auth']);
         });
 
+        $api->post('/create', 'App\Api\V1\Controllers\VideoController@create')->middleware(['jwt.auth']);
+
         $api->post('/playing', 'App\Api\V1\Controllers\VideoController@playing');
+
+        $api->post('/fetch', 'App\Api\V1\Controllers\VideoController@fetchVideoSrc');
+
+        $api->post('/buy', 'App\Api\V1\Controllers\VideoController@buy')->middleware(['jwt.auth']);
     });
 
     $api->group(['prefix' => '/score'], function ($api)
@@ -196,6 +226,8 @@ $api->version(['v1', 'latest'], function ($api)
 
         $api->get('/invite/list', 'App\Api\V1\Controllers\UserController@userInviteList');
 
+        $api->get('/invite/users', 'App\Api\V1\Controllers\UserController@userInviteUsers');
+
         $api->get('/card', 'App\Api\V1\Controllers\UserController@userCard');
 
         $api->group(['prefix' => '/{zone}'], function ($api)
@@ -223,6 +255,12 @@ $api->version(['v1', 'latest'], function ($api)
         $api->group(['prefix' => '/{id}'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\PostController@show')->middleware(['showDelete']);
+
+            $api->get('/show_cache', 'App\Api\V1\Controllers\PostController@show_cache')->middleware(['showDelete']);
+
+            $api->get('/show_meta', 'App\Api\V1\Controllers\PostController@show_meta');
+
+            $api->get('/get_preview_images', 'App\Api\V1\Controllers\PostController@get_preview_images');
 
             $api->post('/deletePost', 'App\Api\V1\Controllers\PostController@deletePost')->middleware(['jwt.auth']);
         });
@@ -322,19 +360,90 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/create', 'App\Api\V1\Controllers\CartoonRoleController@create');
 
             $api->post('/edit', 'App\Api\V1\Controllers\CartoonRoleController@edit');
+
+            $api->post('/user_create', 'App\Api\V1\Controllers\CartoonRoleController@publicCreate');
         });
 
         $api->group(['prefix' => '/{id}'], function ($api)
         {
             $api->get('/show', 'App\Api\V1\Controllers\CartoonRoleController@show');
 
+            $api->get('/stock_show', 'App\Api\V1\Controllers\CartoonRoleController@stockShow');
+
+            $api->get('/deal_show', 'App\Api\V1\Controllers\CartoonRoleController@dealShow');
+
+            $api->get('/stock_chart', 'App\Api\V1\Controllers\CartoonRoleController@stochChart');
+
             $api->get('/fans', 'App\Api\V1\Controllers\CartoonRoleController@fans');
 
+            $api->get('/owners', 'App\Api\V1\Controllers\CartoonRoleController@owners');
+            $api->post('/owners', 'App\Api\V1\Controllers\CartoonRoleController@owners');
+
             $api->post('/star', 'App\Api\V1\Controllers\CartoonRoleController@star')->middleware(['jwt.auth']);
+
+            $api->post('/buy_stock', 'App\Api\V1\Controllers\CartoonRoleController@buyStock')->middleware(['jwt.auth']);
+
+            $api->get('/get_idol_deal', 'App\Api\V1\Controllers\CartoonRoleController@getMyIdolDeal')->middleware(['jwt.auth']);
         });
+
+        $api->get('/products', 'App\Api\V1\Controllers\CartoonRoleController@products');
+
+        $api->get('/get_idol_request_list', 'App\Api\V1\Controllers\CartoonRoleController@get_idol_request_list');
+
+        $api->get('/get_mine_product_orders', 'App\Api\V1\Controllers\CartoonRoleController@get_mine_product_orders')->middleware(['jwt.auth']);
+
+        $api->get('/can_use_income', 'App\Api\V1\Controllers\CartoonRoleController@can_use_income')->middleware(['jwt.auth']);
+
+        $api->get('/get_my_product_request_list', 'App\Api\V1\Controllers\CartoonRoleController@get_my_product_request_list')->middleware(['jwt.auth']);
+
+        $api->post('/create_buy_request', 'App\Api\V1\Controllers\CartoonRoleController@create_buy_request')->middleware(['jwt.auth']);
+
+        $api->post('/delete_buy_request', 'App\Api\V1\Controllers\CartoonRoleController@delete_buy_request')->middleware(['jwt.auth']);
+
+        $api->post('/over_buy_request', 'App\Api\V1\Controllers\CartoonRoleController@over_buy_request')->middleware(['jwt.auth']);
+
+        $api->post('/check_product_request', 'App\Api\V1\Controllers\CartoonRoleController@check_product_request')->middleware(['jwt.auth']);
+
+        $api->get('/get_idol_days_chart', 'App\Api\V1\Controllers\CartoonRoleController@idolSomeDayStockChartData');
+
+        $api->get('/deal_list', 'App\Api\V1\Controllers\CartoonRoleController@getDealList');
+        $api->post('/deal_list', 'App\Api\V1\Controllers\CartoonRoleController@getDealList');
+
+        $api->get('/my_deal', 'App\Api\V1\Controllers\CartoonRoleController@myDeal')->middleware(['jwt.auth']);
+
+        $api->get('/get_user_deal_list', 'App\Api\V1\Controllers\CartoonRoleController@getUserDealList');
+
+        $api->get('/stock_meta', 'App\Api\V1\Controllers\CartoonRoleController@stockMeta');
+
+        $api->get('/recent_buy', 'App\Api\V1\Controllers\CartoonRoleController@recentBuyList');
+
+        $api->get('/recent_deal', 'App\Api\V1\Controllers\CartoonRoleController@recentDealList');
+
+        $api->get('/deal_exchange_record', 'App\Api\V1\Controllers\CartoonRoleController@getDealExchangeRecord');
+
+        $api->get('/market_price_draft_list', 'App\Api\V1\Controllers\CartoonRoleController@getIdolMarketPriceDraftList');
+
+        $api->get('/user_draft_work', 'App\Api\V1\Controllers\CartoonRoleController@getMyTodoWork')->middleware(['jwt.auth']);
+
+        $api->post('/change_idol_profile', 'App\Api\V1\Controllers\CartoonRoleController@changeIdolProfile')->middleware(['jwt.auth']);
+
+        $api->post('/create_market_price_draft', 'App\Api\V1\Controllers\CartoonRoleController@createIdolMarketPriceDraft')->middleware(['jwt.auth']);
+
+        $api->post('/delete_market_price_draft', 'App\Api\V1\Controllers\CartoonRoleController@deleteIdolMarketPriceDraft')->middleware(['jwt.auth']);
+
+        $api->post('/vote_market_price_draft', 'App\Api\V1\Controllers\CartoonRoleController@voteIdolMarketPriceDraft')->middleware(['jwt.auth']);
+
+        $api->post('/create_deal', 'App\Api\V1\Controllers\CartoonRoleController@createDeal')->middleware(['jwt.auth']);
+
+        $api->post('/delete_deal', 'App\Api\V1\Controllers\CartoonRoleController@deleteDeal')->middleware(['jwt.auth']);
+
+        $api->post('/make_deal', 'App\Api\V1\Controllers\CartoonRoleController@makeDeal')->middleware(['jwt.auth']);
 
         $api->group(['prefix' => '/list'], function ($api)
         {
+            $api->get('/idols', 'App\Api\V1\Controllers\CartoonRoleController@getIdolList');
+            $api->post('/idols', 'App\Api\V1\Controllers\CartoonRoleController@getIdolList');
+
             $api->get('/today', 'App\Api\V1\Controllers\CartoonRoleController@todayActivity');
 
             $api->get('/dalao', 'App\Api\V1\Controllers\CartoonRoleController@dalaoUsers');
@@ -346,6 +455,8 @@ $api->version(['v1', 'latest'], function ($api)
     $api->group(['prefix' => '/flow'], function ($api)
     {
         $api->get('/list', 'App\Api\V1\Controllers\TrendingController@flowlist');
+
+        $api->get('/mixin', 'App\Api\V1\Controllers\TrendingController@mixinFlow');
 
         $api->post('/list', 'App\Api\V1\Controllers\TrendingController@flowlist');
 
@@ -525,6 +636,8 @@ $api->version(['v1', 'latest'], function ($api)
 
             $api->get('/trending', 'App\Api\V1\Controllers\VideoController@playTrending');
 
+            $api->get('/baidu_list', 'App\Api\V1\Controllers\VideoController@baiduVideos');
+
             $api->post('/edit', 'App\Api\V1\Controllers\VideoController@edit');
 
             $api->post('/save', 'App\Api\V1\Controllers\VideoController@save');
@@ -539,8 +652,6 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/edit', 'App\Api\V1\Controllers\CartoonRoleController@edit');
 
             $api->post('/create', 'App\Api\V1\Controllers\CartoonRoleController@create');
-
-            $api->post('/remove_star', 'App\Api\V1\Controllers\CartoonRoleController@removeStarByIp');
         });
 
         $api->group(['prefix' => '/user'], function ($api)
@@ -565,6 +676,8 @@ $api->version(['v1', 'latest'], function ($api)
             {
                 $api->get('/freezeUsers', 'App\Api\V1\Controllers\UserController@freezeUserList');
 
+                $api->get('/mutil_users', 'App\Api\V1\Controllers\UserController@mutilUsers');
+
                 $api->post('/freeze', 'App\Api\V1\Controllers\UserController@freezeUser');
 
                 $api->post('/free', 'App\Api\V1\Controllers\UserController@freeUser');
@@ -575,6 +688,8 @@ $api->version(['v1', 'latest'], function ($api)
             $api->post('/transactions', 'App\Api\V1\Controllers\UserController@getUserCoinTransactions');
 
             $api->post('/withdrawal', 'App\Api\V1\Controllers\UserController@withdrawal');
+
+            $api->post('/give_user_money', 'App\Api\V1\Controllers\UserController@giveUserMoney');
 
             $api->get('/dalao', 'App\Api\V1\Controllers\UserController@coinDescList');
 
@@ -621,6 +736,8 @@ $api->version(['v1', 'latest'], function ($api)
                 $api->post('/recover', 'App\Api\V1\Controllers\UserController@recover');
 
                 $api->post('/delete_info', 'App\Api\V1\Controllers\UserController@deleteUserInfo');
+
+                $api->post('/banned_user_cherr', 'App\Api\V1\Controllers\UserController@bannedUserCherr');
             });
 
             $api->group(['prefix' => '/image'], function ($api)

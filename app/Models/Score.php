@@ -20,6 +20,7 @@ class Score extends Model
     protected $fillable = [
         'bangumi_id',
         'user_id',
+        'idol_id',
         'user_age',
         'user_sex',
         'content',

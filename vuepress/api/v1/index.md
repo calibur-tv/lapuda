@@ -34,6 +34,7 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
 目前支持 `type` 为：
 1. `sign_up`，注册时调用
 2. `forgot_password`，找回密码时使用
+3. `bind_phone`，绑定手机号时使用
 
 > 目前返回的数字验证码是`6位`
 
@@ -158,8 +159,127 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
 
 + Response 204 (application/json)
 
-## 获取用户信息 [POST /door/refresh]
-每次`启动应用`、`登录`、`注册`成功后调用
+## APP授权QQ登录、注册 [POST /door/oauth2/qq]
+
+
++ Parameters
+    + from: (string, required) - 如果是登录，就是 sign，如果是绑定，就是 bind
+    + access_token: (string, required) - 登录授权的 access_code
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "账号绑定成功"
+            }
+
++ Response 201 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "JWT-TOKEN"
+            }
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "请求参数错误"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "未登录或已绑定"
+            }
+
++ Response 503 (application/json)
+    + Body
+
+            {
+                "code": 50301,
+                "message": "服务暂时不可用"
+            }
+
+## APP授权微信登录、注册 [POST /door/oauth2/wechat]
+
+
++ Parameters
+    + from: (string, required) - 如果是登录，就是 sign，如果是绑定，就是 bind
+    + access_token: (string, required) - 登录授权的 access_code
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "账号绑定成功"
+            }
+
++ Response 201 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "JWT-TOKEN"
+            }
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "请求参数错误"
+            }
+
++ Response 403 (application/json)
+    + Body
+
+            {
+                "code": 40301,
+                "message": "未登录或已绑定"
+            }
+
++ Response 503 (application/json)
+    + Body
+
+            {
+                "code": 50301,
+                "message": "服务暂时不可用"
+            }
+
+## 绑定用户手机号 [POST /door/bind_phone]
+
+
++ Parameters
+    + id: (number, required) - 用户id
+    + phone: (number, required) - 手机号
+    + password: (string, required) - 6至16位的密码
+    + authCode: (number, required) - 6位数字的短信验证码
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "绑定成功"
+            }
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "code": 40003,
+                "message": "参数错误或验证码过期或手机号已占用"
+            }
+
+## 网站获取用户信息 [POST /door/refresh]
+每次页面刷新时调用
 
 + Request (application/json)
     + Headers
@@ -206,7 +326,7 @@ type：all, user, bangumi, video，post，role，image，score，question，answ
                 "message": "登录凭证获取失败"
             }
 
-## 获取当前登录用户的信息 [POST /door/current_user]
+## APP 获取当前登录用户的信息 [POST /door/current_user]
 每次`启动应用`成功后调用
 
 + Request (application/json)
@@ -421,29 +541,6 @@ transactions
                 "message": "不存在的番剧"
             }
 
-## 番剧视频 [GET /bangumi/`bangumiId`/videos]
-
-
-+ Response 200 (application/json)
-    + Body
-
-            {
-                "code": 0,
-                "data": {
-                    "videos": "视频列表",
-                    "has_season": "是否有多个季度",
-                    "total": "视频总数"
-                }
-            }
-
-+ Response 404 (application/json)
-    + Body
-
-            {
-                "code": 40401,
-                "message": "不存在的番剧"
-            }
-
 ## 推荐番剧列表 [GET /bangumi/recommended]
 
 
@@ -504,6 +601,53 @@ transactions
             {
                 "50301": 40301,
                 "message": "服务暂不可用"
+            }
+
+# 番剧季度相关接口
+
+## 新番列表（周） [GET /bangumi/released]
+
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "番剧列表"
+            }
+
+## 番剧视频 [GET /bangumi/`bangumiId`/videos]
+
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": {
+                    "videos": "视频列表",
+                    "has_season": "是否有多个季度",
+                    "total": "视频总数"
+                }
+            }
+
++ Response 404 (application/json)
+    + Body
+
+            {
+                "code": 40401,
+                "message": "不存在的番剧"
+            }
+
+## 获取番剧的季度信息 [GET /bangumi/seasons]
+
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "code": 0,
+                "data": "季度列表"
             }
 
 # 帖子相关接口
@@ -1231,6 +1375,15 @@ transactions
                 "code": 40401,
                 "message": "不存在的视频资源"
             }
+
+## 版主更新视频 [POST /video/${videoId}/update]
+
+
+## 版主创建视频 [POST /video/create]
+
+
+## 承包季度视频 [POST /video/buy]
+
 
 ## 记录视频播放信息 [GET /video/${videoId}/playing]
 
@@ -1960,14 +2113,14 @@ transactions
 
 + Response 204 (application/json)
 
-## 用户交易记录列表 [GET /user/transactions]
+## 用户的虚拟币记录列表 [GET /user/transactions]
 
 
 + Request (application/json)
     + Body
 
             {
-                "min_id": "看过的最小id",
+                "page": "页码",
                 "default": 0,
                 "required": true
             }

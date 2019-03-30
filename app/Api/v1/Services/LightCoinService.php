@@ -29,6 +29,7 @@ class LightCoinService
 {
     private $record_table = 'light_coin_records';
     private $withdraw_baseline = 100;
+    private $master = [];
     // 增发团子
     private function recharge(array $params)
     {
@@ -39,6 +40,8 @@ class LightCoinService
         $toProductId = $params['to_product_id'];
         $toProductType = $params['to_product_type'];
         $amount = $params['count'];
+        $orderId = isset($params['order_id']) ? $params['order_id'] : "recharge-{$toUserId}-{$from}-$amount-" . time();
+        $state = isset($params['coin_state']) ? $params['coin_state'] : 0;
         // step：1 创建团子
         // step：2 写入流通记录
         // step：3 修改用户数据
@@ -47,11 +50,10 @@ class LightCoinService
             'origin_from' => $from,
             'holder_type' => 1, // 1是用户
             'holder_id' => $toUserId,
-            'state' => 0, // 0是团子
+            'state' => $state, // 0是团子，1是关玉
             'created_at' => $now,
             'updated_at' => $now
         ];
-        $orderId = isset($params['order_id']) ? $params['order_id'] : "recharge-{$toUserId}-{$from}-$amount-" . time();
         $records = [];
         DB::beginTransaction();
         try
@@ -69,13 +71,21 @@ class LightCoinService
                     'to_product_type' => $toProductType,
                     'order_amount' => $amount,
                     'created_at' => $now,
-                    'updated_at' => $now
+                    'updated_at' => $now,
+                    'migration_state' => 2
                 ];
             }
 
             LightCoinRecord::insert($records);
 
-            $this->increUserInfo($toUserId, 'coin_count_v2', $amount);
+            if ($state == 0)
+            {
+                $this->increUserInfo($toUserId, 'coin_count_v2', $amount);
+            }
+            else if ($state == 1)
+            {
+                $this->increUserInfo($toUserId, 'light_count', $amount);
+            }
 
             DB::commit();
             return true;
@@ -126,7 +136,7 @@ class LightCoinService
             $now = Carbon::now();
             if ($user['coin_count_v2'] >= $exchange_count)
             {
-                $this->setUserInfo($from_user_id, 'coin_count_v2', $user['coin_count_v2'] - $exchange_count);
+                $this->increUserInfo($from_user_id, 'coin_count_v2', -$exchange_count);
                 // 优先消费团子
                 $exchangeIds = LightCoin
                     ::where('state', 0)
@@ -194,7 +204,8 @@ class LightCoinService
                     'to_product_type' => $to_product_type,
                     'order_amount' => $exchange_count,
                     'created_at' => $now,
-                    'updated_at' => $now
+                    'updated_at' => $now,
+                    'migration_state' => 2
                 ];
             }
 
@@ -233,23 +244,12 @@ class LightCoinService
     public function getUserRecord($userId, $page = 0, $count = 15)
     {
         $repository = new Repository();
-        $ids = $repository->RedisList($this->userRecordCacheKey($userId), function () use ($userId)
-        {
-            return DB
-                ::table($this->record_table)
-                ->where('to_user_id', $userId)
-                ->orWhere('from_user_id', $userId)
-                ->orderBy('id', 'DESC')
-                ->groupBy('id', 'order_id')
-                ->pluck('order_id')
-                ->toArray();
-
-        }, 0, -1, 'm');
-
+        $ids = $this->computeUserRecordIds($userId);
         $idsObj = $repository->filterIdsByPage($ids, $page, $count);
         $records = DB
             ::table($this->record_table)
-            ->whereIn('order_id', $idsObj['ids'])
+            ->whereIn('id', $idsObj['ids'])
+            ->orderBy('created_at', 'DESC')
             ->get()
             ->toArray();
 
@@ -355,6 +355,44 @@ class LightCoinService
             {
                 $is_plus = false;
             }
+            else if ($type == 13)
+            {
+                $is_plus = true;
+            }
+            else if ($type == 14)
+            {
+                $is_plus = true;
+            }
+            else if ($type == 15)
+            {
+                $is_plus = true;
+            }
+            else if ($type == 16)
+            {
+                $is_plus = true;
+            }
+            else if ($type == 17)
+            {
+                if ($userId == $item->from_user_id)
+                {
+                    // 当前用户是邀请者
+                    continue;
+                }
+                $is_plus = true;
+                $aboutUser = $repository->item($item->from_user_id);
+                $user = [
+                    'zone' => $aboutUser['zone'],
+                    'nickname' => $aboutUser['nickname']
+                ];
+            }
+            else if ($type == 18)
+            {
+                $is_plus = false;
+            }
+            else if ($type == 19)
+            {
+                continue;
+            }
             if ($type >= 4 && $type <= 8)
             {
                 $userRepository = new UserRepository();
@@ -388,6 +426,48 @@ class LightCoinService
         ];
     }
 
+    // 获取用户的收入、支出
+    public function getUserBanlance($userId)
+    {
+        $ids = $this->computeUserRecordIds($userId);
+        $records = DB
+            ::table($this->record_table)
+            ->whereIn('id', $ids)
+            ->select('to_product_type', 'order_amount', 'from_user_id')
+            ->get()
+            ->toArray();
+
+        $get = 0;
+        $set = 0;
+        foreach ($records as $item)
+        {
+            $type = (int)$item->to_product_type;
+            $amount = $item->order_amount;
+            if (in_array($type, [0, 2, 3, 13, 14, 15, 16]))
+            {
+                $get += $amount;
+            }
+            if (in_array($type, [4, 5, 6, 7, 8, 9, 10, 11, 12, 18]))
+            {
+                $set += $amount;
+            }
+            if ($type == 1 || $type == 17)
+            {
+                if ($userId == $item->from_user_id)
+                {
+                    // 当前用户是被邀请者
+                    continue;
+                }
+                $get += $amount;
+            }
+        }
+
+        return [
+            'get' => $get,
+            'set' => $set
+        ];
+    }
+
     // 单个团子的交易记录
     public function getRecordByCoinId($coinId)
     {
@@ -416,7 +496,7 @@ class LightCoinService
             ->toArray();
     }
 
-    // 每日签到
+    // 每日签到送团子
     public function daySign($userId)
     {
         return $this->recharge([
@@ -429,16 +509,17 @@ class LightCoinService
         ]);
     }
 
-    // 邀请他人注册
+    // 邀请他人注册送团子
     public function inviteUser($oldUserId, $newUserId)
     {
         return $this->recharge([
             'from' => 1,
-            'count' => 1,
+            'count' => 5,
             'from_user_id' => $newUserId,
             'to_product_id' => $newUserId,
             'to_product_type' => 1,
-            'to_user_id' => $oldUserId
+            'to_user_id' => $oldUserId,
+            'coin_state' => in_array($oldUserId, $this->master) ? 1 : 0
         ]);
     }
 
@@ -455,7 +536,7 @@ class LightCoinService
         ]);
     }
 
-    // 吧主活跃送团子
+    // 吧主活跃送光玉
     public function masterActiveReward($userId)
     {
         return $this->recharge([
@@ -463,8 +544,63 @@ class LightCoinService
             'count' => 1,
             'from_user_id' => 0,
             'to_product_id' => 0,
-            'to_product_type' => 3,
-            'to_user_id' => $userId
+            'to_product_type' => 16,
+            'to_user_id' => $userId,
+            'coin_state' => 1
+        ]);
+    }
+
+    // 给用户赠送团子
+    public function coinGift($toUserId, $amount)
+    {
+        return $this->recharge([
+            'from' => 5,
+            'count' => $amount,
+            'from_user_id' => 0,
+            'to_product_id' => 0,
+            'to_product_type' => 13,
+            'to_user_id' => $toUserId
+        ]);
+    }
+
+    // 给用户赠送光玉
+    public function lightGift($toUserId, $amount)
+    {
+        return $this->recharge([
+            'from' => 5,
+            'count' => $amount,
+            'from_user_id' => 0,
+            'to_product_id' => 0,
+            'to_product_type' => 14,
+            'to_user_id' => $toUserId,
+            'coin_state' => 1
+        ]);
+    }
+
+    // 被邀请用户送团子
+    public function invitedNewbieCoinGift($oldUser, $newUser, $amount = 2)
+    {
+        return $this->recharge([
+            'from' => 5,
+            'to_product_id' => 0,
+            'to_product_type' => 17,
+            'count' => $amount,
+            'from_user_id' => $oldUser,
+            'to_user_id' => $newUser
+        ]);
+    }
+
+    // 承包视频
+    public function buyVideoPackage($fromUserId, $toProductId, $amount)
+    {
+        return $this->exchange([
+            'from_user_id' => $fromUserId,
+            'to_user_id' => 0,
+            'to_user_type' => 0,
+            'to_product_id' => $toProductId,
+            'to_product_type' => 18,
+            'count' => $amount,
+            'is_reward_to_really_user' => false
         ]);
     }
 
@@ -607,7 +743,14 @@ class LightCoinService
             {
                 if ($coin->holder_id == $userId && $coin->holder_type == 0)
                 {
-                    $coin->delete();
+                    LightCoin
+                        ::where('id', $coin->id)
+                        ->update([
+                            'state' => 2,
+                            'holder_id' => 0,
+                            'holder_type' => 0
+                        ]);
+
                     $records[] = [
                         'coin_id' => $coin->id,
                         'order_id' => $orderId,
@@ -617,7 +760,8 @@ class LightCoinService
                         'to_product_type' => 11,
                         'order_amount' => $amount,
                         'created_at' => $now,
-                        'updated_at' => $now
+                        'updated_at' => $now,
+                        'migration_state' => 2
                     ];
                     $deletedLightCount++;
                 }
@@ -646,7 +790,8 @@ class LightCoinService
                         'to_product_type' => 11,
                         'order_amount' => $amount,
                         'created_at' => $now,
-                        'updated_at' => $now
+                        'updated_at' => $now,
+                        'migration_state' => 2
                     ];
                     $deletedLightCount++;
                 }
@@ -673,7 +818,8 @@ class LightCoinService
                             'to_product_type' => 11,
                             'order_amount' => $amount,
                             'created_at' => $now,
-                            'updated_at' => $now
+                            'updated_at' => $now,
+                            'migration_state' => 2
                         ];
                         $deletedCoinCount++;
                     }
@@ -681,7 +827,11 @@ class LightCoinService
 
                 LightCoin
                     ::whereIn('id', $deleteIds)
-                    ->delete();
+                    ->update([
+                        'state' => 2,
+                        'holder_id' => 0,
+                        'holder_type' => 0
+                    ]);
             }
 
             LightCoinRecord::insert($records);
@@ -722,8 +872,8 @@ class LightCoinService
             DB::beginTransaction();
             $result = $this->exchange([
                 'from_user_id' => $fromUserId,
-                'to_user_id' => 0,
-                'to_user_type' => 0,
+                'to_user_id' => $roleId,
+                'to_user_type' => 2,
                 'to_product_id' => $roleId,
                 'to_product_type' => 9,
                 'count' => $count,
@@ -807,7 +957,8 @@ class LightCoinService
                     'to_product_type' => 10,
                     'order_amount' => $count,
                     'created_at' => $now,
-                    'updated_at' => $now
+                    'updated_at' => $now,
+                    'migration_state' => 2
                 ];
             }
 
@@ -862,7 +1013,11 @@ class LightCoinService
 
             LightCoin
                 ::whereIn('id', $coinIds)
-                ->delete();
+                ->update([
+                    'state' => 2,
+                    'holder_type' => 0,
+                    'holder_id' => 0
+                ]);
 
             $records = [];
             foreach ($coinIds as $coinId)
@@ -873,10 +1028,11 @@ class LightCoinService
                     'from_user_id' => 0,
                     'to_user_id' => $userId,
                     'to_product_id' => 0,
-                    'to_product_type' => 12,
+                    'to_product_type' => 19,
                     'order_amount' => $amount,
                     'created_at' => $now,
-                    'updated_at' => $now
+                    'updated_at' => $now,
+                    'migration_state' => 2
                 ];
             }
 
@@ -948,6 +1104,9 @@ class LightCoinService
             case 12:
                 return null;
                 break;
+            case 17:
+                return new UserRepository();
+                break;
             default:
                 return null;
         }
@@ -964,16 +1123,20 @@ class LightCoinService
         }
     }
 
-    private function setUserInfo($userId, $key, $value)
+    private function computeUserRecordIds($userId)
     {
-        User::where('id', $userId)
-            ->withTrashed()
-            ->update([
-                $key => $value
-            ]);
-        if (Redis::EXISTS("user_{$userId}"))
+        $repository = new Repository();
+        return $repository->RedisList($this->userRecordCacheKey($userId), function () use ($userId)
         {
-            Redis::HSET("user_{$userId}", $key, $value);
-        }
+            return DB
+                ::table($this->record_table)
+                ->where('to_user_id', $userId)
+                ->orWhere('from_user_id', $userId)
+                ->orderBy('created_at', 'DESC')
+                ->groupBy('order_id')
+                ->pluck('id')
+                ->toArray();
+
+        }, 0, -1, 'm');
     }
 }

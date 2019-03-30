@@ -3,7 +3,14 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Repositories\BangumiRepository;
+use App\Api\V1\Repositories\ImageRepository;
+use App\Api\V1\Repositories\PostRepository;
 use App\Api\V1\Repositories\QuestionRepository;
+use App\Api\V1\Repositories\ScoreRepository;
+use App\Api\V1\Repositories\UserRepository;
+use App\Api\V1\Services\Comment\ImageCommentService;
+use App\Api\V1\Services\Comment\PostCommentService;
+use App\Api\V1\Services\Comment\ScoreCommentService;
 use App\Api\V1\Services\Counter\Stats\TotalAnswerCount;
 use App\Api\V1\Services\Counter\Stats\TotalBangumiCount;
 use App\Api\V1\Services\Counter\Stats\TotalImageAlbumCount;
@@ -11,12 +18,23 @@ use App\Api\V1\Services\Counter\Stats\TotalImageCount;
 use App\Api\V1\Services\Counter\Stats\TotalPostCount;
 use App\Api\V1\Services\Counter\Stats\TotalQuestionCount;
 use App\Api\V1\Services\Counter\Stats\TotalScoreCount;
+use App\Api\V1\Services\Toggle\Image\ImageLikeService;
+use App\Api\V1\Services\Toggle\Image\ImageMarkService;
+use App\Api\V1\Services\Toggle\Post\PostLikeService;
+use App\Api\V1\Services\Toggle\Post\PostMarkService;
+use App\Api\V1\Services\Toggle\Score\ScoreLikeService;
+use App\Api\V1\Services\Toggle\Score\ScoreMarkService;
 use App\Api\V1\Services\Trending\AnswerTrendingService;
 use App\Api\V1\Services\Trending\ImageTrendingService;
 use App\Api\V1\Services\Trending\PostTrendingService;
 use App\Api\V1\Services\Trending\QuestionTrendingService;
 use App\Api\V1\Services\Trending\CartoonRoleTrendingService;
 use App\Api\V1\Services\Trending\ScoreTrendingService;
+use App\Api\V1\Transformers\BangumiTransformer;
+use App\Api\V1\Transformers\ImageTransformer;
+use App\Api\V1\Transformers\PostTransformer;
+use App\Api\V1\Transformers\ScoreTransformer;
+use App\Api\V1\Transformers\UserTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -64,7 +82,7 @@ class TrendingController extends Controller
                 'bangumiId' => 'integer',
                 'type' => [
                     'required',
-                    Rule::in(['post', 'image', 'score', 'role', 'question','answer']),
+                    Rule::in(['post', 'image', 'score', 'role', 'question', 'answer']),
                 ],
                 'sort' => [
                     'required',
@@ -137,6 +155,122 @@ class TrendingController extends Controller
 //        }
 
         return $this->resOK($trendingService->hot($seen, $take));
+    }
+
+    public function mixinFlow(Request $request)
+    {
+        $take = $request->get('take') ?: 10;
+        $seen = $request->get('seen_ids') ? explode(',', $request->get('seen_ids')) : [];
+        $bangumiId = $request->get('bangumi_id') ?: 0;
+        $postRepository = new PostRepository();
+        $idsObj = $postRepository->mixinFlowIds($seen, $take, $bangumiId);
+        if (empty($idsObj['ids']))
+        {
+            return $this->resOK([
+                'list' => [],
+                'noMore' => true,
+                'total' => $idsObj['total']
+            ]);
+        }
+
+        $imageRepository = new ImageRepository();
+        $scoreRepository = new ScoreRepository();
+        $userRepository = new UserRepository();
+        $bangumiRepository = new BangumiRepository();
+        $userTransformer = new UserTransformer();
+        $bangumiTransformer = new BangumiTransformer();
+        $postTransformer = new PostTransformer();
+        $imageTransformer = new ImageTransformer();
+        $scoreTransformer = new ScoreTransformer();
+
+        $scoreLikeService = new ScoreLikeService();
+        $scoreMarkService = new ScoreMarkService();
+        $scoreCommentService = new ScoreCommentService();
+
+        $imageLikeService = new ImageLikeService();
+        $imageMarkService = new ImageMarkService();
+        $imageCommentService = new ImageCommentService();
+
+        $postLikeService = new PostLikeService();
+        $postMarkService = new PostMarkService();
+        $postCommentService = new PostCommentService();
+
+        $result = [];
+        foreach ($idsObj['ids'] as $item)
+        {
+            $arr = explode('-', $item);
+            $type = $arr[0];
+            $id = $arr[1];
+            $sendType = '';
+            $object = null;
+            $repository = null;
+            $likeService = null;
+            $commentService = null;
+            $markService = null;
+            if ($type === 'p')
+            {
+                $object = $postRepository->item($id);
+                $sendType = 'post';
+                $transformer = $postTransformer;
+                $likeService = $postLikeService;
+                $markService = $postMarkService;
+                $commentService = $postCommentService;
+            }
+            else if ($type === 'i')
+            {
+                $object = $imageRepository->item($id);
+                $sendType = 'image';
+                $transformer = $imageTransformer;
+                $likeService = $imageLikeService;
+                $markService = $imageMarkService;
+                $commentService = $imageCommentService;
+            }
+            else if ($type === 's')
+            {
+                $object = $scoreRepository->item($id);
+                $sendType = 'score';
+                $transformer = $scoreTransformer;
+                $likeService = $scoreLikeService;
+                $markService = $scoreMarkService;
+                $commentService = $scoreCommentService;
+            }
+            if (is_null($object))
+            {
+                continue;
+            }
+
+            $user = $userRepository->item($object['user_id']);
+            if (is_null($user))
+            {
+                continue;
+            }
+
+            $bangumi = $bangumiId ? null : $bangumiRepository->item($object['bangumi_id']);
+            if (is_null($bangumi))
+            {
+                continue;
+            }
+
+            $object['like_count'] = $likeService->total($id);
+            $object['mark_count'] = $markService->total($id);
+            $object['comment_count'] = $commentService->getCommentCount($id);
+            $object['reward_count'] = 0;
+
+            $result[] = [
+                'type' => $sendType,
+                'object' => [
+                    'user' => $userTransformer->item($user),
+                    'bangumi' => $bangumiTransformer->item($bangumi),
+                    'flow' => $transformer->baseFlow($object)
+                ]
+            ];
+        }
+
+        return $this->resOK([
+            'list' => $result,
+            'total' => $idsObj['total'],
+            'noMore' => $idsObj['noMore']
+        ]);
     }
 
     // 获取信息流的统计数据，App暂无需求，之后可用于下拉刷新提示

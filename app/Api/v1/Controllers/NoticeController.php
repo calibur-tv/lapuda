@@ -17,6 +17,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 
+/**
+ * @Resource("消息提醒相关接口")
+ */
 class NoticeController extends Controller
 {
     // 展示
@@ -112,13 +115,12 @@ class NoticeController extends Controller
     {
         $id = $request->get('id');
         $score = Score::where('id', $id)->first();
-        $repository = new Repository();
         if ($score['user_id'] != 1)
         {
             return $this->resErrRole();
         }
 
-        $notice = SystemNotice::create([
+        SystemNotice::create([
             'title' => $score['title'],
             'banner' => $score['banner'],
             'content' => $score['content']
@@ -126,14 +128,7 @@ class NoticeController extends Controller
 
         Redis::DEL('system_notice_list');
         Redis::DEL('system_notice_id_list');
-        $repository->Cache('system_notice_lastest_item', function () use ($notice)
-        {
-            return [
-                'id' => $notice['id'],
-                'title' => $notice['title'],
-                'created_at' => $notice['created_at']
-            ];
-        });
+        Redis::DEL('system_notice_lastest_item');
 
         return $this->resOK();
     }
@@ -158,6 +153,8 @@ class NoticeController extends Controller
             ]);
 
         Redis::DEL('system_notice_list');
+        Redis::DEL('system_notice_lastest_item');
+        Redis::DEL('system_notice_item_' . $noticeId);
 
         return $this->resOK();
     }
@@ -176,6 +173,7 @@ class NoticeController extends Controller
 
         Redis::DEL('system_notice_list');
         Redis::DEL('system_notice_id_list');
+        Redis::DEL('system_notice_lastest_item');
         Redis::DEL('system_notice_item_' . $id);
 
         return $this->resOK();

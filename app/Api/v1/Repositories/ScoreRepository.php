@@ -216,10 +216,10 @@ class ScoreRepository extends Repository
 
             $bangumiActivityService = new BangumiActivity();
             $bangumiActivityService->update($bangumiId, 7);
-
-            $job = (new \App\Jobs\Trial\Score\Create($scoreId));
-            dispatch($job);
         }
+
+        $job = (new \App\Jobs\Trial\Score\Create($scoreId));
+        dispatch($job);
     }
 
     public function cacheKeyBangumiScore($bangumiId)

@@ -17,10 +17,18 @@ class Kernel extends ConsoleKernel
         Job\CronComputedActivity::class,
         Job\ClearSearch::class,
         Job\DayStats::class,
-        Job\CronAvthumb::class,
         Job\Trending::class,
         Job\VideoDown::class,
         Job\VideoUp::class,
+        Job\UpdateIdolBoss::class,
+        Job\ComputeIdolMarketPrice::class,
+        Job\SaveIdolMarketPrice::class,
+        Job\AutoChangeMarketStock::class,
+        Job\DeleteIdolDeal::class,
+        Job\AutoRefreshWechatAccessToken::class,
+        Job\ComputeIdolDailyIncome::class,
+        Job\DetectSameUser::class,
+        Job\UpdateVideo::class,
     ];
 
     /**
@@ -32,17 +40,27 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('CronComputedActivity')->dailyAt('00:01');
-        $schedule->command('DayStats')->dailyAt('01:01');
-//        $schedule->command('CronAvthumb')->hourly();
-        $schedule->command('ClearSearch')->dailyAt('05:00');
         $schedule->command('CronFreeUser')->everyFiveMinutes();
+        $schedule->command('ComputeIdolMarketPrice')->everyFiveMinutes();
+        $schedule->command('AutoChangeMarketStock')->everyFiveMinutes();
+        $schedule->command('SaveIdolMarketPrice')->dailyAt('00:01');
+        $schedule->command('ComputeIdolDailyIncome')->dailyAt('00:01');
+        $schedule->command('DayStats')->dailyAt('01:00');
+        $schedule->command('DeleteIdolDeal')->dailyAt('03:00');
+        $schedule->command('DetectSameUser')->dailyAt('04:00');
+        $schedule->command('ClearSearch')->dailyAt('05:00');
+        $schedule->command('UpdateVideo')->dailyAt('08:00');
         $schedule->command('Trending')->hourly();
-//        $schedule->command('VideoUp')
-//            ->dailyAt('19:00')
-//            ->weekdays();
-//        $schedule->command('VideoDown')
-//            ->dailyAt('8:00')
-//            ->weekdays();
+        $schedule->command('UpdateIdolBoss')->hourly();
+        $schedule->command('AutoRefreshWechatAccessToken')->hourly();
+        $schedule
+            ->command('VideoUp')
+            ->dailyAt('19:00')
+            ->weekdays();
+        $schedule
+            ->command('VideoDown')
+            ->dailyAt('8:00')
+            ->weekdays();
     }
 
     /**

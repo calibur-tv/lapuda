@@ -8,9 +8,5 @@ class SystemNotice extends Model
 {
     protected $table = 'system_notices';
 
-    protected $fillable = [
-        'title',
-        'banner',
-        'content'
-    ];
+    protected $fillable = ['title', 'banner', 'content'];
 }

@@ -12,6 +12,7 @@ namespace App\Api\V1\Repositories;
 use App\Models\Bangumi;
 use App\Models\BangumiSeason;
 use App\Models\Video;
+use Illuminate\Support\Facades\Redis;
 
 class VideoRepository extends Repository
 {
@@ -80,7 +81,11 @@ class VideoRepository extends Repository
                 'episode' => $video['episode'],
                 'user_id' => $video['user_id'],
                 'deleted_at' => $video['deleted_at'],
-                'is_released' => $isReleased
+                'is_released' => $isReleased,
+                'bangumi_season_id' => $video['bangumi_season_id'],
+                'baidu_cloud_src' => $video['baidu_cloud_src'],
+                'baidu_cloud_pwd' => $video['baidu_cloud_pwd'],
+                'self_src' => $video['src_v2']
             ];
         }, 'h');
 
@@ -90,8 +95,15 @@ class VideoRepository extends Repository
         }
 
         $otherSiteResource = $result['src_other'] ?: '';
+        $result['is_baidu_cloud'] = false;
 
-        if ($result['other_site'])
+        if ($result['baidu_cloud_src'])
+        {
+            $result['src'] = $result['baidu_cloud_src'];
+            $result['is_baidu_cloud'] = true;
+            $result['other_site'] = true;
+        }
+        else if ($result['other_site'])
         {
             $result['src'] = $otherSiteResource;
         }
@@ -111,6 +123,10 @@ class VideoRepository extends Repository
         if (!isset($result['is_released']))
         {
             $result['is_released'] = false;
+        }
+        if (!$result['other_site'])
+        {
+            $result['src'] = '';
         }
 
         return $result;

@@ -22,6 +22,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 
 
+/**
+ * @Resource("统计相关接口")
+ */
 class StatsController extends Controller
 {
     // 后台实时数据
