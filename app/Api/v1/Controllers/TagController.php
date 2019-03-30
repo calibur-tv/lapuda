@@ -9,6 +9,7 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\V1\Services\Tag\BangumiTagService;
+use App\Api\V1\Services\Tag\IndexTagService;
 use App\Api\V1\Services\Tag\PostTagService;
 use Illuminate\Http\Request;
 
@@ -30,6 +31,10 @@ class TagController extends Controller
         {
             $tagService = new PostTagService();
         }
+        else if ($type === 'index')
+        {
+            $tagService = new IndexTagService();
+        }
         $result = $tagService ? $tagService->all() : [];
 
         return $this->resOK($result);
@@ -50,6 +55,10 @@ class TagController extends Controller
         else if ($type === 'post')
         {
             $tagService = new PostTagService();
+        }
+        else if ($type === 'index')
+        {
+            $tagService = new IndexTagService();
         }
         if (is_null($tagService))
         {
@@ -74,6 +83,10 @@ class TagController extends Controller
         else if ($type === 'post')
         {
             $tagService = new PostTagService();
+        }
+        else if ($type === 'index')
+        {
+            $tagService = new IndexTagService();
         }
         if (is_null($tagService))
         {
