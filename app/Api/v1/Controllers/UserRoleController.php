@@ -6,6 +6,9 @@ use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Role;
 use Illuminate\Http\Request;
 
+/**
+ * @Resource("用户权限相关接口")
+ */
 class UserRoleController extends Controller
 {
     protected $role;

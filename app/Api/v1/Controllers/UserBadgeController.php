@@ -12,6 +12,9 @@ use App\Api\V1\Repositories\UserRepository;
 use App\Api\V1\Services\Tag\Base\UserBadgeService;
 use Illuminate\Http\Request;
 
+/**
+ * @Resource("用户徽章相关接口")
+ */
 class UserBadgeController extends Controller
 {
     public function __construct()

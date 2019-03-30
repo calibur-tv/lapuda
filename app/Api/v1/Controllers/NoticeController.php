@@ -17,6 +17,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 
+/**
+ * @Resource("消息提醒相关接口")
+ */
 class NoticeController extends Controller
 {
     // 展示
