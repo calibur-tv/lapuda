@@ -234,6 +234,7 @@ class BangumiController extends Controller
             $bangumi['has_video'] = false;
             $bangumi['has_cartoon'] = false;
         }
+        $bangumi['has_score'] = isset($bangumi['has_score']) ? $bangumi['has_score'] : true;
 
         return $this->resOK($bangumiTransformer->show($bangumi));
     }
@@ -853,7 +854,8 @@ class BangumiController extends Controller
                 'search' => $request->get('alias')
             ]) : 'null',
             'has_cartoon' => $request->get('has_cartoon'),
-            'has_video' => $request->get('has_video')
+            'has_video' => $request->get('has_video'),
+            'has_score' => $request->get('has_score')
         ];
 
         $result = $bangumi->update($arr);

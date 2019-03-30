@@ -29,7 +29,7 @@ class Bangumi extends Model
         'score',
         'has_cartoon',
         'has_video',
-        'has_season',
+        'has_score',
         'qq_group',
         'cartoon' // 漫画的 ids
     ];
@@ -41,7 +41,8 @@ class Bangumi extends Model
         'others_site_video' => 'boolean',
         'end' => 'boolean',
         'has_video' => 'boolean',
-        'has_cartoon' => 'boolean'
+        'has_cartoon' => 'boolean',
+        'has_score' => 'boolean'
     ];
 
     public function getAvatarAttribute($avatar)
