@@ -343,17 +343,17 @@ class PostRepository extends Repository
             $result = [];
             foreach ($post as $id => $time)
             {
-                $result["p-{$id}"] = $time;
+                $result["post-{$id}"] = $time;
             }
 
             foreach ($image as $id => $time)
             {
-                $result["i-{$id}"] = $time;
+                $result["image-{$id}"] = $time;
             }
 
             foreach ($score as $id => $time)
             {
-                $result["s-{$id}"] = $time;
+                $result["score-{$id}"] = $time;
             }
 
             return $result;
@@ -364,6 +364,6 @@ class PostRepository extends Repository
 
     public function mixinFlowIdsCacheKey($bangumi_id = 0)
     {
-        return "mixin_flow_list_bangumi_{$bangumi_id}_ids";
+        return "mixin_flow_list_activity_{$bangumi_id}_ids";
     }
 }

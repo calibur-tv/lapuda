@@ -203,34 +203,30 @@ class TrendingController extends Controller
             $arr = explode('-', $item);
             $type = $arr[0];
             $id = $arr[1];
-            $sendType = '';
             $object = null;
             $repository = null;
             $likeService = null;
             $commentService = null;
             $markService = null;
-            if ($type === 'p')
+            if ($type === 'post')
             {
                 $object = $postRepository->item($id);
-                $sendType = 'post';
                 $transformer = $postTransformer;
                 $likeService = $postLikeService;
                 $markService = $postMarkService;
                 $commentService = $postCommentService;
             }
-            else if ($type === 'i')
+            else if ($type === 'image')
             {
                 $object = $imageRepository->item($id);
-                $sendType = 'image';
                 $transformer = $imageTransformer;
                 $likeService = $imageLikeService;
                 $markService = $imageMarkService;
                 $commentService = $imageCommentService;
             }
-            else if ($type === 's')
+            else if ($type === 'score')
             {
                 $object = $scoreRepository->item($id);
-                $sendType = 'score';
                 $transformer = $scoreTransformer;
                 $likeService = $scoreLikeService;
                 $markService = $scoreMarkService;
@@ -259,7 +255,7 @@ class TrendingController extends Controller
             $object['reward_count'] = 0;
 
             $result[] = [
-                'type' => $sendType,
+                'type' => $type,
                 'object' => [
                     'user' => $userTransformer->item($user),
                     'bangumi' => $bangumiTransformer->item($bangumi),

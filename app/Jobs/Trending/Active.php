@@ -25,7 +25,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 
 class Active implements ShouldQueue
 {
@@ -80,6 +79,8 @@ class Active implements ShouldQueue
         }
 
         $service->update($this->id, $indexFlow);
+        $repository->SortAdd("mixin_flow_list_activity_{$this->bangumiId}_ids", "{$this->type}-{$this->id}");
+        $repository->SortAdd("mixin_flow_list_activity_0_ids", "{$this->type}-{$this->id}");
     }
 
     protected function getTableByModel()
